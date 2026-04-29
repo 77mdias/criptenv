@@ -77,7 +77,7 @@ criptenv/
 |---------|-------|-----|
 | Supabase | Free Tier | PostgreSQL + Auth + Realtime |
 | FastAPI | Railway/Render | Serverless Python |
-| Frontend | Vercel/Cloudflare | Edge Deployment |
+| Frontend | Cloudflare Pages + Workers | Edge Deployment |
 | CLI | npm Global | Distribuição |
 
 ## 📚 Documentação

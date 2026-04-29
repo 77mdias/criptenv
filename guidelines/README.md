@@ -21,7 +21,7 @@ CriptEnv deve ser acessível a:
 |---------|-----------|--------------|
 | **Database** | Supabase | $0 (free tier: 500MB) |
 | **Backend** | Railway/Render | $0 (500 hours, sleeps) |
-| **Frontend** | Vercel | $0 (100GB bandwidth) |
+| **Frontend** | Cloudflare Pages + Workers | $0 (unlimited bandwidth) |
 | **Domain** | .env.security (TBD) | $12/year |
 | **CI/CD** | GitHub Actions | $0 |
 | **Total** | | **~$1/month** |
@@ -32,12 +32,12 @@ CriptEnv deve ser acessível a:
 Month 1-6: Free tier limits
 ├── Supabase: < 500MB, < 50k MAU
 ├── Railway: < 500 hours (sleep after 15min)
-└── Vercel: < 100GB bandwidth
+└── Cloudflare Pages: unlimited bandwidth
 
 Month 6-12: First revenue
 ├── Upgrade Supabase to Pro: $25/month
 ├── Keep Railway/Render on free (or Pro if needed)
-└── Vercel Pro: $20/month
+└── Cloudflare Pages Pro: $20/month
 
 Year 2+: Enterprise/paid tiers
 ├── Self-hosted option

@@ -66,7 +66,7 @@
 | **Serverless** | ⭐⭐⭐⭐⭐ | ❌ | ⚠️ | ❌ |
 | **Learning Curve** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐ |
 
-**Serverless Compatibility**: FastAPI + Mangum = AWS Lambda / Vercel / Railway
+**Serverless Compatibility**: FastAPI + Mangum = AWS Lambda / Cloudflare Workers / Railway
 
 ### Frontend: Next.js + Vinext
 
@@ -127,11 +127,12 @@
 │                        FRONTEND TIER                                 │
 │                                                                      │
 │  ┌─────────────────────────────────────────────────────────────┐   │
-│  │                    Vercel (Free Tier)                        │   │
-│  │  • Edge Network (global)                                     │   │
-│  │  • 100GB bandwidth/mo                                         │   │
+│  │          Cloudflare Pages + Workers (Free Tier)               │   │
+│  │  • Edge Network (300+ cities globally)                       │   │
+│  │  • Unlimited bandwidth (no cap)                               │   │
 │  │  • Automatic HTTPS                                            │   │
-│  │  • Preview deployments                                        │   │
+│  │  • Preview deployments via @cloudflare/next-on-pages          │   │
+│  │  • Vinext (Next.js + Pug) native support                     │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -142,11 +143,11 @@
 │  │                 Railway (Free Tier) / Render                 │   │
 │  │  • FastAPI + Uvicorn                                         │   │
 │  │  • 500 hours/mo free                                         │   │
-│  │  • Automatic sleep after 15min inactivity                   │   │
+│  │  • Automatic sleep after 15min inactivity                    │   │
 │  │  • Custom domain with SSL                                     │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 │                                                                      │
-│  Alternative: AWS Lambda + API Gateway (Mangum adapter)             │
+│  Alternative: Cloudflare Workers (Python support via pyodide)         │
 └─────────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────────┐
@@ -167,7 +168,7 @@
 
 | Service | Free Tier Limits | Cost |
 |---------|------------------|------|
-| **Vercel** | 100GB bandwidth, 100 deployments | $0 |
+| **Cloudflare Pages** | Unlimited bandwidth, 500 builds | $0 |
 | **Railway** | 500 hours, sleep after 15min | $0 |
 | **Supabase** | 500MB DB, 1GB storage, 50k MAU | $0 |
 | **GitHub** | Unlimited repos, Actions CI/CD | $0 |
