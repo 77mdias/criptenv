@@ -31,6 +31,7 @@ interface UIState {
   toggleSidebarMobile: () => void
   setSidebarMobileOpen: (open: boolean) => void
   toggleCommandPalette: () => void
+  setCommandPaletteOpen: (open: boolean) => void
   setTheme: (theme: Theme) => void
   toggleTheme: () => void
 }
@@ -45,6 +46,7 @@ export const useUIStore = create<UIState>((set, get) => ({
   toggleSidebarMobile: () => set((state) => ({ sidebarMobileOpen: !state.sidebarMobileOpen })),
   setSidebarMobileOpen: (open) => set({ sidebarMobileOpen: open }),
   toggleCommandPalette: () => set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),
+  setCommandPaletteOpen: (open) => set({ commandPaletteOpen: open }),
   setTheme: (theme: Theme) => {
     localStorage.setItem(STORAGE_KEY, theme)
     set({ theme, resolvedTheme: resolveTheme(theme) })

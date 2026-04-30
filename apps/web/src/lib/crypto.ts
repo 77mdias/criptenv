@@ -6,7 +6,7 @@
  */
 
 const PBKDF2_ITERATIONS = 100_000
-const SALT_LENGTH = 16
+const SALT_LENGTH = 32
 const IV_LENGTH = 12
 const KEY_LENGTH = 256
 
@@ -54,6 +54,13 @@ export async function deriveSessionKey(
   )
 }
 
+export async function deriveSessionKeyFromBase64Salt(
+  password: string,
+  saltBase64: string
+): Promise<CryptoKey> {
+  return deriveSessionKey(password, base64ToBuffer(saltBase64))
+}
+
 /**
  * Encrypt plaintext using AES-GCM 256-bit
  */
@@ -83,6 +90,14 @@ export async function encrypt(
   } catch {
     throw new CryptoError("Encryption failed", "ENCRYPTION_FAILED")
   }
+}
+
+export async function checksum(value: string): Promise<string> {
+  const bytes = new TextEncoder().encode(value)
+  const digest = await crypto.subtle.digest("SHA-256", bytes)
+  return Array.from(new Uint8Array(digest))
+    .map((byte) => byte.toString(16).padStart(2, "0"))
+    .join("")
 }
 
 /**
@@ -117,7 +132,7 @@ export async function decrypt(
 
 // --- Helpers ---
 
-function bufferToBase64(buffer: Uint8Array): string {
+export function bufferToBase64(buffer: Uint8Array): string {
   let binary = ""
   for (let i = 0; i < buffer.length; i++) {
     binary += String.fromCharCode(buffer[i])
@@ -125,7 +140,7 @@ function bufferToBase64(buffer: Uint8Array): string {
   return btoa(binary)
 }
 
-function base64ToBuffer(base64: string): Uint8Array {
+export function base64ToBuffer(base64: string): Uint8Array {
   const binary = atob(base64)
   const bytes = new Uint8Array(binary.length)
   for (let i = 0; i < binary.length; i++) {

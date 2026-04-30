@@ -28,7 +28,12 @@ async def get_current_user(request: Request) -> User:
 
     async with async_session_factory() as db:
         auth_service = AuthService(db)
-        user = await auth_service.validate_session(token)
+        try:
+            user = await auth_service.validate_session(token)
+            await db.commit()
+        except Exception:
+            await db.rollback()
+            raise
 
         if user is None:
             raise HTTPException(

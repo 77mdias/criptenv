@@ -18,6 +18,7 @@ export type {
   Environment,
   EnvironmentListResponse,
   VaultBlob,
+  VaultBlobPush,
   VaultPushRequest,
   VaultPullResponse,
   VaultVersionResponse,

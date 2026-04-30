@@ -1,8 +1,8 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import Link from "next/link"
-import { Plus, FolderOpen, Key, Users } from "lucide-react"
+import { Plus, FolderOpen, Key } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -19,9 +19,11 @@ export default function ProjectsPage() {
   const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
 
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async (showLoading = true) => {
     try {
-      setLoading(true)
+      if (showLoading) {
+        setLoading(true)
+      }
       setError(null)
       const data = await projectsApi.list()
       setProjects(data.projects)
@@ -30,10 +32,38 @@ export default function ProjectsPage() {
     } finally {
       setLoading(false)
     }
-  }
+  }, [])
 
   useEffect(() => {
-    fetchProjects()
+    let cancelled = false
+
+    projectsApi
+      .list()
+      .then((data) => {
+        if (!cancelled) {
+          setProjects(data.projects)
+        }
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar projetos")
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  useEffect(() => {
+    const openDialog = () => setDialogOpen(true)
+    window.addEventListener("criptenv:new-project", openDialog)
+    return () => window.removeEventListener("criptenv:new-project", openDialog)
   }, [])
 
   const handleCreateSuccess = () => {

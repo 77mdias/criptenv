@@ -23,6 +23,7 @@ export interface User {
   id: string;
   email: string;
   name: string;
+  kdf_salt: string;
   created_at: string;
   email_verified?: boolean;
   two_factor_enabled?: boolean;
@@ -55,23 +56,43 @@ export interface Environment {
   project_id: string;
   name: string;
   display_name: string | null;
+  is_default?: boolean;
+  secrets_count?: number;
+  secrets_version?: number;
   created_at: string;
   updated_at: string;
 }
 
 export interface EnvironmentListResponse {
   environments: Environment[];
+  total?: number;
 }
 
 export interface VaultBlob {
+  id: string;
+  project_id: string;
+  environment_id: string;
   key_id: string;
   iv: string;
   ciphertext: string;
   auth_tag: string;
+  version: number;
+  checksum: string;
+  created_at: string;
+  updated_at: string | null;
+}
+
+export interface VaultBlobPush {
+  key_id: string;
+  iv: string;
+  ciphertext: string;
+  auth_tag: string;
+  checksum: string;
+  version: number;
 }
 
 export interface VaultPushRequest {
-  blobs: VaultBlob[];
+  blobs: VaultBlobPush[];
 }
 
 export interface VaultPullResponse {
@@ -81,6 +102,7 @@ export interface VaultPullResponse {
 
 export interface VaultVersionResponse {
   version: number;
+  blob_count: number;
 }
 
 export interface Member {
@@ -100,7 +122,12 @@ export interface Invite {
   project_id: string;
   email: string;
   role: string;
-  status: string;
+  invited_by?: string | null;
+  token?: string;
+  expires_at: string;
+  accepted_at?: string | null;
+  revoked_at?: string | null;
+  status?: string;
   created_at: string;
 }
 
@@ -123,7 +150,12 @@ export interface AuditLog {
   project_id: string;
   user_id: string | null;
   action: string;
-  details: unknown;
+  resource_type: string;
+  resource_id: string | null;
+  meta?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+  ip_address?: string | null;
+  user_agent?: string | null;
   created_at: string;
 }
 
@@ -162,6 +194,7 @@ export interface AuditQueryParams {
   page?: number;
   per_page?: number;
   action?: string;
+  resource_type?: string;
 }
 
 // ─── Token Helpers ─────────────────────────────────────────────────────────────

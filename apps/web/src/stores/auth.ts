@@ -5,6 +5,7 @@ export interface AuthUser {
   id: string;
   email: string;
   name: string;
+  kdf_salt: string;
 }
 
 interface AuthState {

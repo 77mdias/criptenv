@@ -1,118 +1,205 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
-import { Activity } from "lucide-react"
+import { Download, Filter } from "lucide-react"
+import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { EmptyState } from "@/components/shared/empty-state"
+import { AuditTimeline } from "@/components/shared/audit-timeline"
 import { auditApi } from "@/lib/api"
 import type { AuditLog } from "@/lib/api"
+
+const actions = [
+  "",
+  "project.created",
+  "project.updated",
+  "vault.pushed",
+  "invite.created",
+  "invite.revoked",
+  "member.added",
+  "member.removed",
+  "member.role_changed",
+]
+
+const resourceTypes = ["", "project", "vault", "invite", "member", "environment"]
 
 export default function AuditPage() {
   const params = useParams()
   const projectId = params.id as string
-
   const [logs, setLogs] = useState<AuditLog[]>([])
+  const [total, setTotal] = useState(0)
+  const [page, setPage] = useState(1)
+  const [action, setAction] = useState("")
+  const [resourceType, setResourceType] = useState("")
   const [loading, setLoading] = useState(true)
+  const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
-  useEffect(() => {
-    async function fetchLogs() {
-      try {
+  const loadLogs = useCallback(
+    async (nextPage: number, append = false) => {
+      if (append) {
+        setLoadingMore(true)
+      } else {
         setLoading(true)
-        const data = await auditApi.getLogs(projectId)
-        setLogs(data.logs)
+      }
+      setError(null)
+
+      try {
+        const data = await auditApi.getLogs(projectId, {
+          page: nextPage,
+          per_page: 20,
+          action: action || undefined,
+          resource_type: resourceType || undefined,
+        })
+        setLogs((current) => (append ? [...current, ...data.logs] : data.logs))
+        setTotal(data.total)
+        setPage(data.page)
       } catch (err) {
         setError(err instanceof Error ? err.message : "Erro ao carregar logs")
       } finally {
         setLoading(false)
+        setLoadingMore(false)
       }
+    },
+    [action, projectId, resourceType]
+  )
+
+  useEffect(() => {
+    let cancelled = false
+
+    auditApi
+      .getLogs(projectId, {
+        page: 1,
+        per_page: 20,
+        action: action || undefined,
+        resource_type: resourceType || undefined,
+      })
+      .then((data) => {
+        if (cancelled) return
+        setLogs(data.logs)
+        setTotal(data.total)
+        setPage(data.page)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar logs")
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
     }
-    fetchLogs()
-  }, [projectId])
+  }, [action, projectId, resourceType])
 
-  const getActionColor = (action: string) => {
-    if (action.includes("create")) return "success"
-    if (action.includes("delete") || action.includes("remove")) return "danger"
-    if (action.includes("update") || action.includes("edit")) return "warning"
-    return "outline"
-  }
-
-  if (loading) {
-    return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Audit Log</h1>
-          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
-            Historico de ações do projeto
-          </p>
-        </div>
-        <Card className="p-6 space-y-4">
-          {[1, 2, 3, 4, 5].map((i) => (
-            <div key={i} className="flex items-center gap-4">
-              <Skeleton className="h-4 w-4" />
-              <div className="flex-1 space-y-2">
-                <Skeleton className="h-4 w-48" />
-                <Skeleton className="h-3 w-32" />
-              </div>
-              <Skeleton className="h-6 w-20" />
-            </div>
-          ))}
-        </Card>
-      </div>
-    )
+  const exportJson = () => {
+    const blob = new Blob([JSON.stringify(logs, null, 2)], {
+      type: "application/json;charset=utf-8",
+    })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `audit-${projectId}.json`
+    link.click()
+    URL.revokeObjectURL(url)
   }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Audit Log</h1>
-        <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
-          {logs.length} eventos · Historico de ações do projeto
-        </p>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Audit Log</h1>
+          <p className="mt-1 font-mono text-sm text-[var(--text-tertiary)]">
+            {total} eventos registrados para este projeto
+          </p>
+        </div>
+        <Button variant="secondary" icon={Download} onClick={exportJson} disabled={logs.length === 0}>
+          Export JSON
+        </Button>
       </div>
 
+      <Card className="p-4">
+        <div className="mb-3 flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+          <Filter className="h-3.5 w-3.5" />
+          Filtros
+        </div>
+        <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
+          <label className="space-y-1.5">
+            <span className="block font-mono text-xs text-[var(--text-muted)]">Action</span>
+            <select
+              className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text-primary)]"
+              value={action}
+              onChange={(event) => {
+                setLoading(true)
+                setAction(event.target.value)
+              }}
+            >
+              {actions.map((item) => (
+                <option key={item || "all"} value={item}>
+                  {item || "Todas"}
+                </option>
+              ))}
+            </select>
+          </label>
+          <label className="space-y-1.5">
+            <span className="block font-mono text-xs text-[var(--text-muted)]">Resource</span>
+            <select
+              className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text-primary)]"
+              value={resourceType}
+              onChange={(event) => {
+                setLoading(true)
+                setResourceType(event.target.value)
+              }}
+            >
+              {resourceTypes.map((item) => (
+                <option key={item || "all"} value={item}>
+                  {item || "Todos"}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+      </Card>
+
       {error && (
-        <Card className="p-4 border-red-500/50">
-          <p className="text-red-500 text-sm font-mono">{error}</p>
+        <Card className="border-red-500/50 p-4">
+          <p className="font-mono text-sm text-red-600">{error}</p>
         </Card>
       )}
 
-      {logs.length === 0 ? (
-        <EmptyState
-          icon={Activity}
-          title="Nenhum evento registrado"
-          description="As ações realizadas neste projeto aparecerão aqui."
-        />
-      ) : (
-        <Card className="p-0 overflow-hidden">
-          <div className="divide-y divide-[var(--border)]">
-            {logs.map((log) => (
-              <div
-                key={log.id}
-                className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--background-subtle)] transition-colors"
-              >
-                <Activity className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-[var(--text-primary)] font-mono">
-                      {log.action}
-                    </span>
-                    <Badge variant={getActionColor(log.action) as "success" | "warning" | "danger" | "outline"}>
-                      {log.action}
-                    </Badge>
-                  </div>
-                  <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">
-                    {log.user_id ? `Usuário: ${log.user_id}` : "Sistema"} ·{" "}
-                    {new Date(log.created_at).toLocaleString("pt-BR")}
-                  </p>
+      <Card className="overflow-hidden p-0">
+        {loading ? (
+          <div className="space-y-4 p-6">
+            {[1, 2, 3, 4].map((item) => (
+              <div key={item} className="flex gap-4">
+                <Skeleton className="h-8 w-8 rounded-full" />
+                <div className="flex-1 space-y-2">
+                  <Skeleton className="h-4 w-48" />
+                  <Skeleton className="h-3 w-64" />
                 </div>
               </div>
             ))}
           </div>
-        </Card>
+        ) : (
+          <AuditTimeline logs={logs} />
+        )}
+      </Card>
+
+      {logs.length < total && (
+        <div className="flex justify-center">
+          <Button
+            variant="secondary"
+            loading={loadingMore}
+            onClick={() => loadLogs(page + 1, true)}
+          >
+            Carregar mais
+          </Button>
+        </div>
       )}
     </div>
   )

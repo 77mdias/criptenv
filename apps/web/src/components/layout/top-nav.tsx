@@ -18,7 +18,7 @@ interface TopNavProps {
 }
 
 function TopNav({ breadcrumbs = [], className }: TopNavProps) {
-  const { toggleSidebar, toggleSidebarMobile, sidebarCollapsed } = useUIStore()
+  const { toggleSidebar, toggleSidebarMobile, setCommandPaletteOpen } = useUIStore()
 
   return (
     <header
@@ -75,7 +75,12 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
 
       {/* Right: Actions */}
       <div className="flex items-center gap-2">
-        <Button variant="ghost" size="icon" aria-label="Search">
+        <Button
+          variant="ghost"
+          size="icon"
+          aria-label="Search"
+          onClick={() => setCommandPaletteOpen(true)}
+        >
           <Search className="h-4 w-4 text-[var(--text-muted)]" />
         </Button>
         <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">

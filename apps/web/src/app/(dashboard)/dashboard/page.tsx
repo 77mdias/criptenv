@@ -183,28 +183,34 @@ export default function DashboardPage() {
               ))}
             </>
           ) : auditLogs.length > 0 ? (
-            auditLogs.map((log) => (
-              <div key={log.id} className="flex items-center gap-4 py-3 border-b border-[var(--border)] last:border-0">
-                <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background-muted)]">
-                  <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+            auditLogs.map((log) => {
+              const metadata = log.meta ?? log.metadata ?? {}
+              const description =
+                typeof metadata.description === "string"
+                  ? metadata.description
+                  : log.resource_type
+
+              return (
+                <div key={log.id} className="flex items-center gap-4 py-3 border-b border-[var(--border)] last:border-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background-muted)]">
+                    <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm text-[var(--text-primary)]">
+                      <span className="font-medium">{log.action}</span>
+                      {" · "}
+                      <span className="font-mono text-[var(--text-secondary)]">{log.resource_type}</span>
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono">
+                      {description}
+                    </p>
+                  </div>
+                  <span className="text-xs text-[var(--text-muted)] font-mono whitespace-nowrap">
+                    {log.created_at ? formatRelativeTime(log.created_at) : "—"}
+                  </span>
                 </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm text-[var(--text-primary)]">
-                    <span className="font-medium">{typeof log.details === 'object' && log.details !== null ? (log.details as Record<string, unknown>).action as string || log.action : log.action}</span>
-                    {" · "}
-                    <span className="font-mono text-[var(--text-secondary)]">{log.action}</span>
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] font-mono">
-                    {typeof log.details === 'object' && log.details !== null
-                      ? (log.details as Record<string, unknown>).description as string || "—"
-                      : "—"}
-                  </p>
-                </div>
-                <span className="text-xs text-[var(--text-muted)] font-mono whitespace-nowrap">
-                  {log.created_at ? formatRelativeTime(log.created_at) : "—"}
-                </span>
-              </div>
-            ))
+              )
+            })
           ) : (
             <div className="text-center py-8">
               <p className="text-sm text-[var(--text-muted)] font-mono">

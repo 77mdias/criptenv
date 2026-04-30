@@ -1,321 +1,408 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
-import { Plus, Lock, Copy, Pencil, Trash2 } from "lucide-react"
+import { Download, KeyRound, Lock, Plus, RefreshCw, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
+import { EnvSelector } from "@/components/shared/env-selector"
+import { ExportModal } from "@/components/shared/export-modal"
+import { ImportModal } from "@/components/shared/import-modal"
+import { SecretForm, type SecretFormValue } from "@/components/shared/secret-form"
+import { SecretsTable } from "@/components/shared/secrets-table"
+import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
+import { useAuth } from "@/hooks/use-auth"
+import { checksum, decrypt, encrypt } from "@/lib/crypto"
 import { environmentsApi, vaultApi } from "@/lib/api"
-import type { Environment, VaultBlob } from "@/lib/api"
+import { useCryptoStore } from "@/stores/crypto"
+import type { Environment, VaultBlob, VaultBlobPush } from "@/lib/api"
+import type { DecryptedSecret } from "@/components/shared/secret-row"
+
+async function decryptVault(blobs: VaultBlob[], key: CryptoKey): Promise<DecryptedSecret[]> {
+  const secrets = await Promise.all(
+    blobs.map(async (blob) => ({
+      key: blob.key_id,
+      value: await decrypt(blob.ciphertext, key, blob.iv, blob.auth_tag),
+      updatedAt: blob.updated_at || blob.created_at,
+    }))
+  )
+
+  return secrets.sort((a, b) => a.key.localeCompare(b.key))
+}
+
+async function encryptVault(
+  secrets: DecryptedSecret[],
+  key: CryptoKey,
+  version: number
+): Promise<VaultBlobPush[]> {
+  return Promise.all(
+    secrets
+      .sort((a, b) => a.key.localeCompare(b.key))
+      .map(async (secret) => {
+        const encrypted = await encrypt(secret.value, key)
+        const digest = await checksum(
+          `${secret.key}:${encrypted.iv}:${encrypted.ciphertext}:${encrypted.authTag}`
+        )
+
+        return {
+          key_id: secret.key,
+          iv: encrypted.iv,
+          ciphertext: encrypted.ciphertext,
+          auth_tag: encrypted.authTag,
+          checksum: digest,
+          version,
+        }
+      })
+  )
+}
 
 export default function SecretsPage() {
   const params = useParams()
   const projectId = params.id as string
+  const { user } = useAuth()
+  const { sessionKey, isUnlocked, setSessionKey, clearSession } = useCryptoStore()
 
   const [environments, setEnvironments] = useState<Environment[]>([])
   const [activeEnv, setActiveEnv] = useState<Environment | null>(null)
   const [vaultBlobs, setVaultBlobs] = useState<VaultBlob[]>([])
-  const [vaultVersion, setVaultVersion] = useState<number>(0)
+  const [secrets, setSecrets] = useState<DecryptedSecret[]>([])
+  const [vaultVersion, setVaultVersion] = useState(0)
   const [loading, setLoading] = useState(true)
   const [vaultLoading, setVaultLoading] = useState(false)
+  const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [newSecretOpen, setNewSecretOpen] = useState(false)
-  const [newSecretKey, setNewSecretKey] = useState("")
-  const [newSecretValue, setNewSecretValue] = useState("")
-  const [creating, setCreating] = useState(false)
+  const [formOpen, setFormOpen] = useState(false)
+  const [editingSecret, setEditingSecret] = useState<DecryptedSecret | null>(null)
+  const [importOpen, setImportOpen] = useState(false)
+  const [exportOpen, setExportOpen] = useState(false)
+  const [copiedKey, setCopiedKey] = useState<string | null>(null)
 
-  // Fetch environments on mount
   useEffect(() => {
-    async function fetchEnvironments() {
-      try {
-        setLoading(true)
-        const data = await environmentsApi.list(projectId)
+    let cancelled = false
+
+    environmentsApi
+      .list(projectId)
+      .then((data) => {
+        if (cancelled) return
         setEnvironments(data.environments)
-        if (data.environments.length > 0) {
-          setActiveEnv(data.environments[0])
+        setVaultLoading(data.environments.length > 0)
+        setActiveEnv(data.environments[0] ?? null)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar ambientes")
         }
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar ambientes")
-      } finally {
-        setLoading(false)
-      }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
     }
-    fetchEnvironments()
   }, [projectId])
 
-  // Fetch vault when active environment changes
-  useEffect(() => {
-    if (!activeEnv) return
-
-    async function fetchVault() {
+  const loadVault = useCallback(
+    async (environment: Environment) => {
+      setVaultLoading(true)
+      setError(null)
       try {
-        setVaultLoading(true)
-        const data = await vaultApi.pull(projectId, activeEnv!.name)
+        const data = await vaultApi.pull(projectId, environment.id)
         setVaultBlobs(data.blobs)
         setVaultVersion(data.version)
+        if (sessionKey) {
+          setSecrets(await decryptVault(data.blobs, sessionKey))
+        } else {
+          setSecrets([])
+        }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar secrets")
         setVaultBlobs([])
+        setSecrets([])
+        setError(err instanceof Error ? err.message : "Erro ao carregar secrets")
       } finally {
         setVaultLoading(false)
       }
-    }
-    fetchVault()
-  }, [projectId, activeEnv])
+    },
+    [projectId, sessionKey]
+  )
 
-  const handleCreateSecret = async () => {
-    if (!activeEnv || !newSecretKey.trim() || !newSecretValue.trim()) return
-    try {
-      setCreating(true)
-      const data = await vaultApi.push(projectId, activeEnv.name, {
-        blobs: [
-          {
-            key_id: newSecretKey,
-            iv: "",
-            ciphertext: newSecretValue,
-            auth_tag: "",
-          },
-        ],
+  useEffect(() => {
+    if (!activeEnv) return
+
+    let cancelled = false
+
+    vaultApi
+      .pull(projectId, activeEnv.id)
+      .then(async (data) => {
+        const nextSecrets = sessionKey ? await decryptVault(data.blobs, sessionKey) : []
+        if (cancelled) return
+        setVaultBlobs(data.blobs)
+        setVaultVersion(data.version)
+        setSecrets(nextSecrets)
       })
+      .catch((err) => {
+        if (!cancelled) {
+          setVaultBlobs([])
+          setSecrets([])
+          setError(err instanceof Error ? err.message : "Erro ao carregar secrets")
+        }
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setVaultLoading(false)
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [activeEnv, projectId, sessionKey])
+
+  useEffect(() => {
+    const openNewSecret = () => {
+      setEditingSecret(null)
+      setFormOpen(true)
+    }
+    window.addEventListener("criptenv:new-secret", openNewSecret)
+    return () => window.removeEventListener("criptenv:new-secret", openNewSecret)
+  }, [])
+
+  useEffect(() => {
+    let cancelled = false
+    if (!sessionKey) {
+      return
+    }
+
+    decryptVault(vaultBlobs, sessionKey)
+      .then((nextSecrets) => {
+        if (!cancelled) {
+          setSecrets(nextSecrets)
+          setError(null)
+        }
+      })
+      .catch(() => {
+        if (!cancelled) {
+          setSecrets([])
+          setError("Não foi possível descriptografar este vault com a chave atual.")
+        }
+      })
+
+    return () => {
+      cancelled = true
+    }
+  }, [sessionKey, vaultBlobs])
+
+  const activeEnvName = activeEnv?.display_name || activeEnv?.name || "environment"
+
+  const secretCounts = useMemo(() => {
+    const counts: Record<string, number> = {}
+    for (const environment of environments) {
+      counts[environment.id] = environment.id === activeEnv?.id ? secrets.length : 0
+    }
+    return counts
+  }, [activeEnv?.id, environments, secrets.length])
+
+  const pushSecrets = async (nextSecrets: DecryptedSecret[]) => {
+    if (!activeEnv || !sessionKey) return
+
+    setSaving(true)
+    setError(null)
+    try {
+      const blobs = await encryptVault(nextSecrets, sessionKey, vaultVersion + 1)
+      const data = await vaultApi.push(projectId, activeEnv.id, { blobs })
       setVaultBlobs(data.blobs)
       setVaultVersion(data.version)
-      setNewSecretOpen(false)
-      setNewSecretKey("")
-      setNewSecretValue("")
+      setSecrets(await decryptVault(data.blobs, sessionKey))
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar secret")
+      setError(err instanceof Error ? err.message : "Erro ao salvar secrets")
     } finally {
-      setCreating(false)
+      setSaving(false)
     }
   }
 
-  const handleCopyKey = (keyId: string) => {
-    navigator.clipboard.writeText(keyId)
+  const handleSaveSecret = async (secret: SecretFormValue) => {
+    const nextSecrets = [
+      ...secrets.filter((item) => item.key !== secret.key),
+      { key: secret.key, value: secret.value },
+    ].sort((a, b) => a.key.localeCompare(b.key))
+
+    await pushSecrets(nextSecrets)
+    setFormOpen(false)
+    setEditingSecret(null)
   }
 
-  if (error && environments.length === 0) {
+  const handleDeleteSecret = async (secret: DecryptedSecret) => {
+    if (!window.confirm(`Remover ${secret.key}?`)) return
+    await pushSecrets(secrets.filter((item) => item.key !== secret.key))
+  }
+
+  const handleImport = async (importedSecrets: DecryptedSecret[]) => {
+    const merged = new Map(secrets.map((secret) => [secret.key, secret]))
+    for (const secret of importedSecrets) {
+      merged.set(secret.key, secret)
+    }
+    await pushSecrets(Array.from(merged.values()))
+  }
+
+  const handleCopy = async (secret: DecryptedSecret) => {
+    await navigator.clipboard.writeText(secret.value)
+    setCopiedKey(secret.key)
+    window.setTimeout(() => setCopiedKey(null), 3000)
+    window.setTimeout(() => {
+      navigator.clipboard.writeText("").catch(() => undefined)
+    }, 30000)
+  }
+
+  if (loading) {
     return (
       <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Secrets</h1>
-            <p className="text-red-600 text-sm font-mono mt-1">{error}</p>
-          </div>
+        <div>
+          <Skeleton className="h-8 w-48" />
+          <Skeleton className="mt-2 h-4 w-64" />
         </div>
+        <Skeleton className="h-10 w-full" />
+        <Card className="space-y-4">
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </Card>
       </div>
+    )
+  }
+
+  if (environments.length === 0) {
+    return (
+      <EmptyState
+        icon={Lock}
+        title="Nenhum ambiente encontrado"
+        description="Crie um ambiente para este projeto para começar a armazenar secrets."
+      />
     )
   }
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Secrets</h1>
-          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
-            {loading
-              ? "Carregando..."
-              : `${environments.length} ambientes · ${vaultBlobs.length} secrets · v${vaultVersion}`}
+          <p className="mt-1 font-mono text-sm text-[var(--text-tertiary)]">
+            {activeEnvName} · {secrets.length} secrets · vault v{vaultVersion}
           </p>
         </div>
-        <div className="flex gap-2">
-          {activeEnv && (
-            <Button
-              icon={Plus}
-              size="sm"
-              onClick={() => setNewSecretOpen(!newSecretOpen)}
-            >
-              Novo Secret
-            </Button>
+        <div className="flex flex-wrap gap-2">
+          {isUnlocked && (
+            <>
+              <Button variant="secondary" size="sm" icon={Upload} onClick={() => setImportOpen(true)}>
+                Importar
+              </Button>
+              <Button variant="secondary" size="sm" icon={Download} onClick={() => setExportOpen(true)}>
+                Exportar
+              </Button>
+              <Button
+                variant="secondary"
+                size="sm"
+                icon={RefreshCw}
+                onClick={() => activeEnv && loadVault(activeEnv)}
+              >
+                Atualizar
+              </Button>
+              <Button
+                size="sm"
+                icon={Plus}
+                onClick={() => {
+                  setEditingSecret(null)
+                  setFormOpen(true)
+                }}
+              >
+                Novo Secret
+              </Button>
+            </>
           )}
         </div>
       </div>
 
-      {/* New Secret Form */}
-      {newSecretOpen && activeEnv && (
-        <Card>
-          <div className="space-y-4">
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-              Adicionar novo secret
-            </h3>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                  Chave
-                </label>
-                <input
-                  type="text"
-                  className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
-                  placeholder="DATABASE_URL"
-                  value={newSecretKey}
-                  onChange={(e) => setNewSecretKey(e.target.value.toUpperCase())}
-                />
-              </div>
-              <div className="space-y-1.5">
-                <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                  Valor
-                </label>
-                <input
-                  type="password"
-                  className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
-                  placeholder="Valor secreto"
-                  value={newSecretValue}
-                  onChange={(e) => setNewSecretValue(e.target.value)}
-                />
-              </div>
-            </div>
-            <div className="flex justify-end gap-3">
-              <Button variant="secondary" size="sm" onClick={() => setNewSecretOpen(false)}>
-                Cancelar
-              </Button>
-              <Button
-                size="sm"
-                loading={creating}
-                onClick={handleCreateSecret}
-                disabled={!newSecretKey.trim() || !newSecretValue.trim()}
-              >
-                Salvar
-              </Button>
-            </div>
-          </div>
+      {error && (
+        <Card className="border-red-500/50 p-4">
+          <p className="font-mono text-sm text-red-600">{error}</p>
         </Card>
       )}
 
-      {/* Environment Tabs */}
-      {loading ? (
-        <div className="space-y-4">
-          <div className="flex gap-2">
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-8 w-24" />
-            <Skeleton className="h-8 w-24" />
+      <EnvSelector
+        environments={environments}
+        activeEnvironmentId={activeEnv?.id ?? null}
+        secretCounts={secretCounts}
+        onSelect={(environment) => {
+          setVaultLoading(true)
+          setActiveEnv(environment)
+        }}
+      />
+
+      {!isUnlocked ? (
+        <VaultUnlockPanel kdfSalt={user?.kdf_salt} onUnlock={setSessionKey} />
+      ) : (
+        <Card className="overflow-hidden p-0">
+          <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
+            <div className="flex items-center gap-2 font-mono text-xs text-[var(--text-muted)]">
+              <KeyRound className="h-3.5 w-3.5" />
+              Vault desbloqueado apenas nesta sessão
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                setSecrets([])
+                clearSession()
+              }}
+            >
+              Bloquear
+            </Button>
           </div>
-          <Card>
-            <div className="space-y-4">
-              {[1, 2, 3].map((i) => (
-                <div key={i} className="flex items-center gap-4 px-6 py-4">
-                  <Skeleton className="h-4 w-4" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                  </div>
-                  <Skeleton className="h-6 w-6" />
-                  <Skeleton className="h-6 w-6" />
-                  <Skeleton className="h-6 w-6" />
+          {vaultLoading || saving ? (
+            <div className="space-y-0">
+              {[1, 2, 3].map((item) => (
+                <div key={item} className="border-b border-[var(--border)] px-6 py-4 last:border-0">
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="mt-2 h-3 w-64" />
                 </div>
               ))}
             </div>
-          </Card>
-        </div>
-      ) : environments.length === 0 ? (
-        <EmptyState
-          icon={Lock}
-          title="Nenhum ambiente encontrado"
-          description="Crie um ambiente para este projeto para começar a armazenar secrets."
-        />
-      ) : (
-        <>
-          <div className="flex gap-1 border-b border-[var(--border)]">
-            {environments.map((env) => (
-              <button
-                key={env.id}
-                onClick={() => setActiveEnv(env)}
-                className={`px-4 py-2.5 text-sm font-medium border-b-2 transition-colors ${
-                  activeEnv?.id === env.id
-                    ? "border-[var(--accent)] text-[var(--text-primary)]"
-                    : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
-                }`}
-              >
-                {env.display_name || env.name}
-                {activeEnv?.id === env.id && (
-                  <span className="ml-2 text-xs text-[var(--text-muted)] font-mono">
-                    ({vaultBlobs.length})
-                  </span>
-                )}
-              </button>
-            ))}
-          </div>
-
-          {/* Secrets Table */}
-          <Card className="p-0 overflow-hidden">
-            {vaultLoading ? (
-              <div className="space-y-0">
-                {[1, 2, 3].map((i) => (
-                  <div key={i} className="flex items-center gap-4 px-6 py-4 border-b border-[var(--border)] last:border-0">
-                    <Skeleton className="h-4 w-4" />
-                    <div className="flex-1 space-y-2">
-                      <Skeleton className="h-4 w-32" />
-                      <Skeleton className="h-3 w-48" />
-                    </div>
-                    <Skeleton className="h-6 w-6" />
-                    <Skeleton className="h-6 w-6" />
-                    <Skeleton className="h-6 w-6" />
-                  </div>
-                ))}
-              </div>
-            ) : vaultBlobs.length === 0 ? (
-              <EmptyState
-                icon={Lock}
-                title="Nenhum secret neste ambiente"
-                description="Adicione seu primeiro secret clicando no botão 'Novo Secret' acima."
-                className="py-12"
-              />
-            ) : (
-              <div className="divide-y divide-[var(--border)]">
-                {vaultBlobs.map((blob) => (
-                  <div
-                    key={blob.key_id}
-                    className="flex items-center gap-4 px-6 py-4 hover:bg-[var(--background-subtle)] transition-colors group"
-                  >
-                    <Lock className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono text-sm font-semibold text-[var(--text-primary)]">
-                          {blob.key_id}
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 mt-0.5">
-                        <span className="font-mono text-xs text-[var(--text-muted)]">
-                          {blob.ciphertext.slice(0, 20)}...
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        aria-label="Copy"
-                        onClick={() => handleCopyKey(blob.key_id)}
-                      >
-                        <Copy className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8"
-                        aria-label="Edit"
-                      >
-                        <Pencil className="h-3.5 w-3.5" />
-                      </Button>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        className="h-8 w-8 text-red-500"
-                        aria-label="Delete"
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-        </>
+          ) : (
+            <SecretsTable
+              secrets={secrets}
+              environmentName={activeEnvName}
+              copiedKey={copiedKey}
+              onCopy={handleCopy}
+              onEdit={(secret) => {
+                setEditingSecret(secret)
+                setFormOpen(true)
+              }}
+              onDelete={handleDeleteSecret}
+              onCreate={() => {
+                setEditingSecret(null)
+                setFormOpen(true)
+              }}
+            />
+          )}
+        </Card>
       )}
+
+      <SecretForm
+        open={formOpen}
+        title={editingSecret ? "Editar Secret" : "Novo Secret"}
+        initialValue={editingSecret}
+        loading={saving}
+        onOpenChange={(open) => {
+          setFormOpen(open)
+          if (!open) setEditingSecret(null)
+        }}
+        onSubmit={handleSaveSecret}
+      />
+      <ImportModal open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
+      <ExportModal open={exportOpen} onOpenChange={setExportOpen} secrets={secrets} />
     </div>
   )
 }

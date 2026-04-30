@@ -4,6 +4,7 @@ import { cn } from "@/lib/utils"
 import { useUIStore } from "@/stores/ui"
 import { SidebarNav } from "./sidebar-nav"
 import { TopNav } from "./top-nav"
+import { CommandPalette } from "@/components/shared/command-palette"
 
 interface AppShellProps {
   children: React.ReactNode
@@ -38,6 +39,7 @@ function AppShell({ children, breadcrumbs }: AppShellProps) {
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>
+      <CommandPalette />
     </div>
   )
 }

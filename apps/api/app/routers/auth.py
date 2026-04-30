@@ -16,6 +16,7 @@ def _user_to_response(user: User) -> UserResponse:
         id=user.id,
         email=str(user.email),
         name=user.name,
+        kdf_salt=user.kdf_salt,
         avatar_url=user.avatar_url,
         email_verified=user.email_verified,
         two_factor_enabled=user.two_factor_enabled,

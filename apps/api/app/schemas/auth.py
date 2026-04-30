@@ -19,6 +19,7 @@ class UserResponse(BaseModel):
     id: UUID
     email: str
     name: str
+    kdf_salt: str
     avatar_url: Optional[str] = None
     email_verified: bool
     two_factor_enabled: bool

@@ -7,14 +7,21 @@ import { create } from "zustand"
  */
 interface CryptoState {
   sessionKey: CryptoKey | null
-  isAuthenticated: boolean
+  isUnlocked: boolean
+  unlockedAt: string | null
   setSessionKey: (key: CryptoKey | null) => void
   clearSession: () => void
 }
 
 export const useCryptoStore = create<CryptoState>((set) => ({
   sessionKey: null,
-  isAuthenticated: false,
-  setSessionKey: (key) => set({ sessionKey: key, isAuthenticated: key !== null }),
-  clearSession: () => set({ sessionKey: null, isAuthenticated: false }),
+  isUnlocked: false,
+  unlockedAt: null,
+  setSessionKey: (key) =>
+    set({
+      sessionKey: key,
+      isUnlocked: key !== null,
+      unlockedAt: key ? new Date().toISOString() : null,
+    }),
+  clearSession: () => set({ sessionKey: null, isUnlocked: false, unlockedAt: null }),
 }))

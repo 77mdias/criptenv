@@ -1,6 +1,8 @@
 from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID, uuid4
+import base64
+import os
 import secrets
 
 from sqlalchemy import select, update
@@ -15,6 +17,15 @@ from app.config import settings
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    def generate_kdf_salt(self) -> str:
+        return base64.b64encode(os.urandom(32)).decode("ascii")
+
+    async def ensure_kdf_salt(self, user: User) -> User:
+        if not user.kdf_salt:
+            user.kdf_salt = self.generate_kdf_salt()
+            await self.db.flush()
+        return user
 
     def hash_password(self, password: str) -> str:
         return bcrypt.hashpw(password.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
@@ -44,7 +55,7 @@ class AuthService:
             email=email,
             name=name,
             password_hash=self.hash_password(password),
-            kdf_salt="",
+            kdf_salt=self.generate_kdf_salt(),
             email_verified=False,
             two_factor_enabled=False
         )
@@ -70,15 +81,7 @@ class AuthService:
         if not user or not self.verify_password(password, user.password_hash):
             raise ValueError("Invalid email or password")
 
-        # Force load all attributes before they expire
-        user_id = user.id
-        user_name = user.name
-        user_email = user.email
-        user_avatar = user.avatar_url
-        user_email_verified = user.email_verified
-        user_2fa = user.two_factor_enabled
-        user_created = user.created_at
-        user_updated = user.updated_at
+        await self.ensure_kdf_salt(user)
 
         await self.db.execute(
             update(User)
@@ -92,6 +95,7 @@ class AuthService:
             select(User).where(User.id == user.id)
         )
         user = result2.scalar_one()
+        await self.ensure_kdf_salt(user)
 
         session = await self.create_session(user.id, ip_address, user_agent)
 
@@ -136,7 +140,10 @@ class AuthService:
             .options(selectinload(User.sessions), selectinload(User.projects), selectinload(User.memberships))
             .where(User.id == session.user_id)
         )
-        return user_result.scalar_one_or_none()
+        user = user_result.scalar_one_or_none()
+        if user:
+            await self.ensure_kdf_salt(user)
+        return user
 
     async def invalidate_session(self, token: str) -> bool:
         result = await self.db.execute(
