@@ -31,7 +31,7 @@ export interface User {
 
 export interface AuthResponse {
   user: User;
-  session_token: string;
+  session: SessionResponse;
 }
 
 export interface MessageResponse {
@@ -138,7 +138,6 @@ export interface InviteListResponse {
 export interface SessionResponse {
   id: string;
   user_id: string;
-  token: string;
   expires_at: string;
   created_at: string;
   ip_address: string | null;
@@ -197,18 +196,6 @@ export interface AuditQueryParams {
   resource_type?: string;
 }
 
-// ─── Token Helpers ─────────────────────────────────────────────────────────────
-
-let _token: string | null = null;
-
-export function setToken(token: string | null) {
-  _token = token;
-}
-
-export function getToken(): string | null {
-  return _token;
-}
-
 // ─── Base Fetch Wrapper ────────────────────────────────────────────────────────
 
 export async function request<T>(
@@ -231,13 +218,10 @@ export async function request<T>(
     'Content-Type': 'application/json',
   };
 
-  if (_token) {
-    headers['Authorization'] = `Bearer ${_token}`;
-  }
-
   const res = await fetch(url.toString(), {
     method,
     headers,
+    credentials: 'include',
     body: body ? JSON.stringify(body) : undefined,
   });
 

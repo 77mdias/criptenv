@@ -8,17 +8,7 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { authApi } from "@/lib/api"
-import type { User as UserType } from "@/lib/api"
-
-interface SessionResponse {
-  id: string;
-  user_id: string;
-  token: string;
-  expires_at: string;
-  created_at: string;
-  ip_address: string | null;
-  user_agent: string | null;
-}
+import type { SessionResponse, User as UserType } from "@/lib/api"
 
 export default function AccountPage() {
   const router = useRouter()

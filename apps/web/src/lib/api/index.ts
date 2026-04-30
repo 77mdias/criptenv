@@ -1,5 +1,5 @@
 // Re-export everything for convenient imports
-export { ApiError, setToken, getToken, request } from './client';
+export { ApiError, request } from './client';
 export type {
   User,
   AuthResponse,
