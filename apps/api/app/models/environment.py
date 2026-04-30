@@ -14,6 +14,8 @@ class Environment(Base):
     display_name = Column(String(255))
     is_default = Column(Boolean, default=False)
     secrets_version = Column(Integer, default=0)
+    archived = Column(Boolean, default=False, nullable=False)
+    archived_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

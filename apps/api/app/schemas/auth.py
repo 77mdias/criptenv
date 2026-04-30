@@ -34,7 +34,6 @@ class UserResponse(BaseModel):
 class SessionResponse(BaseModel):
     id: UUID
     user_id: UUID
-    token: str
     expires_at: datetime
     created_at: datetime
     ip_address: Optional[str] = None
@@ -53,7 +52,6 @@ class SessionResponse(BaseModel):
 class AuthResponse(BaseModel):
     user: UserResponse
     session: SessionResponse
-    session_token: str
 
 
 class MessageResponse(BaseModel):

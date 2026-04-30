@@ -30,7 +30,6 @@ def _session_to_response(session) -> SessionResponse:
     return SessionResponse(
         id=session.id,
         user_id=session.user_id,
-        token=session.token,
         expires_at=session.expires_at,
         created_at=session.created_at,
         ip_address=str(session.ip_address) if session.ip_address else None,
@@ -72,8 +71,7 @@ async def signup(
 
     return AuthResponse(
         user=_user_to_response(user),
-        session=_session_to_response(session),
-        session_token=session.token
+        session=_session_to_response(session)
     )
 
 
@@ -110,8 +108,7 @@ async def signin(
 
     return AuthResponse(
         user=_user_to_response(user),
-        session=_session_to_response(session),
-        session_token=session.token
+        session=_session_to_response(session)
     )
 
 

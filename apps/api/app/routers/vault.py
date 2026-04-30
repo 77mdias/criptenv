@@ -91,7 +91,7 @@ async def push_vault(
         user_agent=request.headers.get("User-Agent")
     )
 
-    current_version = await vault_service.get_environment_version(env_uuid)
+    current_version = await vault_service.get_environment_version(project_uuid, env_uuid)
 
     return VaultPullResponse(
         blobs=[VaultBlobPull.model_validate(_force_load_vault_blob(b)) for b in created_blobs],
@@ -168,8 +168,14 @@ async def get_vault_version(
             detail="Project not found"
         )
 
-    version = await vault_service.get_environment_version(env_uuid)
-    blob_count = await vault_service.get_blob_count(env_uuid)
+    try:
+        version = await vault_service.get_environment_version(project_uuid, env_uuid)
+        blob_count = await vault_service.get_blob_count(project_uuid, env_uuid)
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
 
     return {
         "version": version,

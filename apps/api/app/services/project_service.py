@@ -10,13 +10,31 @@ from app.models.environment import Environment
 from app.models.member import ProjectMember
 from app.strategies.access import get_access_strategy
 
+MAX_SLUG_LENGTH = 50
+MIN_SLUG_LENGTH = 2
+FALLBACK_SLUG = "project"
+
+
+def _normalize_slug(value: str) -> str:
+    slug = value.lower().strip()
+    slug = re.sub(r"[^a-z0-9]+", "-", slug)
+    slug = re.sub(r"-{2,}", "-", slug).strip("-")
+    slug = slug[:MAX_SLUG_LENGTH].strip("-")
+    return slug if len(slug) >= MIN_SLUG_LENGTH else FALLBACK_SLUG
+
+
+def _slug_with_suffix(base_slug: str, counter: int) -> str:
+    suffix = f"-{counter}"
+    available = MAX_SLUG_LENGTH - len(suffix)
+    trimmed_base = base_slug[:available].strip("-") or FALLBACK_SLUG[:available].strip("-")
+    if len(trimmed_base) < MIN_SLUG_LENGTH:
+        trimmed_base = FALLBACK_SLUG[:available]
+    return f"{trimmed_base}{suffix}"
+
 
 def _generate_slug(name: str) -> str:
     """Generate a URL-safe slug from a project name."""
-    slug = name.lower().strip()
-    slug = re.sub(r'[^a-z0-9]+', '-', slug)
-    slug = slug.strip('-')
-    return slug[:50] or 'project'
+    return _normalize_slug(name)
 
 
 class ProjectService:
@@ -32,25 +50,18 @@ class ProjectService:
         encryption_key_id: Optional[str] = None,
         settings: Optional[dict] = None
     ) -> Project:
-        if not slug:
-            slug = _generate_slug(name)
-            # Ensure uniqueness
-            base_slug = slug
-            counter = 1
-            while True:
-                existing = await self.db.execute(
-                    select(Project).where(Project.slug == slug)
-                )
-                if not existing.scalar_one_or_none():
-                    break
-                slug = f"{base_slug}-{counter}"
-                counter += 1
-        else:
+        base_slug = _generate_slug(slug or name)
+        slug = base_slug
+        counter = 1
+
+        while True:
             existing = await self.db.execute(
                 select(Project).where(Project.slug == slug)
             )
-            if existing.scalar_one_or_none():
-                raise ValueError(f"Project with slug '{slug}' already exists")
+            if not existing.scalar_one_or_none():
+                break
+            slug = _slug_with_suffix(base_slug, counter)
+            counter += 1
 
         project = Project(
             id=uuid4(),

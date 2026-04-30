@@ -1,3 +1,5 @@
+from datetime import datetime, timezone
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID, uuid4
@@ -24,6 +26,8 @@ def _force_load_environment(env):
     _ = env.display_name
     _ = env.is_default
     _ = env.secrets_version
+    _ = env.archived
+    _ = env.archived_at
     _ = env.created_at
     _ = env.updated_at
     return env
@@ -73,7 +77,9 @@ async def create_environment(
         name=payload.name,
         display_name=payload.display_name,
         is_default=payload.is_default,
-        secrets_version=0
+        secrets_version=0,
+        archived=False,
+        archived_at=None,
     )
     db.add(environment)
     await db.flush()
@@ -120,7 +126,7 @@ async def list_environments(
         .where(Environment.project_id == project_uuid)
         .order_by(Environment.is_default.desc(), Environment.name)
     )
-    environments = list(result.scalars().all())
+    environments = [env for env in result.scalars().all() if not getattr(env, "archived", False)]
 
     return EnvironmentListResponse(
         environments=[EnvironmentResponse.model_validate(_force_load_environment(e)) for e in environments],
@@ -166,6 +172,11 @@ async def get_environment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found"
         )
+    if getattr(environment, "archived", False):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Environment not found"
+        )
 
     return EnvironmentResponse.model_validate(_force_load_environment(environment))
 
@@ -207,6 +218,11 @@ async def update_environment(
     environment = result.scalar_one_or_none()
 
     if not environment:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Environment not found"
+        )
+    if getattr(environment, "archived", False):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found"
@@ -273,6 +289,11 @@ async def delete_environment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found"
         )
+    if getattr(environment, "archived", False):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Environment not found"
+        )
 
     if environment.is_default:
         raise HTTPException(
@@ -280,8 +301,12 @@ async def delete_environment(
             detail="Cannot delete default environment"
         )
 
+    environment.archived = True
+    environment.archived_at = datetime.now(timezone.utc)
+    await db.flush()
+
     await audit_service.log(
-        action="environment.deleted",
+        action="environment.archived",
         resource_type="environment",
         resource_id=environment.id,
         user_id=current_user.id,
@@ -290,5 +315,3 @@ async def delete_environment(
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent")
     )
-
-    await db.delete(environment)
