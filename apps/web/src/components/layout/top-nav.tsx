@@ -5,6 +5,7 @@ import { Menu, Search, Bell, ChevronRight } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { useUIStore } from "@/stores/ui"
 import { Button } from "@/components/ui/button"
+import { Brand } from "@/components/layout/brand"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
 
 interface Breadcrumb {
@@ -56,14 +57,7 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
           <Menu className="h-4 w-4" />
         </Button>
 
-        <Link href="/dashboard" className="flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] font-bold text-sm">
-            C
-          </div>
-          <span className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
-            CriptEnv
-          </span>
-        </Link>
+        <Brand href="/dashboard" compact className="shrink-0" />
 
         {/* Breadcrumbs */}
         {breadcrumbs.length > 0 && (

@@ -16,7 +16,8 @@ from app.routers import (
     invites_router,
     audit_router,
     tokens_router,
-    ci_router
+    ci_router,
+    integrations_router
 )
 
 logging.basicConfig(
@@ -111,6 +112,7 @@ app.include_router(invites_router)
 app.include_router(audit_router)
 app.include_router(tokens_router)
 app.include_router(ci_router)
+app.include_router(integrations_router)
 
 
 if __name__ == "__main__":

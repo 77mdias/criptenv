@@ -26,6 +26,9 @@
   --accent: #171717;
   --accent-hover: #262626;
   --accent-foreground: #ffffff;
+  --selection-bg: rgba(23, 23, 23, 0.16);
+  --glow-soft: rgba(23, 23, 23, 0.08);
+  --glow-strong: rgba(23, 23, 23, 0.14);
 
   /* Status */
   --success: #15803d;
@@ -69,9 +72,12 @@
   --text-secondary: rgba(232, 230, 227, 0.7);
   --text-tertiary: rgba(232, 230, 227, 0.5);
   --text-muted: rgba(232, 230, 227, 0.3);
-  --accent: #ff4500;
-  --accent-hover: #ff6633;
+  --accent: #f5f5f5;
+  --accent-hover: #ffffff;
   --accent-foreground: #0a0a0b;
+  --selection-bg: rgba(255, 255, 255, 0.18);
+  --glow-soft: rgba(255, 255, 255, 0.08);
+  --glow-strong: rgba(255, 255, 255, 0.14);
 }
 
 * {
@@ -88,7 +94,7 @@ body {
 
 /* Selection */
 ::selection {
-  background: rgba(255, 69, 0, 0.3);
+  background: var(--selection-bg);
   color: var(--text-primary);
 }
 
@@ -162,10 +168,10 @@ html.dark {
 /* Glow pulse — accent elements */
 @keyframes glowPulse {
   0%, 100% {
-    box-shadow: 0 0 20px rgba(255, 69, 0, 0.1);
+    box-shadow: 0 0 20px var(--glow-soft);
   }
   50% {
-    box-shadow: 0 0 40px rgba(255, 69, 0, 0.25);
+    box-shadow: 0 0 40px var(--glow-strong);
   }
 }
 

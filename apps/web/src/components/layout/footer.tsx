@@ -1,4 +1,5 @@
 import Link from "next/link"
+import { Brand } from "@/components/layout/brand"
 import { StatusBadge } from "@/components/ui/status-badge"
 
 function Footer() {
@@ -7,10 +8,7 @@ function Footer() {
       <div className="mx-auto max-w-6xl py-12 md:py-20">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-10 justify-between items-center">
           <div>
-            <div className="font-bold text-lg tracking-tight mb-2">CriptEnv</div>
-            <p className="text-[var(--text-tertiary)] text-sm font-mono">
-              Secret Management for Developers
-            </p>
+            <Brand subtitle="Secret Management for Developers" />
           </div>
           <div className="flex flex-col md:flex-row gap-6 md:justify-end items-start md:items-center text-sm font-medium text-[var(--text-secondary)]">
             <StatusBadge status="online" label="All systems operational" />

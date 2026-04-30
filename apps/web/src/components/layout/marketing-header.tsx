@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react"
 import Link from "next/link"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
+import { Brand } from "@/components/layout/brand"
 import { ThemeSwitch } from "@/components/ui/theme-switch"
 
 interface MarketingHeaderProps {
@@ -42,16 +43,7 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
       )}
     >
       <div className="mx-auto flex h-14 max-w-6xl items-center justify-between px-6">
-        {/* Logo */}
-        <Link
-          href="/"
-          className="flex items-center gap-2 text-lg font-bold tracking-tight text-[var(--text-primary)]"
-        >
-          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] text-xs font-bold">
-            C
-          </div>
-          CriptEnv
-        </Link>
+        <Brand compact />
 
         {/* Center nav — hidden on mobile, visible on desktop */}
         <nav className="hidden md:flex items-center gap-1">
