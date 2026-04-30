@@ -71,7 +71,8 @@ async def signup(
 
     return AuthResponse(
         user=_user_to_response(user),
-        session=_session_to_response(session)
+        session=_session_to_response(session),
+        token=session.token
     )
 
 
@@ -108,7 +109,8 @@ async def signin(
 
     return AuthResponse(
         user=_user_to_response(user),
-        session=_session_to_response(session)
+        session=_session_to_response(session),
+        token=session.token
     )
 
 

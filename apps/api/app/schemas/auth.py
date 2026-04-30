@@ -52,6 +52,7 @@ class SessionResponse(BaseModel):
 class AuthResponse(BaseModel):
     user: UserResponse
     session: SessionResponse
+    token: str  # Session token for CLI usage
 
 
 class MessageResponse(BaseModel):
