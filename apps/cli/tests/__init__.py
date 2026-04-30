@@ -1,0 +1,1 @@
+"""CriptEnv CLI tests."""

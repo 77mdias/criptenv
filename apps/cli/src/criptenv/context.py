@@ -1,0 +1,123 @@
+"""CLI context helpers — bridges async vault/API with sync Click commands."""
+
+import asyncio
+import getpass
+from contextlib import contextmanager
+from typing import Optional
+
+import click
+import aiosqlite
+
+from criptenv.crypto.keys import derive_master_key
+from criptenv.vault.database import get_db, init_schema, close_db
+from criptenv.vault import queries
+from criptenv.session import SessionManager
+from criptenv.api.client import CriptEnvClient
+
+
+def run_async(coro):
+    """Run an async coroutine from a sync Click command."""
+    return asyncio.run(coro)
+
+
+def _get_master_password() -> str:
+    """Prompt user for master password (hidden input)."""
+    return getpass.getpass("Master password: ")
+
+
+async def _load_master_key(db: aiosqlite.Connection) -> bytes:
+    """Load salt from vault and derive master key from user password."""
+    salt_hex = await queries.get_config(db, "master_salt")
+    if not salt_hex:
+        raise click.ClickException(
+            "Not initialized. Run 'criptenv init' first."
+        )
+
+    password = _get_master_password()
+    return derive_master_key(password, bytes.fromhex(salt_hex))
+
+
+async def _get_session_manager(db: aiosqlite.Connection) -> SessionManager:
+    """Get a SessionManager with a valid authenticated client."""
+    master_key = await _load_master_key(db)
+    manager = SessionManager(master_key, db)
+
+    client = await manager.get_authenticated_client()
+    if not client:
+        raise click.ClickException(
+            "Not logged in or session expired. Run 'criptenv login' first."
+        )
+
+    return manager
+
+
+async def _resolve_env_id(
+    db: aiosqlite.Connection,
+    env_name_or_id: Optional[str],
+) -> str:
+    """Resolve environment name to ID. Falls back to 'default'."""
+    if not env_name_or_id:
+        env_name_or_id = "default"
+
+    # Try as ID first
+    env = await queries.get_environment(db, env_name_or_id)
+    if env:
+        return env.id
+
+    # Try as name
+    env = await queries.get_environment_by_name(db, env_name_or_id)
+    if env:
+        return env.id
+
+    raise click.ClickException(
+        f"Environment '{env_name_or_id}' not found. "
+        "Run 'criptenv env list' to see available environments."
+    )
+
+
+@contextmanager
+def cli_context(require_auth: bool = False):
+    """
+    Context manager that sets up DB, master key, and optionally session.
+
+    Usage:
+        with cli_context() as (db, master_key):
+            # local-only operations (init, set, get, list, delete)
+
+        with cli_context(require_auth=True) as (db, master_key, client):
+            # API operations (push, pull, env list, etc.)
+    """
+    db = run_async(get_db())
+    run_async(init_schema(db))
+
+    try:
+        if require_auth:
+            manager = run_async(_get_session_manager(db))
+            client = manager.client
+            master_key = manager.master_key
+            yield db, master_key, client
+        else:
+            # For local-only operations, still need master key
+            salt_hex = run_async(queries.get_config(db, "master_salt"))
+            if salt_hex:
+                password = _get_master_password()
+                master_key = derive_master_key(password, bytes.fromhex(salt_hex))
+            else:
+                master_key = None
+            yield db, master_key, None
+    finally:
+        run_async(close_db(db))
+
+
+@contextmanager
+def local_vault():
+    """
+    Lightweight context for operations that only need DB access
+    (no master key, no auth). Used by 'init' command.
+    """
+    db = run_async(get_db())
+    run_async(init_schema(db))
+    try:
+        yield db
+    finally:
+        run_async(close_db(db))
