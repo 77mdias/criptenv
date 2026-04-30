@@ -13,6 +13,7 @@
 ### Solução
 
 CriptEnv oferece:
+
 - 🔒 **Zero-Knowledge Encryption** — Seus secrets nunca saem do seu dispositivo sem criptografia AES-GCM 256-bit
 - ⚡ **CLI-First** — Fluxo de trabalho direto no terminal
 - 🌐 **Web Dashboard** — Interface visual para equipes
@@ -21,64 +22,107 @@ CriptEnv oferece:
 
 ## 🚀 Quick Start
 
+### CLI
+
 ```bash
 # Instalar CLI
-npm install -g @criptenv/cli
+cd apps/cli && pip install -e .
 
-# Inicializar projeto
+# Inicializar (cria ~/.criptenv/, pede master password)
 criptenv init
 
-# Adicionar secrets
+# Login no servidor
+criptenv login --email user@example.com
+
+# Adicionar secrets (encriptados localmente com AES-256-GCM)
 criptenv set DATABASE_URL=postgres://...
+criptenv set API_KEY=secret123
 
-# Sincronizar com equipe
-criptenv push
+# Listar secrets (apenas nomes, valores nunca expostos)
+criptenv list
 
-# Puxar secrets do time
-criptenv pull
+# Obter valor decriptado
+criptenv get DATABASE_URL
+
+# Importar de arquivo .env
+criptenv import .env
+
+# Exportar para .env
+criptenv export -o .env.exported
+
+# Sincronizar com cloud
+criptenv push -p <project-id>
+criptenv pull -p <project-id>
+
+# Diagnóstico
+criptenv doctor
 ```
 
-## 🏗️ Arquitetura Tech Stack
+### Web Dashboard
 
-| Camada | Tecnologia |
-|--------|------------|
-| **Frontend** | Next.js 14 + Vinext + TailwindCSS + Pug |
-| **Backend** | Python FastAPI |
-| **Database** | Supabase (PostgreSQL + Realtime) |
-| **Auth** | BetterAuth |
-| **Encryption** | AES-GCM 256-bit (Zero-Knowledge) |
+```bash
+cd apps/web && npm install && npm run dev
+```
+
+### Backend API
+
+```bash
+cd apps/api && pip install -r requirements.txt && uvicorn main:app --reload
+```
+
+## 🏗️ Tech Stack
+
+| Camada          | Tecnologia                                        |
+| --------------- | ------------------------------------------------- |
+| **CLI**         | Python Click + cryptography + httpx + aiosqlite   |
+| **Frontend**    | Next.js 16 + React 19 + TailwindCSS v4 + Radix UI |
+| **Backend**     | FastAPI + SQLAlchemy async + asyncpg              |
+| **Database**    | PostgreSQL                                        |
+| **Auth**        | Custom session tokens (JWT-like)                  |
+| **Encryption**  | AES-256-GCM + PBKDF2HMAC + HKDF (Zero-Knowledge)  |
+| **Local Vault** | SQLite (~/.criptenv/vault.db)                     |
 
 ## 📂 Estrutura do Projeto
 
 ```
 criptenv/
-├── prd/                    # Product Requirements Document
-├── discovery/              # Product Discovery
-├── roadmap/                # Roadmap de fases
-├── specs/                  # Especificações Técnicas
-│   ├── architecture/       # Diagramas de arquitetura
-│   ├── endpoints/          # FastAPI endpoints
-│   ├── database/           # Schema Supabase
-│   └── encryption/         # Protocolo de criptografia
-├── user-stories/           # User stories
-└── guidelines/             # Diretrizes de design
+├── apps/
+│   ├── cli/                  # CLI (Python + Click)
+│   │   ├── src/criptenv/     # Source code
+│   │   │   ├── commands/     # CLI commands (init, login, set, get, etc.)
+│   │   │   ├── crypto/       # AES-256-GCM encryption module
+│   │   │   ├── vault/        # Local SQLite vault
+│   │   │   ├── api/          # HTTP client for backend API
+│   │   │   └── session.py    # Encrypted session management
+│   │   └── tests/            # 93 unit tests
+│   ├── api/                  # Backend API (FastAPI)
+│   └── web/                  # Web Dashboard (Next.js)
+├── docs/                     # Documentation
+│   ├── phase-1/              # CLI implementation plan & milestones
+│   └── development/          # Changelog, phase reviews
+├── plans/                    # Implementation plans
+├── prd/                      # Product Requirements Document
+├── roadmap/                  # Roadmap de fases
+└── specs/                    # Technical specifications
 ```
 
 ## 🔒 Segurança
 
 - **Zero-Knowledge**: O servidor NUNCA tem acesso aos secrets descriptografados
-- **AES-GCM 256-bit**: Criptografia militar para todos os dados
+- **AES-256-GCM**: Criptografia de 256 bits para todos os dados
+- **PBKDF2HMAC**: 100.000 iterações para derivação de chave mestra
+- **HKDF**: Chaves por ambiente derivadas da chave mestra
 - **Audit Logs**: Rastreabilidade completa de todas as operações
-- **2FA Support**: Suporte a autenticação em dois fatores via BetterAuth
+- **Local Vault**: Secrets encriptados no SQLite local, nunca em plain-text
 
-## 📦 Deploy Zero-Cost
+## 📦 Deploy
 
-| Serviço | Plano | Uso |
-|---------|-------|-----|
-| Supabase | Free Tier | PostgreSQL + Auth + Realtime |
-| FastAPI | Railway/Render | Serverless Python |
-| Frontend | Cloudflare Pages + Workers | Edge Deployment |
-| CLI | npm Global | Distribuição |
+| Serviço    | Plano                      | Uso                            |
+| ---------- | -------------------------- | ------------------------------ |
+| PostgreSQL | Free Tier                  | Database                       |
+| FastAPI    | Railway/Render             | Backend API                    |
+| Frontend   | Cloudflare Pages + Workers | Edge Deployment                |
+| CLI        | pip install                | Distribuição via PyPI (futuro) |
 
 ## 📚 Documentação
 
