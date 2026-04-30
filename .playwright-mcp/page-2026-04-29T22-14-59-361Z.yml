@@ -1,0 +1,153 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - navigation [ref=e3]:
+      - generic [ref=e4]:
+        - link "CriptEnv" [ref=e5] [cursor=pointer]:
+          - /url: /
+        - generic [ref=e6]:
+          - button "Switch to dark mode" [ref=e7] [cursor=pointer]:
+            - img [ref=e8]
+          - link "Entrar" [ref=e14] [cursor=pointer]:
+            - /url: /login
+            - button "Entrar" [ref=e15]
+          - link "Começar" [ref=e16] [cursor=pointer]:
+            - /url: /signup
+            - button "Começar" [ref=e17]
+    - generic [ref=e20]:
+      - generic [ref=e23]: Open Source
+      - heading "Secrets seguros, equipe feliz." [level=1] [ref=e24]:
+        - text: Secrets seguros,
+        - text: equipe feliz.
+      - paragraph [ref=e25]: Gestão de secrets com criptografia Zero-Knowledge. Seus .env criptografados antes mesmo de sair do seu computador.
+      - generic [ref=e26]:
+        - link "Start Project" [ref=e27] [cursor=pointer]:
+          - /url: /signup
+          - button "Start Project" [ref=e28]:
+            - text: Start Project
+            - img [ref=e29]
+        - link "Learn More" [ref=e31] [cursor=pointer]:
+          - /url: "#features"
+          - button "Learn More" [ref=e32]
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - text: Features
+        - heading "Tudo que você precisa" [level=2] [ref=e38]
+      - generic [ref=e39]:
+        - generic [ref=e41]:
+          - img [ref=e43]
+          - heading "Zero-Knowledge" [level=3] [ref=e46]
+          - paragraph [ref=e47]: Criptografia AES-GCM 256-bit client-side. O servidor NUNCA vê seus secrets em plain-text.
+        - generic [ref=e49]:
+          - img [ref=e51]
+          - heading "CLI-First" [level=3] [ref=e53]
+          - paragraph [ref=e54]: Fluxo natural no terminal. init, set, push, pull — tudo em menos de 500ms.
+        - generic [ref=e56]:
+          - img [ref=e58]
+          - heading "Team Sync" [level=3] [ref=e63]
+          - paragraph [ref=e64]: Compartilhe secrets com sua equipe de forma segura. Sync em tempo real via Supabase.
+        - generic [ref=e66]:
+          - img [ref=e68]
+          - heading "Audit Completo" [level=3] [ref=e70]
+          - paragraph [ref=e71]: Trilha de auditoria de todas as operações. Quem acessou, quando, de onde.
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - text: Pricing
+        - heading "Simples e transparente" [level=2] [ref=e75]
+      - generic [ref=e76]:
+        - generic [ref=e77]:
+          - generic [ref=e78]:
+            - heading "Protocol" [level=3] [ref=e79]
+            - paragraph [ref=e80]: Para MVPs & Startups
+          - generic [ref=e81]: Free
+          - list [ref=e82]:
+            - listitem [ref=e83]:
+              - img [ref=e84]
+              - text: Unlimited secrets
+            - listitem [ref=e86]:
+              - img [ref=e87]
+              - text: 3 environments
+            - listitem [ref=e89]:
+              - img [ref=e90]
+              - text: 5 team members
+            - listitem [ref=e92]:
+              - img [ref=e93]
+              - text: 30-day audit log
+          - link "Get Started" [ref=e95] [cursor=pointer]:
+            - /url: /signup
+            - button "Get Started" [ref=e96]
+        - generic [ref=e97]:
+          - generic [ref=e98]: Most Popular
+          - generic [ref=e99]:
+            - heading "Construct" [level=3] [ref=e100]
+            - paragraph [ref=e101]: Para equipes em crescimento
+          - generic [ref=e102]: $9/seat/mo
+          - list [ref=e103]:
+            - listitem [ref=e104]:
+              - img [ref=e105]
+              - text: Everything in Protocol
+            - listitem [ref=e107]:
+              - img [ref=e108]
+              - text: Unlimited environments
+            - listitem [ref=e110]:
+              - img [ref=e111]
+              - text: Unlimited members
+            - listitem [ref=e113]:
+              - img [ref=e114]
+              - text: 1-year audit log
+            - listitem [ref=e116]:
+              - img [ref=e117]
+              - text: Priority support
+          - link "Start Free Trial" [ref=e119] [cursor=pointer]:
+            - /url: /signup
+            - button "Start Free Trial" [ref=e120]
+        - generic [ref=e121]:
+          - generic [ref=e122]:
+            - heading "Enterprise" [level=3] [ref=e123]
+            - paragraph [ref=e124]: Para grandes organizações
+          - generic [ref=e125]: Custom
+          - list [ref=e126]:
+            - listitem [ref=e127]:
+              - img [ref=e128]
+              - text: Everything in Construct
+            - listitem [ref=e130]:
+              - img [ref=e131]
+              - text: SSO/SAML
+            - listitem [ref=e133]:
+              - img [ref=e134]
+              - text: SCIM provisioning
+            - listitem [ref=e136]:
+              - img [ref=e137]
+              - text: SIEM export
+            - listitem [ref=e139]:
+              - img [ref=e140]
+              - text: Self-hosted option
+            - listitem [ref=e142]:
+              - img [ref=e143]
+              - text: Dedicated support
+          - link "Contact Sales" [ref=e145] [cursor=pointer]:
+            - /url: /signup
+            - button "Contact Sales" [ref=e146]
+    - generic [ref=e148]:
+      - heading "Pronto para segurar seus secrets?" [level=2] [ref=e149]
+      - paragraph [ref=e150]: Open source. Zero-knowledge. Gratuito para começar.
+      - generic [ref=e151]:
+        - link "Get Started Free" [ref=e152] [cursor=pointer]:
+          - /url: /signup
+          - button "Get Started Free" [ref=e153]
+        - link "View on GitHub" [ref=e154] [cursor=pointer]:
+          - /url: https://github.com/criptenv
+          - button "View on GitHub" [ref=e155]
+    - contentinfo [ref=e156]:
+      - generic [ref=e158]:
+        - generic [ref=e159]:
+          - generic [ref=e160]: CriptEnv
+          - paragraph [ref=e161]: Secret Management for Developers
+        - generic [ref=e162]:
+          - generic [ref=e163]: All systems operational
+          - navigation [ref=e167]:
+            - link "Docs" [ref=e168] [cursor=pointer]:
+              - /url: /docs
+            - link "GitHub" [ref=e169] [cursor=pointer]:
+              - /url: https://github.com/criptenv
+  - button "Open Next.js Dev Tools" [ref=e175] [cursor=pointer]:
+    - img [ref=e176]

@@ -1,0 +1,1104 @@
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1, viewport-fit=cover" name="viewport"/>
+<title>Design System — ux.jonny</title>
+<meta content="Living design system and pattern library." name="description"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="assets/css2_19fd9cc6b396.css" rel="stylesheet"/>
+<link href="assets/css2_62759cd015bd.css" rel="stylesheet"/>
+<link href="assets/css2_86e10c4bcbd4.css" rel="stylesheet"/>
+<script src="assets/resource_3fa48481346f.es"></script>
+<script src="assets/three_1aecfa5aa56f.js"></script>
+<script src="assets/lucide_latest_2eebd0ebe8c2.es"></script>
+<style>
+:root { --font-sans: 'Geist', Inter, ui-sans-serif, system-ui, -apple-system, sans-serif; }
+body { font-family: var(--font-sans); }
+.font-geist-mono { font-family: 'Geist Mono', monospace !important; }
+html { scroll-behavior: smooth; }
+#canvas-container {
+position: absolute;
+top: 0;
+left: 0;
+width: 100%;
+height: 100%;
+z-index: 0;
+pointer-events: none;
+overflow: hidden;
+}
+::-webkit-scrollbar { width: 8px; }
+::-webkit-scrollbar-track { background: #f5f5f5; }
+::-webkit-scrollbar-thumb { background: #d4d4d4; border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: #a3a3a3; }
+</style></head>
+<body class="bg-white text-neutral-900 antialiased selection:bg-neutral-200 selection:text-black">
+
+<!-- Top Horizontal Nav -->
+<nav class="sticky top-0 z-50 bg-white/90 backdrop-blur-sm border-b border-neutral-200">
+<div class="max-w-6xl mx-auto px-6 py-3 flex gap-6 overflow-x-auto text-xs font-medium text-neutral-500 uppercase tracking-wide font-geist-mono">
+<a class="hover:text-black transition-colors whitespace-nowrap" href="#hero">Hero</a>
+<a class="hover:text-black transition-colors whitespace-nowrap" href="#typography">Typography</a>
+<a class="hover:text-black transition-colors whitespace-nowrap" href="#colors">Colors & Surfaces</a>
+<a class="hover:text-black transition-colors whitespace-nowrap" href="#components">UI Components</a>
+<a class="hover:text-black transition-colors whitespace-nowrap" href="#layout">Layout & Spacing</a>
+<a class="hover:text-black transition-colors whitespace-nowrap" href="#motion">Motion & Interaction</a>
+<a class="hover:text-black transition-colors whitespace-nowrap" href="#icons">Icons</a>
+</div>
+</nav>
+
+<!-- ============================================ -->
+<!-- 0) HERO — Exact Clone, Text Adapted -->
+<!-- ============================================ -->
+<header class="relative w-full h-screen flex flex-col justify-between p-6 sm:p-12 z-10 pointer-events-none overflow-hidden bg-white" id="hero">
+<div id="canvas-container"></div>
+<div class="flex justify-between items-start pointer-events-auto w-full max-w-[1400px] mx-auto z-10">
+<div class="text-lg font-bold tracking-tight text-black">ux.jonny</div>
+<nav class="hidden sm:flex gap-8 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+<a class="hover:text-black transition-colors" href="#typography">Typography</a>
+<a class="hover:text-black transition-colors" href="#colors">Colors</a>
+<a class="hover:text-black transition-colors" href="#components">Components</a>
+<a class="hover:text-black transition-colors" href="#motion">Motion</a>
+</nav>
+</div>
+<div class="flex flex-col md:flex-row justify-between items-end gap-12 pointer-events-auto w-full max-w-[1400px] mx-auto mb-4 z-10">
+<div class="max-w-xs space-y-8">
+<p class="text-sm leading-relaxed text-neutral-600 font-medium">
+                    A living design system showcasing tokens, components, patterns, and motion — extracted from the reference portfolio and documented for reuse.
+                </p>
+<button class="group flex items-center gap-2 text-xs font-bold tracking-widest uppercase border-b border-black pb-1 hover:text-neutral-600 hover:border-neutral-400 transition-all cursor-pointer" onclick="document.getElementById('typography').scrollIntoView()">
+                    Explore <span class="group-hover:translate-y-0.5 transition-transform duration-300">↓</span>
+</button>
+</div>
+<div class="text-right">
+<h1 class="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tighter leading-[0.85] text-black">
+<span class="block">Design System</span>
+<span class="block">& Pattern Library</span>
+</h1>
+<p class="text-2xl md:text-4xl text-neutral-400 font-normal mt-3 tracking-tight">tokens & components</p>
+</div>
+</div>
+</header>
+
+<!-- ============================================ -->
+<!-- 1) TYPOGRAPHY -->
+<!-- ============================================ -->
+<section class="sm:px-8 px-6 pt-20 pb-16 border-t border-neutral-100" id="typography">
+<div class="max-w-6xl mx-auto">
+<div class="flex items-center gap-3 mb-6">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">01</span>
+<div class="h-px flex-1 bg-neutral-200"></div>
+</div>
+<h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">Typography</h2>
+<p class="text-lg text-neutral-500 font-geist-mono max-w-2xl mb-16">Hierarchy, scale, and rhythm — all type styles used in the reference design.</p>
+
+<div class="space-y-0 border border-neutral-200 rounded-2xl overflow-hidden">
+<!-- Heading 1 -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Heading 1</span>
+</div>
+<div class="col-span-6">
+<h1 class="text-5xl md:text-7xl lg:text-8xl font-semibold tracking-tighter leading-[0.85] text-black">Aa Bb Cc</h1>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">80px / 68px</span>
+</div>
+</div>
+<!-- Heading 2 -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Heading 2</span>
+</div>
+<div class="col-span-6">
+<h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900">Aa Bb Cc Dd</h2>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">36px / 40px</span>
+</div>
+</div>
+<!-- Heading 3 -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Heading 3</span>
+</div>
+<div class="col-span-6">
+<h3 class="text-3xl md:text-4xl font-medium text-neutral-900 leading-tight">Aa Bb Cc Dd Ee</h3>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">36px / 40px</span>
+</div>
+</div>
+<!-- Heading 3 Bold -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Heading 3 Bold</span>
+</div>
+<div class="col-span-6">
+<h3 class="text-2xl font-bold text-neutral-900 mb-0">Aa Bb Cc Dd Ee Ff</h3>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">24px / 32px</span>
+</div>
+</div>
+<!-- Heading 4 -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Heading 4</span>
+</div>
+<div class="col-span-6">
+<h4 class="text-xl font-semibold text-neutral-900">Aa Bb Cc Dd Ee Ff Gg</h4>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">20px / 28px</span>
+</div>
+</div>
+<!-- Bold L -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-neutral-50">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Bold L</span>
+</div>
+<div class="col-span-6">
+<p class="text-lg font-medium text-neutral-900">The quick brown fox jumps over the lazy dog.</p>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">18px / 28px</span>
+</div>
+</div>
+<!-- Bold M -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-neutral-50">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Bold M</span>
+</div>
+<div class="col-span-6">
+<p class="text-sm font-semibold text-neutral-900">The quick brown fox jumps over the lazy dog.</p>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">14px / 20px</span>
+</div>
+</div>
+<!-- Bold S -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-neutral-50">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Bold S</span>
+</div>
+<div class="col-span-6">
+<p class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">The quick brown fox jumps over the lazy dog.</p>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">12px / 16px</span>
+</div>
+</div>
+<!-- Paragraph -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Paragraph</span>
+</div>
+<div class="col-span-6">
+<p class="text-lg leading-relaxed text-neutral-600 font-geist-mono">Sou Product Designer com 9 anos de experiência e atualmente atuo como Senior Product Designer na Allos. Crio interfaces escaláveis com Design Systems sólidos.</p>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">18px / 28px</span>
+</div>
+</div>
+<!-- Regular L -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Regular L</span>
+</div>
+<div class="col-span-6">
+<p class="text-sm leading-relaxed text-neutral-500 font-geist-mono">Creating intuitive interfaces that offer a frictionless experience. We combine creativity with usability.</p>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">14px / 20px</span>
+</div>
+</div>
+<!-- Regular M -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 border-b border-neutral-100 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Regular M</span>
+</div>
+<div class="col-span-6">
+<p class="text-xs font-medium text-neutral-500 font-geist-mono">2024 · Fintech · SaaS Dashboard · React · TypeScript</p>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">12px / 16px</span>
+</div>
+</div>
+<!-- Regular S -->
+<div class="grid grid-cols-12 gap-4 items-baseline p-6 bg-white">
+<div class="col-span-3">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">Regular S</span>
+</div>
+<div class="col-span-6">
+<p class="text-[10px] text-neutral-400 font-geist-mono leading-relaxed">const App = () => { return (<div className="hero"><h1>Hello</h1></div>) }</p>
+</div>
+<div class="col-span-3 text-right">
+<span class="text-xs text-neutral-400 font-geist-mono">10px / 14px</span>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- 2) COLORS & SURFACES -->
+<!-- ============================================ -->
+<section class="sm:px-8 px-6 bg-neutral-50 border-t border-neutral-200" id="colors">
+<div class="py-24 max-w-6xl mx-auto">
+<div class="flex items-center gap-3 mb-6">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">02</span>
+<div class="h-px flex-1 bg-neutral-200"></div>
+</div>
+<h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">Colors & Surfaces</h2>
+<p class="text-lg text-neutral-500 font-geist-mono max-w-2xl mb-16">Backgrounds, text colors, accents, borders, and gradients used across the design.</p>
+
+<!-- Backgrounds -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-4">Backgrounds</h3>
+<div class="grid grid-cols-2 md:grid-cols-4 gap-4 mb-12">
+<div class="rounded-xl border border-neutral-200 overflow-hidden">
+<div class="h-24 bg-white"></div>
+<div class="p-3 bg-white">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">white</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">bg-white · Page, cards</div>
+</div>
+</div>
+<div class="rounded-xl border border-neutral-200 overflow-hidden">
+<div class="h-24 bg-neutral-50"></div>
+<div class="p-3 bg-white">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-50</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">bg-neutral-50 · Sections</div>
+</div>
+</div>
+<div class="rounded-xl border border-neutral-200 overflow-hidden">
+<div class="h-24 bg-neutral-100"></div>
+<div class="p-3 bg-white">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-100</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">bg-neutral-100 · Image containers</div>
+</div>
+</div>
+<div class="rounded-xl border border-neutral-200 overflow-hidden">
+<div class="h-24 bg-neutral-900"></div>
+<div class="p-3 bg-white">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-900</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">bg-neutral-900 · Primary button, dark cards</div>
+</div>
+</div>
+</div>
+
+<!-- Text Colors -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-4">Text Colors</h3>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="w-8 h-8 rounded-full bg-neutral-900 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-900</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Headings, primary</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="w-8 h-8 rounded-full bg-neutral-600 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-600</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Body, descriptions</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="w-8 h-8 rounded-full bg-neutral-500 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-500</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Secondary text, lists</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="w-8 h-8 rounded-full bg-neutral-400 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-400</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Labels, captions, icons</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="w-8 h-8 rounded-full bg-neutral-200 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-200</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Dividers, subtle borders</div>
+</div>
+</div>
+
+<!-- Accent Colors -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-4">Accents & Badges</h3>
+<div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-12">
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="inline-flex gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium font-geist-mono mb-3 border border-blue-100">
+<i class="w-3 h-3" data-lucide="paintbrush"></i> Design
+</div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">blue-600</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Design badge</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="inline-flex gap-2 bg-purple-50 text-purple-600 px-3 py-1 rounded-full text-xs font-medium font-geist-mono mb-3 border border-purple-100">
+<i class="w-3 h-3" data-lucide="code-2"></i> Development
+</div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">purple-600</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Development badge</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="inline-flex gap-2 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-medium font-geist-mono mb-3 border border-emerald-100">
+<i class="w-3 h-3" data-lucide="layout"></i> Branding
+</div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">emerald-600</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Branding badge</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="inline-flex gap-2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-xs font-medium font-geist-mono mb-3 border border-green-200">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+</span>
+Available
+</div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">green-700</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Status indicator</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="flex gap-1.5 mb-3">
+<div class="w-4 h-4 rounded-full bg-red-400/80"></div>
+<div class="w-4 h-4 rounded-full bg-amber-400/80"></div>
+<div class="w-4 h-4 rounded-full bg-green-400/80"></div>
+</div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">Traffic lights</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Code snippet dots</div>
+</div>
+</div>
+
+<!-- Borders -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-4">Borders & Dividers</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-12">
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="h-px bg-neutral-100 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-100</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Subtle dividers, card borders</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="h-px bg-neutral-200 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-200</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Section separators, card borders</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="h-px bg-neutral-800 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">neutral-800</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">Dark card borders (code snippet)</div>
+</div>
+</div>
+
+<!-- Gradients -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-4">Gradients</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="h-4 rounded-full bg-gradient-to-r from-neutral-900 via-neutral-500 to-neutral-200 mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">Brand Gradient</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">from-neutral-900 via-neutral-500 to-neutral-200</div>
+</div>
+<div class="rounded-xl border border-neutral-200 p-4 bg-white">
+<div class="h-2 w-1/3 bg-neutral-200 rounded-full mb-3"></div>
+<div class="text-xs font-bold text-neutral-900 font-geist-mono">Skeleton / Placeholder</div>
+<div class="text-[10px] text-neutral-400 font-geist-mono">bg-neutral-200 rounded-full</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- 3) UI COMPONENTS -->
+<!-- ============================================ -->
+<section class="sm:px-8 px-6 bg-white border-t border-neutral-200" id="components">
+<div class="py-24 max-w-6xl mx-auto">
+<div class="flex items-center gap-3 mb-6">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">03</span>
+<div class="h-px flex-1 bg-neutral-200"></div>
+</div>
+<h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">UI Components</h2>
+<p class="text-lg text-neutral-500 font-geist-mono max-w-2xl mb-16">Buttons, cards, tags, and interactive elements — with states shown side by side.</p>
+
+<!-- Buttons -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Buttons</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8 mb-16">
+<!-- Primary Button -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Primary</div>
+<div class="flex flex-wrap gap-4 items-center">
+<a class="px-6 py-3 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors font-geist-mono text-sm" href="#">Default</a>
+<a class="px-6 py-3 rounded-lg bg-neutral-800 text-white font-medium font-geist-mono text-sm" href="#">Hover</a>
+<a class="px-6 py-3 rounded-lg bg-neutral-900 text-white font-medium font-geist-mono text-sm opacity-50 cursor-not-allowed" href="#">Disabled</a>
+</div>
+</div>
+<!-- Secondary Button -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Secondary</div>
+<div class="flex flex-wrap gap-4 items-center">
+<a class="px-6 py-3 rounded-lg border border-neutral-200 text-neutral-900 font-medium hover:bg-neutral-50 transition-colors font-geist-mono text-sm" href="#">Default</a>
+<a class="px-6 py-3 rounded-lg border border-neutral-200 text-neutral-900 font-medium bg-neutral-50 font-geist-mono text-sm" href="#">Hover</a>
+</div>
+</div>
+<!-- Ghost Button -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Ghost / Text</div>
+<div class="flex flex-wrap gap-4 items-center">
+<button class="group flex items-center gap-2 text-xs font-bold tracking-widest uppercase border-b border-black pb-1 hover:text-neutral-600 hover:border-neutral-400 transition-all cursor-pointer">
+                    Default <span class="group-hover:translate-y-0.5 transition-transform duration-300">↓</span>
+</button>
+</div>
+</div>
+<!-- Pill Button -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Pill</div>
+<div class="flex flex-wrap gap-4 items-center">
+<a class="inline-flex items-center gap-2 px-8 py-4 bg-white border border-neutral-200 rounded-full text-neutral-900 hover:bg-neutral-50 transition-all font-geist-mono text-sm shadow-sm hover:shadow-md" href="#">
+                    Ver todos <i class="w-4 h-4" data-lucide="plus"></i>
+</a>
+</div>
+</div>
+<!-- Link Button -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Inline Link</div>
+<div class="flex flex-wrap gap-4 items-center">
+<a class="inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 hover:text-blue-600 transition-colors border-b border-transparent hover:border-blue-600 pb-0.5" href="#">
+                    Ver projeto <i class="w-4 h-4" data-lucide="arrow-right"></i>
+</a>
+</div>
+</div>
+</div>
+
+<!-- Tags / Badges -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Tags & Badges</h3>
+<div class="flex flex-wrap gap-3 mb-16">
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">React</span>
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">TypeScript</span>
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">D3.js</span>
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">Next.js</span>
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">Shopify</span>
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">Framer Motion</span>
+</div>
+
+<!-- Cards -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Cards</h3>
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8 mb-16">
+<!-- Service Card (Light) -->
+<div class="group bg-white border border-neutral-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300">
+<div class="h-48 mb-6 bg-neutral-100 rounded-xl overflow-hidden relative border border-neutral-100">
+<div class="absolute inset-4 bg-white shadow-sm rounded-lg border border-neutral-200 p-3">
+<div class="flex gap-1.5 mb-3">
+<div class="w-2 h-2 rounded-full bg-red-400/80"></div>
+<div class="w-2 h-2 rounded-full bg-amber-400/80"></div>
+<div class="w-2 h-2 rounded-full bg-green-400/80"></div>
+</div>
+<div class="space-y-2">
+<div class="h-2 w-1/3 bg-neutral-200 rounded-full"></div>
+<div class="grid grid-cols-2 gap-2">
+<div class="h-16 bg-neutral-50 rounded border border-neutral-100"></div>
+<div class="h-16 bg-neutral-50 rounded border border-neutral-100"></div>
+</div>
+</div>
+</div>
+</div>
+<div class="inline-flex gap-2 bg-blue-50 text-blue-600 px-3 py-1 rounded-full text-xs font-medium font-geist-mono mb-4 border border-blue-100">
+<i class="w-3 h-3" data-lucide="paintbrush"></i> Design
+</div>
+<h3 class="text-xl font-semibold text-neutral-900 mb-3">Service Card</h3>
+<p class="text-neutral-500 text-sm leading-relaxed font-geist-mono">Light card with illustration area, badge, and description.</p>
+</div>
+<!-- Service Card (Dark) -->
+<div class="group bg-white border border-neutral-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300">
+<div class="h-48 mb-6 bg-neutral-900 rounded-xl overflow-hidden relative border border-neutral-800 flex flex-col">
+<div class="flex items-center px-3 py-2 border-b border-neutral-800 bg-neutral-900/50">
+<div class="flex gap-1.5">
+<div class="w-2 h-2 rounded-full bg-red-500"></div>
+<div class="w-2 h-2 rounded-full bg-yellow-500"></div>
+<div class="w-2 h-2 rounded-full bg-green-500"></div>
+</div>
+</div>
+<div class="p-3 font-geist-mono text-[10px] text-neutral-400 leading-relaxed">
+<span class="text-purple-400">const</span> <span class="text-blue-400">App</span> = () =&gt; {<br/>
+                                &nbsp;&nbsp;<span class="text-purple-400">return</span> (<br/>
+                                &nbsp;&nbsp;&nbsp;&lt;<span class="text-red-400">div</span>&gt;Hello&lt;/<span class="text-red-400">div</span>&gt;<br/>
+                                &nbsp;&nbsp;)<br/>
+                                }
+                            </div>
+</div>
+<div class="inline-flex gap-2 bg-purple-50 text-purple-600 px-3 py-1 rounded-full text-xs font-medium font-geist-mono mb-4 border border-purple-100">
+<i class="w-3 h-3" data-lucide="code-2"></i> Development
+</div>
+<h3 class="text-xl font-semibold text-neutral-900 mb-3">Dark Code Card</h3>
+<p class="text-neutral-500 text-sm leading-relaxed font-geist-mono">Dark illustration area with code syntax and colored badge.</p>
+</div>
+<!-- Service Card (Brand) -->
+<div class="group bg-white border border-neutral-200 rounded-2xl p-6 hover:shadow-xl transition-all duration-300">
+<div class="h-48 mb-6 bg-neutral-100 rounded-xl overflow-hidden relative border border-neutral-100 flex items-center justify-center p-4">
+<div class="grid grid-cols-3 gap-3 w-full max-w-[200px]">
+<div class="aspect-square rounded-full bg-neutral-900 shadow-lg"></div>
+<div class="aspect-square rounded-full bg-neutral-400 shadow-lg"></div>
+<div class="aspect-square rounded-full bg-neutral-200 shadow-lg"></div>
+<div class="col-span-3 h-2 rounded-full bg-gradient-to-r from-neutral-900 via-neutral-500 to-neutral-200 mt-2"></div>
+</div>
+</div>
+<div class="inline-flex gap-2 bg-emerald-50 text-emerald-600 px-3 py-1 rounded-full text-xs font-medium font-geist-mono mb-4 border border-emerald-100">
+<i class="w-3 h-3" data-lucide="layout"></i> Branding
+</div>
+<h3 class="text-xl font-semibold text-neutral-900 mb-3">Brand Card</h3>
+<p class="text-neutral-500 text-sm leading-relaxed font-geist-mono">Color palette visualization with gradient bar and emerald badge.</p>
+</div>
+</div>
+
+<!-- Project Card -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Project Card</h3>
+<div class="group grid grid-cols-1 lg:grid-cols-2 gap-12 items-center mb-16">
+<div>
+<div class="flex items-center gap-2 mb-4">
+<span class="text-xs text-neutral-500 font-geist-mono font-medium">2024</span>
+<div class="h-1 w-1 rounded-full bg-neutral-300"></div>
+<span class="text-xs text-neutral-500 font-geist-mono font-medium">Fintech</span>
+</div>
+<h3 class="text-2xl font-bold text-neutral-900 mb-4">Project Title</h3>
+<p class="text-neutral-600 mb-6 leading-relaxed font-geist-mono">Project description with details about the work, technologies, and outcomes achieved.</p>
+<div class="flex flex-wrap gap-2 mb-8">
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">Tag 1</span>
+<span class="px-3 py-1 text-xs bg-neutral-100 text-neutral-600 border border-neutral-200 rounded-full font-geist-mono">Tag 2</span>
+</div>
+<a class="inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 hover:text-blue-600 transition-colors border-b border-transparent hover:border-blue-600 pb-0.5" href="#">
+                                Ver projeto <i class="w-4 h-4" data-lucide="arrow-right"></i>
+</a>
+</div>
+<div>
+<div class="rounded-xl overflow-hidden border border-neutral-200 shadow-xl bg-neutral-50 group-hover:-translate-y-2 transition-transform duration-500">
+<div class="w-full h-48 bg-gradient-to-br from-neutral-100 to-neutral-200"></div>
+</div>
+</div>
+</div>
+
+<!-- Testimonial Card -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Testimonial Card</h3>
+<div class="bg-neutral-50 border border-neutral-200 rounded-2xl p-8 max-w-2xl">
+<div class="mb-6">
+<i class="w-8 h-8 text-neutral-300 mb-4" data-lucide="quote"></i>
+<h3 class="text-lg font-medium text-neutral-900 leading-tight mb-6">
+                        "Jonathan é um dos melhores profissionais com quem tive a oportunidade de trabalhar, principalmente por sua capacidade de superar expectativas."
+                    </h3>
+<div class="flex items-center gap-4">
+<div class="w-10 h-10 rounded-full bg-neutral-200 overflow-hidden"></div>
+<div>
+<div class="font-bold text-neutral-900 text-sm">Victor Gonçalves</div>
+<div class="text-neutral-500 text-xs font-geist-mono">Chief Digital Officer @Verity</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Status Indicator -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6 mt-16">Status Indicator</h3>
+<div class="flex items-center gap-2 px-3 py-1 rounded-full bg-green-50 text-green-700 border border-green-200 text-xs font-geist-mono w-fit">
+<span class="relative flex h-2 w-2">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-2 w-2 bg-green-500"></span>
+</span>
+                    Disponível para oportunidades
+                </div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- 4) LAYOUT & SPACING -->
+<!-- ============================================ -->
+<section class="sm:px-8 px-6 bg-neutral-50 border-t border-neutral-200" id="layout">
+<div class="py-24 max-w-6xl mx-auto">
+<div class="flex items-center gap-3 mb-6">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">04</span>
+<div class="h-px flex-1 bg-neutral-200"></div>
+</div>
+<h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">Layout & Spacing</h2>
+<p class="text-lg text-neutral-500 font-geist-mono max-w-2xl mb-16">Containers, grids, columns, and section patterns used throughout the design.</p>
+
+<!-- Container Widths -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Container Widths</h3>
+<div class="space-y-4 mb-16">
+<div class="bg-white border border-neutral-200 rounded-xl p-4">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-neutral-400 font-geist-mono">max-w-6xl</span>
+<span class="text-xs text-neutral-400 font-geist-mono">1152px</span>
+</div>
+<div class="h-8 bg-neutral-100 rounded-lg border border-neutral-200 max-w-6xl mx-auto"></div>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-neutral-400 font-geist-mono">max-w-4xl</span>
+<span class="text-xs text-neutral-400 font-geist-mono">896px</span>
+</div>
+<div class="h-8 bg-neutral-100 rounded-lg border border-neutral-200 max-w-4xl mx-auto"></div>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4">
+<div class="flex items-center justify-between mb-2">
+<span class="text-xs font-bold text-neutral-400 font-geist-mono">max-w-xs</span>
+<span class="text-xs text-neutral-400 font-geist-mono">320px</span>
+</div>
+<div class="h-8 bg-neutral-100 rounded-lg border border-neutral-200 max-w-xs"></div>
+</div>
+</div>
+
+<!-- Section Padding -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Section Padding</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-16">
+<div class="bg-white border border-neutral-200 rounded-xl p-6">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">Vertical</div>
+<div class="text-xs text-neutral-500 font-geist-mono">py-24 (96px)</div>
+<div class="h-4"></div>
+<div class="h-24 bg-neutral-100 rounded-lg border-2 border-dashed border-neutral-300 flex items-center justify-center">
+<span class="text-xs text-neutral-400 font-geist-mono">96px</span>
+</div>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-6">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">Horizontal</div>
+<div class="text-xs text-neutral-500 font-geist-mono">px-6 sm:px-8 (24px / 32px)</div>
+<div class="h-4"></div>
+<div class="flex gap-2">
+<div class="w-6 sm:w-8 h-24 bg-neutral-100 rounded border-2 border-dashed border-neutral-300 flex items-center justify-center">
+<span class="text-[10px] text-neutral-400 font-geist-mono writing-mode-vertical" style="writing-mode:vertical-rl">24</span>
+</div>
+<div class="flex-1 h-24 bg-neutral-50 rounded border border-neutral-200"></div>
+<div class="w-6 sm:w-8 h-24 bg-neutral-100 rounded border-2 border-dashed border-neutral-300 flex items-center justify-center">
+<span class="text-[10px] text-neutral-400 font-geist-mono" style="writing-mode:vertical-rl">24</span>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Grid Patterns -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Grid Patterns</h3>
+<div class="space-y-8">
+<!-- 12-Column Grid -->
+<div class="bg-white border border-neutral-200 rounded-xl p-6">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">12-Column Grid</div>
+<div class="text-xs text-neutral-500 font-geist-mono mb-4">grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-12</div>
+<div class="grid grid-cols-12 gap-2">
+<div class="h-12 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center">
+<span class="text-[10px] text-neutral-400 font-geist-mono">5</span>
+</div>
+<div class="col-span-7 h-12 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center">
+<span class="text-[10px] text-neutral-400 font-geist-mono">7</span>
+</div>
+</div>
+</div>
+<!-- 3-Column Grid -->
+<div class="bg-white border border-neutral-200 rounded-xl p-6">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">3-Column Grid</div>
+<div class="text-xs text-neutral-500 font-geist-mono mb-4">grid grid-cols-1 lg:grid-cols-3 gap-8</div>
+<div class="grid grid-cols-3 gap-2">
+<div class="h-24 bg-neutral-100 rounded border border-neutral-200"></div>
+<div class="h-24 bg-neutral-100 rounded border border-neutral-200"></div>
+<div class="h-24 bg-neutral-100 rounded border border-neutral-200"></div>
+</div>
+</div>
+<!-- 2-Column Grid -->
+<div class="bg-white border border-neutral-200 rounded-xl p-6">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">2-Column Grid</div>
+<div class="text-xs text-neutral-500 font-geist-mono mb-4">grid grid-cols-1 lg:grid-cols-2 gap-12</div>
+<div class="grid grid-cols-2 gap-2">
+<div class="h-24 bg-neutral-100 rounded border border-neutral-200"></div>
+<div class="h-24 bg-neutral-100 rounded border border-neutral-200"></div>
+</div>
+</div>
+<!-- Flex Split -->
+<div class="bg-white border border-neutral-200 rounded-xl p-6">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">Flex Split (Hero Footer)</div>
+<div class="text-xs text-neutral-500 font-geist-mono mb-4">flex flex-col md:flex-row justify-between items-end gap-12</div>
+<div class="flex flex-col md:flex-row justify-between items-end gap-4">
+<div class="w-48 h-16 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center">
+<span class="text-[10px] text-neutral-400 font-geist-mono">Left (max-w-xs)</span>
+</div>
+<div class="h-16 bg-neutral-100 rounded border border-neutral-200 flex items-center justify-center px-8">
+<span class="text-[10px] text-neutral-400 font-geist-mono">Right (text-right)</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- 5) MOTION & INTERACTION -->
+<!-- ============================================ -->
+<section class="sm:px-8 px-6 bg-white border-t border-neutral-200" id="motion">
+<div class="py-24 max-w-6xl mx-auto">
+<div class="flex items-center gap-3 mb-6">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">05</span>
+<div class="h-px flex-1 bg-neutral-200"></div>
+</div>
+<h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">Motion & Interaction</h2>
+<p class="text-lg text-neutral-500 font-geist-mono max-w-2xl mb-16">Hover effects, transitions, and animation patterns extracted from the reference.</p>
+
+<!-- Motion Gallery -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Motion Gallery</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+<!-- Card Hover Lift -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Card Hover Lift</div>
+<div class="group cursor-pointer">
+<div class="rounded-xl overflow-hidden border border-neutral-200 shadow-xl bg-neutral-50 group-hover:-translate-y-2 transition-transform duration-500">
+<div class="w-full h-32 bg-gradient-to-br from-neutral-100 to-neutral-200"></div>
+</div>
+</div>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">group-hover:-translate-y-2 · duration-500</div>
+</div>
+<!-- Shadow Lift -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Shadow Lift</div>
+<div class="group bg-white border border-neutral-200 rounded-2xl p-4 hover:shadow-xl transition-all duration-300 cursor-pointer">
+<div class="h-24 bg-neutral-100 rounded-lg mb-3"></div>
+<div class="h-2 w-2/3 bg-neutral-200 rounded-full"></div>
+</div>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">hover:shadow-xl · transition-all · duration-300</div>
+</div>
+<!-- Grayscale to Color -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Grayscale to Color</div>
+<div class="relative overflow-hidden bg-neutral-100 rounded-xl aspect-[4/3]">
+<div class="w-full h-full bg-gradient-to-br from-neutral-300 to-neutral-500 grayscale hover:grayscale-0 transition-all duration-700 cursor-pointer"></div>
+</div>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">grayscale hover:grayscale-0 · duration-700</div>
+</div>
+<!-- Button Color -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Button Color</div>
+<a class="px-6 py-3 rounded-lg bg-neutral-900 text-white font-medium hover:bg-neutral-800 transition-colors font-geist-mono text-sm cursor-pointer inline-block">
+                    Hover me
+                </a>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">hover:bg-neutral-800 · transition-colors</div>
+</div>
+<!-- Arrow Bounce -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Arrow Bounce</div>
+<button class="group flex items-center gap-2 text-xs font-bold tracking-widest uppercase border-b border-black pb-1 hover:text-neutral-600 hover:border-neutral-400 transition-all cursor-pointer">
+                    Explorar <span class="group-hover:translate-y-0.5 transition-transform duration-300">↓</span>
+</button>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">group-hover:translate-y-0.5 · duration-300</div>
+</div>
+<!-- Text Color Shift -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Text Color Shift</div>
+<a class="inline-flex items-center gap-2 text-sm font-semibold text-neutral-900 hover:text-blue-600 transition-colors border-b border-transparent hover:border-blue-600 pb-0.5 cursor-pointer">
+                    Ver projeto <i class="w-4 h-4" data-lucide="arrow-right"></i>
+</a>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">hover:text-blue-600 · hover:border-blue-600</div>
+</div>
+<!-- Ping Animation -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Ping Animation</div>
+<div class="flex items-center gap-2">
+<span class="relative flex h-3 w-3">
+<span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
+<span class="relative inline-flex rounded-full h-3 w-3 bg-green-500"></span>
+</span>
+<span class="text-xs text-neutral-600 font-geist-mono">animate-ping</span>
+</div>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">animate-ping · opacity-75</div>
+</div>
+<!-- Nav Hover -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Nav Hover</div>
+<nav class="flex gap-6 text-xs font-medium text-neutral-500 uppercase tracking-wide">
+<a class="hover:text-black transition-colors cursor-pointer">Sobre</a>
+<a class="hover:text-black transition-colors cursor-pointer">Projetos</a>
+<a class="hover:text-black transition-colors cursor-pointer">Contato</a>
+</nav>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">hover:text-black · transition-colors</div>
+</div>
+<!-- Icon Button Hover -->
+<div class="rounded-xl border border-neutral-200 p-6 bg-neutral-50">
+<div class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono mb-4">Icon Button Hover</div>
+<div class="flex gap-2">
+<button class="group grid place-items-center hover:text-black hover:bg-neutral-100 transition relative text-neutral-400 w-10 h-10 rounded-full cursor-pointer">
+<i class="w-4 h-4" data-lucide="home"></i>
+</button>
+<button class="group grid place-items-center hover:text-black hover:bg-neutral-100 transition relative text-neutral-400 w-10 h-10 rounded-full cursor-pointer">
+<i class="w-4 h-4" data-lucide="briefcase"></i>
+</button>
+</div>
+<div class="mt-3 text-[10px] text-neutral-400 font-geist-mono">hover:bg-neutral-100 · transition</div>
+</div>
+</div>
+
+<!-- Timing Reference -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6 mt-16">Timing Reference</h3>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+<div class="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">Fast</div>
+<div class="text-xs text-neutral-500 font-geist-mono">transition-colors (150ms)</div>
+</div>
+<div class="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">Medium</div>
+<div class="text-xs text-neutral-500 font-geist-mono">duration-300 (300ms)</div>
+</div>
+<div class="bg-neutral-50 border border-neutral-200 rounded-xl p-4">
+<div class="text-xs font-bold text-neutral-900 font-geist-mono mb-1">Slow</div>
+<div class="text-xs text-neutral-500 font-geist-mono">duration-500 / duration-700</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ============================================ -->
+<!-- 6) ICONS -->
+<!-- ============================================ -->
+<section class="sm:px-8 px-6 bg-neutral-50 border-t border-neutral-200" id="icons">
+<div class="py-24 max-w-6xl mx-auto">
+<div class="flex items-center gap-3 mb-6">
+<span class="text-xs font-bold text-neutral-400 uppercase tracking-widest font-geist-mono">06</span>
+<div class="h-px flex-1 bg-neutral-200"></div>
+</div>
+<h2 class="text-3xl md:text-4xl font-semibold tracking-tight text-neutral-900 mb-4">Icons</h2>
+<p class="text-lg text-neutral-500 font-geist-mono max-w-2xl mb-16">Lucide icons — sizes, colors, and usage patterns from the reference design.</p>
+
+<!-- Icon Sizes -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Sizes</h3>
+<div class="flex flex-wrap items-end gap-8 mb-12">
+<div class="text-center">
+<div class="w-24 h-24 bg-white border border-neutral-200 rounded-xl flex items-center justify-center mb-2">
+<i class="w-3 h-3 text-neutral-400" data-lucide="paintbrush"></i>
+</div>
+<span class="text-[10px] text-neutral-400 font-geist-mono">w-3 h-3 (12px)</span>
+</div>
+<div class="text-center">
+<div class="w-24 h-24 bg-white border border-neutral-200 rounded-xl flex items-center justify-center mb-2">
+<i class="w-4 h-4 text-neutral-400" data-lucide="home"></i>
+</div>
+<span class="text-[10px] text-neutral-400 font-geist-mono">w-4 h-4 (16px)</span>
+</div>
+<div class="text-center">
+<div class="w-24 h-24 bg-white border border-neutral-200 rounded-xl flex items-center justify-center mb-2">
+<i class="w-8 h-8 text-neutral-300" data-lucide="quote"></i>
+</div>
+<span class="text-[10px] text-neutral-400 font-geist-mono">w-8 h-8 (32px)</span>
+</div>
+</div>
+
+<!-- Icon Colors -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Colors</h3>
+<div class="flex flex-wrap gap-6 mb-12">
+<div class="flex items-center gap-2">
+<i class="w-4 h-4 text-neutral-400" data-lucide="arrow-down-right"></i>
+<span class="text-xs text-neutral-500 font-geist-mono">neutral-400</span>
+</div>
+<div class="flex items-center gap-2">
+<i class="w-4 h-4 text-neutral-300" data-lucide="quote"></i>
+<span class="text-xs text-neutral-500 font-geist-mono">neutral-300</span>
+</div>
+<div class="flex items-center gap-2">
+<i class="w-3 h-3 text-blue-600" data-lucide="paintbrush"></i>
+<span class="text-xs text-neutral-500 font-geist-mono">blue-600</span>
+</div>
+<div class="flex items-center gap-2">
+<i class="w-3 h-3 text-purple-600" data-lucide="code-2"></i>
+<span class="text-xs text-neutral-500 font-geist-mono">purple-600</span>
+</div>
+<div class="flex items-center gap-2">
+<i class="w-3 h-3 text-emerald-600" data-lucide="layout"></i>
+<span class="text-xs text-neutral-500 font-geist-mono">emerald-600</span>
+</div>
+</div>
+
+<!-- All Icons Used -->
+<h3 class="text-sm font-semibold text-neutral-900 font-geist-mono uppercase tracking-wide mb-6">Icon Inventory</h3>
+<div class="grid grid-cols-4 md:grid-cols-8 gap-4">
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="home"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">home</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="briefcase"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">briefcase</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="user"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">user</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="mail"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">mail</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="arrow-down-right"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">arrow-down-right</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="arrow-right"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">arrow-right</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="paintbrush"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">paintbrush</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="code-2"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">code-2</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="layout"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">layout</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="quote"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">quote</span>
+</div>
+<div class="bg-white border border-neutral-200 rounded-xl p-4 flex flex-col items-center gap-2">
+<i class="w-5 h-5 text-neutral-600" data-lucide="plus"></i>
+<span class="text-[10px] text-neutral-400 font-geist-mono">plus</span>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Footer -->
+<footer class="bg-white border-t border-neutral-200 px-6 sm:px-8">
+<div class="mx-auto max-w-6xl py-12 md:py-20">
+<div class="grid grid-cols-1 md:grid-cols-2 gap-10 justify-between items-center">
+<div>
+<div class="font-bold text-lg tracking-tight mb-2">ux.jonny</div>
+<p class="text-neutral-500 text-sm font-geist-mono">Design System · Pattern Library</p>
+</div>
+<div class="flex flex-col md:flex-row gap-6 md:justify-end items-start md:items-center text-sm font-medium text-neutral-600">
+<nav class="flex gap-6">
+<a class="hover:text-black transition" href="#typography">Typography</a>
+<a class="hover:text-black transition" href="#colors">Colors</a>
+<a class="hover:text-black transition" href="#components">Components</a>
+<a class="hover:text-black transition" href="#motion">Motion</a>
+</nav>
+</div>
+</div>
+</div>
+</footer>
+
+<script>
+        lucide.createIcons();
+
+        const initThreeJS = () => {
+            const container = document.getElementById('canvas-container');
+            if (!container) return;
+
+            const scene = new THREE.Scene();
+            scene.fog = new THREE.FogExp2(0xffffff, 0.002);
+
+            let width = container.clientWidth;
+            let height = container.clientHeight;
+
+            const camera = new THREE.PerspectiveCamera(75, width / height, 0.1, 1000);
+            camera.position.z = 30;
+
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(width, height);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.setClearColor(0xffffff, 1);
+            container.appendChild(renderer.domElement);
+
+            const geometry = new THREE.TorusKnotGeometry(9, 2.5, 120, 16);
+            const material = new THREE.MeshPhysicalMaterial({
+                color: 0x888888,
+                emissive: 0x000000,
+                metalness: 0.5,
+                roughness: 0.1,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.3
+            });
+            const torusKnot = new THREE.Mesh(geometry, material);
+            scene.add(torusKnot);
+
+            const sparkCount = 100;
+            const sparkGeo = new THREE.CircleGeometry(0.15, 3);
+            const sparkMat = new THREE.MeshBasicMaterial({
+                color: 0xD4AF37,
+                side: THREE.DoubleSide,
+                blending: THREE.NormalBlending,
+                transparent: true,
+                opacity: 1,
+                depthTest: false
+            });
+            const sparks = new THREE.InstancedMesh(sparkGeo, sparkMat, sparkCount);
+            torusKnot.add(sparks);
+
+            const dummy = new THREE.Object3D();
+            const sparkData = [];
+            const radialSegments = 16;
+            const tubularSegments = 120;
+            
+            for (let i = 0; i < sparkCount; i++) {
+                sparkData.push({
+                    speed: 0.001 + Math.random() * 0.002,
+                    progress: Math.random(),
+                    pathIndex: Math.floor(Math.random() * radialSegments)
+                });
+            }
+
+            const posAttribute = geometry.attributes.position;
+            const stride = radialSegments + 1;
+            const v1 = new THREE.Vector3();
+            const v2 = new THREE.Vector3();
+
+            function updateSparks() {
+                sparkData.forEach((spark, i) => {
+                    spark.progress += spark.speed;
+                    if (spark.progress >= 1) spark.progress = 0;
+
+                    const exactInd = spark.progress * tubularSegments;
+                    const u = Math.floor(exactInd);
+                    const nextU = (u + 1) % tubularSegments;
+                    const v = spark.pathIndex;
+
+                    const idx1 = (u * stride + v) * 3;
+                    const idx2 = (nextU * stride + v) * 3;
+
+                    v1.fromArray(posAttribute.array, idx1);
+                    v2.fromArray(posAttribute.array, idx2);
+                    v1.lerp(v2, exactInd - u);
+
+                    dummy.position.copy(v1);
+                    dummy.lookAt(v2); 
+                    dummy.updateMatrix();
+                    sparks.setMatrixAt(i, dummy.matrix);
+                });
+                sparks.instanceMatrix.needsUpdate = true;
+            }
+
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.8);
+            scene.add(ambientLight);
+            
+            const pLight1 = new THREE.PointLight(0xD4AF37, 1, 50);
+            pLight1.position.set(10, 10, 10);
+            scene.add(pLight1);
+
+            let mouseX = 0, mouseY = 0;
+            let targetX = 0, targetY = 0;
+            const windowHalfX = window.innerWidth / 2;
+            const windowHalfY = window.innerHeight / 2;
+
+            document.addEventListener('mousemove', (e) => {
+                mouseX = (e.clientX - windowHalfX) * 0.0005;
+                mouseY = (e.clientY - windowHalfY) * 0.0005;
+            });
+
+            const animate = () => {
+                requestAnimationFrame(animate);
+
+                targetX = mouseX * 0.5;
+                targetY = mouseY * 0.5;
+
+                torusKnot.rotation.y += 0.05 * (targetX - torusKnot.rotation.y) + 0.002;
+                torusKnot.rotation.x += 0.05 * (targetY - torusKnot.rotation.x) + 0.001;
+
+                updateSparks();
+                renderer.render(scene, camera);
+            };
+
+            animate();
+
+            const onResize = () => {
+                width = container.clientWidth;
+                height = container.clientHeight;
+                camera.aspect = width / height;
+                camera.updateProjectionMatrix();
+                renderer.setSize(width, height);
+            };
+
+            window.addEventListener('resize', onResize);
+        };
+
+        window.addEventListener('DOMContentLoaded', initThreeJS);
+    </script>
+</body></html>

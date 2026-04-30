@@ -1,0 +1,1234 @@
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>MONOLITH — Design System</title>
+<script src="assets/resource_3fa48481346f.es"></script>
+<script src="assets/iconify-icon_e5bd14a829b8.js"></script>
+<link href="assets/css2_5e23dd8fd27f.css" rel="stylesheet"/>
+<script src="assets/three_1aecfa5aa56f.js"></script>
+<script src="assets/gsap_4f0dc5b47bd1.js"></script>
+<script src="assets/ScrollTrigger_270ba6162bc6.js"></script>
+<style data-scroll-fix="true">
+        html, body {
+            overflow: auto !important;
+            overflow-x: hidden !important;
+            height: auto !important;
+            min-height: 100% !important;
+            scroll-behavior: auto !important;
+            opacity: 1 !important;
+            visibility: visible !important;
+        }
+        body, .wrapper, main, #__next, #app, .page, .content {
+            opacity: 1 !important;
+            visibility: visible !important;
+            transform: none !important;
+        }
+        .loader, .preloader, .loading, [class*="loader"], [class*="preloader"] {
+            display: none !important;
+            opacity: 0 !important;
+        }
+        .word-inner, .char, .line, [data-aos], [data-scroll],
+        .hero-text span, .hero-fade, [class*="hero"] span {
+            opacity: 1 !important;
+            transform: none !important;
+            visibility: visible !important;
+        }
+        .translate-y-full, .translate-x-full, .-translate-y-full, .-translate-x-full,
+        .translate-y-1\/2, .-translate-y-1\/2, .translate-y-\[100\%\], .translate-y-\[110\%\] {
+            transform: none !important;
+        }
+        .opacity-0, [class*="opacity-0"] {
+            opacity: 1 !important;
+        }
+        .scale-0, .scale-50, .scale-75 {
+            transform: none !important;
+        }
+        html.lenis, html.lenis-smooth, 
+        body.lenis, body.lenis-smooth,
+        .lenis-wrapper, .lenis-content,
+        [data-lenis-prevent], [data-scroll-container] {
+            overflow: visible !important;
+            height: auto !important;
+        }
+        body.flex.items-center,
+        body.flex.justify-center {
+            align-items: flex-start !important;
+            min-height: 100vh;
+            height: auto !important;
+        }
+        main, #__next, #__nuxt, #app, .main-content {
+            overflow: visible !important;
+            height: auto !important;
+        }
+        </style>
+</head>
+<body style="font-family: 'Inter', sans-serif; margin: 0; padding: 0; background: #0a0a0b; color: #e8e6e3; overflow-x: hidden;">
+<!-- Three.js Canvas -->
+<canvas id="three-canvas" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 0;"></canvas>
+<!-- Vignette Overlay -->
+<div style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 1; background: radial-gradient(ellipse at center, transparent 50%, rgba(10,10,11,0.6) 100%);"></div>
+<!-- Scroll Container -->
+<div id="scroll-container" style="position: relative; z-index: 2;">
+
+<!-- Top Navigation -->
+<nav style="position: fixed; top: 0; left: 0; right: 0; z-index: 50; backdrop-filter: blur(20px); background: rgba(10,10,11,0.4); border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div class="max-w-7xl mx-auto flex items-center justify-between" style="padding: 1.25rem 2rem;">
+<div class="tracking-tighter" style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: -0.05em; font-size: 1.25rem;">
+                    MONOLITH <span style="color: rgba(232,230,227,0.3); font-weight: 300; font-size: 0.75rem; letter-spacing: 0.05em; text-transform: uppercase;">Design System</span>
+                </div>
+<div class="hidden md:flex items-center gap-8">
+<a class="text-xs" href="#hero" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;">Hero</a>
+<a class="text-xs" href="#typography" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;">Typography</a>
+<a class="text-xs" href="#colors" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;">Colors</a>
+<a class="text-xs" href="#components" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;">Components</a>
+<a class="text-xs" href="#layout" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;">Layout</a>
+<a class="text-xs" href="#motion" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;">Motion</a>
+<a class="text-xs" href="#icons" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500;">Icons</a>
+</div>
+<a class="hidden sm:block" href="#hero" onmouseout="this.style.background='#ff4500'" onmouseover="this.style.background='#ff6633'" style="background: #ff4500; color: #0a0a0b; padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; transition: all 0.3s; text-decoration: none;">
+                    View System
+                </a>
+</div>
+</nav>
+
+<!-- ========================================== -->
+<!-- SECTION 0: HERO (Exact Clone) -->
+<!-- ========================================== -->
+<section id="hero" style="height: 100vh; display: flex; align-items: center; justify-content: center; position: relative;">
+<div class="text-center" style="max-width: 900px; padding: 0 2rem;">
+<div id="hero-badge" style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 1rem; border: 1px solid rgba(255,69,0,0.3); margin-bottom: 2rem; opacity: 0; transform: translateY(20px);">
+<div style="width: 6px; height: 6px; background: #ff4500; border-radius: 50; animation: pulse 2s infinite;"></div>
+<span class="text-xs" style="color: rgba(232,230,227,0.7); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500;">Design System v1.0</span>
+</div>
+<h1 class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight" id="hero-title" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; line-height: 0.95; letter-spacing: -0.04em; opacity: 0; transform: translateY(40px);">
+                    Building<br/>
+<span style="font-weight: 600;">Digital</span>
+<span style="color: #ff4500; font-weight: 600;">Systems</span>
+</h1>
+<p class="text-sm sm:text-base" id="hero-sub" style="color: rgba(232,230,227,0.45); max-width: 480px; margin: 2rem auto 0; line-height: 1.7; font-weight: 300; opacity: 0; transform: translateY(30px);">
+                    A comprehensive pattern library documenting every component, token, and interaction in the Monolith design language.
+                </p>
+</div>
+<!-- Scroll indicator -->
+<div style="position: absolute; bottom: 3rem; left: 50%; transform: translateX(-50%); display: flex; flex-direction: column; align-items: center; gap: 0.75rem;">
+<div style="width: 1px; height: 48px; background: linear-gradient(to bottom, transparent, rgba(255,69,0,0.5), transparent); animation: scrollPulse 2s infinite;"></div>
+</div>
+</section>
+
+<!-- ========================================== -->
+<!-- SECTION 1: TYPOGRAPHY -->
+<!-- ========================================== -->
+<section id="typography" style="padding: 6rem 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="max-w-7xl mx-auto">
+<span class="text-xs" style="color: #ff4500; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 1rem;">Typography</span>
+<h2 class="text-4xl sm:text-5xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 3rem;">
+                Type <span style="font-weight: 600; color: #ff4500;">Scale</span>
+            </h2>
+
+<!-- Spec Table -->
+<div style="display: flex; flex-direction: column;">
+
+<!-- Heading 1 -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Heading 1</div>
+<div class="text-5xl sm:text-6xl md:text-7xl lg:text-8xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; line-height: 0.95; letter-spacing: -0.04em;">
+                        Defining <span style="font-weight: 600;">Form</span>
+</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">72px / 68px</div>
+</div>
+
+<!-- Heading 2 -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Heading 2</div>
+<div class="text-4xl sm:text-5xl md:text-6xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1;">
+                        From <span style="font-weight: 600;">concept</span> to <span style="font-weight: 600; color: #ff4500;">construct</span>
+</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">48px / 53px</div>
+</div>
+
+<!-- Heading 3 -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Heading 3</div>
+<div class="text-xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; letter-spacing: -0.02em;">
+                        Discovery &amp; Architecture
+</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">20px / 28px</div>
+</div>
+
+<!-- Bold L -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Bold L</div>
+<div class="text-3xl font-semibold tracking-tight">Engagement Models</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">30px / 36px</div>
+</div>
+
+<!-- Bold M -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Bold M</div>
+<div class="text-sm font-medium text-white">Alex Stanton — CTO, Zenith Structures</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">14px / 20px</div>
+</div>
+
+<!-- Bold S -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Bold S</div>
+<div class="text-xs font-bold uppercase tracking-widest">Start Project</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">12px / 16px</div>
+</div>
+
+<!-- Paragraph -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Paragraph</div>
+<p class="text-sm leading-relaxed text-white/70 font-light" style="max-width: 560px;">
+                            Monolith translated our complex architectural data into a seamless digital experience. The precision in their code matches the precision of our buildings.
+                        </p>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">14px / 24px</div>
+</div>
+
+<!-- Regular L -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Regular L</div>
+<p class="text-sm sm:text-base" style="color: rgba(232,230,227,0.45); line-height: 1.7; font-weight: 300; max-width: 480px;">
+                            We craft immersive digital experiences at the intersection of architectural thinking and computational design.
+                        </p>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">16px / 27px</div>
+</div>
+
+<!-- Regular M -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Regular M</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4); line-height: 1.8; font-weight: 300; max-width: 480px;">
+                            Mapping constraints, identifying opportunities, and establishing the architectural brief for discovery phase.
+                        </div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">12px / 22px</div>
+</div>
+
+<!-- Regular S -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0; border-bottom: 1px solid rgba(255,255,255,0.06);">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Regular S</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500;">Phase 01 — Label Style</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">12px / 16px</div>
+</div>
+
+<!-- Gradient Text -->
+<div style="display: flex; align-items: baseline; justify-content: space-between; padding: 2rem 0;">
+<div style="flex: 1;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 0.75rem;">Accent Inline</div>
+<div class="text-4xl sm:text-5xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1;">
+                        The Digital <span style="font-weight: 600; color: #ff4500;">Vault</span>
+</div>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; white-space: nowrap; margin-left: 2rem;">Accent #ff4500</div>
+</div>
+
+</div>
+</div>
+</section>
+
+<!-- ========================================== -->
+<!-- SECTION 2: COLORS & SURFACES -->
+<!-- ========================================== -->
+<section id="colors" style="padding: 6rem 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="max-w-7xl mx-auto">
+<span class="text-xs" style="color: #ff4500; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 1rem;">Colors &amp; Surfaces</span>
+<h2 class="text-4xl sm:text-5xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 3rem;">
+                Color <span style="font-weight: 600; color: #ff4500;">Tokens</span>
+            </h2>
+
+<!-- Color Swatches Grid -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6" style="margin-bottom: 4rem;">
+<!-- Background -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem;">
+<div style="width: 100%; height: 80px; background: #0a0a0b; border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Background</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">#0a0a0b</div>
+</div>
+<!-- Text Primary -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem;">
+<div style="width: 100%; height: 80px; background: #e8e6e3; margin-bottom: 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Text Primary</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">#e8e6e3</div>
+</div>
+<!-- Accent -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem;">
+<div style="width: 100%; height: 80px; background: #ff4500; margin-bottom: 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Accent</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">#ff4500</div>
+</div>
+<!-- Accent Hover -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem;">
+<div style="width: 100%; height: 80px; background: #ff6633; margin-bottom: 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Accent Hover</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">#ff6633</div>
+</div>
+</div>
+
+<!-- Opacity Scale -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">White Opacity Scale</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.02); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">2%</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">3%</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">4%</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">6%</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">8%</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.1); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">10%</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.2); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">20%</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 48px; background: rgba(255,255,255,0.4); border: 1px solid rgba(255,255,255,0.06); margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3);">40%</div>
+</div>
+</div>
+</div>
+
+<!-- Surfaces -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Surfaces</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<!-- Card Surface -->
+<div style="padding: 2rem; background: rgba(255,255,255,0.03); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.06);">
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.5rem;">Card / Glass</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">bg: white/3%<br/>backdrop: blur(40px)<br/>border: white/6%</div>
+</div>
+<!-- Elevated Surface -->
+<div style="padding: 2rem; background: #0f0f10; border: 1px solid rgba(255,69,0,0.3); box-shadow: 0 0 30px rgba(255,69,0,0.1);">
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.5rem;">Elevated / Featured</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">bg: #0f0f10<br/>border: accent/30%<br/>shadow: accent glow</div>
+</div>
+<!-- Section Divider -->
+<div style="padding: 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.5rem;">Section Divider</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">border-top: white/4%</div>
+</div>
+</div>
+</div>
+
+<!-- Gradients -->
+<div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Gradients in Use</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Vignette -->
+<div style="padding: 1.5rem; border: 1px solid rgba(255,255,255,0.06);">
+<div style="width: 100%; height: 64px; background: radial-gradient(ellipse at center, transparent 50%, rgba(10,10,11,0.6) 100%); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Vignette Overlay</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">radial-gradient(ellipse)</div>
+</div>
+<!-- Scroll Indicator -->
+<div style="padding: 1.5rem; border: 1px solid rgba(255,255,255,0.06);">
+<div style="width: 1px; height: 64px; background: linear-gradient(to bottom, transparent, rgba(255,69,0,0.5), transparent); margin: 0 auto 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Scroll Indicator</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">linear-gradient(to bottom)</div>
+</div>
+<!-- Card Hover -->
+<div style="padding: 1.5rem; border: 1px solid rgba(255,255,255,0.06);">
+<div style="width: 100%; height: 64px; background: linear-gradient(to bottom, rgba(255,255,255,0.03), transparent); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Card Gradient</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">gradient-to-b white/3%</div>
+</div>
+<!-- Gallery Hover -->
+<div style="padding: 1.5rem; border: 1px solid rgba(255,255,255,0.06);">
+<div style="width: 100%; height: 64px; background: linear-gradient(to bottom right, rgba(255,69,0,0.2), transparent, transparent); border: 1px solid rgba(255,255,255,0.1); margin-bottom: 1rem;"></div>
+<div class="text-sm font-medium text-white" style="margin-bottom: 0.25rem;">Gallery Hover</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">gradient-to-br accent/20%</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ========================================== -->
+<!-- SECTION 3: UI COMPONENTS -->
+<!-- ========================================== -->
+<section id="components" style="padding: 6rem 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="max-w-7xl mx-auto">
+<span class="text-xs" style="color: #ff4500; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 1rem;">UI Components</span>
+<h2 class="text-4xl sm:text-5xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 3rem;">
+                Interface <span style="font-weight: 600; color: #ff4500;">Elements</span>
+            </h2>
+
+<!-- Buttons -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Buttons</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Primary Button Default -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Primary — Default</div>
+<a style="display: inline-block; background: #ff4500; color: #0a0a0b; padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none;">Start Project</a>
+</div>
+<!-- Primary Button Hover -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Primary — Hover</div>
+<a style="display: inline-block; background: #ff6633; color: #0a0a0b; padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none;">Start Project</a>
+</div>
+<!-- Secondary Button Default -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Secondary — Default</div>
+<a style="display: inline-block; padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; color: white; border: 1px solid rgba(255,255,255,0.1);">Inquire</a>
+</div>
+<!-- Secondary Button Hover -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Secondary — Hover</div>
+<a style="display: inline-block; padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; color: white; border: 1px solid rgba(255,255,255,0.1); background: rgba(255,255,255,0.05);">Inquire</a>
+</div>
+</div>
+<!-- Full Width Button -->
+<div style="margin-top: 1.5rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1rem;">Full-Width Submit Button</div>
+<button onmouseout="this.style.background='#ff4500'" onmouseover="this.style.background='#ff6633'" style="width: 100%; max-width: 400px; background: #ff4500; color: #0a0a0b; padding: 1rem; font-family: 'Inter', sans-serif; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: none; cursor: pointer; transition: all 0.3s; display: flex; align-items: center; justify-content: center; gap: 0.5rem;" type="button">
+                        Send Message
+                        <iconify-icon icon="solar:arrow-right-linear" width="16"></iconify-icon>
+</button>
+</div>
+</div>
+
+<!-- Inputs -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Form Inputs</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<!-- Default -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Default</div>
+<label class="text-xs" style="color: rgba(232,230,227,0.4); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; display: block; margin-bottom: 0.5rem;">Name</label>
+<input placeholder="Your name" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.875rem 1rem; color: #e8e6e3; font-family: 'Inter', sans-serif; font-size: 0.875rem; outline: none; transition: border-color 0.3s; box-sizing: border-box;" type="text"/>
+</div>
+<!-- Focus -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Focus</div>
+<label class="text-xs" style="color: rgba(232,230,227,0.4); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; display: block; margin-bottom: 0.5rem;">Email</label>
+<input placeholder="hello@company.com" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,69,0,0.5); padding: 0.875rem 1rem; color: #e8e6e3; font-family: 'Inter', sans-serif; font-size: 0.875rem; outline: none; transition: border-color 0.3s; box-sizing: border-box;" type="email"/>
+</div>
+<!-- Select -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Select</div>
+<label class="text-xs" style="color: rgba(232,230,227,0.4); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; display: block; margin-bottom: 0.5rem;">Project Type</label>
+<select style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.875rem 1rem; color: rgba(232,230,227,0.5); font-family: 'Inter', sans-serif; font-size: 0.875rem; outline: none; transition: border-color 0.3s; appearance: none; cursor: pointer; box-sizing: border-box;">
+<option value="">Select a service</option>
+<option value="web">Web Experience</option>
+<option value="brand">Brand System</option>
+</select>
+</div>
+</div>
+<!-- Textarea -->
+<div style="margin-top: 1.5rem; max-width: 400px;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1rem;">Textarea</div>
+<label class="text-xs" style="color: rgba(232,230,227,0.4); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; display: block; margin-bottom: 0.5rem;">Message</label>
+<textarea onblur="this.style.borderColor='rgba(255,255,255,0.08)'" onfocus="this.style.borderColor='rgba(255,69,0,0.5)'" placeholder="Tell us about your vision..." rows="4" style="width: 100%; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); padding: 0.875rem 1rem; color: #e8e6e3; font-family: 'Inter', sans-serif; font-size: 0.875rem; outline: none; transition: border-color 0.3s; resize: vertical; box-sizing: border-box;"></textarea>
+</div>
+</div>
+
+<!-- Cards -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Cards</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Process Card -->
+<div class="process-card" style="background: rgba(255,255,255,0.03); backdrop-filter: blur(40px); border: 1px solid rgba(255,255,255,0.06); padding: 2.5rem;">
+<div>
+<div style="width: 48px; height: 48px; border: 1px solid rgba(255,69,0,0.3); display: flex; align-items: center; justify-content: center; margin-bottom: 2rem;">
+<iconify-icon icon="solar:compass-linear" style="color: #ff4500;" width="22"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1rem;">Phase 01</div>
+<h3 class="text-xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 500; letter-spacing: -0.02em; margin-bottom: 1rem;">Discovery</h3>
+<p class="text-xs" style="color: rgba(232,230,227,0.4); line-height: 1.8; font-weight: 300;">Mapping constraints, identifying opportunities, and establishing the architectural brief.</p>
+</div>
+</div>
+<!-- Pricing Card -->
+<div class="p-8 bg-[#0a0a0b] border border-white/[0.06] relative group hover:border-white/20 transition-all duration-300" style="background: #0a0a0b; border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<h3 class="font-['Space_Grotesk'] text-xl font-medium text-white mb-2" style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 500; color: white; margin-bottom: 0.5rem;">Protocol</h3>
+<div class="text-xs text-white/40 mb-6 uppercase tracking-wider font-medium" style="color: rgba(255,255,255,0.4); margin-bottom: 1.5rem; letter-spacing: 0.1em;">For MVPs &amp; Startups</div>
+<div class="flex items-baseline gap-1 mb-8" style="display: flex; align-items: baseline; gap: 0.25rem; margin-bottom: 2rem;">
+<span class="text-3xl font-semibold tracking-tight" style="font-size: 1.875rem; font-weight: 600; letter-spacing: -0.02em;">$15k</span>
+<span class="text-sm text-white/40" style="font-size: 0.875rem; color: rgba(255,255,255,0.4);">/ project</span>
+</div>
+<a class="block w-full py-3 px-4 text-center text-xs font-bold uppercase tracking-widest border border-white/10 hover:bg-white/5 transition-colors text-white" href="#" style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: center; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; border: 1px solid rgba(255,255,255,0.1); color: white; text-decoration: none;">Inquire</a>
+</div>
+<!-- Featured Pricing Card -->
+<div style="background: #0f0f10; border: 1px solid rgba(255,69,0,0.3); box-shadow: 0 0 30px rgba(255,69,0,0.1); padding: 2rem; position: relative;">
+<div style="position: absolute; top: 0; left: 50%; transform: translate(-50%, -50%); background: #ff4500; color: black; font-size: 10px; font-weight: 700; letter-spacing: 0.15em; text-transform: uppercase; padding: 0.25rem 0.75rem; border-radius: 9999px;">Most Popular</div>
+<h3 style="font-family: 'Space Grotesk', sans-serif; font-size: 1.25rem; font-weight: 500; color: white; margin-bottom: 0.5rem;">Construct</h3>
+<div style="color: rgba(255,255,255,0.4); font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">For Growing Brands</div>
+<div style="display: flex; align-items: baseline; gap: 0.25rem; margin-bottom: 2rem;">
+<span style="font-size: 1.875rem; font-weight: 600; letter-spacing: -0.02em;">$35k</span>
+<span style="font-size: 0.875rem; color: rgba(255,255,255,0.4);">/ project</span>
+</div>
+<a style="display: block; width: 100%; padding: 0.75rem 1rem; text-align: center; font-size: 0.75rem; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; background: #ff4500; color: black; text-decoration: none;">Select Plan</a>
+</div>
+</div>
+</div>
+
+<!-- Badge -->
+<div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Badge</div>
+<div style="display: inline-flex; align-items: center; gap: 0.5rem; padding: 0.375rem 1rem; border: 1px solid rgba(255,69,0,0.3);">
+<div style="width: 6px; height: 6px; background: #ff4500; border-radius: 50; animation: pulse 2s infinite;"></div>
+<span class="text-xs" style="color: rgba(232,230,227,0.7); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500;">Status Badge</span>
+</div>
+</div>
+
+<!-- Testimonial Card -->
+<div style="margin-top: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Testimonial Card</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+<div class="p-8 bg-gradient-to-b from-white/[0.03] to-transparent border border-white/[0.06] hover:border-white/10 transition-colors duration-300" style="padding: 2rem; background: linear-gradient(to bottom, rgba(255,255,255,0.03), transparent); border: 1px solid rgba(255,255,255,0.06); transition: border-color 0.3s;">
+<div class="flex gap-1 mb-6 text-[#ff4500]" style="display: flex; gap: 0.25rem; margin-bottom: 1.5rem; color: #ff4500;">
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+</div>
+<p class="text-sm leading-relaxed text-white/70 mb-8 font-light" style="font-size: 0.875rem; line-height: 1.625; color: rgba(255,255,255,0.7); margin-bottom: 2rem; font-weight: 300;">
+                            "Monolith translated our complex architectural data into a seamless digital experience."
+                        </p>
+<div class="flex items-center gap-4" style="display: flex; align-items: center; gap: 1rem;">
+<div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-xs font-bold font-['Space_Grotesk']" style="width: 2.5rem; height: 2.5rem; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif;">AS</div>
+<div>
+<div class="text-sm font-medium text-white" style="font-size: 0.875rem; font-weight: 500; color: white;">Alex Stanton</div>
+<div class="text-xs text-white/40" style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">CTO, Zenith Structures</div>
+</div>
+</div>
+</div>
+<div class="p-8 bg-gradient-to-b from-white/[0.03] to-transparent border border-white/[0.06] hover:border-white/10 transition-colors duration-300" style="padding: 2rem; background: linear-gradient(to bottom, rgba(255,255,255,0.03), transparent); border: 1px solid rgba(255,255,255,0.06); transition: border-color 0.3s;">
+<div class="flex gap-1 mb-6 text-[#ff4500]" style="display: flex; gap: 0.25rem; margin-bottom: 1.5rem; color: #ff4500;">
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+<iconify-icon icon="solar:star-bold" width="16"></iconify-icon>
+</div>
+<p class="text-sm leading-relaxed text-white/70 mb-8 font-light" style="font-size: 0.875rem; line-height: 1.625; color: rgba(255,255,255,0.7); margin-bottom: 2rem; font-weight: 300;">
+                            "They don't just build websites; they build systems. The scalability has been instrumental."
+                        </p>
+<div class="flex items-center gap-4" style="display: flex; align-items: center; gap: 1rem;">
+<div class="w-10 h-10 bg-white/10 rounded-full flex items-center justify-center text-xs font-bold font-['Space_Grotesk']" style="width: 2.5rem; height: 2.5rem; background: rgba(255,255,255,0.1); border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; font-weight: 700; font-family: 'Space Grotesk', sans-serif;">EL</div>
+<div>
+<div class="text-sm font-medium text-white" style="font-size: 0.875rem; font-weight: 500; color: white;">Elena Liu</div>
+<div class="text-xs text-white/40" style="font-size: 0.75rem; color: rgba(255,255,255,0.4);">Founder, Orbital</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ========================================== -->
+<!-- SECTION 4: LAYOUT & SPACING -->
+<!-- ========================================== -->
+<section id="layout" style="padding: 6rem 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="max-w-7xl mx-auto">
+<span class="text-xs" style="color: #ff4500; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 1rem;">Layout &amp; Spacing</span>
+<h2 class="text-4xl sm:text-5xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 3rem;">
+                Structural <span style="font-weight: 600; color: #ff4500;">Patterns</span>
+            </h2>
+
+<!-- Container -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Container</div>
+<div style="border: 1px dashed rgba(255,69,0,0.3); padding: 2rem; position: relative;">
+<div style="position: absolute; top: -0.5rem; left: 1rem; background: #0a0a0b; padding: 0 0.5rem; font-size: 0.625rem; color: rgba(255,69,0,0.5); letter-spacing: 0.1em; text-transform: uppercase;">max-w-7xl mx-auto</div>
+<div style="background: rgba(255,255,255,0.02); padding: 2rem; text-align: center;">
+<div class="text-sm" style="color: rgba(232,230,227,0.5);">1280px max-width, centered, auto margins</div>
+</div>
+</div>
+</div>
+
+<!-- Section Padding -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Section Padding</div>
+<div class="grid grid-cols-1 sm:grid-cols-3 gap-6">
+<div style="border: 1px dashed rgba(255,69,0,0.2); padding: 2rem; text-align: center;">
+<div class="text-2xl font-semibold" style="font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem;">6rem</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">Top/Bottom (py-24)</div>
+</div>
+<div style="border: 1px dashed rgba(255,69,0,0.2); padding: 2rem; text-align: center;">
+<div class="text-2xl font-semibold" style="font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem;">2rem</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">Left/Right (px-8)</div>
+</div>
+<div style="border: 1px dashed rgba(255,69,0,0.2); padding: 2rem; text-align: center;">
+<div class="text-2xl font-semibold" style="font-family: 'Space Grotesk', sans-serif; margin-bottom: 0.5rem;">10vw</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">Process Section</div>
+</div>
+</div>
+</div>
+
+<!-- Grid Patterns -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Grid Patterns</div>
+<!-- 3 Column -->
+<div style="margin-bottom: 1.5rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem;">3-Column (Pricing, Testimonials)</div>
+<div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">col-1</div>
+</div>
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">col-2</div>
+</div>
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">col-3</div>
+</div>
+</div>
+</div>
+<!-- 6 Column Bento -->
+<div style="margin-bottom: 1.5rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem;">6-Column Bento Grid (Gallery)</div>
+<div class="grid grid-cols-2 lg:grid-cols-6 gap-4">
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; text-align: center; grid-column: span 4;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">span 4</div>
+</div>
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; text-align: center; grid-column: span 2;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">span 2</div>
+</div>
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; text-align: center; grid-column: span 2;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">span 2</div>
+</div>
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; text-align: center; grid-column: span 2;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">span 2</div>
+</div>
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 1rem; text-align: center; grid-column: span 2;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">span 2</div>
+</div>
+</div>
+</div>
+<!-- Split Layout -->
+<div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 0.75rem;">Split Layout (Contact Header)</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4); text-align: center;">Left Content</div>
+</div>
+<div style="background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); padding: 2rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.4); text-align: center;">Right Content</div>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Spacing Scale -->
+<div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Gap &amp; Spacing Scale</div>
+<div class="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-8 gap-4">
+<div style="text-align: center;">
+<div style="width: 100%; height: 4px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">4px</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 6px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">6px</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 8px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">8px</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 12px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">12px</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 16px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">16px</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 24px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">24px</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 32px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">32px</div>
+</div>
+<div style="text-align: center;">
+<div style="width: 100%; height: 40px; background: #ff4500; margin-bottom: 0.5rem;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">40px</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ========================================== -->
+<!-- SECTION 5: MOTION & INTERACTION -->
+<!-- ========================================== -->
+<section id="motion" style="padding: 6rem 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="max-w-7xl mx-auto">
+<span class="text-xs" style="color: #ff4500; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 1rem;">Motion &amp; Interaction</span>
+<h2 class="text-4xl sm:text-5xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 3rem;">
+                Animation <span style="font-weight: 600; color: #ff4500;">Gallery</span>
+            </h2>
+
+<!-- Keyframes -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Keyframe Animations</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<!-- Pulse -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem;">pulse — Badge Dot</div>
+<div style="width: 12px; height: 12px; background: #ff4500; border-radius: 50%; margin: 0 auto; animation: pulse 2s infinite;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 1rem;">duration: 2s | infinite | ease: default</div>
+</div>
+<!-- ScrollPulse -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1.5rem;">scrollPulse — Scroll Indicator</div>
+<div style="width: 1px; height: 48px; background: linear-gradient(to bottom, transparent, rgba(255,69,0,0.5), transparent); margin: 0 auto; animation: scrollPulse 2s infinite;"></div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 1rem;">duration: 2s | infinite | opacity: 0.3 → 1</div>
+</div>
+</div>
+</div>
+
+<!-- GSAP Entrance Animations -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">GSAP Entrance Animations</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Hero Badge</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.5); line-height: 1.8;">
+                            y: 20 → 0<br/>opacity: 0 → 1<br/>duration: 0.8s<br/>delay: 0.3s<br/>ease: power3.out
+                        </div>
+</div>
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Hero Title</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.5); line-height: 1.8;">
+                            y: 40 → 0<br/>opacity: 0 → 1<br/>duration: 1s<br/>delay: 0.5s<br/>ease: power3.out
+                        </div>
+</div>
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Hero Subtitle</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.5); line-height: 1.8;">
+                            y: 30 → 0<br/>opacity: 0 → 1<br/>duration: 1s<br/>delay: 0.7s<br/>ease: power3.out
+                        </div>
+</div>
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Scroll Reveal</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.5); line-height: 1.8;">
+                            y: 40 → 0<br/>opacity: 0 → 1<br/>scrub: 0.5<br/>trigger: top 90%
+                        </div>
+</div>
+</div>
+</div>
+
+<!-- Hover Transitions -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Hover Transitions</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+<!-- Button Hover -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Button Hover</div>
+<a onmouseout="this.style.background='#ff4500'" onmouseover="this.style.background='#ff6633'" style="display: inline-block; background: #ff4500; color: #0a0a0b; padding: 0.5rem 1.25rem; font-size: 0.75rem; font-weight: 600; letter-spacing: 0.05em; text-transform: uppercase; text-decoration: none; transition: all 0.3s;">Hover Me</a>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 1rem;">transition: all 0.3s</div>
+</div>
+<!-- Card Border Hover -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center; transition: border-color 0.3s;" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'" onmouseover="this.style.borderColor='rgba(255,255,255,0.2)'">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Card Border Hover</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 1rem;">border → white/20%<br/>transition: 0.3s</div>
+</div>
+<!-- Link Color Hover -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Link Color Hover</div>
+<a href="#" onmouseout="this.style.color='rgba(232,230,227,0.5)'" onmouseover="this.style.color='#e8e6e3'" style="color: rgba(232,230,227,0.5); transition: color 0.3s; letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; font-size: 0.75rem; text-decoration: none;">Hover Link</a>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 1rem;">50% → 100% opacity<br/>transition: 0.3s</div>
+</div>
+<!-- Gallery Item Hover -->
+<div class="group" style="border: 1px solid rgba(255,255,255,0.06); padding: 2rem; text-align: center; overflow: hidden; transition: border-color 0.5s;" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'" onmouseover="this.style.borderColor='rgba(255,69,0,0.3)'">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.1em; text-transform: uppercase; margin-bottom: 1rem;">Gallery Hover</div>
+<div style="width: 40px; height: 40px; border-radius: 50%; border: 1px solid rgba(255,255,255,0.1); margin: 0 auto; display: flex; align-items: center; justify-content: center; transition: all 0.3s;" onmouseout="this.style.background='transparent'; this.style.borderColor='rgba(255,255,255,0.1)'" onmouseover="this.style.background='#ff4500'; this.style.borderColor='#ff4500'">
+<iconify-icon icon="solar:arrow-right-up-linear" width="20"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 1rem;">border → accent/30%<br/>icon → bg accent<br/>transition: 0.5s</div>
+</div>
+</div>
+</div>
+
+<!-- Gallery Card Motion -->
+<div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Gallery Card Motion</div>
+<div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+<!-- Translate & Scale -->
+<div class="gallery-item group" style="border: 1px solid rgba(255,255,255,0.06); overflow: hidden; height: 200px; position: relative; transition: border-color 0.5s;" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'" onmouseover="this.style.borderColor='rgba(255,69,0,0.3)'">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+<div style="width: 80%; height: 70%; background: #1a1a1a; border: 1px solid rgba(255,255,255,0.1); transform: translateY(12px); transition: all 0.7s; padding: 1rem;" onmouseout="this.style.transform='translateY(12px) scale(1)'" onmouseover="this.style.transform='translateY(8px) scale(1.02)'">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); text-align: center;">translate-y-12 → 8<br/>scale → 1.02<br/>duration: 700ms</div>
+</div>
+</div>
+</div>
+<!-- Icon Color Transition -->
+<div class="gallery-item group" style="border: 1px solid rgba(255,255,255,0.06); overflow: hidden; height: 200px; position: relative; transition: border-color 0.5s;" onmouseout="this.style.borderColor='rgba(255,255,255,0.06)'" onmouseover="this.style.borderColor='rgba(255,69,0,0.3)'">
+<div style="position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;">
+<iconify-icon icon="solar:gallery-wide-linear" width="64" style="color: rgba(255,255,255,0.2); transition: color 0.5s;" onmouseout="this.style.color='rgba(255,255,255,0.2)'" onmouseover="this.style.color='#ff4500'"></iconify-icon>
+</div>
+<div style="position: absolute; bottom: 0; left: 0; right: 0; padding: 1rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); text-align: center;">white/20% → accent<br/>duration: 500ms</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- ========================================== -->
+<!-- SECTION 6: ICONS -->
+<!-- ========================================== -->
+<section id="icons" style="padding: 6rem 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="max-w-7xl mx-auto">
+<span class="text-xs" style="color: #ff4500; letter-spacing: 0.2em; text-transform: uppercase; font-weight: 600; display: block; margin-bottom: 1rem;">Icons</span>
+<h2 class="text-4xl sm:text-5xl tracking-tight" style="font-family: 'Space Grotesk', sans-serif; font-weight: 300; letter-spacing: -0.03em; line-height: 1.1; margin-bottom: 3rem;">
+                Icon <span style="font-weight: 600; color: #ff4500;">System</span>
+            </h2>
+
+<!-- Icon Library -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Solar Icon Set — Used Icons</div>
+<div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-6">
+<!-- compass -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:compass-linear" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">compass-linear</div>
+</div>
+<!-- ruler -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:ruler-angular-linear" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">ruler-angular</div>
+</div>
+<!-- code -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:code-square-linear" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">code-square</div>
+</div>
+<!-- arrow-right-up -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:arrow-right-up-linear" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">arrow-right-up</div>
+</div>
+<!-- arrow-right -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:arrow-right-linear" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">arrow-right</div>
+</div>
+<!-- gallery-wide -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:gallery-wide-linear" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">gallery-wide</div>
+</div>
+<!-- star-bold -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:star-bold" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">star-bold</div>
+</div>
+<!-- check-circle -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:check-circle-linear" style="color: #ff4500;" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">check-circle</div>
+</div>
+<!-- close-circle -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:close-circle-linear" style="color: rgba(232,230,227,0.3);" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">close-circle</div>
+</div>
+<!-- link-circle -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:link-circle-linear" style="color: rgba(232,230,227,0.5);" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">link-circle</div>
+</div>
+<!-- letter -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:letter-linear" style="color: rgba(232,230,227,0.5);" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">letter</div>
+</div>
+<!-- share-circle -->
+<div style="border: 1px solid rgba(255,255,255,0.06); padding: 1.5rem; text-align: center;">
+<div style="margin-bottom: 1rem;">
+<iconify-icon icon="solar:share-circle-linear" style="color: rgba(232,230,227,0.5);" width="24"></iconify-icon>
+</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.4);">share-circle</div>
+</div>
+</div>
+</div>
+
+<!-- Size Variants -->
+<div style="margin-bottom: 4rem;">
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Size Variants</div>
+<div style="display: flex; align-items: flex-end; gap: 2rem; flex-wrap: wrap;">
+<div style="text-align: center;">
+<iconify-icon icon="solar:star-bold" style="color: #ff4500;" width="16"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">16px</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:star-bold" style="color: #ff4500;" width="18"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">18px</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:star-bold" style="color: #ff4500;" width="20"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">20px</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:star-bold" style="color: #ff4500;" width="22"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">22px</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:star-bold" style="color: #ff4500;" width="48"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">48px</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:star-bold" style="color: #ff4500;" width="64"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">64px</div>
+</div>
+</div>
+</div>
+
+<!-- Color Inheritance -->
+<div>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); letter-spacing: 0.15em; text-transform: uppercase; font-weight: 500; margin-bottom: 1.5rem;">Color Inheritance</div>
+<div style="display: flex; gap: 2rem; flex-wrap: wrap;">
+<div style="text-align: center;">
+<iconify-icon icon="solar:compass-linear" style="color: #ff4500;" width="32"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">Accent</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:compass-linear" style="color: rgba(232,230,227,0.5);" width="32"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">50% White</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:compass-linear" style="color: rgba(255,255,255,0.2);" width="32"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">20% White</div>
+</div>
+<div style="text-align: center;">
+<iconify-icon icon="solar:compass-linear" style="color: rgba(232,230,227,0.3);" width="32"></iconify-icon>
+<div class="text-xs" style="color: rgba(232,230,227,0.3); margin-top: 0.5rem;">30% Text</div>
+</div>
+</div>
+</div>
+</div>
+</section>
+
+<!-- Footer -->
+<footer style="padding: 2rem; border-top: 1px solid rgba(255,255,255,0.04);">
+<div class="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
+<div class="text-sm tracking-tighter" style="font-family: 'Space Grotesk', sans-serif; font-weight: 600; letter-spacing: -0.05em;">MONOLITH</div>
+<div class="text-xs" style="color: rgba(232,230,227,0.25);">Design System v1.0 — Extracted from Reference</div>
+</div>
+</footer>
+
+</div>
+
+<style>
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.4; }
+        }
+        @keyframes scrollPulse {
+            0%, 100% { opacity: 0.3; }
+            50% { opacity: 1; }
+        }
+        * { scrollbar-width: thin; scrollbar-color: rgba(255,69,0,0.3) transparent; }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(255,69,0,0.3); }
+        ::selection { background: rgba(255,69,0,0.3); color: #e8e6e3; }
+        html { scroll-behavior: smooth; }
+        select option { background: #1a1a1b; color: #e8e6e3; }
+    </style>
+
+<script>
+        // ==========================================
+        // THREE.JS SCENE (Same as original)
+        // ==========================================
+        const canvas = document.getElementById('three-canvas');
+        const scene = new THREE.Scene();
+        scene.fog = new THREE.FogExp2(0x0a0a0b, 0.035);
+
+        const camera = new THREE.PerspectiveCamera(60, window.innerWidth / window.innerHeight, 0.1, 1000);
+        camera.position.set(0, 0, 8);
+
+        const renderer = new THREE.WebGLRenderer({
+            canvas: canvas,
+            antialias: true,
+            alpha: true
+        });
+        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+        renderer.toneMapping = THREE.ACESFilmicToneMapping;
+        renderer.toneMappingExposure = 1.2;
+
+        const ambientLight = new THREE.AmbientLight(0x404050, 0.5);
+        scene.add(ambientLight);
+
+        const mainLight = new THREE.DirectionalLight(0xfff5ee, 2);
+        mainLight.position.set(5, 8, 5);
+        mainLight.castShadow = true;
+        scene.add(mainLight);
+
+        const accentLight = new THREE.PointLight(0xff4500, 3, 20);
+        accentLight.position.set(-3, 2, 4);
+        scene.add(accentLight);
+
+        const rimLight = new THREE.PointLight(0x3366ff, 1.5, 15);
+        rimLight.position.set(4, -2, 3);
+        scene.add(rimLight);
+
+        const fillLight = new THREE.DirectionalLight(0x8888aa, 0.8);
+        fillLight.position.set(-5, -3, -5);
+        scene.add(fillLight);
+
+        const monolithGroup = new THREE.Group();
+        scene.add(monolithGroup);
+
+        const icoGeo = new THREE.IcosahedronGeometry(2, 1);
+        const icoWire = new THREE.WireframeGeometry(icoGeo);
+        const icoMat = new THREE.LineBasicMaterial({ color: 0xff4500, opacity: 0.35, transparent: true });
+        const icoLines = new THREE.LineSegments(icoWire, icoMat);
+        monolithGroup.add(icoLines);
+
+        const dodGeo = new THREE.DodecahedronGeometry(1.3, 0);
+        const dodWire = new THREE.WireframeGeometry(dodGeo);
+        const dodMat = new THREE.LineBasicMaterial({ color: 0xaaaacc, opacity: 0.2, transparent: true });
+        const dodLines = new THREE.LineSegments(dodWire, dodMat);
+        monolithGroup.add(dodLines);
+
+        const octGeo = new THREE.OctahedronGeometry(0.8, 0);
+        const octMat = new THREE.MeshStandardMaterial({
+            color: 0x1a1a2e,
+            metalness: 0.9,
+            roughness: 0.1,
+            emissive: 0xff4500,
+            emissiveIntensity: 0.05
+        });
+        const octMesh = new THREE.Mesh(octGeo, octMat);
+        monolithGroup.add(octMesh);
+
+        const ringGeo = new THREE.TorusGeometry(3, 0.015, 8, 64);
+        const ringMat = new THREE.MeshStandardMaterial({ color: 0xff4500, emissive: 0xff4500, emissiveIntensity: 0.3, metalness: 1, roughness: 0.2 });
+        const ring = new THREE.Mesh(ringGeo, ringMat);
+        ring.rotation.x = Math.PI / 2;
+        monolithGroup.add(ring);
+
+        const ring2Geo = new THREE.TorusGeometry(3.5, 0.008, 8, 80);
+        const ring2Mat = new THREE.MeshStandardMaterial({ color: 0x666688, metalness: 1, roughness: 0.3 });
+        const ring2 = new THREE.Mesh(ring2Geo, ring2Mat);
+        ring2.rotation.x = Math.PI / 3;
+        ring2.rotation.y = Math.PI / 6;
+        monolithGroup.add(ring2);
+
+        const particleCount = 500;
+        const particleGeo = new THREE.SphereGeometry(0.015, 4, 4);
+        const particleMat = new THREE.MeshBasicMaterial({ color: 0x555566 });
+        const instancedParticles = new THREE.InstancedMesh(particleGeo, particleMat, particleCount);
+
+        const dummy = new THREE.Object3D();
+        const particleData = [];
+
+        for (let i = 0; i < particleCount; i++) {
+            const theta = Math.random() * Math.PI * 2;
+            const phi = Math.acos(2 * Math.random() - 1);
+            const r = 5 + Math.random() * 20;
+            const x = r * Math.sin(phi) * Math.cos(theta);
+            const y = r * Math.sin(phi) * Math.sin(theta);
+            const z = r * Math.cos(phi);
+
+            dummy.position.set(x, y, z);
+            const s = 0.5 + Math.random() * 2;
+            dummy.scale.set(s, s, s);
+            dummy.updateMatrix();
+            instancedParticles.setMatrixAt(i, dummy.matrix);
+
+            particleData.push({ x, y, z, speed: 0.0005 + Math.random() * 0.001, offset: Math.random() * Math.PI * 2 });
+        }
+        scene.add(instancedParticles);
+
+        const debrisCount = 60;
+        const debrisGeo = new THREE.BoxGeometry(0.08, 0.08, 0.08);
+        const debrisMat = new THREE.MeshStandardMaterial({ color: 0x333344, metalness: 0.8, roughness: 0.3 });
+        const instancedDebris = new THREE.InstancedMesh(debrisGeo, debrisMat, debrisCount);
+        const debrisData = [];
+
+        for (let i = 0; i < debrisCount; i++) {
+            const angle = Math.random() * Math.PI * 2;
+            const dist = 4 + Math.random() * 8;
+            const x = Math.cos(angle) * dist;
+            const y = (Math.random() - 0.5) * 10;
+            const z = Math.sin(angle) * dist;
+
+            dummy.position.set(x, y, z);
+            dummy.rotation.set(Math.random() * Math.PI, Math.random() * Math.PI, Math.random() * Math.PI);
+            const s = 0.3 + Math.random() * 1.5;
+            dummy.scale.set(s, s, s * 2);
+            dummy.updateMatrix();
+            instancedDebris.setMatrixAt(i, dummy.matrix);
+
+            debrisData.push({ x, y, z, rotSpeed: 0.001 + Math.random() * 0.003, angle: Math.random() * Math.PI * 2 });
+        }
+        scene.add(instancedDebris);
+
+        const gridHelper = new THREE.GridHelper(40, 40, 0x222233, 0x151520);
+        gridHelper.position.y = -4;
+        scene.add(gridHelper);
+
+        let mouseX = 0, mouseY = 0;
+        let targetMouseX = 0, targetMouseY = 0;
+
+        document.addEventListener('mousemove', (e) => {
+            targetMouseX = (e.clientX / window.innerWidth - 0.5) * 2;
+            targetMouseY = (e.clientY / window.innerHeight - 0.5) * 2;
+        });
+
+        let scrollProgress = 0;
+        window.addEventListener('scroll', () => {
+            const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+            scrollProgress = window.scrollY / maxScroll;
+        });
+
+        const clock = new THREE.Clock();
+        function animate() {
+            requestAnimationFrame(animate);
+            const time = clock.getElapsedTime();
+
+            mouseX += (targetMouseX - mouseX) * 0.05;
+            mouseY += (targetMouseY - mouseY) * 0.05;
+
+            monolithGroup.rotation.y = time * 0.15 + mouseX * 0.3;
+            monolithGroup.rotation.x = Math.sin(time * 0.1) * 0.1 + mouseY * 0.15;
+            icoLines.rotation.y = -time * 0.08;
+            icoLines.rotation.z = time * 0.05;
+            dodLines.rotation.y = time * 0.12;
+            dodLines.rotation.x = time * 0.07;
+            octMesh.rotation.y = time * 0.2;
+            octMesh.rotation.x = time * 0.15;
+            ring.rotation.z = time * 0.1;
+            ring2.rotation.z = -time * 0.07;
+            ring2.rotation.x = Math.PI / 3 + time * 0.05;
+
+            accentLight.position.x = Math.cos(time * 0.3) * 5;
+            accentLight.position.z = Math.sin(time * 0.3) * 5;
+            accentLight.position.y = Math.sin(time * 0.5) * 2;
+
+            for (let i = 0; i < particleCount; i++) {
+                const p = particleData[i];
+                dummy.position.set(
+                    p.x + Math.sin(time * p.speed * 100 + p.offset) * 0.3,
+                    p.y + Math.cos(time * p.speed * 80 + p.offset) * 0.3,
+                    p.z + Math.sin(time * p.speed * 60 + p.offset + 1) * 0.3
+                );
+                const s = 0.5 + Math.sin(time + p.offset) * 0.3;
+                dummy.scale.set(s, s, s);
+                dummy.updateMatrix();
+                instancedParticles.setMatrixAt(i, dummy.matrix);
+            }
+            instancedParticles.instanceMatrix.needsUpdate = true;
+
+            for (let i = 0; i < debrisCount; i++) {
+                const d = debrisData[i];
+                dummy.position.set(
+                    d.x + Math.sin(time * 0.2 + d.angle) * 0.5,
+                    d.y + Math.cos(time * 0.15 + d.angle) * 0.5,
+                    d.z
+                );
+                dummy.rotation.set(time * d.rotSpeed * 50, time * d.rotSpeed * 30, time * d.rotSpeed * 40);
+                const s = 0.3 + Math.sin(time * 0.5 + d.angle) * 0.15;
+                dummy.scale.set(s, s, s * 2);
+                dummy.updateMatrix();
+                instancedDebris.setMatrixAt(i, dummy.matrix);
+            }
+            instancedDebris.instanceMatrix.needsUpdate = true;
+
+            const targetFov = 60 + scrollProgress * 15;
+            camera.fov += (targetFov - camera.fov) * 0.05;
+            camera.updateProjectionMatrix();
+
+            const pulse = 1 + Math.sin(time * 0.5) * 0.02;
+            monolithGroup.scale.set(pulse, pulse, pulse);
+
+            camera.position.x = mouseX * 0.5;
+            camera.position.y = -mouseY * 0.3;
+            camera.lookAt(0, 0, 0);
+
+            renderer.render(scene, camera);
+        }
+        animate();
+
+        window.addEventListener('resize', () => {
+            camera.aspect = window.innerWidth / window.innerHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(window.innerWidth, window.innerHeight);
+        });
+
+        // ==========================================
+        // GSAP ANIMATIONS
+        // ==========================================
+        gsap.registerPlugin(ScrollTrigger);
+
+        gsap.to('#hero-badge', { opacity: 1, y: 0, duration: 0.8, delay: 0.3, ease: 'power3.out' });
+        gsap.to('#hero-title', { opacity: 1, y: 0, duration: 1, delay: 0.5, ease: 'power3.out' });
+        gsap.to('#hero-sub', { opacity: 1, y: 0, duration: 1, delay: 0.7, ease: 'power3.out' });
+
+        // Smooth scroll for nav links
+        document.querySelectorAll('a[href^="#"]').forEach(anchor => {
+            anchor.addEventListener('click', function (e) {
+                e.preventDefault();
+                const target = document.querySelector(this.getAttribute('href'));
+                if (target) {
+                    target.scrollIntoView({ behavior: 'smooth' });
+                }
+            });
+        });
+    </script>
+</body></html>

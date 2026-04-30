@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "Entrar" [level=1] [ref=e6]
+      - paragraph [ref=e7]: Acesse sua conta CriptEnv
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: Email
+        - generic [ref=e11]:
+          - img [ref=e12]
+          - textbox "Email" [ref=e15]:
+            - /placeholder: voce@email.com
+      - generic [ref=e16]:
+        - generic [ref=e17]: Senha
+        - generic [ref=e18]:
+          - img [ref=e19]
+          - textbox "Senha" [ref=e22]:
+            - /placeholder: ••••••••
+      - button "Entrar" [ref=e23] [cursor=pointer]
+    - paragraph [ref=e24]:
+      - text: Não tem conta?
+      - link "Cadastre-se" [ref=e25] [cursor=pointer]:
+        - /url: /signup
+  - button "Open Next.js Dev Tools" [ref=e31] [cursor=pointer]:
+    - img [ref=e32]

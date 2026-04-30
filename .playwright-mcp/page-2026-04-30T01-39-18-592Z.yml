@@ -1,0 +1,234 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - generic [ref=e4]:
+        - link "C CriptEnv" [ref=e5] [cursor=pointer]:
+          - /url: /
+          - generic [ref=e6]: C
+          - text: CriptEnv
+        - navigation [ref=e7]:
+          - link "Features" [ref=e8] [cursor=pointer]:
+            - /url: "#features"
+          - link "How It Works" [ref=e9] [cursor=pointer]:
+            - /url: "#how-it-works"
+          - link "Security" [ref=e10] [cursor=pointer]:
+            - /url: "#security"
+          - link "Pricing" [ref=e11] [cursor=pointer]:
+            - /url: "#pricing"
+        - generic [ref=e12]:
+          - button "Switch to dark mode" [ref=e13] [cursor=pointer]:
+            - img [ref=e14]
+          - link "Entrar" [ref=e20] [cursor=pointer]:
+            - /url: /login
+            - button "Entrar" [ref=e21]
+          - link "Começar" [ref=e22] [cursor=pointer]:
+            - /url: /signup
+            - button "Começar" [ref=e23]
+    - complementary [ref=e24]:
+      - navigation [ref=e25]:
+        - button "Home" [ref=e26]:
+          - img [ref=e27]
+          - generic [ref=e30]: Home
+        - button "Features" [ref=e31]:
+          - img [ref=e32]
+          - generic [ref=e36]: Features
+        - button "How It Works" [ref=e37]:
+          - img [ref=e38]
+          - generic [ref=e41]: How It Works
+        - button "Security" [ref=e42]:
+          - img [ref=e43]
+          - generic [ref=e45]: Security
+        - button "Pricing" [ref=e46]:
+          - img [ref=e47]
+          - generic [ref=e49]: Pricing
+        - button "Get Started" [ref=e50]:
+          - img [ref=e51]
+          - generic [ref=e56]: Get Started
+    - generic [ref=e59]:
+      - generic [ref=e60]:
+        - generic [ref=e63]: Open Source
+        - heading "Secrets seguros, equipe feliz." [level=1] [ref=e64]:
+          - text: Secrets seguros,
+          - text: equipe feliz.
+        - paragraph [ref=e65]: Gestão de secrets com criptografia Zero-Knowledge. Seus .env criptografados antes mesmo de sair do seu computador.
+        - generic [ref=e66]:
+          - link "Start Project" [ref=e67] [cursor=pointer]:
+            - /url: /signup
+            - button "Start Project" [ref=e68]:
+              - text: Start Project
+              - img [ref=e69]
+          - link "Learn More" [ref=e71] [cursor=pointer]:
+            - /url: "#features"
+            - button "Learn More" [ref=e72]
+      - img "Chaves de segredo — CriptEnv" [ref=e76]
+    - generic [ref=e80]:
+      - generic [ref=e81]:
+        - text: Features
+        - heading "Tudo que você precisa" [level=2] [ref=e82]
+      - generic [ref=e83]:
+        - generic [ref=e84]:
+          - img [ref=e86]
+          - heading "Zero-Knowledge" [level=3] [ref=e89]
+          - paragraph [ref=e90]: Criptografia AES-GCM 256-bit client-side. O servidor NUNCA vê seus secrets em plain-text.
+        - generic [ref=e91]:
+          - img [ref=e93]
+          - heading "CLI-First" [level=3] [ref=e95]
+          - paragraph [ref=e96]: Fluxo natural no terminal. init, set, push, pull — tudo em menos de 500ms.
+        - generic [ref=e97]:
+          - img [ref=e99]
+          - heading "Team Sync" [level=3] [ref=e104]
+          - paragraph [ref=e105]: Compartilhe secrets com sua equipe de forma segura. Sync em tempo real via Supabase.
+        - generic [ref=e106]:
+          - img [ref=e108]
+          - heading "Audit Completo" [level=3] [ref=e110]
+          - paragraph [ref=e111]: Trilha de auditoria de todas as operações. Quem acessou, quando, de onde.
+    - generic [ref=e115]:
+      - generic [ref=e116]:
+        - text: How It Works
+        - heading "4 comandos. Zero stress." [level=2] [ref=e117]
+      - generic [ref=e118]:
+        - generic [ref=e119]:
+          - generic [ref=e120]: "01"
+          - generic "$ criptenv init" [ref=e121]:
+            - generic [ref=e122]: $ criptenv init
+          - heading "Crie seu projeto" [level=3] [ref=e123]
+          - paragraph [ref=e124]: Inicialize um vault criptografado para seu projeto em segundos.
+        - generic [ref=e126]:
+          - generic [ref=e127]: "02"
+          - generic "$ criptenv set DB_URL postgres://..." [ref=e128]:
+            - generic [ref=e129]: $ criptenv set DB_URL postgres://...
+          - heading "Adicione secrets" [level=3] [ref=e130]
+          - paragraph [ref=e131]: Cada secret é criptografado com sua chave pública antes de sair do seu terminal.
+        - generic [ref=e133]:
+          - generic [ref=e134]: "03"
+          - generic "$ criptenv push" [ref=e135]:
+            - generic [ref=e136]: $ criptenv push
+          - heading "Envie de forma segura" [level=3] [ref=e137]
+          - paragraph [ref=e138]: Dados criptografados sobem para o servidor. O servidor nunca vê o conteúdo.
+        - generic [ref=e140]:
+          - generic [ref=e141]: "04"
+          - generic "$ criptenv pull" [ref=e142]:
+            - generic [ref=e143]: $ criptenv pull
+          - heading "Equipe decripta local" [level=3] [ref=e144]
+          - paragraph [ref=e145]: Cada membro decripta com sua própria chave. Zero-knowledge garantido.
+    - generic [ref=e148]:
+      - img "Segurança e privacidade" [ref=e151]
+      - generic [ref=e153]:
+        - text: Security
+        - heading "Segurança que você pode confiar" [level=2] [ref=e154]
+        - paragraph [ref=e155]: Arquitetura zero-knowledge de verdade. Seus dados são criptografados no seu dispositivo e o servidor nunca tem acesso às chaves ou ao conteúdo em plain-text.
+        - generic [ref=e156]:
+          - generic [ref=e157]:
+            - img [ref=e159]
+            - generic [ref=e162]: AES-GCM 256-bit encryption
+          - generic [ref=e163]:
+            - img [ref=e165]
+            - generic [ref=e168]: Zero-knowledge architecture
+          - generic [ref=e169]:
+            - img [ref=e171]
+            - generic [ref=e180]: Client-side only — dados nunca expostos
+          - generic [ref=e181]:
+            - img [ref=e183]
+            - generic [ref=e186]: 100% open source e auditável
+    - generic [ref=e188]:
+      - generic [ref=e189]:
+        - text: Pricing
+        - heading "Simples e transparente" [level=2] [ref=e190]
+      - generic [ref=e191]:
+        - generic [ref=e192]:
+          - generic [ref=e193]:
+            - heading "Protocol" [level=3] [ref=e194]
+            - paragraph [ref=e195]: Para MVPs & Startups
+          - generic [ref=e196]: Free
+          - list [ref=e197]:
+            - listitem [ref=e198]:
+              - img [ref=e199]
+              - text: Unlimited secrets
+            - listitem [ref=e201]:
+              - img [ref=e202]
+              - text: 3 environments
+            - listitem [ref=e204]:
+              - img [ref=e205]
+              - text: 5 team members
+            - listitem [ref=e207]:
+              - img [ref=e208]
+              - text: 30-day audit log
+          - link "Get Started" [ref=e210] [cursor=pointer]:
+            - /url: /signup
+            - button "Get Started" [ref=e211]
+        - generic [ref=e212]:
+          - generic [ref=e213]: Most Popular
+          - generic [ref=e214]:
+            - heading "Construct" [level=3] [ref=e215]
+            - paragraph [ref=e216]: Para equipes em crescimento
+          - generic [ref=e217]: $9/seat/mo
+          - list [ref=e218]:
+            - listitem [ref=e219]:
+              - img [ref=e220]
+              - text: Everything in Protocol
+            - listitem [ref=e222]:
+              - img [ref=e223]
+              - text: Unlimited environments
+            - listitem [ref=e225]:
+              - img [ref=e226]
+              - text: Unlimited members
+            - listitem [ref=e228]:
+              - img [ref=e229]
+              - text: 1-year audit log
+            - listitem [ref=e231]:
+              - img [ref=e232]
+              - text: Priority support
+          - link "Start Free Trial" [ref=e234] [cursor=pointer]:
+            - /url: /signup
+            - button "Start Free Trial" [ref=e235]
+        - generic [ref=e236]:
+          - generic [ref=e237]:
+            - heading "Enterprise" [level=3] [ref=e238]
+            - paragraph [ref=e239]: Para grandes organizações
+          - generic [ref=e240]: Custom
+          - list [ref=e241]:
+            - listitem [ref=e242]:
+              - img [ref=e243]
+              - text: Everything in Construct
+            - listitem [ref=e245]:
+              - img [ref=e246]
+              - text: SSO/SAML
+            - listitem [ref=e248]:
+              - img [ref=e249]
+              - text: SCIM provisioning
+            - listitem [ref=e251]:
+              - img [ref=e252]
+              - text: SIEM export
+            - listitem [ref=e254]:
+              - img [ref=e255]
+              - text: Self-hosted option
+            - listitem [ref=e257]:
+              - img [ref=e258]
+              - text: Dedicated support
+          - link "Contact Sales" [ref=e260] [cursor=pointer]:
+            - /url: /signup
+            - button "Contact Sales" [ref=e261]
+    - generic [ref=e265]:
+      - heading "Pronto para segurar seus secrets?" [level=2] [ref=e266]
+      - paragraph [ref=e267]: Open source. Zero-knowledge. Gratuito para começar.
+      - generic [ref=e268]:
+        - link "Get Started Free" [ref=e269] [cursor=pointer]:
+          - /url: /signup
+          - button "Get Started Free" [ref=e270]
+        - link "View on GitHub" [ref=e271] [cursor=pointer]:
+          - /url: https://github.com/criptenv
+          - button "View on GitHub" [ref=e272]
+    - contentinfo [ref=e273]:
+      - generic [ref=e275]:
+        - generic [ref=e276]:
+          - generic [ref=e277]: CriptEnv
+          - paragraph [ref=e278]: Secret Management for Developers
+        - generic [ref=e279]:
+          - generic [ref=e280]: All systems operational
+          - navigation [ref=e284]:
+            - link "Docs" [ref=e285] [cursor=pointer]:
+              - /url: /docs
+            - link "GitHub" [ref=e286] [cursor=pointer]:
+              - /url: https://github.com/criptenv
+  - button "Open Next.js Dev Tools" [ref=e292] [cursor=pointer]:
+    - img [ref=e293]
