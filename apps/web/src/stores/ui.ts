@@ -22,7 +22,7 @@ function getInitialTheme(): Theme {
 }
 
 interface UIState {
-  sidebarCollapsed: boolean
+  desktopSidebarOpen: boolean
   sidebarMobileOpen: boolean
   commandPaletteOpen: boolean
   theme: Theme
@@ -37,12 +37,12 @@ interface UIState {
 }
 
 export const useUIStore = create<UIState>((set, get) => ({
-  sidebarCollapsed: false,
+  desktopSidebarOpen: true,
   sidebarMobileOpen: false,
   commandPaletteOpen: false,
   theme: getInitialTheme(),
   resolvedTheme: resolveTheme(getInitialTheme()),
-  toggleSidebar: () => set((state) => ({ sidebarCollapsed: !state.sidebarCollapsed })),
+  toggleSidebar: () => set((state) => ({ desktopSidebarOpen: !state.desktopSidebarOpen })),
   toggleSidebarMobile: () => set((state) => ({ sidebarMobileOpen: !state.sidebarMobileOpen })),
   setSidebarMobileOpen: (open) => set({ sidebarMobileOpen: open }),
   toggleCommandPalette: () => set((state) => ({ commandPaletteOpen: !state.commandPaletteOpen })),

@@ -8,7 +8,7 @@
 
 | Camada | Tecnologia | Versão | Justificativa |
 |--------|-----------|--------|---------------|
-| **Framework** | Next.js (App Router) | 14+ | SSR/SSG, API routes, Vinext compatível |
+| **Framework** | Vinext (Next.js-compatible App Router) | 0.0.x | SSR/RSC sobre Vite com deploy nativo em Cloudflare Workers |
 | **Language** | TypeScript | 5.x | Type safety, DX, integração Prisma |
 | **Styling** | TailwindCSS | 3.4+ | Utility-first, tokens via config, dark mode nativo |
 | **Components** | shadcn/ui + Radix UI | latest | Primitivas acessíveis, copy-paste, customizável |
@@ -16,14 +16,14 @@
 | **Motion** | Framer Motion | 11+ | Animações declarativas, layout animations |
 | **State** | Zustand + React Query (TanStack) | latest | Client state + server cache separation |
 | **Forms** | React Hook Form + Zod | latest | Validação schema-first, performance |
-| **Auth** | BetterAuth (client SDK) | latest | Email/password + OAuth, session management |
+| **Auth** | Custom session auth + API client | current | Sessões HttpOnly e integração direta com o backend FastAPI |
 | **Backend** | Supabase (JS client) | latest | Realtime, RLS, storage, auth bridge |
 | **Encryption** | Web Crypto API (AES-GCM-256) | native | Zero-knowledge, client-side only |
 | **3D/Canvas** | Three.js (hero only) | r160+ | Background animado no landing page |
 
 ### Decisões de Arquitetura
 
-- **Monorepo**: `packages/ui` (componentes), `apps/web` (Next.js), `packages/cli` (futuro)
+- **Monorepo**: `packages/ui` (componentes), `apps/web` (Vinext), `packages/cli` (futuro)
 - **Server Components por padrão**: Client Components apenas quando necessário (interatividade, hooks)
 - **API Layer**: Server Actions para mutations, Route Handlers para webhooks/external
 - **Styling Strategy**: TailwindCSS utility classes + CSS variables para tokens semânticos

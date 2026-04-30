@@ -18,7 +18,12 @@ interface TopNavProps {
 }
 
 function TopNav({ breadcrumbs = [], className }: TopNavProps) {
-  const { toggleSidebar, toggleSidebarMobile, setCommandPaletteOpen } = useUIStore()
+  const {
+    desktopSidebarOpen,
+    toggleSidebar,
+    toggleSidebarMobile,
+    setCommandPaletteOpen,
+  } = useUIStore()
 
   return (
     <header
@@ -40,16 +45,25 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
           <Menu className="h-5 w-5" />
         </Button>
 
-        {/* Desktop collapse toggle */}
+        {/* Desktop sidebar toggle */}
         <Button
           variant="ghost"
           size="icon"
           className="hidden lg:flex"
           onClick={toggleSidebar}
-          aria-label="Toggle sidebar"
+          aria-label={desktopSidebarOpen ? "Hide sidebar" : "Show sidebar"}
         >
           <Menu className="h-4 w-4" />
         </Button>
+
+        <Link href="/dashboard" className="flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] font-bold text-sm">
+            C
+          </div>
+          <span className="text-lg font-bold tracking-tight text-[var(--text-primary)]">
+            CriptEnv
+          </span>
+        </Link>
 
         {/* Breadcrumbs */}
         {breadcrumbs.length > 0 && (

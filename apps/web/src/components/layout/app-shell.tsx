@@ -5,6 +5,7 @@ import { useUIStore } from "@/stores/ui"
 import { SidebarNav } from "./sidebar-nav"
 import { TopNav } from "./top-nav"
 import { CommandPalette } from "@/components/shared/command-palette"
+import { DashboardFloatingBar } from "./dashboard-floating-bar"
 
 interface AppShellProps {
   children: React.ReactNode
@@ -12,12 +13,13 @@ interface AppShellProps {
 }
 
 function AppShell({ children, breadcrumbs }: AppShellProps) {
-  const { sidebarCollapsed, sidebarMobileOpen, setSidebarMobileOpen } = useUIStore()
+  const { desktopSidebarOpen, sidebarMobileOpen, setSidebarMobileOpen } = useUIStore()
 
   return (
     <div className="min-h-screen bg-[var(--background-subtle)]">
       {/* Sidebar */}
       <SidebarNav />
+      <DashboardFloatingBar />
 
       {/* Mobile overlay */}
       {sidebarMobileOpen && (
@@ -30,12 +32,12 @@ function AppShell({ children, breadcrumbs }: AppShellProps) {
       {/* Main content */}
       <div
         className={cn(
-          "transition-all duration-200",
-          sidebarCollapsed ? "lg:ml-16" : "lg:ml-60"
+          "transition-[margin] duration-300 ease-out motion-reduce:transition-none",
+          desktopSidebarOpen ? "lg:ml-60" : "lg:ml-0"
         )}
       >
         <TopNav breadcrumbs={breadcrumbs} />
-        <main className="p-6">
+        <main className={cn("p-6", !desktopSidebarOpen && "lg:pl-24")}>
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>
       </div>

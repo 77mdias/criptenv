@@ -20,7 +20,7 @@
 │                          CLIENTS                                      │
 │  ┌─────────────┐  ┌─────────────┐  ┌─────────────┐               │
 │  │   CLI       │  │  Web App    │  │   CI/CD     │               │
-│  │  (Node.js)  │  │  (Next.js)  │  │  (Actions)  │               │
+│  │  (Node.js)  │  │  (Vinext)   │  │  (Actions)  │               │
 │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘               │
 │         │                 │                 │                      │
 └─────────┼─────────────────┼─────────────────┼──────────────────────┘
@@ -68,7 +68,7 @@
 
 **Serverless Compatibility**: FastAPI + Mangum = AWS Lambda / Cloudflare Workers / Railway
 
-### Frontend: Next.js + Vinext
+### Frontend: Vinext (Next.js API on Vite)
 
 **Why Vinext over standard Next.js?**
 
@@ -78,7 +78,7 @@
 | **Vite Ecosystem** | ✅ Yes | ❌ No |
 | **Cloudflare Edge** | ✅ Native | ⚠️ Limited |
 | **Bundle Size** | Smaller | Larger |
-| **Pug Support** | ✅ Native | ⚠️ Plugin |
+| **Workers Deploy** | ✅ Native via Wrangler | ⚠️ Adapter-dependent |
 
 **Trade-off**: Vinext is newer (less community), but better suited for our "zero-cost edge" goal.
 
@@ -131,8 +131,8 @@
 │  │  • Edge Network (300+ cities globally)                       │   │
 │  │  • Unlimited bandwidth (no cap)                               │   │
 │  │  • Automatic HTTPS                                            │   │
-│  │  • Preview deployments via @cloudflare/next-on-pages          │   │
-│  │  • Vinext (Next.js + Pug) native support                     │   │
+│  │  • Preview deployments via Workers & Pages                    │   │
+│  │  • Vinext native support via Vite + Wrangler                  │   │
 │  └─────────────────────────────────────────────────────────────┘   │
 └─────────────────────────────────────────────────────────────────────┘
 
@@ -168,7 +168,7 @@
 
 | Service | Free Tier Limits | Cost |
 |---------|------------------|------|
-| **Cloudflare Pages** | Unlimited bandwidth, 500 builds | $0 |
+| **Cloudflare Pages + Workers** | Unlimited bandwidth, 500 builds | $0 |
 | **Railway** | 500 hours, sleep after 15min | $0 |
 | **Supabase** | 500MB DB, 1GB storage, 50k MAU | $0 |
 | **GitHub** | Unlimited repos, Actions CI/CD | $0 |

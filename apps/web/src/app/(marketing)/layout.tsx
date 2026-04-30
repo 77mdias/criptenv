@@ -1,5 +1,5 @@
-import { MarketingSidebar } from "@/components/layout/marketing-sidebar"
 import { MarketingHeader } from "@/components/layout/marketing-header"
+import { FloatingBar } from "@/components/floating-bar/floating-bar"
 
 export default function MarketingLayout({
   children,
@@ -9,7 +9,7 @@ export default function MarketingLayout({
   return (
     <div className="min-h-screen">
       <MarketingHeader />
-      <MarketingSidebar />
+      <FloatingBar />
       {children}
     </div>
   )

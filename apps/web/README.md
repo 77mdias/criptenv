@@ -1,36 +1,48 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# CriptEnv Web
+
+Frontend do CriptEnv rodando em [vinext](https://github.com/cloudflare/vinext), com App Router compatível com Next.js 16 e deploy alvo em Cloudflare Pages + Workers.
 
 ## Getting Started
 
-First, run the development server:
+Instale as dependências e suba o servidor de desenvolvimento padrão do `vinext`:
 
 ```bash
+npm install
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+Abra `http://localhost:3000` no navegador.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Se você precisar comparar com o runtime antigo durante a transição, ainda existe o fallback:
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+npm run dev:next
+```
 
-## Learn More
+## Scripts
 
-To learn more about Next.js, take a look at the following resources:
+```bash
+npm run dev           # vinext dev
+npm run build         # vinext build
+npm run start         # vinext start
+npm run lint          # eslint
+npm run check:vinext  # compatibility check
+npm run deploy        # Cloudflare Workers deploy
+```
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+## Cloudflare
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+O projeto usa a integração nativa do `vinext` com Cloudflare:
 
-## Deploy on Vercel
+- `wrangler.jsonc` define o worker e os assets
+- `worker/index.ts` é o entrypoint do runtime Cloudflare
+- `vite.config.ts` inclui `@cloudflare/vite-plugin` para App Router + Workers
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+Para preparar ou publicar o deploy:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+```bash
+npm run deploy:dry-run
+npm run deploy
+```
+
+Antes do primeiro deploy real, autentique o `wrangler` e configure o `account_id` no `wrangler.jsonc` ou via `CLOUDFLARE_ACCOUNT_ID`.

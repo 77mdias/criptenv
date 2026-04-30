@@ -84,15 +84,15 @@ criptenv export -o .env                 # Exportar para .env
 
 ---
 
-## Phase 2: Web UI & BetterAuth Integration
+## Phase 2: Web UI & Cloudflare Runtime Alignment
 
 **Timeline**: 3 months (Q3 2024) → Completed April 2026
 **Status**: ✅ COMPLETE
-**Goal**: Dashboard web completo
+**Goal**: Dashboard web completo com runtime Vinext e deploy em Cloudflare Pages + Workers
 
 ### Objectives
 
-- [x] Next.js frontend + TailwindCSS + Radix UI (NOT Vinext/Pug)
+- [x] Frontend em Vinext + TailwindCSS + Radix UI preparado para Cloudflare Pages + Workers
 - [x] Session-based auth (NOT BetterAuth - custom JWT-like sessions)
 - [x] CRUD completo de projects/environments/secrets
 - [x] Audit logs visual
@@ -101,13 +101,13 @@ criptenv export -o .env                 # Exportar para .env
 
 ### Implementation Notes
 
-| Planned             | Actual                                                      |
-| ------------------- | ----------------------------------------------------------- |
-| Vinext              | Next.js 16 standalone                                       |
-| BetterAuth          | Custom session-based auth (apps/api/app/middleware/auth.py) |
-| Supabase Realtime   | Not implemented                                             |
-| GitHub/Google OAuth | Not implemented                                             |
-| 2FA (TOTP)          | Not implemented                                             |
+| Planned                  | Actual                                                                 |
+| ------------------------ | ---------------------------------------------------------------------- |
+| Vinext + Cloudflare edge | Vinext runtime on top of the existing App Router, targeting Cloudflare |
+| BetterAuth               | Custom session-based auth (apps/api/app/middleware/auth.py)            |
+| Supabase Realtime        | Not implemented                                                        |
+| GitHub/Google OAuth      | Not implemented                                                        |
+| 2FA (TOTP)               | Not implemented                                                        |
 
 ### Deliverables
 
@@ -128,19 +128,19 @@ criptenv export -o .env                 # Exportar para .env
 
 #### Technical Deliverables
 
-| Deliverable           | Description               |
-| --------------------- | ------------------------- |
-| **Next.js App**       | Full-stack com Vinext     |
-| **BetterAuth Web**    | Session management        |
-| **Supabase Realtime** | Live updates no dashboard |
-| **SSO Providers**     | GitHub, Google, GitLab    |
-| **2FA**               | TOTP support              |
+| Deliverable              | Description                                   |
+| ------------------------ | --------------------------------------------- |
+| **Vinext App**           | Full-stack dashboard preparado para Cloudflare |
+| **Custom Session Auth**  | Session management                            |
+| **Supabase Realtime**    | Live updates no dashboard                     |
+| **SSO Providers**        | GitHub, Google, GitLab                        |
+| **Cloudflare Runtime**   | Worker entry, wrangler config e edge deploy   |
 
 ### Milestones
 
 | Milestone                  | Week | Criteria                    |
 | -------------------------- | ---- | --------------------------- |
-| **M2.1**: Project scaffold | 2    | Next.js + Vinext + Tailwind |
+| **M2.1**: Project scaffold | 2    | Vinext + Tailwind + Cloudflare baseline |
 | **M2.2**: Auth complete    | 4    | Login/signup + OAuth        |
 | **M2.3**: Secrets CRUD     | 6    | Full CRUD no dashboard      |
 | **M2.4**: Team features    | 8    | Invite flow, RBAC           |
@@ -258,7 +258,7 @@ POST   /api/v1/integrations/verify
 | Role                   | Phase 1 | Phase 2 | Phase 3 |
 | ---------------------- | ------- | ------- | ------- |
 | **Backend (FastAPI)**  | 50%     | 30%     | 30%     |
-| **Frontend (Next.js)** | 20%     | 50%     | 30%     |
+| **Frontend (Vinext)**  | 20%     | 50%     | 30%     |
 | **DevOps/Infra**       | 20%     | 10%     | 20%     |
 | **Security**           | 10%     | 10%     | 20%     |
 
@@ -267,7 +267,7 @@ POST   /api/v1/integrations/verify
 | Service        | Phase 1   | Phase 2   | Phase 3    |
 | -------------- | --------- | --------- | ---------- |
 | **Supabase**   | $0 (free) | $25 (pro) | $75 (team) |
-| **Vercel**     | $0 (free) | $20 (pro) | $20        |
+| **Cloudflare Pages + Workers** | $0 (free) | $20 (paid) | $20        |
 | **Domain**     | $12       | $12       | $12        |
 | **Monitoring** | $0        | $0        | $50        |
 | **Total**      | ~$12/mo   | ~$57/mo   | ~$157/mo   |

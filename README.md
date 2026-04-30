@@ -64,6 +64,12 @@ criptenv doctor
 cd apps/web && npm install && npm run dev
 ```
 
+Ou pela raiz:
+
+```bash
+make web-dev
+```
+
 ### Backend API
 
 ```bash
@@ -75,7 +81,7 @@ cd apps/api && pip install -r requirements.txt && uvicorn main:app --reload
 | Camada          | Tecnologia                                        |
 | --------------- | ------------------------------------------------- |
 | **CLI**         | Python Click + cryptography + httpx + aiosqlite   |
-| **Frontend**    | Next.js 16 + React 19 + TailwindCSS v4 + Radix UI |
+| **Frontend**    | Vinext (API Next.js 16 em Vite) + React 19 + TailwindCSS v4 + Radix UI |
 | **Backend**     | FastAPI + SQLAlchemy async + asyncpg              |
 | **Database**    | PostgreSQL                                        |
 | **Auth**        | Custom session tokens (JWT-like)                  |
@@ -96,7 +102,7 @@ criptenv/
 │   │   │   └── session.py    # Encrypted session management
 │   │   └── tests/            # 93 unit tests
 │   ├── api/                  # Backend API (FastAPI)
-│   └── web/                  # Web Dashboard (Next.js)
+│   └── web/                  # Web Dashboard (Vinext/App Router)
 ├── docs/                     # Documentation
 │   ├── phase-1/              # CLI implementation plan & milestones
 │   └── development/          # Changelog, phase reviews
@@ -121,7 +127,7 @@ criptenv/
 | ---------- | -------------------------- | ------------------------------ |
 | PostgreSQL | Free Tier                  | Database                       |
 | FastAPI    | Railway/Render             | Backend API                    |
-| Frontend   | Cloudflare Pages + Workers | Edge Deployment                |
+| Frontend   | Cloudflare Pages + Workers | Vinext + Wrangler + Edge Deployment |
 | CLI        | pip install                | Distribuição via PyPI (futuro) |
 
 ## 📚 Documentação

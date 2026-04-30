@@ -35,6 +35,10 @@ Plataforma de **Secret Management** com arquitetura **Zero-Knowledge** onde:
 3. **Web Dashboard** — Interface visual para equipes não-técnicas
 4. **Audit Completo** — logs de todas as operações
 
+### Frontend Deployment Positioning
+
+O dashboard web será entregue com runtime compatível com Next.js via `vinext` e deploy oficial em **Cloudflare Pages + Workers**. Isso mantém o produto alinhado com a estratégia de edge hosting de baixo custo e influencia decisões de bundling, SSR e integrações frontend.
+
 ---
 
 ## 2. Target Audience
@@ -164,6 +168,7 @@ Target: > 95% em 6 meses
 | Supabase free tier | Limite de 500MB database, 2GB transfer |
 | Zero-knowledge architecture | Não há "forgot password" para secrets |
 | Browser-only encryption key derivation | Performance mobile limitada |
+| Frontend em Cloudflare Pages + Workers | Requer compatibilidade com runtime Workers e build baseado em Vite/vinext |
 
 ### Business Assumptions
 

@@ -1,0 +1,48 @@
+name: "CriptEnv Secrets"
+description: "Pull secrets from CriptEnv and inject as environment variables"
+author: "CriptEnv"
+branding:
+  icon: "lock"
+  color: "purple"
+
+inputs:
+  token:
+    description: "CI token from CriptEnv (starts with ci_)"
+    required: true
+  project:
+    description: "Project ID from CriptEnv"
+    required: true
+  environment:
+    description: "Environment name (e.g., production, staging)"
+    required: false
+    default: "production"
+  api-url:
+    description: "CriptEnv API URL"
+    required: false
+    default: "https://api.criptenv.com"
+  prefix:
+    description: "Prefix for environment variables (default: SECRET_)"
+    required: false
+    default: "SECRET_"
+  version-output:
+    description: "Output name for secrets version"
+    required: false
+    default: "version"
+
+outputs:
+  secrets-count:
+    description: "Number of secrets loaded"
+    value: ${{ steps.criptenv.outputs.secrets-count }}
+  version:
+    description: "Version of the secrets loaded"
+    value: ${{ steps.criptenv.outputs.version }}
+
+runs:
+  using: "node20"
+  main: "dist/index.js"
+
+permissions:
+  contents: "read"
+
+env:
+  CI: "true"

@@ -1,15 +1,16 @@
-import type { Metadata } from "next"
-import "./globals.css"
+import type { Metadata } from "next";
+import "./globals.css";
 
 export const metadata: Metadata = {
   title: "CriptEnv — Secret Management for Developers",
-  description: "Zero-Knowledge secret management with AES-GCM 256-bit encryption. CLI-first, team-ready.",
-}
+  description:
+    "Zero-Knowledge secret management with AES-GCM 256-bit encryption. CLI-first, team-ready.",
+};
 
 export default function RootLayout({
   children,
 }: Readonly<{
-  children: React.ReactNode
+  children: React.ReactNode;
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
@@ -31,5 +32,5 @@ export default function RootLayout({
         {children}
       </body>
     </html>
-  )
+  );
 }

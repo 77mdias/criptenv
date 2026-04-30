@@ -6,6 +6,7 @@ from app.routers.members import router as members_router
 from app.routers.invites import router as invites_router
 from app.routers.audit import router as audit_router
 from app.routers.tokens import router as tokens_router
+from app.routers.ci import router as ci_router
 
 __all__ = [
     "auth_router",
@@ -15,5 +16,6 @@ __all__ = [
     "members_router",
     "invites_router",
     "audit_router",
-    "tokens_router"
+    "tokens_router",
+    "ci_router"
 ]
