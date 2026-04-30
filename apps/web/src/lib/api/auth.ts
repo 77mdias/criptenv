@@ -1,5 +1,5 @@
 import { request } from './client';
-import type { AuthResponse, User, MessageResponse } from './client';
+import type { AuthResponse, User, MessageResponse, SessionResponse } from './client';
 
 export const authApi = {
   signup(body: { email: string; password: string; name: string }): Promise<AuthResponse> {
@@ -16,5 +16,9 @@ export const authApi = {
 
   session(): Promise<User> {
     return request('GET', '/api/auth/session');
+  },
+
+  getSessions(): Promise<SessionResponse[]> {
+    return request('GET', '/api/auth/sessions');
   },
 };

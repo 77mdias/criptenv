@@ -24,6 +24,8 @@ export interface User {
   email: string;
   name: string;
   created_at: string;
+  email_verified?: boolean;
+  two_factor_enabled?: boolean;
 }
 
 export interface AuthResponse {
@@ -104,6 +106,16 @@ export interface Invite {
 
 export interface InviteListResponse {
   invites: Invite[];
+}
+
+export interface SessionResponse {
+  id: string;
+  user_id: string;
+  token: string;
+  expires_at: string;
+  created_at: string;
+  ip_address: string | null;
+  user_agent: string | null;
 }
 
 export interface AuditLog {

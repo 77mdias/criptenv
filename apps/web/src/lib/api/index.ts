@@ -16,6 +16,7 @@ export type {
   MemberListResponse,
   Invite,
   InviteListResponse,
+  SessionResponse,
   AuditLog,
   AuditLogListResponse,
   CreateProjectRequest,
