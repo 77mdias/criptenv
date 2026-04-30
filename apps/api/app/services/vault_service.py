@@ -1,16 +1,19 @@
 from typing import Optional
-from uuid import UUID, uuid4
+from uuid import UUID
 
 from sqlalchemy import select, func, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.vault import VaultBlob
 from app.models.environment import Environment
+from app.strategies.exceptions import VaultConflict
+from app.strategies.vault_push import ReplaceAllVaultBlobsStrategy, VaultPushStrategy
 
 
 class VaultService:
-    def __init__(self, db: AsyncSession):
+    def __init__(self, db: AsyncSession, push_strategy: VaultPushStrategy | None = None):
         self.db = db
+        self.push_strategy = push_strategy or ReplaceAllVaultBlobsStrategy()
 
     async def push_blobs(
         self,
@@ -38,27 +41,13 @@ class VaultService:
 
         new_version = environment.secrets_version + 1
 
-        await self.db.execute(
-            VaultBlob.__table__.delete().where(
-                VaultBlob.environment_id == environment_id
-            )
+        created_blobs = await self.push_strategy.push(
+            db=self.db,
+            project_id=project_id,
+            environment_id=environment_id,
+            blobs=blobs,
+            version=new_version
         )
-
-        created_blobs = []
-        for blob_data in blobs:
-            blob = VaultBlob(
-                id=uuid4(),
-                project_id=project_id,
-                environment_id=environment_id,
-                key_id=blob_data["key_id"],
-                iv=blob_data["iv"],
-                ciphertext=blob_data["ciphertext"],
-                auth_tag=blob_data["auth_tag"],
-                version=new_version,
-                checksum=blob_data["checksum"]
-            )
-            self.db.add(blob)
-            created_blobs.append(blob)
 
         environment.secrets_version = new_version
         await self.db.flush()
@@ -113,10 +102,4 @@ class VaultService:
         return version if version is not None else 0
 
 
-class ConflictError(Exception):
-    def __init__(self, current_version: int, expected_version: int):
-        self.current_version = current_version
-        self.expected_version = expected_version
-        super().__init__(
-            f"Version conflict: expected {expected_version}, got {current_version}"
-        )
+ConflictError = VaultConflict

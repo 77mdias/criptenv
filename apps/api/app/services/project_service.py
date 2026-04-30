@@ -8,6 +8,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.project import Project
 from app.models.environment import Environment
 from app.models.member import ProjectMember
+from app.strategies.access import get_access_strategy
 
 
 def _generate_slug(name: str) -> str:
@@ -188,10 +189,9 @@ class ProjectService:
         if not member:
             return None
 
-        if required_role:
-            role_hierarchy = {"owner": 3, "admin": 2, "developer": 1, "viewer": 0}
-            if role_hierarchy.get(member.role, 0) < role_hierarchy.get(required_role, 0):
-                return None
+        access_strategy = get_access_strategy(required_role)
+        if not access_strategy.can_access(member.role):
+            return None
 
         return member
 

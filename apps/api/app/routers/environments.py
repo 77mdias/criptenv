@@ -1,6 +1,6 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from app.database import get_db
 from app.services.project_service import ProjectService
@@ -68,7 +68,7 @@ async def create_environment(
         )
 
     environment = Environment(
-        id=UUID(),
+        id=uuid4(),
         project_id=project_uuid,
         name=payload.name,
         display_name=payload.display_name,

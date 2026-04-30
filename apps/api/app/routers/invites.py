@@ -11,6 +11,12 @@ from app.schemas.member import InviteCreate, InviteResponse, InviteListResponse
 from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.models.member import ProjectInvite
+from app.strategies.exceptions import DomainError
+from app.strategies.invite_transitions import (
+    AcceptInviteStrategy,
+    DeleteInviteStrategy,
+    RevokeInviteStrategy,
+)
 
 from sqlalchemy import select
 
@@ -144,7 +150,6 @@ async def accept_invite(
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
-    project_service = ProjectService(db)
     audit_service = AuditService(db)
 
     try:
@@ -170,56 +175,15 @@ async def accept_invite(
             detail="Invite not found"
         )
 
-    if invite.accepted_at:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invite already accepted"
+    try:
+        invite = await AcceptInviteStrategy().execute(
+            db=db,
+            invite=invite,
+            project_id=project_uuid,
+            current_user=current_user
         )
-
-    if invite.revoked_at:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invite has been revoked"
-        )
-
-    if invite.expires_at < datetime.now(timezone.utc):
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invite has expired"
-        )
-
-    if invite.email.lower() != current_user.email.lower():
-        raise HTTPException(
-            status_code=status.HTTP_403_FORBIDDEN,
-            detail="This invite is for a different email"
-        )
-
-    existing_member = await db.execute(
-        select(ProjectMember).where(
-            ProjectMember.project_id == project_uuid,
-            ProjectMember.user_id == current_user.id
-        )
-    )
-    if existing_member.scalar_one_or_none():
-        raise HTTPException(
-            status_code=status.HTTP_409_CONFLICT,
-            detail="Already a member of this project"
-        )
-
-    from app.models.member import ProjectMember
-
-    new_member = ProjectMember(
-        id=uuid4(),
-        project_id=project_uuid,
-        user_id=current_user.id,
-        role=invite.role,
-        invited_by=invite.invited_by
-    )
-    db.add(new_member)
-
-    invite.accepted_at = datetime.now(timezone.utc)
-    await db.flush()
-    await db.refresh(invite)
+    except DomainError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
 
     await audit_service.log(
         action="invite.accepted",
@@ -275,15 +239,15 @@ async def revoke_invite(
             detail="Invite not found"
         )
 
-    if invite.revoked_at:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail="Invite already revoked"
+    try:
+        invite = await RevokeInviteStrategy().execute(
+            db=db,
+            invite=invite,
+            project_id=project_uuid,
+            current_user=current_user
         )
-
-    invite.revoked_at = datetime.now(timezone.utc)
-    await db.flush()
-    await db.refresh(invite)
+    except DomainError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
 
     await audit_service.log(
         action="invite.revoked",
@@ -351,4 +315,9 @@ async def delete_invite(
         user_agent=request.headers.get("User-Agent")
     )
 
-    await db.delete(invite)
+    await DeleteInviteStrategy().execute(
+        db=db,
+        invite=invite,
+        project_id=project_uuid,
+        current_user=current_user
+    )
