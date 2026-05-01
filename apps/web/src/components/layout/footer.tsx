@@ -13,7 +13,7 @@ function Footer() {
           <div className="flex flex-col md:flex-row gap-6 md:justify-end items-start md:items-center text-sm font-medium text-[var(--text-secondary)]">
             <StatusBadge status="online" label="All systems operational" />
             <nav className="flex gap-6">
-              <Link href="/docs" className="hover:text-[var(--text-primary)] transition">
+              <Link href="/docs" prefetch={false} className="hover:text-[var(--text-primary)] transition">
                 Docs
               </Link>
               <Link href="https://github.com/criptenv" className="hover:text-[var(--text-primary)] transition">

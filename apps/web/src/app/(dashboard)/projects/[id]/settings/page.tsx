@@ -1,75 +1,83 @@
-"use client"
+"use client";
 
-import { useEffect, useState } from "react"
-import { useParams, useRouter } from "next/navigation"
-import { Settings, Trash2, AlertTriangle } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { projectsApi } from "@/lib/api"
-import type { Project } from "@/lib/api"
+import { useEffect, useState } from "react";
+import { useParams, useRouter } from "next/navigation";
+import { Settings, Trash2, AlertTriangle } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { projectsApi } from "@/lib/api";
+import { CITokensPanel } from "@/components/shared/ci-tokens-panel";
+import type { Project } from "@/lib/api";
 
 export default function SettingsPage() {
-  const params = useParams()
-  const router = useRouter()
-  const projectId = params.id as string
+  const params = useParams();
+  const router = useRouter();
+  const projectId = params.id as string;
 
-  const [project, setProject] = useState<Project | null>(null)
-  const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [name, setName] = useState("")
-  const [description, setDescription] = useState("")
-  const [saving, setSaving] = useState(false)
-  const [deleteConfirm, setDeleteConfirm] = useState("")
-  const [deleting, setDeleting] = useState(false)
+  const [project, setProject] = useState<Project | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [name, setName] = useState("");
+  const [description, setDescription] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState("");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     async function fetchProject() {
       try {
-        setLoading(true)
-        const data = await projectsApi.get(projectId)
-        setProject(data)
-        setName(data.name)
-        setDescription(data.description || "")
+        setLoading(true);
+        const data = await projectsApi.get(projectId);
+        setProject(data);
+        setName(data.name);
+        setDescription(data.description || "");
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar projeto")
+        setError(
+          err instanceof Error ? err.message : "Erro ao carregar projeto",
+        );
       } finally {
-        setLoading(false)
+        setLoading(false);
       }
     }
-    fetchProject()
-  }, [projectId])
+    fetchProject();
+  }, [projectId]);
 
   const handleSave = async () => {
     try {
-      setSaving(true)
-      await projectsApi.update(projectId, { name, description: description || undefined })
-      setError(null)
+      setSaving(true);
+      await projectsApi.update(projectId, {
+        name,
+        description: description || undefined,
+      });
+      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar")
+      setError(err instanceof Error ? err.message : "Erro ao salvar");
     } finally {
-      setSaving(false)
+      setSaving(false);
     }
-  }
+  };
 
   const handleDelete = async () => {
-    if (deleteConfirm !== project?.name) return
+    if (deleteConfirm !== project?.name) return;
     try {
-      setDeleting(true)
-      await projectsApi.delete(projectId)
-      router.push("/projects")
+      setDeleting(true);
+      await projectsApi.delete(projectId);
+      router.push("/projects");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao deletar")
+      setError(err instanceof Error ? err.message : "Erro ao deletar");
     } finally {
-      setDeleting(false)
+      setDeleting(false);
     }
-  }
+  };
 
   if (loading) {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Configurações
+          </h1>
           <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
             Configure o projeto
           </p>
@@ -81,7 +89,7 @@ export default function SettingsPage() {
           <Skeleton className="h-10 w-32" />
         </Card>
       </div>
-    )
+    );
   }
 
   return (
@@ -92,6 +100,9 @@ export default function SettingsPage() {
           Configure o projeto
         </p>
       </div>
+
+      {/* CI Tokens */}
+      <CITokensPanel projectId={projectId} />
 
       {error && (
         <Card className="p-4 border-red-500/50">
@@ -156,7 +167,8 @@ export default function SettingsPage() {
         <div className="space-y-3">
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-              Digite <span className="text-red-500">{project?.name}</span> para confirmar
+              Digite <span className="text-red-500">{project?.name}</span> para
+              confirmar
             </label>
             <input
               type="text"
@@ -178,5 +190,5 @@ export default function SettingsPage() {
         </div>
       </Card>
     </div>
-  )
+  );
 }

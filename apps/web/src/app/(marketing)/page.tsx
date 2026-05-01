@@ -1,23 +1,40 @@
 "use client"
 
-import Link from "next/link"
+import dynamic from "next/dynamic"
 import Image from "next/image"
+import Link from "next/link"
+import type { ReactNode } from "react"
 import {
+  ArrowRight,
+  Check,
+  CircleDot,
+  Code2,
+  Eye,
+  Fingerprint,
+  GitBranch,
+  KeyRound,
+  Lock,
+  Server,
   Shield,
   Terminal,
   Users,
-  Lock,
-  ArrowRight,
-  Check,
-  KeyRound,
-  Eye,
-  Fingerprint,
-  Server,
+  Zap,
 } from "lucide-react"
-import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/layout/footer"
+import { LandingMotion } from "@/components/marketing/landing-motion"
+import { Badge } from "@/components/ui/badge"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 
-/* ─── Data ─────────────────────────────────────────────────── */
+const HeroScene = dynamic(
+  () => import("@/components/marketing/hero-scene").then((mod) => mod.HeroScene),
+  {
+    ssr: false,
+    loading: () => (
+      <div className="absolute inset-0 rounded-[var(--radius-xl)] bg-[radial-gradient(circle_at_center,var(--glow-soft),transparent_62%)]" />
+    ),
+  },
+)
 
 const features = [
   {
@@ -57,13 +74,13 @@ const steps = [
     num: "02",
     cmd: "criptenv set DB_URL postgres://...",
     title: "Adicione secrets",
-    desc: "Cada secret é criptografado com sua chave pública antes de sair do seu terminal.",
+    desc: "Cada secret é criptografado com sua chave pública antes de sair do terminal.",
   },
   {
     num: "03",
     cmd: "criptenv push",
     title: "Envie de forma segura",
-    desc: "Dados criptografados sobem para o servidor. O servidor nunca vê o conteúdo.",
+    desc: "Dados criptografados sobem para o servidor. O conteúdo permanece invisível.",
   },
   {
     num: "04",
@@ -76,8 +93,16 @@ const steps = [
 const securityPoints = [
   { icon: KeyRound, text: "AES-GCM 256-bit encryption" },
   { icon: Eye, text: "Zero-knowledge architecture" },
-  { icon: Fingerprint, text: "Client-side only — dados nunca expostos" },
+  { icon: Fingerprint, text: "Client-side only: dados nunca expostos" },
   { icon: Server, text: "100% open source e auditável" },
+]
+
+const scatteredSecrets = [
+  ".env.local",
+  "DATABASE_URL",
+  "SUPABASE_KEY",
+  "STRIPE_SECRET",
+  "CI_TOKEN",
 ]
 
 const plans = [
@@ -129,31 +154,88 @@ const plans = [
 const marketingSectionClass =
   "scroll-mt-14 px-6 py-20 sm:px-8 sm:py-24 lg:flex lg:min-h-screen lg:items-center lg:py-0"
 
-/* ─── Page ─────────────────────────────────────────────────── */
+function TerminalPanel() {
+  return (
+    <div className="relative z-10 overflow-hidden rounded-xl border border-black/10 bg-white/76 shadow-2xl shadow-black/10 backdrop-blur-md dark:border-white/10 dark:bg-black/45 dark:shadow-black/20">
+      <div className="flex h-10 items-center justify-between border-b border-black/8 px-4 dark:border-white/10">
+        <div className="flex items-center gap-1.5">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-400/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
+          <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
+        </div>
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
+          encrypted session
+        </span>
+      </div>
+      <div className="space-y-3 p-5 font-mono text-xs text-[var(--text-secondary)] sm:p-6">
+        <p>
+          <span className="text-green-400">$</span> criptenv init
+        </p>
+        <p>
+          <span className="text-green-400">$</span> criptenv set DATABASE_URL
+          postgres://...
+        </p>
+        <p className="text-[var(--text-muted)]">encrypting with AES-GCM-256...</p>
+        <div className="grid gap-2 rounded-lg border border-black/8 bg-black/[0.025] p-3 dark:border-white/10 dark:bg-white/[0.03]">
+          {["vault.local", "team.public-key", "audit.chain"].map((item) => (
+            <div key={item} className="flex items-center justify-between gap-4">
+              <span>{item}</span>
+              <span className="text-green-400">sealed</span>
+            </div>
+          ))}
+        </div>
+        <p>
+          <span className="text-green-400">$</span> criptenv push
+        </p>
+        <p className="text-[var(--text-primary)]">sync complete. server saw 0 secrets.</p>
+      </div>
+    </div>
+  )
+}
+
+function SectionHeading({
+  label,
+  title,
+  align = "left",
+}: {
+  label: string
+  title: ReactNode
+  align?: "left" | "center"
+}) {
+  return (
+    <div className={align === "center" ? "mx-auto mb-16 max-w-2xl text-center" : "mb-16 max-w-2xl"}>
+      <span className="font-mono text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
+        {label}
+      </span>
+      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--text-primary)] md:text-4xl">
+        {title}
+      </h2>
+    </div>
+  )
+}
 
 export default function LandingPage() {
   return (
-    <>
-      {/* ═══════════ HERO ═══════════ */}
+    <LandingMotion>
       <section
         id="hero"
         className="relative flex min-h-screen scroll-mt-14 items-center overflow-hidden bg-[var(--background)]"
       >
-        {/* Ambient glow */}
-        <div className="absolute top-1/2 right-1/4 -translate-y-1/2 w-[600px] h-[600px] bg-[var(--accent)]/8 rounded-full blur-[120px] pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-full h-32 bg-gradient-to-t from-[var(--background)] to-transparent pointer-events-none z-10" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,var(--glow-soft),transparent_34%),linear-gradient(to_bottom,transparent_72%,var(--background))]" />
 
-        <div className="relative w-full max-w-7xl mx-auto px-6 sm:px-8 py-24 lg:py-0">
-          <div className="grid lg:grid-cols-2 gap-12 lg:gap-8 items-center">
-            {/* Text */}
+        <div className="relative mx-auto w-full max-w-7xl px-6 py-24 sm:px-8 lg:py-0">
+          <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
             <div className="relative z-10">
-              <div className="inline-flex items-center gap-2 px-4 py-1.5 border border-[var(--accent)]/30 mb-8">
-                <div className="w-1.5 h-1.5 bg-[var(--accent)] rounded-full animate-pulse" />
-                <span className="text-xs text-[var(--text-secondary)] tracking-widest uppercase font-medium">
+              <div data-motion="hero">
+                <Badge variant="outline" className="rounded-md border-[var(--border)] bg-[var(--surface)]/70">
+                  <CircleDot className="h-3 w-3 text-green-400" />
                   Open Source
-                </span>
+                </Badge>
               </div>
-              <h1 className="text-5xl sm:text-6xl lg:text-7xl font-light tracking-tight leading-[0.95]">
+              <h1
+                data-motion="hero"
+                className="mt-8 max-w-3xl text-5xl font-light leading-[0.95] tracking-tight text-[var(--text-primary)] sm:text-6xl lg:text-7xl"
+              >
                 Secrets{" "}
                 <span className="font-semibold">seguros,</span>
                 <br />
@@ -161,15 +243,18 @@ export default function LandingPage() {
                   equipe feliz.
                 </span>
               </h1>
-              <p className="mt-8 text-[var(--text-tertiary)] text-base max-w-md leading-relaxed font-light">
+              <p
+                data-motion="hero"
+                className="mt-8 max-w-md text-base font-light leading-relaxed text-[var(--text-tertiary)]"
+              >
                 Gestão de secrets com criptografia Zero-Knowledge. Seus .env
                 criptografados antes mesmo de sair do seu computador.
               </p>
-              <div className="mt-10 flex gap-4">
+              <div data-motion="hero" className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
                 <Link href="/signup">
                   <Button
                     size="lg"
-                    className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] font-bold tracking-wider uppercase text-xs"
+                    className="w-full bg-[var(--accent)] text-xs font-bold uppercase tracking-wider text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] sm:w-auto"
                   >
                     Start Project
                     <ArrowRight className="h-4 w-4" />
@@ -179,7 +264,7 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     variant="secondary"
-                    className="border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)]"
+                    className="w-full border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)] sm:w-auto"
                   >
                     Learn More
                   </Button>
@@ -187,46 +272,95 @@ export default function LandingPage() {
               </div>
             </div>
 
-            {/* Hero Image */}
-            <div className="relative flex items-center justify-center">
-              <div className="relative w-full max-w-lg aspect-square">
-                {/* Glow behind image */}
-                <div className="absolute inset-0 bg-[var(--accent)]/15 rounded-full blur-[80px] scale-75" />
-                <Image
-                  src="/images/master-keys_1200x1200-removebg-preview.png"
-                  alt="Chaves de segredo — CriptEnv"
-                  fill
-                  className="object-contain drop-shadow-2xl animate-float"
-                  priority
-                />
+            <div data-motion="hero" className="relative min-h-[400px] overflow-visible sm:min-h-[520px] lg:min-h-[640px]">
+              <HeroScene />
+              <div className="absolute inset-x-0 bottom-4 mx-auto w-full max-w-xl px-2 sm:bottom-10">
+                <TerminalPanel />
               </div>
+              <div className="absolute left-1/2 top-10 h-56 w-56 -translate-x-1/2 rounded-full border border-[var(--border)] bg-[var(--surface)]/20 blur-3xl" />
             </div>
           </div>
         </div>
 
-        {/* Scroll indicator */}
-        <div className="absolute bottom-8 left-1/2 -translate-x-1/2 z-10">
-          <div className="w-px h-12 bg-gradient-to-b from-transparent via-[var(--accent)]/50 to-transparent animate-pulse" />
+        <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
+          <div className="h-12 w-px animate-pulse bg-gradient-to-b from-transparent via-[var(--accent)]/50 to-transparent" />
         </div>
       </section>
 
-      {/* ═══════════ FEATURES ═══════════ */}
+      <section className={`relative overflow-hidden bg-[var(--background-subtle)] ${marketingSectionClass}`}>
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
+          <div data-motion="reveal">
+            <SectionHeading
+              label="Problem to Vault"
+              title={
+                <>
+                  Secrets espalhados viram um{" "}
+                  <span className="text-[var(--accent)]">vault criptografado</span>
+                </>
+              }
+            />
+            <p className="-mt-8 max-w-xl leading-relaxed text-[var(--text-tertiary)]">
+              O fluxo transforma variáveis soltas, tokens de CI e credenciais de
+              produção em um grafo audível e auditável: criptografa localmente,
+              sincroniza seguro, decripta só onde deve.
+            </p>
+          </div>
+
+          <div data-motion="reveal" className="relative min-h-[430px]">
+            <div className="absolute inset-0 rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--surface)]/60" />
+            <div className="absolute left-5 top-6 grid gap-3 sm:left-8">
+              {scatteredSecrets.map((secret, index) => (
+                <div
+                  key={secret}
+                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 font-mono text-xs text-[var(--text-secondary)] shadow-sm"
+                  style={{ marginLeft: `${index % 2 === 0 ? 0 : 34}px` }}
+                >
+                  {secret}
+                </div>
+              ))}
+            </div>
+            <div className="absolute left-8 right-8 top-1/2 h-px bg-[var(--border)]">
+              <div data-motion="line" className="h-px bg-[var(--accent)]/70" />
+            </div>
+            <div className="absolute bottom-8 right-6 w-[58%] min-w-[220px] rounded-xl border border-[var(--border)] bg-[var(--background)] p-5 shadow-xl sm:right-8">
+              <div className="mb-4 flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <KeyRound className="h-4 w-4 text-[var(--accent)]" />
+                  <span className="font-mono text-xs text-[var(--text-muted)]">
+                    vault.local
+                  </span>
+                </div>
+                <Badge variant="success">sealed</Badge>
+              </div>
+              <div className="space-y-2">
+                {["ciphertext", "team keyring", "audit hash"].map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center justify-between rounded-md bg-[var(--background-subtle)] px-3 py-2 font-mono text-xs"
+                  >
+                    <span className="text-[var(--text-tertiary)]">{item}</span>
+                    <span className="text-[var(--text-primary)]">••••••</span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       <section id="features" className={`${marketingSectionClass} bg-[var(--background)]`}>
         <div className="mx-auto w-full max-w-6xl">
-          <div className="mb-16">
-            <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">
-              Features
-            </span>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[var(--text-primary)] mt-4">
-              Tudo que você precisa
-            </h2>
+          <div data-motion="reveal">
+            <SectionHeading label="Features" title="Tudo que você precisa" />
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
             {features.map((feature) => (
-              <div
+              <Card
+                data-motion="reveal"
                 key={feature.title}
-                className="group relative flex h-full min-h-[214px] flex-col overflow-hidden rounded-xl border border-white/10 bg-white/5 p-8 backdrop-blur-sm transition-all duration-300 hover:border-[var(--accent)]/30 hover:shadow-lg hover:shadow-[var(--accent)]/5"
+                className="group relative min-h-[214px] overflow-hidden rounded-xl border-[var(--border)] bg-[var(--surface)]/80 p-8 backdrop-blur-sm transition-all duration-300 hover:border-[var(--accent)]/30 hover:shadow-lg hover:shadow-[var(--glow-soft)]"
               >
+                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
                 <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/10">
                   <feature.icon className="h-6 w-6 text-[var(--accent)]" />
                 </div>
@@ -236,15 +370,13 @@ export default function LandingPage() {
                 <p className="text-sm leading-relaxed text-[var(--text-tertiary)]">
                   {feature.description}
                 </p>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════ HOW IT WORKS ═══════════ */}
       <section id="how-it-works" className={`relative overflow-hidden ${marketingSectionClass}`}>
-        {/* Background image */}
         <div className="absolute inset-0">
           <Image
             src="/images/fad0f89c8d6a92fc48b19560eef69626.jpg"
@@ -257,128 +389,127 @@ export default function LandingPage() {
         </div>
 
         <div className="relative z-10 mx-auto w-full max-w-6xl">
-          <div className="mb-16 text-center">
-            <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">
-              How It Works
-            </span>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[var(--text-primary)] mt-4">
-              4 comandos. <span className="text-[var(--accent)]">Zero stress.</span>
-            </h2>
+          <div data-motion="reveal">
+            <SectionHeading
+              align="center"
+              label="How It Works"
+              title={
+                <>
+                  4 comandos. <span className="text-[var(--accent)]">Zero stress.</span>
+                </>
+              }
+            />
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {steps.map((step, i) => (
-              <div
+          <div className="relative grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="absolute left-0 right-0 top-1/2 hidden h-px bg-[var(--border)] lg:block">
+              <div data-motion="line" className="h-px bg-[var(--accent)]/70" />
+            </div>
+            {steps.map((step) => (
+              <Card
+                data-motion="reveal"
                 key={step.num}
-                className="group relative flex h-full min-h-[220px] flex-col rounded-xl border border-white/10 bg-white/5 p-6 backdrop-blur-sm transition-all duration-300 hover:border-[var(--accent)]/30"
+                className="group relative flex min-h-[230px] flex-col rounded-xl border-[var(--border)] bg-[var(--surface)]/85 p-6 backdrop-blur-md transition-all duration-300 hover:border-[var(--accent)]/30"
               >
-                {/* Step number */}
-                <span className="text-5xl font-bold text-[var(--accent)]/10 absolute top-4 right-4 font-mono">
+                <span className="absolute right-4 top-4 font-mono text-5xl font-bold text-[var(--accent)]/10">
                   {step.num}
                 </span>
-                {/* Terminal command */}
                 <div
-                  className="mb-4 flex min-h-12 items-center rounded-lg border border-white/5 bg-black/40 px-3 py-2 pr-14 font-mono text-xs text-green-400"
+                  className="mb-5 flex min-h-12 items-center rounded-lg border border-[var(--border)] bg-black/45 px-3 py-2 pr-10 font-mono text-xs text-green-400"
                   title={`$ ${step.cmd}`}
                 >
                   <span className="block truncate">$ {step.cmd}</span>
                 </div>
-                <h3 className="text-lg font-semibold text-[var(--text-primary)] mb-2">
+                <h3 className="mb-2 text-lg font-semibold text-[var(--text-primary)]">
                   {step.title}
                 </h3>
-                <p className="text-sm text-[var(--text-tertiary)] leading-relaxed">
+                <p className="text-sm leading-relaxed text-[var(--text-tertiary)]">
                   {step.desc}
                 </p>
-                {/* Connector line (except last) */}
-                {i < steps.length - 1 && (
-                  <div className="hidden lg:block absolute top-1/2 -right-3 w-6 h-px bg-gradient-to-r from-[var(--accent)]/40 to-transparent" />
-                )}
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════ SECURITY ═══════════ */}
       <section id="security" className={`${marketingSectionClass} bg-[var(--background)]`}>
-        <div className="mx-auto w-full max-w-6xl">
-          <div className="grid lg:grid-cols-2 gap-16 items-center">
-            {/* Image */}
-            <div className="relative order-2 lg:order-1">
-              <div className="relative aspect-[4/5] max-w-md mx-auto overflow-hidden rounded-xl">
-                <Image
-                  src="/images/secrets-make-you-sick.jpg"
-                  alt="Segurança e privacidade"
-                  fill
-                  className="object-cover grayscale hover:grayscale-0 transition-all duration-700"
-                  loading="lazy"
-                />
-                {/* Overlay gradient */}
-                <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent opacity-60" />
+        <div className="mx-auto grid w-full max-w-6xl items-center gap-16 lg:grid-cols-2">
+          <div data-motion="reveal" className="relative order-2 lg:order-1">
+            <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-xl border border-[var(--border)]">
+              <Image
+                src="/images/secrets-make-you-sick.jpg"
+                alt="Segurança e privacidade"
+                fill
+                className="object-cover grayscale transition-all duration-700 hover:grayscale-0"
+                loading="lazy"
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent opacity-70" />
+              <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/45 p-4 font-mono text-xs text-white/80 backdrop-blur-md">
+                <div className="mb-3 flex items-center gap-2 text-green-400">
+                  <Zap className="h-4 w-4" />
+                  local encryption path
+                </div>
+                <div className="h-px bg-white/15">
+                  <div data-motion="line" className="h-px bg-green-400" />
+                </div>
               </div>
             </div>
+          </div>
 
-            {/* Content */}
-            <div className="order-1 lg:order-2">
-              <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">
-                Security
-              </span>
-              <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[var(--text-primary)] mt-4 mb-6">
-                Segurança que você pode{" "}
-                <span className="text-[var(--accent)]">confiar</span>
-              </h2>
-              <p className="text-[var(--text-tertiary)] mb-10 leading-relaxed">
-                Arquitetura zero-knowledge de verdade. Seus dados são criptografados
-                no seu dispositivo e o servidor nunca tem acesso às chaves ou ao
-                conteúdo em plain-text.
-              </p>
-
-              <div className="space-y-5">
-                {securityPoints.map((point) => (
-                  <div
-                    key={point.text}
-                    className="flex items-center gap-4 group"
-                  >
-                    <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--accent)]/10 border border-[var(--accent)]/20 group-hover:bg-[var(--accent)]/20 transition-colors">
-                      <point.icon className="h-5 w-5 text-[var(--accent)]" />
-                    </div>
-                    <span className="text-[var(--text-secondary)] text-sm font-medium">
-                      {point.text}
-                    </span>
+          <div data-motion="reveal" className="order-1 lg:order-2">
+            <SectionHeading
+              label="Security"
+              title={
+                <>
+                  Segurança que você pode{" "}
+                  <span className="text-[var(--accent)]">confiar</span>
+                </>
+              }
+            />
+            <p className="-mt-10 mb-10 leading-relaxed text-[var(--text-tertiary)]">
+              Arquitetura zero-knowledge de verdade. Seus dados são criptografados
+              no seu dispositivo e o servidor nunca tem acesso às chaves ou ao
+              conteúdo em plain-text.
+            </p>
+            <div className="space-y-5">
+              {securityPoints.map((point) => (
+                <div key={point.text} className="group flex items-center gap-4">
+                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--accent)]/20 bg-[var(--accent)]/10 transition-colors group-hover:bg-[var(--accent)]/20">
+                    <point.icon className="h-5 w-5 text-[var(--accent)]" />
                   </div>
-                ))}
-              </div>
+                  <span className="text-sm font-medium text-[var(--text-secondary)]">
+                    {point.text}
+                  </span>
+                </div>
+              ))}
             </div>
           </div>
         </div>
       </section>
 
-      {/* ═══════════ PRICING ═══════════ */}
-      <section id="pricing" className={`relative overflow-hidden bg-[var(--background-subtle)] ${marketingSectionClass}`}>
-        {/* Ambient glow */}
-        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[400px] bg-[var(--accent)]/5 rounded-full blur-[120px] pointer-events-none" />
+      <section
+        id="pricing"
+        className={`relative overflow-hidden bg-[var(--background-subtle)] ${marketingSectionClass}`}
+      >
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/5 blur-[120px]" />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl">
-          <div className="mb-16 text-center">
-            <span className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-widest font-mono">
-              Pricing
-            </span>
-            <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[var(--text-primary)] mt-4">
-              Simples e transparente
-            </h2>
+          <div data-motion="reveal">
+            <SectionHeading align="center" label="Pricing" title="Simples e transparente" />
           </div>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
             {plans.map((plan) => (
-              <div
+              <Card
+                data-motion="reveal"
                 key={plan.name}
-                className={`group relative flex h-full min-h-[442px] flex-col rounded-xl border p-6 transition-all duration-300 ${
+                className={`group relative flex min-h-[442px] flex-col rounded-xl p-6 transition-all duration-300 ${
                   plan.featured
-                    ? "border-[var(--accent)]/50 bg-white/5 backdrop-blur-sm shadow-lg shadow-[var(--accent)]/10 hover:shadow-[var(--accent)]/20"
-                    : "border-white/10 bg-white/5 backdrop-blur-sm hover:border-white/20 hover:shadow-lg"
+                    ? "border-[var(--accent)]/50 bg-[var(--surface)] shadow-lg shadow-[var(--glow-soft)] hover:shadow-[var(--glow-strong)]"
+                    : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/20 hover:shadow-lg"
                 }`}
               >
                 {plan.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-[var(--accent)] text-[var(--accent-foreground)] text-[10px] font-bold tracking-widest uppercase px-3 py-0.5 rounded-full">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-foreground)]">
                     Most Popular
                   </div>
                 )}
@@ -401,13 +532,13 @@ export default function LandingPage() {
                   )}
                 </div>
                 <ul className="mb-8 space-y-3">
-                  {plan.features.map((f) => (
+                  {plan.features.map((feature) => (
                     <li
-                      key={f}
+                      key={feature}
                       className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"
                     >
-                      <Check className="h-4 w-4 text-green-500 shrink-0" />
-                      {f}
+                      <Check className="h-4 w-4 shrink-0 text-green-500" />
+                      {feature}
                     </li>
                   ))}
                 </ul>
@@ -417,22 +548,20 @@ export default function LandingPage() {
                     fullWidth
                     className={
                       plan.featured
-                        ? "bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] font-bold"
+                        ? "bg-[var(--accent)] font-bold text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
                         : "border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)]"
                     }
                   >
                     {plan.cta}
                   </Button>
                 </Link>
-              </div>
+              </Card>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ═══════════ CTA ═══════════ */}
       <section id="cta" className={`relative overflow-hidden ${marketingSectionClass}`}>
-        {/* Background image */}
         <div className="absolute inset-0">
           <Image
             src="/images/wer-haben-vergessen.jpeg"
@@ -444,37 +573,54 @@ export default function LandingPage() {
           <div className="absolute inset-0 bg-[var(--background)]/90" />
         </div>
 
-        <div className="relative z-10 mx-auto max-w-2xl text-center">
-          <h2 className="text-3xl md:text-4xl font-semibold tracking-tight text-[var(--text-primary)]">
-            Pronto para{" "}
-            <span className="text-[var(--accent)]">segurar</span> seus secrets?
-          </h2>
-          <p className="mt-4 text-[var(--text-tertiary)] font-mono">
-            Open source. Zero-knowledge. Gratuito para começar.
-          </p>
-          <div className="mt-8 flex gap-4 justify-center">
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] font-bold tracking-wider uppercase text-xs"
-              >
-                Get Started Free
-              </Button>
-            </Link>
-            <Link href="https://github.com/criptenv">
-              <Button
-                size="lg"
-                variant="secondary"
-                className="border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)]"
-              >
-                View on GitHub
-              </Button>
-            </Link>
+        <div data-motion="reveal" className="relative z-10 mx-auto grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+          <div>
+            <h2 className="text-3xl font-semibold tracking-tight text-[var(--text-primary)] md:text-4xl">
+              Pronto para{" "}
+              <span className="text-[var(--accent)]">segurar</span> seus secrets?
+            </h2>
+            <p className="mt-4 font-mono text-[var(--text-tertiary)]">
+              Open source. Zero-knowledge. Gratuito para começar.
+            </p>
+            <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
+              <Link href="/signup">
+                <Button
+                  size="lg"
+                  className="w-full bg-[var(--accent)] text-xs font-bold uppercase tracking-wider text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] sm:w-auto"
+                >
+                  Get Started Free
+                </Button>
+              </Link>
+              <Link href="https://github.com/criptenv">
+                <Button
+                  size="lg"
+                  variant="secondary"
+                  className="w-full border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)] sm:w-auto"
+                >
+                  View on GitHub
+                </Button>
+              </Link>
+            </div>
+          </div>
+          <div className="rounded-xl border border-[var(--border)] bg-black/45 p-5 font-mono text-xs text-[var(--text-secondary)] shadow-2xl shadow-black/20 backdrop-blur-md">
+            <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
+              <div className="flex items-center gap-2 text-[var(--text-primary)]">
+                <Code2 className="h-4 w-4" />
+                terminal
+              </div>
+              <GitBranch className="h-4 w-4 text-[var(--text-muted)]" />
+            </div>
+            <p>
+              <span className="text-green-400">$</span> criptenv init
+            </p>
+            <p className="mt-3 text-[var(--text-primary)]">
+              vault ready. invite your team when you are.
+            </p>
           </div>
         </div>
       </section>
 
       <Footer />
-    </>
+    </LandingMotion>
   )
 }

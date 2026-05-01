@@ -1,7 +1,7 @@
 // CriptEnv Base API Client
 // Typed fetch wrapper for the FastAPI backend
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
 
 // ─── Error Class ───────────────────────────────────────────────────────────────
 
@@ -11,7 +11,7 @@ export class ApiError extends Error {
 
   constructor(message: string, status: number, body: unknown) {
     super(message);
-    this.name = 'ApiError';
+    this.name = "ApiError";
     this.status = status;
     this.body = body;
   }
@@ -196,6 +196,39 @@ export interface AuditQueryParams {
   resource_type?: string;
 }
 
+// ─── CI Tokens ───────────────────────────────────────────────────────────────
+
+export interface CIToken {
+  id: string;
+  project_id: string;
+  name: string;
+  description: string | null;
+  scopes: string[];
+  environment_scope: string | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  revoked_at: string | null;
+  created_at: string;
+}
+
+export interface CITokenListResponse {
+  tokens: CIToken[];
+  total: number;
+}
+
+export interface CITokenWithPlaintext {
+  token: string;
+  token_info: CIToken;
+}
+
+export interface CreateCITokenRequest {
+  name: string;
+  description?: string;
+  scopes: string[];
+  environment_scope?: string;
+  expires_at?: string;
+}
+
 // ─── Base Fetch Wrapper ────────────────────────────────────────────────────────
 
 export async function request<T>(
@@ -215,13 +248,13 @@ export async function request<T>(
   }
 
   const headers: Record<string, string> = {
-    'Content-Type': 'application/json',
+    "Content-Type": "application/json",
   };
 
   const res = await fetch(url.toString(), {
     method,
     headers,
-    credentials: 'include',
+    credentials: "include",
     body: body ? JSON.stringify(body) : undefined,
   });
 

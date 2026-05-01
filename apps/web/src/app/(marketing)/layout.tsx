@@ -7,7 +7,7 @@ export default function MarketingLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen">
+    <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)]">
       <MarketingHeader />
       <FloatingBar />
       {children}

@@ -5,11 +5,15 @@ import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatRelativeTime } from "@/lib/utils"
+import { ExpirationBadge } from "./expiration-badge"
 
 export interface DecryptedSecret {
   key: string
   value: string
   updatedAt?: string | null
+  expiresAt?: string | null
+  daysUntilExpiration?: number | null
+  isExpired?: boolean
 }
 
 interface SecretRowProps {
@@ -50,6 +54,14 @@ export function SecretRow({
             <span className="font-mono text-xs text-[var(--text-muted)]">
               {formatRelativeTime(secret.updatedAt)}
             </span>
+          )}
+          {/* M3.5.7: Expiration badge */}
+          {(secret.daysUntilExpiration != null || secret.isExpired) && (
+            <ExpirationBadge
+              daysUntilExpiration={secret.daysUntilExpiration}
+              isExpired={secret.isExpired}
+              expiresAt={secret.expiresAt ?? undefined}
+            />
           )}
         </div>
       </div>

@@ -8,6 +8,7 @@ export { environmentsApi } from './api/environments';
 export { vaultApi } from './api/vault';
 export { membersApi } from './api/members';
 export { auditApi } from './api/audit';
+export { ciTokensApi } from './api/ci-tokens';
 
 export type {
   User,
@@ -44,6 +45,7 @@ import { environmentsApi } from './api/environments';
 import { vaultApi } from './api/vault';
 import { membersApi } from './api/members';
 import { auditApi } from './api/audit';
+import { ciTokensApi } from './api/ci-tokens';
 
 export const api = {
   auth: authApi,
@@ -52,4 +54,5 @@ export const api = {
   vault: vaultApi,
   members: membersApi,
   audit: auditApi,
+  ciTokens: ciTokensApi,
 };

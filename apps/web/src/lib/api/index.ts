@@ -1,5 +1,5 @@
 // Re-export everything for convenient imports
-export { ApiError, request } from './client';
+export { ApiError, request } from "./client";
 export type {
   User,
   AuthResponse,
@@ -26,11 +26,12 @@ export type {
   UpdateMemberRequest,
   CreateInviteRequest,
   AuditQueryParams,
-} from './client';
+} from "./client";
 
-export { authApi } from './auth';
-export { projectsApi } from './projects';
-export { environmentsApi } from './environments';
-export { vaultApi } from './vault';
-export { membersApi } from './members';
-export { auditApi } from './audit';
+export { authApi } from "./auth";
+export { projectsApi } from "./projects";
+export { environmentsApi } from "./environments";
+export { vaultApi } from "./vault";
+export { membersApi } from "./members";
+export { auditApi } from "./audit";
+export { ciTokensApi } from "./ci-tokens";
