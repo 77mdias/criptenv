@@ -1,5 +1,6 @@
 from sqlalchemy import Column, String, DateTime, ForeignKey, func
 from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.types import JSON
 from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
@@ -43,9 +44,18 @@ class CIToken(Base):
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False, index=True)
     name = Column(String(255), nullable=False)
+    description = Column(String(500), nullable=True)
     token_hash = Column(String(255), nullable=False, unique=True)
+
+    # NEW FIELDS for M3.3
+    scopes = Column(JSON, default=["read:secrets"])  # List of scope strings
+    environment_scope = Column(String(255), nullable=True)  # null = all, or specific env
+
     last_used_at = Column(DateTime(timezone=True))
-    expires_at = Column(DateTime(timezone=True))
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    revoked_at = Column(DateTime(timezone=True), nullable=True)
+
     created_at = Column(DateTime(timezone=True), server_default=func.now())
+    created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     project = relationship("Project", back_populates="ci_tokens", foreign_keys=[project_id])

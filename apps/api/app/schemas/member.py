@@ -59,16 +59,26 @@ class InviteListResponse(BaseModel):
 
 class CITokenCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255)
+    description: Optional[str] = Field(None, max_length=500)
     expires_at: Optional[datetime] = None
+    scopes: list[str] = Field(default=["read:secrets"])
+    environment_scope: Optional[str] = Field(
+        None,
+        pattern=r'^[a-z0-9-]+$',  # kebab-case env names only
+        description="Restrict token to specific environment"
+    )
 
 
 class CITokenResponse(BaseModel):
     id: UUID
     project_id: UUID
     name: str
-    token_hash: str
+    description: Optional[str] = None
+    scopes: list[str]
+    environment_scope: Optional[str] = None
     last_used_at: Optional[datetime] = None
     expires_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
     created_at: datetime
 
     class Config:

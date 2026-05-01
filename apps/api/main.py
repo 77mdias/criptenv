@@ -1,6 +1,7 @@
 from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
+from fastapi.security import HTTPBearer, APIKeyHeader
 from contextlib import asynccontextmanager
 import time
 import logging
@@ -19,6 +20,8 @@ from app.routers import (
     ci_router,
     integrations_router
 )
+from app.routers.v1 import v1_router  # M3.4: API Versioning
+from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
 
 logging.basicConfig(
     level=logging.INFO if settings.DEBUG else logging.WARNING,
@@ -27,23 +30,92 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
+# M3.4.6: OpenAPI Security Schemes
+bearer_scheme = HTTPBearer(
+    scheme_name="BearerAuth",
+    description="JWT token obtained from /api/auth/signin or /api/auth/signup",
+    auto_error=False,
+)
+api_key_header = APIKeyHeader(
+    name="X-API-Key",
+    scheme_name="ApiKeyAuth",
+    description="API key with cek_ prefix for programmatic access",
+    auto_error=False,
+)
+
+
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting CriptEnv API...")
+    
+    # M3.6: Start scheduler if enabled
+    scheduler_manager = None
+    if getattr(settings, 'SCHEDULER_ENABLED', True):
+        try:
+            from app.jobs.scheduler import init_scheduler
+            from app.jobs.expiration_check import ExpirationChecker
+            from app.database import get_db
+            
+            db = get_db()
+            checker = ExpirationChecker(db)
+            scheduler_manager = init_scheduler(
+                checker,
+                interval_hours=getattr(settings, 'SCHEDULER_INTERVAL_HOURS', 1)
+            )
+            scheduler_manager.start()
+            logger.info(
+                f"Scheduler started (interval: {getattr(settings, 'SCHEDULER_INTERVAL_HOURS', 1)}h)"
+            )
+        except ImportError:
+            logger.warning("APScheduler not installed, skipping scheduler init")
+        except Exception as e:
+            logger.warning(f"Failed to start scheduler: {e}")
+    
     yield
+    
+    # Graceful shutdown
+    if scheduler_manager:
+        scheduler_manager.stop()
+        logger.info("Scheduler stopped")
+    
     logger.info("Shutting down CriptEnv API...")
     await close_db()
 
 
 app = FastAPI(
     title="CriptEnv API",
-    description="Secret management platform API",
+    description="""Secret management platform API for CriptEnv.
+    
+    ## Authentication
+
+    This API supports two authentication methods:
+    - **Bearer Token**: JWT token obtained from `/api/auth/signin` or `/api/auth/signup`
+    - **API Key**: For programmatic access, use an API key with `cek_` prefix
+
+    ## Rate Limiting
+
+    Different endpoints have different rate limits:
+    - Auth endpoints: 5 requests/minute per IP
+    - API Key endpoints: 1000 requests/minute per key
+    - Public endpoints: 100 requests/minute per IP
+
+    ## Versioning
+
+    This API is versioned. Current version: **v1** (prefix: `/api/v1/`)
+
+    ## Error Responses
+
+    All errors follow a consistent format with `code`, `message`, and optional `details`.
+    """,
     version="1.0.0",
     lifespan=lifespan,
     docs_url="/docs" if settings.DEBUG else None,
-    redoc_url="/redoc" if settings.DEBUG else None
+    redoc_url="/redoc" if settings.DEBUG else None,
+    openapi_url="/openapi.json",
+    swagger_ui_parameters={"syntaxHighlight": False},
 )
 
+# Add CORS middleware
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.cors_origins_list,
@@ -51,6 +123,9 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Add API Version middleware (M3.4)
+app.add_middleware(APIVersionMiddleware)
 
 
 @app.middleware("http")
@@ -77,10 +152,14 @@ async def global_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {exc}", exc_info=True)
     return JSONResponse(
         status_code=500,
-        content={"detail": "Internal server error"}
+        content={"error": {
+            "code": "INTERNAL_ERROR",
+            "message": "Internal server error"
+        }}
     )
 
 
+# M3.4: Legacy health endpoints (backwards compatibility)
 @app.get("/health", tags=["Health"])
 async def health_check():
     return {"status": "ok", "service": "criptenv-api"}
@@ -103,6 +182,10 @@ async def readiness_check():
         )
 
 
+# M3.4: Include v1 API router with /api/v1/ prefix
+app.include_router(v1_router)
+
+# Legacy routers (backwards compatibility - no prefix)
 app.include_router(auth_router)
 app.include_router(projects_router)
 app.include_router(environments_router)

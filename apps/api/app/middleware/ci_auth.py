@@ -5,6 +5,7 @@ These tokens are created by project admins and have limited scopes.
 """
 
 import hashlib
+import re
 import secrets
 from datetime import datetime, timezone, timedelta
 from typing import Optional
@@ -22,6 +23,49 @@ from app.models.member import CIToken
 CI_TOKEN_PREFIX = "ci_"
 CI_SESSION_PREFIX = "ci_s_"
 CI_SESSION_EXPIRE_SECONDS = 3600  # 1 hour
+
+# Valid scopes as per M3.3 specification
+VALID_SCOPES = frozenset([
+    "read:secrets",
+    "write:secrets",
+    "delete:secrets",
+    "read:audit",
+    "write:integrations",
+    "admin:project"
+])
+
+
+class ScopeValidator:
+    """Validates CI token scopes per M3.3 specification.
+    
+    Uses GRASP Protected Variations pattern to isolate scope validation logic.
+    """
+    
+    def __init__(self):
+        self._valid_scopes = VALID_SCOPES
+        # Pattern for scope format: action:resource
+        self._scope_pattern = re.compile(r'^[a-z]+:[a-z]+$')
+    
+    def is_valid_scope(self, scope: str) -> bool:
+        """Check if a scope string is valid."""
+        if not scope or not isinstance(scope, str):
+            return False
+        return scope in self._valid_scopes
+    
+    def normalize_scopes(self, scopes: Optional[list[str]]) -> list[str]:
+        """Normalize scopes to a list, defaulting to read:secrets."""
+        if not scopes:
+            return ["read:secrets"]
+        return list(scopes)
+    
+    def has_scope(self, token_scopes: list[str], required_scope: str) -> bool:
+        """Check if token has the required scope or admin:project."""
+        if not token_scopes:
+            return False
+        # admin:project grants all access
+        if "admin:project" in token_scopes:
+            return True
+        return required_scope in token_scopes
 
 
 def hash_token(token: str) -> str:
@@ -213,17 +257,19 @@ async def get_current_ci_user(request: Request) -> dict:
         )
 
 
-async def require_ci_scope(required_scope: str):
+def require_ci_scope(required_scope: str):
     """Dependency factory for requiring specific CI scopes.
     
     Usage:
         @router.get("/secrets", dependencies=[Depends(require_ci_scope("read:secrets"))])
     """
+    validator = ScopeValidator()
+    
     async def scope_checker(request: Request):
         ci_user = await get_current_ci_user(request)
         scopes = ci_user.get("scopes", [])
         
-        if required_scope not in scopes and "admin:project" not in scopes:
+        if not validator.has_scope(scopes, required_scope):
             raise HTTPException(
                 status_code=status.HTTP_403_FORBIDDEN,
                 detail=f"Required scope '{required_scope}' not granted"
@@ -232,3 +278,30 @@ async def require_ci_scope(required_scope: str):
         return ci_user
     
     return scope_checker
+
+
+async def validate_environment_access(ci_token, environment: str) -> None:
+    """Validate that a CI token has access to the specified environment.
+    
+    Args:
+        ci_token: CIToken model instance with environment_scope attribute
+        environment: The environment name to access
+        
+    Raises:
+        HTTPException: 403 if token is restricted to a different environment
+    """
+    environment_scope = getattr(ci_token, 'environment_scope', None)
+    
+    # null means all environments
+    if environment_scope is None:
+        return
+    
+    # Strict comparison - environment names are case-sensitive
+    if environment_scope != environment:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ENVIRONMENT_ACCESS_DENIED",
+                "message": f"Token is restricted to environment '{environment_scope}' and cannot access '{environment}'"
+            }
+        )
