@@ -7,6 +7,44 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### M3.5 Secret Alerts & Rotation
+
+##### API (apps/api)
+
+- **SecretExpiration Model**: `SecretExpiration` model with fields for expires_at, rotation_policy, notify_days_before, last_notified_at
+- **RotationService**: Service layer for rotation operations with audit logging
+- **RotationRouter**: FastAPI endpoints for rotation operations (`POST /rotate`, `POST /expiration`, `GET /rotation`, `GET /rotation/history`, `GET /secrets/expiring`)
+- **WebhookService**: HTTP notification service with exponential backoff retry logic
+- **ExpirationChecker**: Background job that checks for expiring secrets and triggers notifications
+- **WebhookChannel**: `NotificationChannel` implementation for HTTP webhooks
+
+##### CLI (apps/cli)
+
+- **rotate command**: `criptenv rotate KEY [--value new_value] [--env env] [--force]` — Rotates secret with auto-generated or manual value
+- **secrets expire command**: `criptenv secrets expire KEY --days 90 [--policy notify|auto|manual]` — Sets expiration on a secret
+- **secrets alert command**: `criptenv secrets alert KEY --days 30` — Configures alert timing
+- **rotation list command**: `criptenv rotation list [--days 30] [--env env]` — Lists secrets pending rotation
+- **API Client methods**: `rotate_secret()`, `set_expiration()`, `get_rotation_status()`, `list_expiring()` added to `CriptEnvClient`
+
+##### Web UI (apps/web)
+
+- **ExpirationBadge component**: Visual badge showing secret expiration status (green/yellow/red/expired)
+- **Secret row integration**: Expiration badge integrated into `SecretRow` component
+
+#### M3.6 APScheduler Lifespan
+
+- **SchedulerManager**: Abstracted scheduler lifecycle management with singleton pattern
+- **Lifespan integration**: APScheduler starts/stops with FastAPI application
+- **Config options**: `SCHEDULER_ENABLED` and `SCHEDULER_INTERVAL_HOURS` settings
+
+### Tests
+
+- **33 CLI rotation tests**: Tests for rotate, expire, alert, rotation list commands
+- **6 integration tests**: E2E tests for complete rotation lifecycle
+- **Webhook service tests**: Tests for retry logic, payload building, channel abstraction
+
 ## [0.2.0] - 2026-04-30
 
 ### Added
