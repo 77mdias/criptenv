@@ -59,8 +59,20 @@ async def init_schema(db: aiosqlite.Connection):
             FOREIGN KEY (environment_id) REFERENCES environments(id)
         );
 
+        CREATE TABLE IF NOT EXISTS ci_sessions (
+            id TEXT PRIMARY KEY,
+            project_id TEXT NOT NULL,
+            project_name TEXT NOT NULL,
+            session_token_encrypted BLOB NOT NULL,
+            scopes TEXT NOT NULL,
+            environment_scope TEXT,
+            created_at INTEGER NOT NULL,
+            expires_at INTEGER NOT NULL
+        );
+
         CREATE INDEX IF NOT EXISTS idx_secrets_env ON secrets(environment_id);
         CREATE INDEX IF NOT EXISTS idx_secrets_key ON secrets(key_id);
+        CREATE INDEX IF NOT EXISTS idx_ci_sessions_expires ON ci_sessions(expires_at);
     """)
     await db.commit()
 

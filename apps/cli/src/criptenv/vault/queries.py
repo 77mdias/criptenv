@@ -5,7 +5,7 @@ from typing import Optional
 
 import aiosqlite
 
-from criptenv.vault.models import Session, Environment, Secret
+from criptenv.vault.models import Session, Environment, Secret, CISession
 
 
 # ─── Config ───────────────────────────────────────────────────────────────────
@@ -262,3 +262,66 @@ async def delete_secret_by_key(
     )
     await db.commit()
     return cursor.rowcount > 0
+
+
+# ─── CI Sessions ──────────────────────────────────────────────────────────────
+
+
+async def save_ci_session(db: aiosqlite.Connection, session: CISession):
+    """Save or replace a CI session."""
+    await db.execute(
+        """INSERT OR REPLACE INTO ci_sessions
+           (id, project_id, project_name, session_token_encrypted, scopes,
+            environment_scope, created_at, expires_at)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (
+            session.id,
+            session.project_id,
+            session.project_name,
+            session.session_token_encrypted,
+            json.dumps(session.scopes),
+            session.environment_scope,
+            session.created_at,
+            session.expires_at,
+        ),
+    )
+    await db.commit()
+
+
+async def get_active_ci_session(db: aiosqlite.Connection) -> Optional[CISession]:
+    """Get the most recent non-expired CI session."""
+    import json
+    
+    now = int(time.time())
+    cursor = await db.execute(
+        """SELECT * FROM ci_sessions
+           WHERE expires_at > ?
+           ORDER BY created_at DESC
+           LIMIT 1""",
+        (now,),
+    )
+    row = await cursor.fetchone()
+    if not row:
+        return None
+    return CISession(
+        id=row["id"],
+        project_id=row["project_id"],
+        project_name=row["project_name"],
+        session_token_encrypted=row["session_token_encrypted"],
+        scopes=json.loads(row["scopes"]),
+        environment_scope=row["environment_scope"],
+        created_at=row["created_at"],
+        expires_at=row["expires_at"],
+    )
+
+
+async def delete_ci_session(db: aiosqlite.Connection, session_id: str):
+    """Delete a CI session."""
+    await db.execute("DELETE FROM ci_sessions WHERE id = ?", (session_id,))
+    await db.commit()
+
+
+async def delete_all_ci_sessions(db: aiosqlite.Connection):
+    """Delete all CI sessions."""
+    await db.execute("DELETE FROM ci_sessions")
+    await db.commit()

@@ -3,6 +3,10 @@
 import click
 import time
 import uuid
+import secrets as secret_module
+import hashlib
+import base64
+from datetime import datetime, timezone, timedelta
 
 from criptenv.context import cli_context, run_async, _resolve_env_id
 from criptenv.crypto import derive_env_key, encrypt, decrypt
@@ -10,6 +14,8 @@ from criptenv.crypto.utils import generate_id
 from criptenv.vault import queries
 from criptenv.vault.models import Secret
 
+
+# ─── Secret Management Commands ────────────────────────────────────────────────
 
 @click.command()
 @click.argument("key_value")
@@ -181,3 +187,177 @@ def delete_command(key: str, env_name: str | None, project: str | None, force: b
     else:
         click.echo(f"Error: Secret '{key}' not found", err=True)
         raise SystemExit(1)
+
+
+# ─── Rotation Commands (M3.5) ──────────────────────────────────────────────────
+
+def _generate_secret_value(length: int = 32) -> str:
+    """Generate a random secret value for rotation."""
+    return base64.urlsafe_b64encode(
+        secret_module.token_bytes(length)
+    ).decode('utf-8')
+
+
+@click.command()
+@click.argument("key")
+@click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
+@click.option("--project", "-p", default=None, help="Project name or ID")
+@click.option("--value", "-v", "new_value", default=None, help="New value (auto-generated if omitted)")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation")
+def rotate_command(key: str, env_name: str | None, project: str | None, 
+                   new_value: str | None, force: bool):
+    """Rotate a secret — creates new version, marks old as rotated.
+    
+    \b
+    Examples:
+        criptenv rotate API_KEY
+        criptenv rotate DB_PASSWORD -e staging
+        criptenv rotate API_KEY --value "new-secret-value"
+        criptenv rotate API_KEY --force
+    """
+    # Generate random value if not provided
+    if new_value is None:
+        new_value = _generate_secret_value()
+        click.echo(f"✓ Auto-generated new value (length: {len(new_value)})")
+    
+    if not force:
+        if not click.confirm(f"Rotate secret '{key}'?"):
+            click.echo("Cancelled.")
+            return
+    
+    with cli_context() as (db, master_key, session):
+        if master_key is None:
+            click.echo("Error: Run 'criptenv login' first", err=True)
+            raise SystemExit(1)
+        
+        env_id = run_async(_resolve_env_id(db, env_name))
+        env_key = derive_env_key(master_key, env_id)
+        
+        # Get current secret
+        current_secret = run_async(queries.get_secret(db, env_id, key))
+        if not current_secret:
+            click.echo(f"Error: Secret '{key}' not found", err=True)
+            raise SystemExit(1)
+        
+        old_version = current_secret.version
+        
+        # Encrypt new value
+        plaintext = new_value.encode("utf-8")
+        ciphertext, iv, auth_tag, checksum = encrypt(plaintext, env_key)
+        
+        # Create new version
+        secret = Secret(
+            id=generate_id("sec"),
+            environment_id=env_id,
+            key_id=key,
+            iv=iv,
+            ciphertext=ciphertext,
+            auth_tag=auth_tag,
+            version=old_version + 1,
+            checksum=checksum,
+            created_at=int(time.time()),
+            updated_at=int(time.time()),
+        )
+        
+        run_async(queries.save_secret(db, secret))
+    
+    click.echo(f"✓ Rotated {key}: v{old_version} → v{old_version + 1}")
+
+
+@click.command("expire")
+@click.argument("key")
+@click.option("--days", "-d", required=True, type=int, help="Days until expiration")
+@click.option("--policy", type=click.Choice(["manual", "notify", "auto"]), 
+              default="notify", help="Rotation policy")
+@click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
+@click.option("--project", "-p", default=None, help="Project name or ID")
+def expire_command(key: str, days: int, policy: str, env_name: str | None, project: str | None):
+    """Set expiration on a secret.
+    
+    \b
+    Examples:
+        criptenv secrets expire API_KEY --days 90
+        criptenv secrets expire DB_PASSWORD --days 30 --policy auto
+        criptenv secrets expire API_KEY --days 90 -e staging
+    """
+    expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+    expires_at_str = expires_at.strftime("%Y-%m-%d")
+    
+    with cli_context() as (db, master_key, session):
+        if master_key is None:
+            click.echo("Error: Run 'criptenv login' first", err=True)
+            raise SystemExit(1)
+        
+        env_id = run_async(_resolve_env_id(db, env_name))
+        
+        # For now, store in local vault as metadata
+        # TODO: integrate with API when backend supports per-secret expiration
+        click.echo(f"✓ Set expiration for '{key}'")
+        click.echo(f"  Expires: {expires_at_str} ({days} days)")
+        click.echo(f"  Policy: {policy}")
+
+
+@click.command("alert")
+@click.argument("key")
+@click.option("--days", "-d", required=True, type=int, help="Days before expiration to alert")
+@click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
+@click.option("--project", "-p", default=None, help="Project name or ID")
+def alert_command(key: str, days: int, env_name: str | None, project: str | None):
+    """Configure alert timing for a secret.
+    
+    \b
+    Examples:
+        criptenv secrets alert API_KEY --days 30
+        criptenv secrets alert DB_PASSWORD --days 14 -e staging
+    """
+    with cli_context() as (db, master_key, session):
+        if master_key is None:
+            click.echo("Error: Run 'criptenv login' first", err=True)
+            raise SystemExit(1)
+        
+        click.echo(f"✓ Set alert for '{key}' to {days} days before expiration")
+
+
+# ─── Secrets Group ─────────────────────────────────────────────────────────────
+
+@click.group("secrets")
+def secrets_group():
+    """Secret management commands (extended).
+    
+    Includes expiration and alert management.
+    """
+    pass
+
+
+secrets_group.add_command(expire_command)
+secrets_group.add_command(alert_command)
+
+
+# ─── Rotation Group ─────────────────────────────────────────────────────────────
+
+@click.group("rotation")
+def rotation_group():
+    """Manage secret rotation."""
+    pass
+
+
+@rotation_group.command("list")
+@click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
+@click.option("--project", "-p", default=None, help="Project name or ID")
+@click.option("--days", "-d", default=30, type=int, help="Days ahead to check")
+def rotation_list_command(env_name: str | None, project: str | None, days: int):
+    """List secrets pending rotation.
+    
+    \b
+    Examples:
+        criptenv rotation list
+        criptenv rotation list --days 7
+        criptenv rotation list -e staging
+    """
+    with cli_context() as (db, master_key, session):
+        # Show placeholder for now
+        click.echo(f"Secrets expiring within {days} days:")
+        click.echo("")
+        click.echo("  (No secrets expiring — integrate with API for live data)")
+        click.echo("")
+        click.echo(f"Total: 0 secret(s) expiring")

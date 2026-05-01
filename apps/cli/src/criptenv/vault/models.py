@@ -46,3 +46,21 @@ class Secret:
     checksum: str
     created_at: int
     updated_at: int
+
+
+@dataclass
+class CISession:
+    """CI session token stored locally for automated workflows."""
+
+    id: str
+    project_id: str
+    project_name: str
+    session_token_encrypted: bytes
+    scopes: list[str]
+    environment_scope: str | None
+    created_at: int
+    expires_at: int
+
+    @property
+    def is_expired(self) -> bool:
+        return time.time() > self.expires_at
