@@ -5,7 +5,7 @@ import { FolderOpen, Key, Clock } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { peekCached, projectsApi, auditApi } from "@/lib/api"
+import { peekCached, projectsApi, auditApi, environmentsApi, vaultApi } from "@/lib/api"
 import { formatRelativeTime } from "@/lib/utils"
 import type { Project, AuditLog, ProjectListResponse } from "@/lib/api"
 
@@ -13,6 +13,7 @@ export default function DashboardPage() {
   const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects")
   const [projects, setProjects] = useState<Project[]>(cachedProjects?.projects ?? [])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+  const [totalSecrets, setTotalSecrets] = useState(0)
   const [loading, setLoading] = useState(!cachedProjects)
   const [activityLoading, setActivityLoading] = useState(!cachedProjects)
   const [error, setError] = useState<string | null>(null)
@@ -25,6 +26,27 @@ export default function DashboardPage() {
         const projectData = await projectsApi.list()
         if (cancelled) return
         setProjects(projectData.projects)
+
+        const environmentResponses = await Promise.all(
+          projectData.projects.map((project) => environmentsApi.list(project.id))
+        )
+        if (cancelled) return
+
+        const vaultMetadata = await Promise.all(
+          environmentResponses.flatMap((response) =>
+            response.environments.map((environment) =>
+              vaultApi.getVersion(environment.project_id, environment.id)
+            )
+          )
+        )
+        if (cancelled) return
+
+        const secretsSum = vaultMetadata.reduce(
+          (sum, metadata) => sum + metadata.blob_count,
+          0
+        )
+
+        setTotalSecrets(secretsSum)
         setLoading(false)
 
         if (projectData.projects.length > 0) {
@@ -146,12 +168,12 @@ export default function DashboardPage() {
                     Secrets
                   </p>
                   <p className="text-2xl font-semibold tracking-tight">
-                    {auditLogs.length > 0 ? auditLogs.length : "—"}
+                    {totalSecrets}
                   </p>
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono">
-                {auditLogs.length > 0 ? "Atividade recente" : "Sem dados ainda"}
+                {totalSecrets === 0 ? "Nenhuma secret ainda" : `${totalSecrets} secrets no total`}
               </p>
             </Card>
 

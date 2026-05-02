@@ -33,7 +33,7 @@ function NavIconLink({ item, pathname }: { item: DashboardNavItem; pathname: str
 function DashboardFloatingBar() {
   const pathname = usePathname()
   const { desktopSidebarOpen } = useUIStore()
-  const { mainNavItems, bottomNavItems } = getDashboardNavGroups(pathname)
+  const { mainNavItems, bottomNavItems } = getDashboardNavGroups()
 
   return (
     <aside className="fixed left-4 top-1/2 z-40 hidden -translate-y-1/2 lg:block">

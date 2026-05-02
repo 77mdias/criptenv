@@ -13,7 +13,7 @@ interface SidebarNavProps {
 function SidebarNav({ className }: SidebarNavProps) {
   const pathname = usePathname()
   const { desktopSidebarOpen } = useUIStore()
-  const { mainNavItems, bottomNavItems } = getDashboardNavGroups(pathname)
+  const { mainNavItems, bottomNavItems } = getDashboardNavGroups()
 
   return (
     <aside
