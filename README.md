@@ -132,12 +132,34 @@ criptenv/
 
 ## 📚 Documentação
 
+> ⚠️ **Nova documentação organizada disponível em [`./docs/index.md`](./docs/index.md)** — Fonte da verdade para desenvolvedores e agentes de IA.
+
+### Documentação Principal
+
+- [Documentação Index](./docs/index.md) — Índice completo da documentação
+- [Estado Atual](./docs/project/current-state.md) — O que está implementado, em progresso, pendente
+- [Arquitetura](./docs/project/architecture.md) — Visão geral do sistema
+- [Tech Stack](./docs/tech-stack.md) — Tecnologias utilizadas
+- [Decisões Técnicas](./docs/project/decisions.md) — Log de decisões (ADR)
+- [Tarefa Atual](./docs/tasks/current-task.md) — O que trabalhar agora
+
+### Documentação Legada (em transição)
+
 - [PRD](./prd/README.md) — Product Requirements Document
 - [Discovery](./discovery/README.md) — Descoberta do Produto
 - [Roadmap](./roadmap/README.md) — Plano de Execução
 - [Specs](./specs/README.md) — Especificações Técnicas
 - [User Stories](./user-stories/README.md) — Journey Maps
 - [Guidelines](./guidelines/README.md) — Diretrizes de Design
+
+### Phase Status
+
+| Phase | Status | Description |
+|-------|--------|-------------|
+| Phase 1 (CLI MVP) | ✅ COMPLETE | 14 commands, AES-256-GCM, local vault |
+| Phase 2 (Web UI) | ✅ COMPLETE | Dashboard, auth, CRUD, audit |
+| Phase 3 (CI/CD) | 🔄 IN PROGRESS | GitHub Action, rotation, cloud integrations |
+| Phase 4 (Enterprise) | 📋 PLANNED | SSO/SAML, SCIM, self-hosted |
 
 ## 🤝 Contributing
 

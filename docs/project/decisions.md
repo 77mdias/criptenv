@@ -1,0 +1,307 @@
+# Technical Decisions — CriptEnv
+
+A record of significant architectural and technical decisions.
+
+---
+
+## Format
+
+Each decision follows this structure:
+
+```md
+## DEC-XXX — [Title]
+
+**Date:** YYYY-MM-DD  
+**Status:** Accepted / Under Review / Reverted  
+**Context:**  
+[Problem being addressed]
+
+**Decision:**  
+[What was decided]
+
+**Rationale:**  
+[Why this makes sense]
+
+**Consequences:**  
+[Positive and negative impacts]
+```
+
+---
+
+## DEC-001 — AES-256-GCM Encryption
+
+**Date:** 2024 (Phase 1)  
+**Status:** ✅ Accepted  
+**Context:**  
+Need to encrypt secrets client-side with Zero-Knowledge guarantee. Server must never see plain-text secrets.
+
+**Decision:**  
+Use AES-256-GCM for symmetric encryption with:
+- PBKDF2HMAC-SHA256 (100,000 iterations) for master key derivation
+- HKDF-SHA256 for per-environment key derivation
+- Unique IV/nonce per encryption operation
+
+**Rationale:**  
+- AES-256-GCM is industry standard (NIST approved)
+- 100k PBKDF2 iterations provides strong protection against brute-force
+- HKDF per-environment ensures compromise of one env doesn't affect others
+- GCM mode provides authenticated encryption (confidentiality + integrity)
+
+**Consequences:**  
+- ✅ Strong security guarantee
+- ✅ Zero-knowledge architecture maintained
+- ✅ Key derivation is slow (~300ms) but acceptable for infrequent operations
+- ❌ Mobile browsers may experience slower key derivation
+
+---
+
+## DEC-002 — SQLite for Local Vault
+
+**Date:** 2024 (Phase 1)  
+**Status:** ✅ Accepted  
+**Context:**  
+CLI needs offline access to secrets. Need a local storage format that supports encryption and works cross-platform.
+
+**Decision:**  
+Use SQLite database at `~/.criptenv/vault.db` with `aiosqlite` for async operations.
+
+**Rationale:**  
+- SQLite is zero-configuration, cross-platform, reliable
+- Single file makes backup/restore simple
+- `aiosqlite` provides async interface matching CLI's async needs
+- Encryption applied at application level (not at DB level)
+
+**Consequences:**  
+- ✅ Works offline
+- ✅ Simple backup (copy single file)
+- ✅ No server dependency for CLI usage
+- ❌ Local machine is the trust boundary
+- ❌ Master password is the only protection if device is compromised
+
+---
+
+## DEC-003 — Strategy Pattern for Complex Flows
+
+**Date:** 2024 (Phase 1 API)  
+**Status:** ✅ Accepted  
+**Context:**  
+Complex business flows (vault access, invite state transitions, audit filtering) require different behaviors based on context. Hard-coding if/else chains would be messy and hard to test.
+
+**Decision:**  
+Implement Strategy pattern in `apps/api/app/strategies/`:
+- `access.py` — Vault access control strategies
+- `invite_transitions.py` — Invite state machine
+- `vault_push.py` — Vault push behavior
+- `audit_filters.py` — Audit log filtering
+
+**Rationale:**  
+- Each strategy is testable in isolation
+- New strategies can be added without modifying existing code
+- Open/Closed Principle satisfied
+- Follows existing patterns in codebase
+
+**Consequences:**  
+- ✅ Extensible for new providers/integrations
+- ✅ Testable individual strategies
+- ✅ Clear separation of concerns
+- ❌ More files to navigate
+- ❌ Need to document which strategy applies when
+
+---
+
+## DEC-004 — Service Layer for Business Logic
+
+**Date:** 2024 (Phase 1 API)  
+**Status:** ✅ Accepted  
+**Context:**  
+Routers should not contain business logic. Direct database access from route handlers makes testing difficult and mixes concerns.
+
+**Decision:**  
+All database mutations go through service classes in `apps/api/app/services/`:
+- `auth_service.py` — Authentication logic
+- `project_service.py` — Project operations
+- `vault_service.py` — Secret vault operations
+- `audit_service.py` — Audit logging
+
+**Rationale:**  
+- Routers handle HTTP, services handle business logic
+- Services can be tested without HTTP layer
+- Easier to implement transactions across multiple operations
+- Clear dependency injection path for database sessions
+
+**Consequences:**  
+- ✅ Testable business logic
+- ✅ Reusable across routers
+- ✅ Transaction management in one place
+- ❌ Extra layer of indirection
+- ❌ Need to keep services and routers in sync
+
+---
+
+## DEC-005 — Session-Based Auth (Not JWT in Browser)
+
+**Date:** 2024 (Phase 2)  
+**Status:** ⚠️ Under Review  
+**Context:**  
+Web dashboard needs authentication. Options: JWT stored in localStorage, HTTP-only cookies, BetterAuth.
+
+**Decision:**  
+Custom session-based auth with tokens stored in HTTP-only cookies. NOT using BetterAuth as originally planned.
+
+**Rationale:**  
+- HTTP-only cookies prevent XSS token theft
+- Server-side session validation allows revocation
+- Custom implementation gives full control
+- Matches CLI's session management pattern
+
+**Consequences:**  
+- ✅ More secure than localStorage JWT
+- ✅ Server can revoke sessions
+- ✅ Works across tabs/windows
+- ❌ Requires CSRF protection
+- ❌ Session management is more complex
+
+**Related Issue**: CR-02 (Token in localStorage) from Phase 2 review indicates current implementation may have issues.
+
+---
+
+## DEC-006 — Vinext (Next.js 16) for Frontend
+
+**Date:** 2024 (Phase 2)  
+**Status:** ✅ Accepted  
+**Context:**  
+Need a React framework compatible with Cloudflare Pages + Workers runtime.
+
+**Decision:**  
+Use Vinext (Vite-based Next.js reimplementation) targeting Cloudflare edge deployment.
+
+**Rationale:**  
+- Cloudflare Pages + Workers has specific runtime requirements
+- Vinext provides Next.js compatibility with Vite speed
+- Edge deployment for global low-latency
+- Wrangler config already in place (`apps/web/wrangler.jsonc`)
+
+**Consequences:**  
+- ✅ Fast builds with Vite
+- ✅ Cloudflare edge deployment ready
+- ✅ Next.js compatibility
+- ❌ Vinext is newer than Next.js (less community support)
+- ❌ Some Next.js patterns may not work identically
+
+---
+
+## DEC-007 — Zustand + React Query State Management
+
+**Date:** 2024 (Phase 2)  
+**Status:** ✅ Accepted  
+**Context:**  
+Frontend needs clear state boundaries between client state and server state.
+
+**Decision:**  
+- **Zustand**: `useUIStore`, `useProjectStore`, `useCryptoStore` for client state
+- **React Query**: All server state (projects, secrets, audit logs)
+
+**Rationale:**  
+- Zustand is simpler than Redux, less boilerplate
+- React Query handles caching, refetching, loading states automatically
+- Clear separation: UI state vs data state
+- Crypto store specifically NOT persisted (keys never go to localStorage)
+
+**Consequences:**  
+- ✅ Minimal boilerplate
+- ✅ Automatic server state sync
+- ✅ Encryption keys in memory only
+- ❌ Two state libraries to learn
+- ❌ Need to avoid mixing responsibilities
+
+---
+
+## DEC-008 — APScheduler for Background Jobs
+
+**Date:** 2026-04 (Phase 3)  
+**Status:** ✅ Accepted  
+**Context:**  
+Need background job for checking secret expirations and triggering notifications.
+
+**Decision:**  
+Use APScheduler with FastAPI lifespan integration:
+- `SchedulerManager` singleton pattern
+- Starts/stops with FastAPI app
+- Configurable via `SCHEDULER_ENABLED` and `SCHEDULER_INTERVAL_HOURS`
+
+**Rationale:**  
+- APScheduler is mature, well-documented
+- Lifespan integration ensures proper startup/shutdown
+- Singleton prevents duplicate schedulers
+- Configurable without code changes
+
+**Consequences:**  
+- ✅ Runs periodic tasks reliably
+- ✅ Proper lifecycle management
+- ✅ Easy configuration
+- ❌ Single process only (no distributed scheduling)
+- ❌ No persistence of job state (in-memory)
+
+---
+
+## DEC-009 — Phase 3 Integration Strategy
+
+**Date:** 2026-04 (Phase 3)  
+**Status:** ✅ Accepted  
+**Context:**  
+Phase 3 requires multiple cloud provider integrations (Vercel, Railway, Render). Each has different APIs.
+
+**Decision:**  
+Use Strategy pattern with `IntegrationProvider` interface:
+- Base interface in `apps/api/app/strategies/integrations/base.py`
+- Provider implementations: `vercel.py`, `railway.py`, `render.py`
+- `IntegrationService` selects appropriate strategy
+
+**Rationale:**  
+- Same pattern already used in codebase (vault_push, invite_transitions)
+- Easy to add new providers
+- Testable in isolation
+- Common interface for CLI and API to consume
+
+**Consequences:**  
+- ✅ Extensible for new providers
+- ✅ Consistent API across integrations
+- ✅ Testable strategies
+- ❌ More files to maintain
+- ❌ Provider APIs may change (need strategy updates)
+
+---
+
+## Pending Decisions
+
+### DEC-010 — Rate Limiting Implementation
+
+**Status:** Under Review  
+**Context:**  
+Public API needs rate limiting to prevent abuse. Current tests exist but implementation is incomplete.
+
+**Options:**
+1. Slowapi (Flask-rate-limit port for FastAPI)
+2. Custom middleware with Redis
+3. Custom middleware with in-memory store
+
+**Recommended:** Start with in-memory (for single-instance), migrate to Redis when scaling.
+
+---
+
+### DEC-011 — API Key vs CI Token Separation
+
+**Status:** Under Review  
+**Context:**  
+Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI/CD). Should they be separate models?
+
+**Options:**
+1. Separate models (`APIKey` and `CIToken`)
+2. Unified token model with `type` field
+
+**Recommended:** Separate models for clearer purpose and different permission scopes.
+
+---
+
+**Document Version**: 1.0  
+**Last Updated**: 2026-05-01
