@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useState } from "react"
 import { useParams } from "next/navigation"
 import { Download, KeyRound, Lock, Plus, RefreshCw, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -12,12 +12,19 @@ import { ExportModal } from "@/components/shared/export-modal"
 import { ImportModal } from "@/components/shared/import-modal"
 import { SecretForm, type SecretFormValue } from "@/components/shared/secret-form"
 import { SecretsTable } from "@/components/shared/secrets-table"
+import {
+  applySecretCountMetadata,
+  setEnvironmentSecretMetadata,
+  syncSecretCountState,
+  type SecretCountMetadata,
+  type SecretCountState,
+} from "@/components/shared/secret-counts"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
-import { useAuth } from "@/hooks/use-auth"
 import { checksum, decrypt, encrypt } from "@/lib/crypto"
-import { environmentsApi, vaultApi } from "@/lib/api"
+import { environmentsApi, peekCached, vaultApi } from "@/lib/api"
+import { useAuthStore } from "@/stores/auth"
 import { useCryptoStore } from "@/stores/crypto"
-import type { Environment, VaultBlob, VaultBlobPush } from "@/lib/api"
+import type { Environment, EnvironmentListResponse, VaultBlob, VaultBlobPush } from "@/lib/api"
 import type { DecryptedSecret } from "@/components/shared/secret-row"
 
 async function decryptVault(blobs: VaultBlob[], key: CryptoKey): Promise<DecryptedSecret[]> {
@@ -61,16 +68,27 @@ async function encryptVault(
 export default function SecretsPage() {
   const params = useParams()
   const projectId = params.id as string
-  const { user } = useAuth()
+  const user = useAuthStore((state) => state.user)
   const { sessionKey, isUnlocked, setSessionKey, clearSession } = useCryptoStore()
+  const cachedEnvironments = peekCached<EnvironmentListResponse>(
+    `/api/v1/projects/${projectId}/environments`
+  )
 
-  const [environments, setEnvironments] = useState<Environment[]>([])
-  const [activeEnv, setActiveEnv] = useState<Environment | null>(null)
+  const [environments, setEnvironments] = useState<Environment[]>(cachedEnvironments?.environments ?? [])
+  const [activeEnv, setActiveEnv] = useState<Environment | null>(
+    cachedEnvironments?.environments[0] ?? null
+  )
   const [vaultBlobs, setVaultBlobs] = useState<VaultBlob[]>([])
   const [secrets, setSecrets] = useState<DecryptedSecret[]>([])
+  const [secretCountState, setSecretCountState] = useState<SecretCountState>(() =>
+    syncSecretCountState(cachedEnvironments?.environments ?? [])
+  )
+  const secretCounts = secretCountState.counts
   const [vaultVersion, setVaultVersion] = useState(0)
   const [loading, setLoading] = useState(true)
-  const [vaultLoading, setVaultLoading] = useState(false)
+  const [vaultLoading, setVaultLoading] = useState(
+    Boolean(cachedEnvironments && cachedEnvironments.environments.length > 0)
+  )
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [formOpen, setFormOpen] = useState(false)
@@ -82,24 +100,60 @@ export default function SecretsPage() {
   useEffect(() => {
     let cancelled = false
 
-    environmentsApi
-      .list(projectId)
-      .then((data) => {
+    const loadEnvironments = async () => {
+      try {
+        const data = await environmentsApi.list(projectId)
         if (cancelled) return
+
         setEnvironments(data.environments)
         setVaultLoading(data.environments.length > 0)
-        setActiveEnv(data.environments[0] ?? null)
-      })
-      .catch((err) => {
+        setSecretCountState((currentState) =>
+          data.environments.length === 0
+            ? { counts: {}, versions: {} }
+            : syncSecretCountState(data.environments, currentState)
+        )
+        setActiveEnv((current) => {
+          const nextEnv = data.environments[0] ?? null
+          return current?.id === nextEnv?.id ? current : nextEnv
+        })
+
+        if (data.environments.length > 0) {
+          const versionResults = await Promise.allSettled(
+            data.environments.map(async (environment): Promise<SecretCountMetadata> => {
+              const metadata = await vaultApi.getVersion(projectId, environment.id)
+
+              return {
+                environmentId: environment.id,
+                count: metadata.blob_count,
+                version: metadata.version,
+              }
+            })
+          )
+
+          if (cancelled) return
+
+          const metadataUpdates = versionResults.flatMap((result) =>
+            result.status === "fulfilled" ? [result.value] : []
+          )
+
+          if (metadataUpdates.length > 0) {
+            setSecretCountState((currentState) =>
+              applySecretCountMetadata(currentState, metadataUpdates)
+            )
+          }
+        }
+      } catch (err) {
         if (!cancelled) {
           setError(err instanceof Error ? err.message : "Erro ao carregar ambientes")
         }
-      })
-      .finally(() => {
+      } finally {
         if (!cancelled) {
           setLoading(false)
         }
-      })
+      }
+    }
+
+    void loadEnvironments()
 
     return () => {
       cancelled = true
@@ -114,6 +168,9 @@ export default function SecretsPage() {
         const data = await vaultApi.pull(projectId, environment.id)
         setVaultBlobs(data.blobs)
         setVaultVersion(data.version)
+        setSecretCountState((currentState) =>
+          setEnvironmentSecretMetadata(currentState, environment.id, data.blobs.length, data.version)
+        )
         if (sessionKey) {
           setSecrets(await decryptVault(data.blobs, sessionKey))
         } else {
@@ -142,6 +199,9 @@ export default function SecretsPage() {
         if (cancelled) return
         setVaultBlobs(data.blobs)
         setVaultVersion(data.version)
+        setSecretCountState((currentState) =>
+          setEnvironmentSecretMetadata(currentState, activeEnv.id, data.blobs.length, data.version)
+        )
         setSecrets(nextSecrets)
       })
       .catch((err) => {
@@ -197,14 +257,7 @@ export default function SecretsPage() {
   }, [sessionKey, vaultBlobs])
 
   const activeEnvName = activeEnv?.display_name || activeEnv?.name || "environment"
-
-  const secretCounts = useMemo(() => {
-    const counts: Record<string, number> = {}
-    for (const environment of environments) {
-      counts[environment.id] = environment.id === activeEnv?.id ? secrets.length : 0
-    }
-    return counts
-  }, [activeEnv?.id, environments, secrets.length])
+  const activeSecretCount = activeEnv ? (secretCounts[activeEnv.id] ?? secrets.length) : secrets.length
 
   const pushSecrets = async (nextSecrets: DecryptedSecret[]) => {
     if (!activeEnv || !sessionKey) return
@@ -216,6 +269,9 @@ export default function SecretsPage() {
       const data = await vaultApi.push(projectId, activeEnv.id, { blobs })
       setVaultBlobs(data.blobs)
       setVaultVersion(data.version)
+      setSecretCountState((currentState) =>
+        setEnvironmentSecretMetadata(currentState, activeEnv.id, data.blobs.length, data.version)
+      )
       setSecrets(await decryptVault(data.blobs, sessionKey))
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar secrets")
@@ -290,7 +346,7 @@ export default function SecretsPage() {
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Secrets</h1>
           <p className="mt-1 font-mono text-sm text-[var(--text-tertiary)]">
-            {activeEnvName} · {secrets.length} secrets · vault v{vaultVersion}
+            {activeEnvName} · {activeSecretCount} secrets · vault v{vaultVersion}
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
