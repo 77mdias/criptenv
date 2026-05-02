@@ -2,42 +2,69 @@
 
 import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuthStore } from '@/stores/auth';
+import { useAuthStore, type AuthUser } from '@/stores/auth';
 import { authApi, ApiError } from '@/lib/api';
+
+let sessionRequest: Promise<AuthUser | null> | null = null;
+
+function loadSession(): Promise<AuthUser | null> {
+  if (!sessionRequest) {
+    sessionRequest = authApi
+      .session()
+      .catch((err) => {
+        if (err instanceof ApiError && err.status === 401) {
+          return null;
+        }
+        return null;
+      })
+      .finally(() => {
+        sessionRequest = null;
+      });
+  }
+
+  return sessionRequest;
+}
 
 export function useAuth() {
   const router = useRouter();
-  const { user, isAuthenticated, isLoading, setUser, setLoading, clearAuth } = useAuthStore();
+  const {
+    user,
+    isAuthenticated,
+    isLoading,
+    hasCheckedSession,
+    setUser,
+    setLoading,
+    clearAuth,
+  } = useAuthStore();
 
   useEffect(() => {
     let isMounted = true;
 
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('criptenv-auth');
+    if (hasCheckedSession) {
+      return () => {
+        isMounted = false;
+      };
     }
 
     setLoading(true);
-    authApi
-      .session()
-      .then((sessionUser) => {
-        if (isMounted) {
+    loadSession().then((sessionUser) => {
+      if (isMounted) {
+        if (useAuthStore.getState().hasCheckedSession) {
+          return;
+        }
+
+        if (sessionUser) {
           setUser(sessionUser);
+        } else {
+          clearAuth();
         }
-      })
-      .catch((err) => {
-        if (isMounted) {
-          if (err instanceof ApiError && err.status === 401) {
-            clearAuth();
-          } else {
-            clearAuth();
-          }
-        }
-      });
+      }
+    });
 
     return () => {
       isMounted = false;
     };
-  }, [setUser, setLoading, clearAuth]);
+  }, [hasCheckedSession, setUser, setLoading, clearAuth]);
 
   const login = useCallback(
     async (email: string, password: string) => {

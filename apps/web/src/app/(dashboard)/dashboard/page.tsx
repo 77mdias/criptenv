@@ -5,36 +5,53 @@ import { FolderOpen, Key, Clock } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { projectsApi, auditApi } from "@/lib/api"
+import { peekCached, projectsApi, auditApi } from "@/lib/api"
 import { formatRelativeTime } from "@/lib/utils"
-import type { Project, AuditLog } from "@/lib/api"
+import type { Project, AuditLog, ProjectListResponse } from "@/lib/api"
 
 export default function DashboardPage() {
-  const [projects, setProjects] = useState<Project[]>([])
+  const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects")
+  const [projects, setProjects] = useState<Project[]>(cachedProjects?.projects ?? [])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
-  const [loading, setLoading] = useState(true)
+  const [loading, setLoading] = useState(!cachedProjects)
+  const [activityLoading, setActivityLoading] = useState(!cachedProjects)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
     async function fetchDashboardData() {
       try {
-        setLoading(true)
         const projectData = await projectsApi.list()
+        if (cancelled) return
         setProjects(projectData.projects)
+        setLoading(false)
 
-        // Fetch audit logs for the first project if available
         if (projectData.projects.length > 0) {
+          setActivityLoading(true)
           const logData = await auditApi.getLogs(projectData.projects[0].id, { per_page: 5 })
+          if (cancelled) return
           setAuditLogs(logData.logs)
+        } else {
+          setAuditLogs([])
         }
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar dashboard")
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar dashboard")
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+          setActivityLoading(false)
+        }
       }
     }
 
-    fetchDashboardData()
+    void fetchDashboardData()
+
+    return () => {
+      cancelled = true
+    }
   }, [])
 
   if (error) {
@@ -169,7 +186,7 @@ export default function DashboardPage() {
           <CardDescription>Últimas operações nos seus projetos</CardDescription>
         </CardHeader>
         <div className="space-y-4">
-          {loading ? (
+          {activityLoading ? (
             <>
               {[1, 2, 3].map((i) => (
                 <div key={i} className="flex items-center gap-4 py-3 border-b border-[var(--border)] last:border-0">

@@ -1,5 +1,5 @@
 // Re-export everything for convenient imports
-export { ApiError, request } from "./client";
+export { ApiError, peekCached, request } from "./client";
 export type {
   User,
   AuthResponse,

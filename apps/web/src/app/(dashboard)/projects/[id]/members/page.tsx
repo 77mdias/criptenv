@@ -8,9 +8,9 @@ import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
-import { membersApi } from "@/lib/api"
+import { membersApi, peekCached } from "@/lib/api"
 import { inviteMemberSchema } from "@/lib/validators/schemas"
-import type { Invite, Member } from "@/lib/api"
+import type { Invite, InviteListResponse, Member, MemberListResponse } from "@/lib/api"
 
 const roles = ["viewer", "developer", "admin"] as const
 
@@ -24,10 +24,12 @@ function inviteState(invite: Invite) {
 export default function MembersPage() {
   const params = useParams()
   const projectId = params.id as string
+  const cachedMembers = peekCached<MemberListResponse>(`/api/v1/projects/${projectId}/members`)
+  const cachedInvites = peekCached<InviteListResponse>(`/api/v1/projects/${projectId}/invites`)
 
-  const [members, setMembers] = useState<Member[]>([])
-  const [invites, setInvites] = useState<Invite[]>([])
-  const [loading, setLoading] = useState(true)
+  const [members, setMembers] = useState<Member[]>(cachedMembers?.members ?? [])
+  const [invites, setInvites] = useState<Invite[]>(cachedInvites?.invites ?? [])
+  const [loading, setLoading] = useState(!cachedMembers || !cachedInvites)
   const [busyId, setBusyId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [notice, setNotice] = useState<string | null>(null)

@@ -25,6 +25,7 @@ class User(Base):
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan", foreign_keys="Session.user_id")
     projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
     memberships = relationship("ProjectMember", back_populates="user", foreign_keys="ProjectMember.user_id", primaryjoin="User.id == ProjectMember.user_id")
+    api_keys = relationship("APIKey", back_populates="user", foreign_keys="APIKey.user_id")
 
 
 class Session(Base):

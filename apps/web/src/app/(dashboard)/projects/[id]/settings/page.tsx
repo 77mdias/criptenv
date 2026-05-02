@@ -6,7 +6,7 @@ import { Settings, Trash2, AlertTriangle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
-import { projectsApi } from "@/lib/api";
+import { peekCached, projectsApi } from "@/lib/api";
 import { CITokensPanel } from "@/components/shared/ci-tokens-panel";
 import type { Project } from "@/lib/api";
 
@@ -14,33 +14,45 @@ export default function SettingsPage() {
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
+  const cachedProject = peekCached<Project>(`/api/v1/projects/${projectId}`);
 
-  const [project, setProject] = useState<Project | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [project, setProject] = useState<Project | null>(cachedProject);
+  const [loading, setLoading] = useState(!cachedProject);
   const [error, setError] = useState<string | null>(null);
-  const [name, setName] = useState("");
-  const [description, setDescription] = useState("");
+  const [name, setName] = useState(cachedProject?.name ?? "");
+  const [description, setDescription] = useState(cachedProject?.description ?? "");
   const [saving, setSaving] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
+    let cancelled = false
+
     async function fetchProject() {
       try {
-        setLoading(true);
         const data = await projectsApi.get(projectId);
+        if (cancelled) return
         setProject(data);
         setName(data.name);
         setDescription(data.description || "");
       } catch (err) {
-        setError(
-          err instanceof Error ? err.message : "Erro ao carregar projeto",
-        );
+        if (!cancelled) {
+          setError(
+            err instanceof Error ? err.message : "Erro ao carregar projeto",
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     }
-    fetchProject();
+
+    void fetchProject();
+
+    return () => {
+      cancelled = true
+    }
   }, [projectId]);
 
   const handleSave = async () => {

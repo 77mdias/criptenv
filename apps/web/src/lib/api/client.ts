@@ -1,7 +1,17 @@
 // CriptEnv Base API Client
 // Typed fetch wrapper for the FastAPI backend
 
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000";
+// Use relative URL in browser to leverage Vite proxy, or absolute URL from env
+const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+const GET_CACHE_TTL_MS = 15_000;
+
+interface CacheEntry {
+  data?: unknown;
+  expiresAt: number;
+  promise?: Promise<unknown>;
+}
+
+const responseCache = new Map<string, CacheEntry>();
 
 // ─── Error Class ───────────────────────────────────────────────────────────────
 
@@ -231,13 +241,12 @@ export interface CreateCITokenRequest {
 
 // ─── Base Fetch Wrapper ────────────────────────────────────────────────────────
 
-export async function request<T>(
-  method: string,
+function buildUrl(
   path: string,
-  body?: unknown,
   params?: Record<string, string | number | undefined>,
-): Promise<T> {
-  const url = new URL(`${BASE_URL}${path}`);
+): URL {
+  const baseUrl = BASE_URL || (typeof window !== "undefined" ? window.location.origin : "http://localhost");
+  const url = new URL(`${baseUrl}${path}`);
 
   if (params) {
     for (const [key, value] of Object.entries(params)) {
@@ -247,30 +256,102 @@ export async function request<T>(
     }
   }
 
+  return url;
+}
+
+function invalidateCache() {
+  responseCache.clear();
+}
+
+export function peekCached<T>(
+  path: string,
+  params?: Record<string, string | number | undefined>,
+): T | null {
+  const key = buildUrl(path, params).toString();
+  const cached = responseCache.get(key);
+
+  if (!cached || cached.data === undefined || cached.expiresAt <= Date.now()) {
+    return null;
+  }
+
+  return cached.data as T;
+}
+
+export async function request<T>(
+  method: string,
+  path: string,
+  body?: unknown,
+  params?: Record<string, string | number | undefined>,
+): Promise<T> {
+  const url = buildUrl(path, params);
+  const cacheKey = url.toString();
+
+  if (method === "GET" && typeof window !== "undefined") {
+    const cached = responseCache.get(cacheKey);
+
+    if (cached?.data !== undefined && cached.expiresAt > Date.now()) {
+      return cached.data as T;
+    }
+
+    if (cached?.promise) {
+      return cached.promise as Promise<T>;
+    }
+  }
+
   const headers: Record<string, string> = {
     "Content-Type": "application/json",
   };
 
-  const res = await fetch(url.toString(), {
-    method,
-    headers,
-    credentials: "include",
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const fetchPromise = (async () => {
+    const res = await fetch(cacheKey, {
+      method,
+      headers,
+      credentials: "include",
+      body: body ? JSON.stringify(body) : undefined,
+    });
 
-  if (res.status === 204) {
-    return undefined as T;
+    if (res.status === 204) {
+      if (method !== "GET") {
+        invalidateCache();
+      }
+      return undefined as T;
+    }
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new ApiError(
+        (data as { detail?: string })?.detail || `Request failed: ${res.status}`,
+        res.status,
+        data,
+      );
+    }
+
+    if (method === "GET" && typeof window !== "undefined") {
+      responseCache.set(cacheKey, {
+        data,
+        expiresAt: Date.now() + GET_CACHE_TTL_MS,
+      });
+    } else if (method !== "GET") {
+      invalidateCache();
+    }
+
+    return data as T;
+  })();
+
+  if (method === "GET" && typeof window !== "undefined") {
+    responseCache.set(cacheKey, {
+      expiresAt: Date.now() + GET_CACHE_TTL_MS,
+      promise: fetchPromise,
+    });
   }
 
-  const data = await res.json().catch(() => null);
-
-  if (!res.ok) {
-    throw new ApiError(
-      (data as { detail?: string })?.detail || `Request failed: ${res.status}`,
-      res.status,
-      data,
-    );
+  try {
+    return await fetchPromise;
+  } catch (error) {
+    if (method === "GET" && typeof window !== "undefined") {
+      responseCache.delete(cacheKey);
+    }
+    throw error;
   }
-
-  return data as T;
 }

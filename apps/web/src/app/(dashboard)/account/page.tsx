@@ -7,31 +7,50 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { authApi } from "@/lib/api"
+import { authApi, peekCached } from "@/lib/api"
+import { useAuthStore } from "@/stores/auth"
 import type { SessionResponse, User as UserType } from "@/lib/api"
 
 export default function AccountPage() {
   const router = useRouter()
+  const authUser = useAuthStore((state) => state.user)
+  const cachedSessions = peekCached<SessionResponse[]>("/api/auth/sessions")
   const [user, setUser] = useState<UserType | null>(null)
-  const [sessions, setSessions] = useState<SessionResponse[]>([])
-  const [loading, setLoading] = useState(true)
+  const [sessions, setSessions] = useState<SessionResponse[]>(cachedSessions ?? [])
+  const [loading, setLoading] = useState(!authUser && !cachedSessions)
   const [error, setError] = useState<string | null>(null)
 
   useEffect(() => {
+    let cancelled = false
+
     async function fetchData() {
       try {
-        const userData = await authApi.session()
-        setUser(userData)
-        const sessionsData = await authApi.getSessions()
+        const userPromise = authUser ? Promise.resolve(null) : authApi.session()
+        const [userData, sessionsData] = await Promise.all([userPromise, authApi.getSessions()])
+        if (cancelled) return
+        if (userData) {
+          setUser(userData)
+        }
         setSessions(sessionsData)
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar dados")
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar dados")
+        }
       } finally {
-        setLoading(false)
+        if (!cancelled) {
+          setLoading(false)
+        }
       }
     }
-    fetchData()
-  }, [])
+
+    void fetchData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [authUser])
+
+  const currentUser = user ?? authUser
 
   const handleSignOutAll = async () => {
     try {
@@ -83,18 +102,18 @@ export default function AccountPage() {
           </div>
           <div className="flex-1 space-y-1">
             <h2 className="font-semibold text-[var(--text-primary)]">
-              {user?.name || "Usuário"}
+              {currentUser?.name || "Usuário"}
             </h2>
             <p className="text-sm text-[var(--text-tertiary)] font-mono">
-              {user?.email}
+              {currentUser?.email}
             </p>
             <div className="flex gap-2 pt-2">
-              {user?.email_verified ? (
+              {currentUser?.email_verified ? (
                 <Badge variant="success">Email verificado</Badge>
               ) : (
                 <Badge variant="warning">Email não verificado</Badge>
               )}
-              {user?.two_factor_enabled && <Badge>2FA ativo</Badge>}
+              {currentUser?.two_factor_enabled && <Badge>2FA ativo</Badge>}
             </div>
           </div>
         </div>

@@ -13,6 +13,9 @@ class Settings(BaseSettings):
     CORS_ORIGINS: str = "http://localhost:3000"
     APP_ENV: str = "development"
     DEBUG: bool = True
+    DB_POOL_SIZE: int = 5
+    DB_MAX_OVERFLOW: int = 5
+    DB_POOL_TIMEOUT: int = 10
 
     class Config:
         env_file = ".env"

@@ -15,8 +15,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ciTokensApi } from "@/lib/api";
-import type { CIToken, CITokenWithPlaintext } from "@/lib/api/client";
+import { ciTokensApi, peekCached } from "@/lib/api";
+import type { CIToken, CITokenListResponse, CITokenWithPlaintext } from "@/lib/api/client";
 
 const AVAILABLE_SCOPES = [
   {
@@ -52,8 +52,11 @@ interface CITokensPanelProps {
 }
 
 export function CITokensPanel({ projectId }: CITokensPanelProps) {
-  const [tokens, setTokens] = useState<CIToken[]>([]);
-  const [loading, setLoading] = useState(true);
+  const cachedTokens = peekCached<CITokenListResponse>(`/api/v1/projects/${projectId}/tokens`, {
+    include_revoked: "true",
+  });
+  const [tokens, setTokens] = useState<CIToken[]>(cachedTokens?.tokens ?? []);
+  const [loading, setLoading] = useState(!cachedTokens);
   const [error, setError] = useState<string | null>(null);
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [newTokenResult, setNewTokenResult] =
@@ -77,7 +80,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
 
   useEffect(() => {
     const timeoutId = window.setTimeout(() => {
-      fetchTokens();
+      void fetchTokens();
     }, 0);
 
     return () => window.clearTimeout(timeoutId);

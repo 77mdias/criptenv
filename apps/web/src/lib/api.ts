@@ -1,7 +1,7 @@
 // CriptEnv API Client — backward-compatible facade
 // Re-exports from modular api/ directory plus the legacy `api` object
 
-export { ApiError, request } from './api/client';
+export { ApiError, peekCached, request } from './api/client';
 export { authApi } from './api/auth';
 export { projectsApi } from './api/projects';
 export { environmentsApi } from './api/environments';

@@ -27,3 +27,4 @@ class Project(Base):
     audit_logs = relationship("AuditLog", back_populates="project", cascade="all, delete-orphan")
     ci_tokens = relationship("CIToken", back_populates="project", cascade="all, delete-orphan")
     integrations = relationship("Integration", back_populates="project", cascade="all, delete-orphan")
+    api_keys = relationship("APIKey", back_populates="project", cascade="all, delete-orphan")

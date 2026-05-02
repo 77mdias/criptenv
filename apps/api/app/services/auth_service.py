@@ -7,7 +7,6 @@ import secrets
 
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm import selectinload
 import bcrypt
 
 from app.models.user import User, Session
@@ -136,9 +135,7 @@ class AuthService:
             return None
 
         user_result = await self.db.execute(
-            select(User)
-            .options(selectinload(User.sessions), selectinload(User.projects), selectinload(User.memberships))
-            .where(User.id == session.user_id)
+            select(User).where(User.id == session.user_id)
         )
         user = user_result.scalar_one_or_none()
         if user:

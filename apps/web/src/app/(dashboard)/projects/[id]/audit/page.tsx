@@ -7,8 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
 import { AuditTimeline } from "@/components/shared/audit-timeline"
-import { auditApi } from "@/lib/api"
-import type { AuditLog } from "@/lib/api"
+import { auditApi, peekCached } from "@/lib/api"
+import type { AuditLog, AuditLogListResponse } from "@/lib/api"
 
 const actions = [
   "",
@@ -27,20 +27,24 @@ const resourceTypes = ["", "project", "vault", "invite", "member", "environment"
 export default function AuditPage() {
   const params = useParams()
   const projectId = params.id as string
-  const [logs, setLogs] = useState<AuditLog[]>([])
-  const [total, setTotal] = useState(0)
-  const [page, setPage] = useState(1)
   const [action, setAction] = useState("")
   const [resourceType, setResourceType] = useState("")
-  const [loading, setLoading] = useState(true)
+  const cachedInitialLogs = peekCached<AuditLogListResponse>(
+    `/api/v1/projects/${projectId}/audit`,
+    { page: 1, per_page: 20 }
+  )
+  const [logs, setLogs] = useState<AuditLog[]>(cachedInitialLogs?.logs ?? [])
+  const [total, setTotal] = useState(cachedInitialLogs?.total ?? 0)
+  const [page, setPage] = useState(cachedInitialLogs?.page ?? 1)
+  const [loading, setLoading] = useState(!cachedInitialLogs)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const loadLogs = useCallback(
-    async (nextPage: number, append = false) => {
+    async (nextPage: number, append = false, showLoading = true) => {
       if (append) {
         setLoadingMore(true)
-      } else {
+      } else if (showLoading) {
         setLoading(true)
       }
       setError(null)
@@ -66,36 +70,13 @@ export default function AuditPage() {
   )
 
   useEffect(() => {
-    let cancelled = false
+    const hasDefaultFilters = action === "" && resourceType === ""
+    const timeoutId = window.setTimeout(() => {
+      void loadLogs(1, false, !(hasDefaultFilters && cachedInitialLogs))
+    }, 0)
 
-    auditApi
-      .getLogs(projectId, {
-        page: 1,
-        per_page: 20,
-        action: action || undefined,
-        resource_type: resourceType || undefined,
-      })
-      .then((data) => {
-        if (cancelled) return
-        setLogs(data.logs)
-        setTotal(data.total)
-        setPage(data.page)
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Erro ao carregar logs")
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [action, projectId, resourceType])
+    return () => window.clearTimeout(timeoutId)
+  }, [action, cachedInitialLogs, loadLogs, resourceType])
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(logs, null, 2)], {
