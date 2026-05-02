@@ -6,7 +6,6 @@ import Link from "next/link"
 import type { ReactNode } from "react"
 import {
   ArrowRight,
-  Check,
   CircleDot,
   Code2,
   Eye,
@@ -25,6 +24,7 @@ import { LandingMotion } from "@/components/marketing/landing-motion"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
+import { PricingCardCarousel } from "@/components/marketing/pricing-card-carousel"
 
 const HeroScene = dynamic(
   () => import("@/components/marketing/hero-scene").then((mod) => mod.HeroScene),
@@ -497,66 +497,8 @@ export default function LandingPage() {
           <div data-motion="reveal">
             <SectionHeading align="center" label="Pricing" title="Simples e transparente" />
           </div>
-          <div className="grid grid-cols-1 gap-8 md:grid-cols-3">
-            {plans.map((plan) => (
-              <Card
-                data-motion="reveal"
-                key={plan.name}
-                className={`group relative flex min-h-[442px] flex-col rounded-xl p-6 transition-all duration-300 ${
-                  plan.featured
-                    ? "border-[var(--accent)]/50 bg-[var(--surface)] shadow-lg shadow-[var(--glow-soft)] hover:shadow-[var(--glow-strong)]"
-                    : "border-[var(--border)] bg-[var(--surface)] hover:border-[var(--accent)]/20 hover:shadow-lg"
-                }`}
-              >
-                {plan.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 rounded-full bg-[var(--accent)] px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-foreground)]">
-                    Most Popular
-                  </div>
-                )}
-                <div>
-                  <h3 className="text-lg font-semibold text-[var(--text-primary)]">
-                    {plan.name}
-                  </h3>
-                  <p className="mt-1 text-sm text-[var(--text-tertiary)]">
-                    {plan.description}
-                  </p>
-                </div>
-                <div className="mb-6 mt-6">
-                  <span className="text-4xl font-semibold tracking-tight text-[var(--text-primary)]">
-                    {plan.price}
-                  </span>
-                  {plan.suffix && (
-                    <span className="text-sm text-[var(--text-muted)]">
-                      {plan.suffix}
-                    </span>
-                  )}
-                </div>
-                <ul className="mb-8 space-y-3">
-                  {plan.features.map((feature) => (
-                    <li
-                      key={feature}
-                      className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"
-                    >
-                      <Check className="h-4 w-4 shrink-0 text-green-500" />
-                      {feature}
-                    </li>
-                  ))}
-                </ul>
-                <Link href="/signup" className="mt-auto block">
-                  <Button
-                    variant={plan.featured ? "primary" : "secondary"}
-                    fullWidth
-                    className={
-                      plan.featured
-                        ? "bg-[var(--accent)] font-bold text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
-                        : "border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)]"
-                    }
-                  >
-                    {plan.cta}
-                  </Button>
-                </Link>
-              </Card>
-            ))}
+          <div data-motion="reveal">
+            <PricingCardCarousel cards={plans} autoPlayInterval={4000} />
           </div>
         </div>
       </section>
