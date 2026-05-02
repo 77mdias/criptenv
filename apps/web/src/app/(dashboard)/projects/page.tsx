@@ -9,15 +9,18 @@ import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { EmptyState } from "@/components/shared/empty-state"
 import { CreateProjectDialog } from "@/components/shared/create-project-dialog"
-import { projectsApi } from "@/lib/api"
+import { peekCached, projectsApi } from "@/lib/api"
 import { formatRelativeTime } from "@/lib/utils"
-import type { Project } from "@/lib/api"
+import type { Project, ProjectListResponse } from "@/lib/api"
 
 export default function ProjectsPage() {
-  const [projects, setProjects] = useState<Project[]>([])
-  const [loading, setLoading] = useState(true)
+  const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects")
+  const [projects, setProjects] = useState<Project[]>(cachedProjects?.projects ?? [])
+  const [loading, setLoading] = useState(!cachedProjects)
   const [error, setError] = useState<string | null>(null)
   const [dialogOpen, setDialogOpen] = useState(false)
+  const projectCardClassName =
+    "flex h-full min-h-[176px] flex-col justify-between hover:shadow-xl transition-all duration-300"
 
   const fetchProjects = useCallback(async (showLoading = true) => {
     try {
@@ -35,30 +38,12 @@ export default function ProjectsPage() {
   }, [])
 
   useEffect(() => {
-    let cancelled = false
+    const timeoutId = window.setTimeout(() => {
+      void fetchProjects(!cachedProjects)
+    }, 0)
 
-    projectsApi
-      .list()
-      .then((data) => {
-        if (!cancelled) {
-          setProjects(data.projects)
-        }
-      })
-      .catch((err) => {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Erro ao carregar projetos")
-        }
-      })
-      .finally(() => {
-        if (!cancelled) {
-          setLoading(false)
-        }
-      })
-
-    return () => {
-      cancelled = true
-    }
-  }, [])
+    return () => window.clearTimeout(timeoutId)
+  }, [cachedProjects, fetchProjects])
 
   useEffect(() => {
     const openDialog = () => setDialogOpen(true)
@@ -98,7 +83,7 @@ export default function ProjectsPage() {
       </div>
 
       {loading ? (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {[1, 2, 3].map((i) => (
             <Card key={i}>
               <div className="flex items-center gap-3 mb-4">
@@ -131,19 +116,19 @@ export default function ProjectsPage() {
           }}
         />
       ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 gap-6 lg:grid-cols-3">
           {projects.map((project) => (
-            <Link key={project.id} href={`/projects/${project.id}`}>
-              <Card className="hover:shadow-xl transition-all duration-300 cursor-pointer group">
+            <Link key={project.id} href={`/projects/${project.id}`} className="h-full">
+              <Card className={`${projectCardClassName} cursor-pointer group`}>
                 <div className="flex items-center gap-3 mb-4">
                   <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)] group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-foreground)] transition-colors">
                     <FolderOpen className="h-5 w-5" />
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-[var(--text-primary)]">
+                  <div className="min-w-0">
+                    <h3 className="truncate font-semibold text-[var(--text-primary)]">
                       {project.name}
                     </h3>
-                    <p className="text-xs text-[var(--text-muted)] font-mono">
+                    <p className="truncate text-xs text-[var(--text-muted)] font-mono">
                       {project.description || "Sem descrição"}
                     </p>
                   </div>
@@ -167,7 +152,7 @@ export default function ProjectsPage() {
 
           {/* Create new project card */}
           <Card
-            className="border-dashed hover:border-[var(--accent)] transition-colors cursor-pointer flex items-center justify-center min-h-[200px]"
+            className={`${projectCardClassName} items-center justify-center border-dashed cursor-pointer hover:border-[var(--accent)] hover:shadow-none`}
             onClick={() => setDialogOpen(true)}
           >
             <div className="text-center">
