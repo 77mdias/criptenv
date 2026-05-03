@@ -7,6 +7,8 @@ import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
+import { Separator } from "@/components/ui/separator"
+import { OAuthButtonGroup } from "@/components/ui/oauth-button"
 import { Mail, Lock, AlertCircle } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/validators/schemas"
 import { useAuth } from "@/hooks/use-auth"
@@ -73,6 +75,15 @@ export default function LoginPage() {
           Entrar
         </Button>
       </form>
+
+      <div className="relative">
+        <Separator className="my-4" />
+        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--background)] px-2 text-xs text-[var(--text-tertiary)]">
+          ou continue com
+        </span>
+      </div>
+
+      <OAuthButtonGroup />
 
       <p className="text-center text-sm text-[var(--text-tertiary)]">
         Não tem conta?{" "}
