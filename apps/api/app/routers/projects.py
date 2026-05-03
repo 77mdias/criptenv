@@ -7,7 +7,7 @@ from app.database import get_db
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, get_current_user_or_api_key
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/projects", tags=["Projects"])
@@ -75,7 +75,7 @@ async def create_project(
 @router.get("", response_model=ProjectListResponse)
 async def list_projects(
     include_archived: bool = False,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -93,7 +93,7 @@ async def list_projects(
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(
     project_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     from uuid import UUID

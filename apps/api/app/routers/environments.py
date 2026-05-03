@@ -8,7 +8,7 @@ from app.database import get_db
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.environment import EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse, EnvironmentListResponse
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, get_current_user_or_api_key
 from app.models.user import User
 from app.models.environment import Environment
 
@@ -101,7 +101,7 @@ async def create_environment(
 @router.get("", response_model=EnvironmentListResponse)
 async def list_environments(
     project_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -138,7 +138,7 @@ async def list_environments(
 async def get_environment(
     project_id: str,
     environment_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)

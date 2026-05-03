@@ -240,6 +240,27 @@ class CriptEnvClient:
         )
         return resp.json()
 
+    # ─── Integrations ─────────────────────────────────────────────────────────
+
+    async def list_integrations(self, project_id: str) -> list[dict[str, Any]]:
+        """GET /api/v1/projects/{id}/integrations"""
+        resp = await self._request(
+            "GET", f"/api/v1/projects/{project_id}/integrations"
+        )
+        data = resp.json()
+        return data.get("items", [])
+
+    async def sync_integration(
+        self, project_id: str, integration_id: str, direction: str = "push"
+    ) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/integrations/{iid}/sync"""
+        resp = await self._request(
+            "POST",
+            f"/api/v1/projects/{project_id}/integrations/{integration_id}/sync",
+            json={"direction": direction},
+        )
+        return resp.json()
+
     # ─── Rotation (M3.5) ────────────────────────────────────────────────────
 
     async def rotate_secret(

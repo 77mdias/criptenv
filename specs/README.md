@@ -57,14 +57,14 @@
 
 **Why FastAPI over alternatives?**
 
-| Criteria | FastAPI | Express | NestJS | Django |
-|----------|--------|---------|--------|--------|
-| **Performance** | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ | ⭐⭐⭐ |
-| **Type Safety** | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐⭐⭐ | ⭐⭐⭐ |
-| **Async** | Native | ⚠️ Optional | ⚠️ Optional | ❌ Sync |
-| **OpenAPI** | Auto | ❌ | ⚠️ Partial | ⚠️ DRF |
-| **Serverless** | ⭐⭐⭐⭐⭐ | ❌ | ⚠️ | ❌ |
-| **Learning Curve** | ⭐⭐⭐ | ⭐⭐⭐⭐⭐ | ⭐⭐ | ⭐⭐ |
+| Criteria           | FastAPI    | Express     | NestJS      | Django  |
+| ------------------ | ---------- | ----------- | ----------- | ------- |
+| **Performance**    | ⭐⭐⭐⭐⭐ | ⭐⭐⭐⭐    | ⭐⭐⭐      | ⭐⭐⭐  |
+| **Type Safety**    | ⭐⭐⭐⭐⭐ | ⭐⭐        | ⭐⭐⭐⭐    | ⭐⭐⭐  |
+| **Async**          | Native     | ⚠️ Optional | ⚠️ Optional | ❌ Sync |
+| **OpenAPI**        | Auto       | ❌          | ⚠️ Partial  | ⚠️ DRF  |
+| **Serverless**     | ⭐⭐⭐⭐⭐ | ❌          | ⚠️          | ❌      |
+| **Learning Curve** | ⭐⭐⭐     | ⭐⭐⭐⭐⭐  | ⭐⭐        | ⭐⭐    |
 
 **Serverless Compatibility**: FastAPI + Mangum = AWS Lambda / Cloudflare Workers / Railway
 
@@ -72,13 +72,13 @@
 
 **Why Vinext over standard Next.js?**
 
-| Criteria | Vinext | Standard Next.js |
-|----------|--------|-----------------|
-| **Cold Start** | ~50ms | ~200ms |
-| **Vite Ecosystem** | ✅ Yes | ❌ No |
-| **Cloudflare Edge** | ✅ Native | ⚠️ Limited |
-| **Bundle Size** | Smaller | Larger |
-| **Workers Deploy** | ✅ Native via Wrangler | ⚠️ Adapter-dependent |
+| Criteria            | Vinext                 | Standard Next.js     |
+| ------------------- | ---------------------- | -------------------- |
+| **Cold Start**      | ~50ms                  | ~200ms               |
+| **Vite Ecosystem**  | ✅ Yes                 | ❌ No                |
+| **Cloudflare Edge** | ✅ Native              | ⚠️ Limited           |
+| **Bundle Size**     | Smaller                | Larger               |
+| **Workers Deploy**  | ✅ Native via Wrangler | ⚠️ Adapter-dependent |
 
 **Trade-off**: Vinext is newer (less community), but better suited for our "zero-cost edge" goal.
 
@@ -86,16 +86,17 @@
 
 **Why BetterAuth over NextAuth/Clerk?**
 
-| Criteria | BetterAuth | NextAuth | Clerk |
-|----------|-----------|----------|-------|
-| **Framework Agnostic** | ✅ Yes | ⚠️ Next.js | ⚠️ Limited |
-| **Open Source** | ✅ MIT | ✅ MIT | ❌ Proprietary |
-| **Database-backed** | ✅ Yes | ⚠️ Optional | ❌ SaaS |
-| **2FA** | ✅ Plugin | ⚠️ Custom | ✅ Yes |
-| **SSO Plugins** | ✅ Yes | ⚠️ Custom | ✅ Yes |
-| **TypeScript** | ✅ First | ✅ Yes | ✅ Yes |
+| Criteria               | BetterAuth | NextAuth    | Clerk          |
+| ---------------------- | ---------- | ----------- | -------------- |
+| **Framework Agnostic** | ✅ Yes     | ⚠️ Next.js  | ⚠️ Limited     |
+| **Open Source**        | ✅ MIT     | ✅ MIT      | ❌ Proprietary |
+| **Database-backed**    | ✅ Yes     | ⚠️ Optional | ❌ SaaS        |
+| **2FA**                | ✅ Plugin  | ⚠️ Custom   | ✅ Yes         |
+| **SSO Plugins**        | ✅ Yes     | ⚠️ Custom   | ✅ Yes         |
+| **TypeScript**         | ✅ First   | ✅ Yes      | ✅ Yes         |
 
 **Key Differentiator**:
+
 - Works with ANY backend (Express, FastAPI, Hono, etc.)
 - Database-backed sessions = full control
 - MIT License = no vendor lock-in
@@ -104,13 +105,14 @@
 
 **Why AES-GCM over alternatives?**
 
-| Algorithm | Key Size | Authenticated | Speed | Standard |
-|-----------|----------|---------------|-------|----------|
-| **AES-GCM** | 256-bit | ✅ Yes (AEAD) | ⭐⭐⭐⭐ | ⭐⭐⭐⭐⭐ |
-| ChaCha20-Poly1305 | 256-bit | ✅ Yes | ⭐⭐⭐⭐⭐ | ⭐⭐⭐ |
-| AES-CBC | 256-bit | ❌ (needs HMAC) | ⭐⭐⭐⭐ | ⭐⭐⭐⭐ |
+| Algorithm         | Key Size | Authenticated   | Speed      | Standard   |
+| ----------------- | -------- | --------------- | ---------- | ---------- |
+| **AES-GCM**       | 256-bit  | ✅ Yes (AEAD)   | ⭐⭐⭐⭐   | ⭐⭐⭐⭐⭐ |
+| ChaCha20-Poly1305 | 256-bit  | ✅ Yes          | ⭐⭐⭐⭐⭐ | ⭐⭐⭐     |
+| AES-CBC           | 256-bit  | ❌ (needs HMAC) | ⭐⭐⭐⭐   | ⭐⭐⭐⭐   |
 
 **AES-GCM chosen** because:
+
 - NIST standard (compliance)
 - Hardware acceleration on all CPUs
 - Built into Web Crypto API (browser-compatible)
@@ -166,14 +168,14 @@
 
 ### Cost Breakdown (Monthly)
 
-| Service | Free Tier Limits | Cost |
-|---------|------------------|------|
-| **Cloudflare Pages + Workers** | Unlimited bandwidth, 500 builds | $0 |
-| **Railway** | 500 hours, sleep after 15min | $0 |
-| **Supabase** | 500MB DB, 1GB storage, 50k MAU | $0 |
-| **GitHub** | Unlimited repos, Actions CI/CD | $0 |
-| **Domain** | .env.security (TBD) | $12/year |
-| **Total** | | **~$1/month** |
+| Service                        | Free Tier Limits                | Cost          |
+| ------------------------------ | ------------------------------- | ------------- |
+| **Cloudflare Pages + Workers** | Unlimited bandwidth, 500 builds | $0            |
+| **Railway**                    | 500 hours, sleep after 15min    | $0            |
+| **Supabase**                   | 500MB DB, 1GB storage, 50k MAU  | $0            |
+| **GitHub**                     | Unlimited repos, Actions CI/CD  | $0            |
+| **Domain**                     | .env.security (TBD)             | $12/year      |
+| **Total**                      |                                 | **~$1/month** |
 
 ---
 
@@ -251,17 +253,17 @@ Developer Machine                              Supabase
 
 ### Error Codes
 
-| Code | HTTP | Description |
-|------|------|-------------|
-| `AUTH_INVALID_CREDENTIALS` | 401 | Wrong email/password |
-| `AUTH_SESSION_EXPIRED` | 401 | Session token expired |
-| `AUTH_2FA_REQUIRED` | 403 | 2FA verification needed |
-| `VAULT_NOT_FOUND` | 404 | Project/vault doesn't exist |
-| `VAULT_ACCESS_DENIED` | 403 | No permission to access vault |
-| `ENCRYPTION_FAILED` | 500 | Client-side encryption error |
-| `DECRYPTION_FAILED` | 500 | Client-side decryption error |
-| `SYNC_CONFLICT` | 409 | Concurrent modification detected |
-| `RATE_LIMIT_EXCEEDED` | 429 | Too many requests |
+| Code                       | HTTP | Description                      |
+| -------------------------- | ---- | -------------------------------- |
+| `AUTH_INVALID_CREDENTIALS` | 401  | Wrong email/password             |
+| `AUTH_SESSION_EXPIRED`     | 401  | Session token expired            |
+| `AUTH_2FA_REQUIRED`        | 403  | 2FA verification needed          |
+| `VAULT_NOT_FOUND`          | 404  | Project/vault doesn't exist      |
+| `VAULT_ACCESS_DENIED`      | 403  | No permission to access vault    |
+| `ENCRYPTION_FAILED`        | 500  | Client-side encryption error     |
+| `DECRYPTION_FAILED`        | 500  | Client-side decryption error     |
+| `SYNC_CONFLICT`            | 409  | Concurrent modification detected |
+| `RATE_LIMIT_EXCEEDED`      | 429  | Too many requests                |
 
 ### Error Response Format
 
@@ -283,15 +285,15 @@ Developer Machine                              Supabase
 
 ## Performance Targets
 
-| Operation | Target | Measurement |
-|-----------|--------|-------------|
-| CLI command (local) | < 100ms | client-side |
-| Encryption (.env 100 vars) | < 200ms | client-side |
-| Push to server | < 500ms | end-to-end |
-| Pull from server | < 500ms | end-to-end |
-| Web page load | < 2s (LCP) | Lighthouse |
-| API response (p95) | < 200ms | server-side |
-| Realtime sync | < 1s | round-trip |
+| Operation                  | Target     | Measurement |
+| -------------------------- | ---------- | ----------- |
+| CLI command (local)        | < 100ms    | client-side |
+| Encryption (.env 100 vars) | < 200ms    | client-side |
+| Push to server             | < 500ms    | end-to-end  |
+| Pull from server           | < 500ms    | end-to-end  |
+| Web page load              | < 2s (LCP) | Lighthouse  |
+| API response (p95)         | < 200ms    | server-side |
+| Realtime sync              | < 1s       | round-trip  |
 
 ---
 
@@ -315,13 +317,13 @@ Developer Machine                              Supabase
 
 ### Metrics (Prometheus)
 
-| Metric | Type | Labels |
-|--------|------|--------|
-| `http_requests_total` | Counter | method, path, status |
-| `http_request_duration_seconds` | Histogram | method, path |
-| `secrets_encrypted_total` | Counter | project_id |
-| `active_connections` | Gauge | type (cli, web) |
-| `sync_operations_total` | Counter | type (push, pull) |
+| Metric                          | Type      | Labels               |
+| ------------------------------- | --------- | -------------------- |
+| `http_requests_total`           | Counter   | method, path, status |
+| `http_request_duration_seconds` | Histogram | method, path         |
+| `secrets_encrypted_total`       | Counter   | project_id           |
+| `active_connections`            | Gauge     | type (cli, web)      |
+| `sync_operations_total`         | Counter   | type (push, pull)    |
 
 ### Health Checks
 

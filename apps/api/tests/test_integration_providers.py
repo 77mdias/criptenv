@@ -137,6 +137,132 @@ class TestVercelProvider:
             assert result is False
 
 
+class TestRenderProvider:
+    """RED: Test RenderProvider implementation"""
+
+    @pytest.mark.asyncio
+    async def test_push_secrets_returns_bool(self):
+        """push_secrets should return True on success"""
+        from app.strategies.integrations.render import RenderProvider
+        
+        provider = RenderProvider()
+        secrets = [
+            {"key": "DATABASE_URL", "value": "postgres://..."},
+            {"key": "API_KEY", "value": "sk_xxx"}
+        ]
+        config = {"api_token": "test_token", "service_id": "srv_123"}
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 201
+        
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value = mock_client
+            mock_client.post = AsyncMock(return_value=mock_response)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock()
+            
+            result = await provider.push_secrets(secrets, config, "production")
+            
+            assert result is True
+            assert mock_client.post.call_count == 2  # 2 secrets
+
+    @pytest.mark.asyncio
+    async def test_pull_secrets_returns_list(self):
+        """pull_secrets should return list of secrets"""
+        from app.strategies.integrations.render import RenderProvider
+        
+        provider = RenderProvider()
+        config = {"api_token": "test_token", "service_id": "srv_123"}
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        mock_response.json = MagicMock(return_value=[
+            {"envVar": {"key": "DATABASE_URL", "value": "postgres://..."}},
+            {"envVar": {"key": "API_KEY", "value": "sk_xxx"}}
+        ])
+        
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value = mock_client
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock()
+            
+            result = await provider.pull_secrets(config, "production")
+            
+            assert isinstance(result, list)
+            assert len(result) == 2
+            assert result[0]["key"] == "DATABASE_URL"
+
+    @pytest.mark.asyncio
+    async def test_validate_connection_returns_bool(self):
+        """validate_connection should return True for valid token"""
+        from app.strategies.integrations.render import RenderProvider
+        
+        provider = RenderProvider()
+        config = {"api_token": "valid_token"}
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 200
+        
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value = mock_client
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock()
+            
+            result = await provider.validate_connection(config)
+            
+            assert result is True
+
+    @pytest.mark.asyncio
+    async def test_validate_connection_returns_false_for_invalid_token(self):
+        """validate_connection should return False for invalid token"""
+        from app.strategies.integrations.render import RenderProvider
+        
+        provider = RenderProvider()
+        config = {"api_token": "invalid_token"}
+        
+        mock_response = MagicMock()
+        mock_response.status_code = 401
+        
+        with patch('httpx.AsyncClient') as mock_client_class:
+            mock_client = AsyncMock()
+            mock_client_class.return_value = mock_client
+            mock_client.get = AsyncMock(return_value=mock_response)
+            mock_client.__aenter__ = AsyncMock(return_value=mock_client)
+            mock_client.__aexit__ = AsyncMock()
+            
+            result = await provider.validate_connection(config)
+            
+            assert result is False
+
+    def test_get_environments(self):
+        """Render should return ['production'] as environments"""
+        from app.strategies.integrations.render import RenderProvider
+        
+        provider = RenderProvider()
+        envs = provider.get_environments({})
+        
+        assert envs == ["production"]
+
+    def test_provider_name(self):
+        """RenderProvider name should be 'render'"""
+        from app.strategies.integrations.render import RenderProvider
+        
+        provider = RenderProvider()
+        assert provider.provider_name == "render"
+
+    def test_api_base_url(self):
+        """RenderProvider API base URL should be correct"""
+        from app.strategies.integrations.render import RenderProvider
+        
+        provider = RenderProvider()
+        assert provider.api_base_url == "https://api.render.com/v1"
+
+
 class TestIntegrationService:
     """RED: Test IntegrationService"""
 

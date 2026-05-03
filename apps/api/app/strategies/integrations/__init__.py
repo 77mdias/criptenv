@@ -12,11 +12,13 @@ from app.strategies.integrations.base import (
 
 # Import providers to trigger registration
 from app.strategies.integrations.vercel import VercelProvider
+from app.strategies.integrations.render import RenderProvider
 
 __all__ = [
     "IntegrationProvider",
     "register_provider",
     "get_provider",
     "list_providers",
-    "VercelProvider"
+    "VercelProvider",
+    "RenderProvider"
 ]

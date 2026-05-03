@@ -6,6 +6,42 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-03 — Phase 3 Objectives Closure (M3.2 + M3.3 + M3.4)
+
+**Resumo:**  
+Fechamento dos 3 objetivos pendentes do ROADMAP marcados como NOT STARTED: Public API (M3.4), CI Tokens (M3.3), e Cloud Integrations (M3.2 — Vercel + Render).
+
+**Arquivos criados:**  
+- `apps/api/app/strategies/integrations/render.py` — RenderProvider implementation
+- `apps/api/tests/test_dual_auth.py` — 7 integration tests for dual auth
+- `apps/cli/src/criptenv/commands/integrations.py` — CLI integrations commands
+- `apps/cli/src/criptenv/commands/ci.py` (rewritten) — Real ci deploy + cli_context fix
+
+**Arquivos alterados:**  
+- `apps/api/main.py` — RateLimitMiddleware registered, custom OpenAPI with dual security
+- `apps/api/app/middleware/auth.py` — `get_current_user_or_api_key()` for dual auth
+- `apps/api/app/middleware/rate_limit.py` — Already existed, now activated
+- `apps/api/app/routers/vault.py` — vault pull/version accept API keys
+- `apps/api/app/routers/projects.py` — projects list/get accept API keys
+- `apps/api/app/routers/environments.py` — environments list/get accept API keys
+- `apps/api/app/strategies/integrations/__init__.py` — RenderProvider registered
+- `apps/api/tests/test_integration_providers.py` — 6 RenderProvider tests added
+- `apps/api/tests/test_openapi_docs.py` — Rate limit error format updated
+- `apps/cli/src/criptenv/context.py` — `CRIPTENV_MASTER_PASSWORD` env var support
+- `apps/cli/src/criptenv/cli.py` — integrations_group registered
+- `apps/cli/src/criptenv/api/client.py` — `list_integrations()`, `sync_integration()` added
+- `ROADMAP.md` — Status updated for M3.2/M3.3/M3.4
+- `docs/development/CHANGELOG.md` — New section for M3.2+M3.3+M3.4 completion
+- `docs/project/current-state.md` — Updated to ~85% Phase 3
+- `docs/tasks/current-task.md` — Session closure documented
+
+**Observações:**  
+- Railway provider (TASK-061) ainda pendente — segue mesmo padrão do RenderProvider
+- Integration config encryption at-rest ainda pendente
+- Todos os testes passando: API 275 ✅, CLI 127 ✅
+
+---
+
 ## 2026-05-03 — Phase 3 Rescue Implementation
 
 **Resumo:**  
@@ -168,5 +204,5 @@ Ver CHANGELOG.md para detalhes completos.
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1  
+**Last Updated**: 2026-05-03

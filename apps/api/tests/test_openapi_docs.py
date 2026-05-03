@@ -131,7 +131,12 @@ class TestErrorResponseFormat:
             # Note: Health endpoint may not be rate limited
             if response.status_code == 429:
                 data = response.json()
-                assert "detail" in data
+                # Rate limit returns consistent API error format: {"error": {...}}
+                assert "error" in data
+                assert "code" in data["error"]
+                assert data["error"]["code"] == "RATE_LIMIT_EXCEEDED"
+                assert "message" in data["error"]
+                assert "retry_after" in data["error"]
 
 
 class TestSecurityDocumentation:

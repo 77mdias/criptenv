@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos com CLI funcional (93+ testes) e Web Dashboard operacional. Phase 3 (CI/CD) está em andamento com GitHub Action implementado, rotação de secrets em desenvolvimento, e integrações cloud (Vercel/Railway) pendentes.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) avançado: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅. Resta Railway provider e hardening de segurança P0.**
 
 ---
 
@@ -12,7 +12,7 @@
 |-------|--------|------------|
 | **Phase 1 (CLI MVP)** | ✅ COMPLETE | 100% |
 | **Phase 2 (Web UI)** | ✅ COMPLETE | 100% |
-| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~60% |
+| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~85% |
 | **Phase 4 (Enterprise)** | 📋 PLANNED | 0% |
 
 ---
@@ -37,30 +37,44 @@
 | `doctor` | Diagnostic checks | ✅ |
 | `import` | Import from `.env` file | ✅ |
 | `export` | Export to `.env` file | ✅ |
-| `rotate` | Rotate secret value | ✅ (Phase 3) |
-| `secrets expire` | Set secret expiration | ✅ (Phase 3) |
-| `secrets alert` | Configure alert timing | ✅ (Phase 3) |
-| `rotation list` | List secrets pending rotation | ✅ (Phase 3) |
+| `rotate` | Rotate secret value | ✅ |
+| `secrets expire` | Set secret expiration | ✅ |
+| `secrets alert` | Configure alert timing | ✅ |
+| `rotation list` | List secrets pending rotation | ✅ |
+| `ci login` | Login with CI token | ✅ |
+| `ci logout` | Clear CI session | ✅ |
+| `ci secrets` | List secrets in CI context | ✅ |
+| `ci deploy` | Deploy local secrets to cloud | ✅ |
+| `ci tokens list` | List CI tokens | ✅ |
+| `ci tokens create` | Create CI token | ✅ |
+| `ci tokens revoke` | Revoke CI token | ✅ |
+| `integrations list` | List cloud integrations | ✅ |
+| `integrations connect` | Connect provider | ✅ |
+| `integrations disconnect` | Disconnect provider | ✅ |
+| `integrations sync` | Sync secrets with provider | ✅ |
 
-**CLI Tests**: 93+ unit tests passing
+**CLI Tests**: 127 unit tests passing
 
 ### API Backend (apps/api)
 
 | Router | Endpoints | Status |
 |--------|-----------|--------|
-| `auth` | signup, signin, signout, session, sessions, **oauth/** | ✅ |
-| `auth/oauth` | github, google, discord initiation/callback/accounts/unlink | ✅ NEW |
-| `projects` | CRUD on projects | ✅ |
-| `environments` | CRUD per project | ✅ |
-| `vault` | push, pull, version | ✅ |
+| `auth` | signup, signin, signout, session, sessions, oauth | ✅ |
+| `auth/oauth` | github, google, discord | ✅ |
+| `projects` | CRUD + list/get with API key | ✅ |
+| `environments` | CRUD + list/get with API key | ✅ |
+| `vault` | push (session), pull/version (session + API key) | ✅ |
 | `members` | CRUD on team members | ✅ |
 | `invites` | create, list, accept, revoke | ✅ |
-| `tokens` | CI/CD tokens | ✅ |
+| `tokens` | CI/CD tokens CRUD | ✅ |
 | `audit` | Paginated audit logs | ✅ |
-| `rotation` | Secret rotation operations | ✅ (Phase 3) |
-| `integrations` | Cloud integrations | ⚠️ Partial |
+| `rotation` | Secret rotation operations | ✅ |
+| `integrations` | Vercel + Render providers, sync, validate | ✅ |
+| `api-keys` | API key CRUD | ✅ |
+| `ci` | CI login, CI secrets | ✅ |
+| `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
 
-**API Tests**: 40+ tests for auth, CI tokens, rate limiting, etc.
+**API Tests**: 275 tests passing
 
 ### Web Frontend (apps/web)
 
@@ -78,65 +92,32 @@
 | Team Settings | `/projects/[id]/members` | ✅ |
 | Project Settings | `/projects/[id]/settings` | ✅ |
 | Account | `/account` | ✅ |
-| Integrations | `/integrations` | ⚠️ Placeholder |
+| Integrations | `/integrations` | ⚠️ Functional for Vercel, placeholder UI |
 
 ---
 
-## Features In Progress (Phase 3)
+## Phase 3 Milestones Status
 
-### M3.5: Secret Alerts & Rotation
-
-**API (apps/api)**:
-- ✅ `SecretExpiration` model
-- ✅ `RotationService` with audit logging
-- ✅ `RotationRouter` endpoints
-- ✅ `WebhookService` with exponential backoff
-- ✅ `ExpirationChecker` background job
-- ✅ `WebhookChannel` notification implementation
-
-**CLI (apps/cli)**:
-- ✅ `criptenv rotate` command
-- ✅ `criptenv secrets expire` command
-- ✅ `criptenv secrets alert` command
-- ✅ `criptenv rotation list` command
-
-**Web UI (apps/web)**:
-- ⚠️ `ExpirationBadge` component (implemented)
-- ⚠️ Secret row integration (in progress)
-
-### M3.1: GitHub Action
-
-- ✅ `packages/github-action/action.yml`
-- ✅ `packages/github-action/src/index.ts`
-- ✅ Test infrastructure
+| Milestone | Status | Notes |
+|-----------|--------|-------|
+| **M3.1**: GitHub Action | ✅ Complete | action.yml + src/index.ts + dist |
+| **M3.2**: Cloud integrations | 🟡 Mostly Complete | Vercel ✅, Render ✅, Railway ⚠️ pending, CLI commands ✅ |
+| **M3.3**: CI tokens | ✅ Complete | Backend + CLI 100%, ci deploy real implementation |
+| **M3.4**: Public API | ✅ Complete | Rate limiting ✅, API keys ✅, dual auth ✅, OpenAPI docs ✅ |
+| **M3.5**: Secret alerts | 🟡 Complete | API + CLI ✅, Web UI partial |
+| **M3.6**: APScheduler | ✅ Complete | Lifespan integration ✅ |
+| **M3.7**: OAuth | ✅ Complete | GitHub, Google, Discord ✅ |
 
 ---
 
-## Incomplete / Not Started
-
-### Phase 3 (Pending)
+## Incomplete / Pending
 
 | Feature | Priority | Status |
 |---------|----------|--------|
-| Vercel integration | P0 | ❌ Not started |
-| Railway integration | P1 | ❌ Not started |
-| Render integration | P1 | ❌ Not started |
-| Public API versioning | P0 | ❌ Not started |
-| API key model | P0 | ❌ Not started |
-| Rate limiting | P0 | ⚠️ Tests exist |
-| CLI `ci-login` | P0 | ❌ Not started |
-| CLI `ci-deploy` | P0 | ❌ Not started |
-| CLI `ci-secrets` | P0 | ❌ Not started |
-| Web integrations dashboard | P1 | ⚠️ Placeholder |
-
-### Security Issues (From Phase 2 Review)
-
-| Issue | Priority | Impact |
-|-------|----------|--------|
-| CR-01: Session token in response body | P0 | API exposes tokens |
-| CR-02: Token in localStorage | P0 | XSS vulnerability risk |
-| MR-03: Rate limiting absent | P1 | Security prerequisite |
-| HR-01: Escalation via invites | P1 | CI token security |
+| Railway provider | P1 | ⚠️ Not implemented |
+| Integration tokens at-rest encryption | P1 | ⚠️ config stored as plaintext JSONB |
+| Web integrations dashboard polish | P1 | ⚠️ Functional but basic |
+| Security review CR-01/CR-02 | P0 | ❌ Session in response body, localStorage token |
 
 ---
 
@@ -144,37 +125,20 @@
 
 | Risk | Level | Mitigation |
 |------|-------|------------|
-| Rate limiting not implemented | 🔴 High | Required before public API |
-| Security review incomplete | 🔴 High | Phase 2 security issues unresolved |
-| Cloud integrations not started | 🟡 Medium | Phase 3 depends on these |
-| Webhook delivery reliability | 🟡 Medium | Need retry mechanism validation |
+| Security issues unresolved | 🔴 High | CR-01/CR-02 need fixing before public launch |
+| Railway provider missing | 🟡 Medium | P1 — can be added following Render pattern |
+| Integration config plaintext | 🟡 Medium | Encrypt `config` field in Integration model |
 
 ---
 
 ## Next Recommended Steps
 
-1. **Security First**: Resolve Phase 2 security issues (CR-01, CR-02)
-2. **API Infrastructure**: Implement rate limiting and API key model
-3. **CI Auth**: Complete CI token middleware and endpoints
-4. **Cloud Integrations**: Implement Vercel provider (Priority P0)
+1. **Security Hardening**: Fix CR-01 (session in body) and CR-02 (localStorage) before public API launch
+2. **Railway Provider**: Implement following the RenderProvider pattern
+3. **Integration Config Encryption**: Encrypt at-rest tokens in `integrations.config`
 
 ---
 
-## Files to Focus On
-
-### For Current Phase 3 Work
-
-| File | Purpose |
-|------|---------|
-| `apps/api/app/routers/rotation.py` | Rotation endpoints |
-| `apps/api/app/services/rotation_service.py` | Rotation business logic |
-| `apps/api/app/models/secret_expiration.py` | Expiration model |
-| `apps/cli/src/criptenv/commands/secrets.py` | CLI rotation commands |
-| `packages/github-action/src/index.ts` | GitHub Action |
-| `apps/api/app/middleware/ci_auth.py` | CI token auth (needed) |
-
----
-
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01  
-**Status**: Active Development — Phase 3
+**Document Version**: 1.2  
+**Last Updated**: 2026-05-03  
+**Status**: Active Development — Phase 3 (85% complete)

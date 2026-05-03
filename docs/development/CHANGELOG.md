@@ -9,6 +9,54 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### M3.4: Public API (Completed)
+
+##### Backend (apps/api)
+
+- **RateLimitMiddleware activated**: `app.middleware.rate_limit.RateLimitMiddleware` now registered in `main.py` with per-auth-type limits (API key: 1000/min, CI token: 200/min, session: 100/min, anonymous: 100/min, auth: 5/min)
+- **Dual authentication**: `get_current_user_or_api_key()` in `app/middleware/auth.py` enables both session tokens (JWT) and API keys (`cek_` prefix) on the same endpoints
+- **API Key auth on read endpoints**: Vault pull/version, projects list/get, environments list/get now accept API keys via `Authorization: Bearer cek_...`
+- **OpenAPI security schemes**: Custom `custom_openapi()` in `main.py` documents both `BearerAuth` and `ApiKeyAuth` with dual-auth badges on public endpoints
+- **Rate limit headers**: All API responses include `X-RateLimit-Limit`, `X-RateLimit-Remaining`, `X-RateLimit-Reset`
+
+##### Tests
+
+- **Dual auth integration tests**: `apps/api/tests/test_dual_auth.py` — 7 tests covering vault pull, projects list/get, environments list, unauthorized access, and rate limit header presence
+
+#### M3.3: CI Tokens (Completed)
+
+##### CLI (apps/cli)
+
+- **`ci deploy` real implementation**: `apps/cli/src/criptenv/commands/ci.py` — actual push of local vault secrets to cloud via `CriptEnvClient.push_vault()`
+- **CI context fix**: All CI commands (`login`, `logout`, `secrets`, `deploy`, `tokens *`) now correctly use `cli_context()` instead of broken `ctx.obj["db"]` pattern
+- **`CRIPTENV_MASTER_PASSWORD` env var**: `apps/cli/src/criptenv/context.py` supports non-interactive CI/CD usage via environment variable
+- **Integration sync on deploy**: `ci deploy --provider <name>` finds the connected integration and triggers cloud sync
+- **API client methods**: `list_integrations()` and `sync_integration()` added to `CriptEnvClient`
+
+#### M3.2: Cloud Integrations (Vercel + Render)
+
+##### Backend (apps/api)
+
+- **RenderProvider**: `app/strategies/integrations/render.py` — full implementation with push_secrets, pull_secrets, validate_connection, get_services, get_environments
+- **Provider registration**: `app/strategies/integrations/__init__.py` imports RenderProvider
+
+##### CLI (apps/cli)
+
+- **`integrations` command group**: `apps/cli/src/criptenv/commands/integrations.py` — `list`, `connect`, `disconnect`, `sync` subcommands
+- **CLI registration**: `apps/cli/src/criptenv/cli.py` registers `integrations_group`
+
+##### Tests
+
+- **RenderProvider tests**: `apps/api/tests/test_integration_providers.py` — 6 tests for push, pull, validate, environments, provider name, and base URL
+
+### Changed
+
+- **Rate limit error format test**: Updated `test_openapi_docs.py` to match the project's consistent `{"error": {"code": "..."}}` format instead of legacy FastAPI `detail`
+
+---
+
+### Added
+
 #### M3.7: OAuth Authentication (GitHub, Google, Discord)
 
 ##### Backend (apps/api)

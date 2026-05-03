@@ -2,6 +2,7 @@
 
 import asyncio
 import getpass
+import os
 from contextlib import contextmanager
 from typing import Optional
 
@@ -21,7 +22,13 @@ def run_async(coro):
 
 
 def _get_master_password() -> str:
-    """Prompt user for master password (hidden input)."""
+    """Prompt user for master password (hidden input).
+    
+    In CI/CD environments, set CRIPTENV_MASTER_PASSWORD to avoid interactive prompt.
+    """
+    password = os.getenv("CRIPTENV_MASTER_PASSWORD")
+    if password:
+        return password
     return getpass.getpass("Master password: ")
 
 

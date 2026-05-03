@@ -7,7 +7,7 @@ from app.services.project_service import ProjectService
 from app.services.vault_service import VaultService, ConflictError
 from app.services.audit_service import AuditService
 from app.schemas.vault import VaultPushRequest, VaultPullResponse, VaultBlobPull
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, get_current_user_or_api_key
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/environments/{environment_id}/vault", tags=["Vault"])
@@ -103,7 +103,7 @@ async def push_vault(
 async def pull_vault(
     project_id: str,
     environment_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -146,7 +146,7 @@ async def pull_vault(
 async def get_vault_version(
     project_id: str,
     environment_id: str,
-    current_user: User = Depends(get_current_user),
+    current_user: User = Depends(get_current_user_or_api_key),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)

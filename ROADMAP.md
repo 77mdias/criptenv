@@ -170,9 +170,9 @@ criptenv export -o .env                 # Exportar para .env
 - [x] GitHub Actions official action (action.yml + src/index.ts ✅)
 - [x] Secret expiration/alerts (API + CLI ✅, Web UI ⚠️ Partial)
 - [x] Secret rotation basics (API + CLI ✅)
-- [ ] Vercel, Railway, Render integrations (NOT STARTED)
-- [ ] CLI tokens for CI/CD (NOT STARTED - ci-login, ci-deploy, ci-secrets)
-- [ ] Public API (NOT STARTED - API key model, rate limiting)
+- [x] Vercel, Railway, Render integrations (Vercel ✅, Render ✅, Railway ⚠️ Pending, CLI commands ✅)
+- [x] CLI tokens for CI/CD (ci-login ✅, ci-secrets ✅, ci-deploy ✅, ci-tokens ✅)
+- [x] Public API (API key model ✅, rate limiting ✅, dual auth ✅, docs ✅)
 
 ### Deliverables
 
@@ -181,9 +181,9 @@ criptenv export -o .env                 # Exportar para .env
 | Integration          | Type           | Priority | Status |
 | -------------------- | -------------- | -------- | ------ |
 | **@criptenv/action** | GitHub Actions | P0       | ✅ Implemented (publishing pending) |
-| **Vercel**           | Native API     | P0       | ❌ Not started |
-| **Railway**          | Native API     | P1       | ❌ Not started |
-| **Render**           | Native API     | P1       | ❌ Not started |
+| **Vercel**           | Native API     | P0       | ✅ Implemented |
+| **Railway**          | Native API     | P1       | ⚠️ Pending |
+| **Render**           | Native API     | P1       | ✅ Implemented |
 | **Docker**           | Compose plugin | P1       | ❌ Not started |
 | **Kubernetes**       | Operator       | P2       | ❌ Not started |
 | **Terraform**        | Provider       | P2       | ❌ Not started |
@@ -191,11 +191,15 @@ criptenv export -o .env                 # Exportar para .env
 #### CLI Extensions
 
 ```bash
-criptenv ci-login          # Login com CI token (NOT IMPLEMENTED)
-criptenv ci-deploy         # Deploy com secrets (NOT IMPLEMENTED)
-criptenv ci-secrets        # Listar secrets disponíveis (NOT IMPLEMENTED)
-criptenv github connect    # Conectar repo GitHub (NOT IMPLEMENTED)
-criptenv vercel link       # Link project Vercel (NOT IMPLEMENTED)
+criptenv ci login          # Login com CI token ✅ IMPLEMENTED
+criptenv ci deploy         # Deploy com secrets ✅ IMPLEMENTED
+criptenv ci secrets        # Listar secrets disponíveis ✅ IMPLEMENTED
+criptenv ci tokens         # Gerenciar CI tokens ✅ IMPLEMENTED
+criptenv github connect    # Conectar repo GitHub ❌ NOT IMPLEMENTED
+criptenv vercel link       # Link project Vercel ❌ NOT IMPLEMENTED
+criptenv integrations list     # Listar integrações ✅ IMPLEMENTED
+criptenv integrations connect  # Conectar provider ✅ IMPLEMENTED
+criptenv integrations sync     # Sync secrets ✅ IMPLEMENTED
 criptenv rotate KEY        # Rotate secret ✅ IMPLEMENTED
 criptenv secrets expire    # Set expiration ✅ IMPLEMENTED
 criptenv secrets alert     # Configure alert timing ✅ IMPLEMENTED
@@ -205,15 +209,18 @@ criptenv rotation list     # List pending rotation ✅ IMPLEMENTED
 #### API
 
 ```bash
-# REST API v1 (PARTIAL - needs versioning + API keys)
-GET    /api/v1/projects
-POST   /api/v1/projects
-GET    /api/v1/projects/:id/secrets
-POST   /api/v1/secrets
-PUT    /api/v1/secrets/:id
-DELETE /api/v1/secrets/:id
-GET    /api/v1/audit
-POST   /api/v1/integrations/verify
+# REST API v1 (COMPLETE - versioning + API keys + rate limiting + dual auth)
+GET    /api/v1/projects                    # Session or API key ✅
+POST   /api/v1/projects                    # Session auth ✅
+GET    /api/v1/projects/:id                # Session or API key ✅
+GET    /api/v1/projects/:id/environments    # Session or API key ✅
+GET    /api/v1/projects/:id/environments/:eid/vault/pull    # Session or API key ✅
+POST   /api/v1/projects/:id/environments/:eid/vault/push    # Session auth ✅
+GET    /api/v1/projects/:id/audit           # Session auth ✅
+GET    /api/v1/projects/:id/api-keys       # Session auth ✅
+POST   /api/v1/projects/:id/integrations   # Session auth ✅
+POST   /api/v1/auth/ci-login               # CI token auth ✅
+GET    /api/v1/ci/secrets                  # CI session auth ✅
 ```
 
 ### Milestones
@@ -221,9 +228,9 @@ POST   /api/v1/integrations/verify
 | Milestone                    | Week | Criteria                  | Status |
 | ---------------------------- | ---- | ------------------------- | ------ |
 | **M3.1**: GitHub Action      | 4    | Official action published | ⚠️ Partial (publishing pending) |
-| **M3.2**: Cloud integrations | 6    | Vercel + Railway working  | ❌ Not started |
-| **M3.3**: CI tokens          | 8    | Token-based auth for CI   | ❌ Not started |
-| **M3.4**: Public API         | 10   | REST API documented       | ❌ Not started |
+| **M3.2**: Cloud integrations | 6    | Vercel + Render working   | ✅ Implemented (Railway pending) |
+| **M3.3**: CI tokens          | 8    | Token-based auth for CI   | ✅ Implemented |
+| **M3.4**: Public API         | 10   | REST API documented       | ✅ Implemented |
 | **M3.5**: Secret alerts      | 12   | Expiration notifications  | ⚠️ Partial (API/CLI done, Web partial) |
 | **M3.6**: APScheduler        | -    | Background job lifespan   | ✅ Implemented |
 

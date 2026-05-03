@@ -2,6 +2,7 @@ from fastapi import FastAPI, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import JSONResponse
 from fastapi.security import HTTPBearer, APIKeyHeader
+from fastapi.openapi.utils import get_openapi
 from contextlib import asynccontextmanager
 import time
 import logging
@@ -23,6 +24,7 @@ from app.routers import (
 )
 from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
+from app.middleware.rate_limit import RateLimitMiddleware  # M3.4: Rate limiting
 
 logging.basicConfig(
     level=logging.INFO if settings.DEBUG else logging.WARNING,
@@ -128,6 +130,9 @@ app.add_middleware(
 # Add API Version middleware (M3.4)
 app.add_middleware(APIVersionMiddleware)
 
+# Add Rate Limit middleware (M3.4)
+app.add_middleware(RateLimitMiddleware)
+
 
 @app.middleware("http")
 async def request_logging_middleware(request: Request, call_next):
@@ -198,6 +203,57 @@ app.include_router(audit_router)
 app.include_router(tokens_router)
 app.include_router(ci_router)
 app.include_router(integrations_router)
+
+
+# Custom OpenAPI schema with dual security schemes
+def custom_openapi():
+    if app.openapi_schema:
+        return app.openapi_schema
+    
+    openapi_schema = get_openapi(
+        title=app.title,
+        version=app.version,
+        description=app.description,
+        routes=app.routes,
+    )
+    
+    openapi_schema["components"]["securitySchemes"] = {
+        "BearerAuth": {
+            "type": "http",
+            "scheme": "bearer",
+            "description": "JWT session token obtained from /api/auth/signin",
+        },
+        "ApiKeyAuth": {
+            "type": "apiKey",
+            "in": "header",
+            "name": "Authorization",
+            "description": "API key with cek_ prefix passed as Bearer token (e.g., 'Bearer cek_live_xxx')",
+        },
+    }
+    
+    # Define dual-auth security for public API read endpoints
+    dual_auth = [{"BearerAuth": []}, {"ApiKeyAuth": []}]
+    
+    # Apply dual auth to read endpoints that support API key access
+    public_paths = [
+        ("/api/v1/projects", "get"),
+        ("/api/v1/projects/{project_id}", "get"),
+        ("/api/v1/projects/{project_id}/environments", "get"),
+        ("/api/v1/projects/{project_id}/environments/{environment_id}", "get"),
+        ("/api/v1/projects/{project_id}/environments/{environment_id}/vault/pull", "get"),
+        ("/api/v1/projects/{project_id}/environments/{environment_id}/vault/version", "get"),
+    ]
+    
+    for path, method in public_paths:
+        if path in openapi_schema.get("paths", {}):
+            if method in openapi_schema["paths"][path]:
+                openapi_schema["paths"][path][method]["security"] = dual_auth
+    
+    app.openapi_schema = openapi_schema
+    return app.openapi_schema
+
+
+app.openapi = custom_openapi
 
 
 if __name__ == "__main__":
