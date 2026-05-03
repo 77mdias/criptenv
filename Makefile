@@ -3,6 +3,7 @@ SHELL := /bin/sh
 
 NPM ?= npm
 PYTHON ?= python3
+REV ?= -1
 
 WEB_DIR := apps/web
 API_DIR := apps/api
@@ -13,7 +14,7 @@ CLI_VENV := $(CLI_DIR)/.venv
 
 .PHONY: help install lint test check \
 	web-install web-dev web-build web-start web-lint web-check-vinext web-migrate-vinext web-deploy \
-	api-install api-dev api-test \
+	api-install api-dev api-test db-current db-downgrade db-history db-migrate db-revision db-upgrade \
 	cli-install cli-test
 
 help: ## Show available commands
@@ -63,6 +64,24 @@ api-dev: api-install ## Start the FastAPI development server
 
 api-test: api-install ## Run the API test suite
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python -m pytest tests -q
+
+db-upgrade: api-install ## Apply Alembic migrations to the configured API database
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/alembic -c alembic.ini upgrade head
+
+db-migrate: db-upgrade ## Alias for db-upgrade
+
+db-current: api-install ## Show current Alembic revision for the configured API database
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/alembic -c alembic.ini current
+
+db-history: api-install ## Show Alembic migration history
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/alembic -c alembic.ini history
+
+db-downgrade: api-install ## Downgrade Alembic by REV, default -1
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/alembic -c alembic.ini downgrade $(REV)
+
+db-revision: api-install ## Create an Alembic autogenerate revision; pass MSG="message"
+	@test -n "$(MSG)" || (echo 'Usage: make db-revision MSG="describe change"' >&2; exit 1)
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/alembic -c alembic.ini revision --autogenerate -m "$(MSG)"
 
 $(CLI_VENV)/bin/python:
 	$(PYTHON) -m venv $(CLI_VENV)

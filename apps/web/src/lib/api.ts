@@ -9,6 +9,8 @@ export { vaultApi } from './api/vault';
 export { membersApi } from './api/members';
 export { auditApi } from './api/audit';
 export { ciTokensApi } from './api/ci-tokens';
+export { rotationApi } from './api/rotation';
+export { integrationsApi } from './api/integrations';
 
 export type {
   User,
@@ -36,6 +38,11 @@ export type {
   UpdateMemberRequest,
   CreateInviteRequest,
   AuditQueryParams,
+  SecretExpiration,
+  SecretExpirationListResponse,
+  Integration,
+  IntegrationListResponse,
+  CreateIntegrationRequest,
 } from './api/client';
 
 // Legacy `api` object — still used by some components
@@ -46,6 +53,8 @@ import { vaultApi } from './api/vault';
 import { membersApi } from './api/members';
 import { auditApi } from './api/audit';
 import { ciTokensApi } from './api/ci-tokens';
+import { rotationApi } from './api/rotation';
+import { integrationsApi } from './api/integrations';
 
 export const api = {
   auth: authApi,
@@ -55,4 +64,6 @@ export const api = {
   members: membersApi,
   audit: auditApi,
   ciTokens: ciTokensApi,
+  rotation: rotationApi,
+  integrations: integrationsApi,
 };

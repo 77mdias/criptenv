@@ -239,6 +239,59 @@ export interface CreateCITokenRequest {
   expires_at?: string;
 }
 
+// ─── Secret Expiration / Rotation ───────────────────────────────────────────
+
+export interface SecretExpiration {
+  id: string;
+  secret_key: string;
+  expires_at: string;
+  rotation_policy: string;
+  notify_days_before: number;
+  last_notified_at: string | null;
+  rotated_at: string | null;
+  created_at: string;
+  updated_at: string;
+  project_id: string;
+  environment_id: string;
+  is_expired: boolean | null;
+  days_until_expiration: number | null;
+}
+
+export interface SecretExpirationListResponse {
+  items: SecretExpiration[];
+  total: number;
+  page: number;
+  page_size: number;
+}
+
+// ─── Integrations ───────────────────────────────────────────────────────────
+
+export interface Integration {
+  id: string;
+  project_id: string;
+  provider: string;
+  name: string;
+  status: string;
+  last_sync_at: string | null;
+  last_error: string | null;
+  created_at: string;
+}
+
+export interface IntegrationListResponse {
+  integrations: Integration[];
+  total: number;
+  available_providers: string[];
+}
+
+export interface CreateIntegrationRequest {
+  provider: "vercel";
+  name: string;
+  config: {
+    api_token: string;
+    project_id: string;
+  };
+}
+
 // ─── Base Fetch Wrapper ────────────────────────────────────────────────────────
 
 function buildUrl(

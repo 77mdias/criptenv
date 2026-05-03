@@ -145,7 +145,10 @@ class TestIntegrationService:
         """Should create integration with provider and config"""
         from app.services.integration_service import IntegrationService
         
-        service = IntegrationService(db=MagicMock())
+        mock_db = MagicMock()
+        mock_db.flush = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        service = IntegrationService(db=mock_db)
         
         project_id = uuid4()
         result = await service.create_integration(
@@ -164,7 +167,9 @@ class TestIntegrationService:
         """Should push secrets to provider during sync"""
         from app.services.integration_service import IntegrationService
         
-        service = IntegrationService(db=MagicMock())
+        mock_db = MagicMock()
+        mock_db.commit = AsyncMock()
+        service = IntegrationService(db=mock_db)
         
         # Mock integration
         mock_integration = MagicMock()
@@ -185,13 +190,14 @@ class TestIntegrationService:
                 mock_provider.push_secrets = AsyncMock(return_value=True)
                 mock_get_provider.return_value = mock_provider
                 
-                result = await service.sync_integration(
+                success, error = await service.sync_integration(
                     integration_id=mock_integration.id,
                     direction="push",
                     secrets=mock_blobs
                 )
                 
-                assert result is True
+                assert success is True
+                assert error is None
                 mock_provider.push_secrets.assert_called_once()
 
 

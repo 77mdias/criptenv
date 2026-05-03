@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useMemo, useState } from "react"
 import { useParams } from "next/navigation"
 import { Download, KeyRound, Lock, Plus, RefreshCw, Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -21,10 +21,16 @@ import {
 } from "@/components/shared/secret-counts"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
 import { checksum, decrypt, encrypt } from "@/lib/crypto"
-import { environmentsApi, peekCached, vaultApi } from "@/lib/api"
+import { environmentsApi, peekCached, rotationApi, vaultApi } from "@/lib/api"
 import { useAuthStore } from "@/stores/auth"
 import { useCryptoStore } from "@/stores/crypto"
-import type { Environment, EnvironmentListResponse, VaultBlob, VaultBlobPush } from "@/lib/api"
+import type {
+  Environment,
+  EnvironmentListResponse,
+  SecretExpiration,
+  VaultBlob,
+  VaultBlobPush,
+} from "@/lib/api"
 import type { DecryptedSecret } from "@/components/shared/secret-row"
 
 async function decryptVault(blobs: VaultBlob[], key: CryptoKey): Promise<DecryptedSecret[]> {
@@ -80,6 +86,7 @@ export default function SecretsPage() {
   )
   const [vaultBlobs, setVaultBlobs] = useState<VaultBlob[]>([])
   const [secrets, setSecrets] = useState<DecryptedSecret[]>([])
+  const [expirations, setExpirations] = useState<SecretExpiration[]>([])
   const [secretCountState, setSecretCountState] = useState<SecretCountState>(() =>
     syncSecretCountState(cachedEnvironments?.environments ?? [])
   )
@@ -99,6 +106,24 @@ export default function SecretsPage() {
 
   useEffect(() => {
     let cancelled = false
+
+    const loadExpirations = async () => {
+      try {
+        const data = await rotationApi.listExpiring(projectId, {
+          days: 365,
+          includeExpired: true,
+        })
+        if (!cancelled) {
+          setExpirations(data.items)
+        }
+      } catch {
+        if (!cancelled) {
+          setExpirations([])
+        }
+      }
+    }
+
+    void loadExpirations()
 
     const loadEnvironments = async () => {
       try {
@@ -159,6 +184,28 @@ export default function SecretsPage() {
       cancelled = true
     }
   }, [projectId])
+
+  const secretsWithExpiration = useMemo(() => {
+    if (!activeEnv) return secrets
+
+    const expirationByKey = new Map(
+      expirations
+        .filter((item) => item.environment_id === activeEnv.id)
+        .map((item) => [item.secret_key, item])
+    )
+
+    return secrets.map((secret) => {
+      const expiration = expirationByKey.get(secret.key)
+      if (!expiration) return secret
+
+      return {
+        ...secret,
+        expiresAt: expiration.expires_at,
+        daysUntilExpiration: expiration.days_until_expiration,
+        isExpired: Boolean(expiration.is_expired),
+      }
+    })
+  }, [activeEnv, expirations, secrets])
 
   const loadVault = useCallback(
     async (environment: Environment) => {
@@ -428,7 +475,7 @@ export default function SecretsPage() {
             </div>
           ) : (
             <SecretsTable
-              secrets={secrets}
+              secrets={secretsWithExpiration}
               environmentName={activeEnvName}
               copiedKey={copiedKey}
               onCopy={handleCopy}

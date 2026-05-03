@@ -261,17 +261,17 @@ export function PricingCardCarousel({
   );
 
   /* ---- Auto-play ---- */
-  const startAutoPlay = useCallback(() => {
-    stopAutoPlay();
-    autoPlayTimer.current = setInterval(goNext, autoPlayInterval);
-  }, [goNext, autoPlayInterval]);
-
   const stopAutoPlay = useCallback(() => {
     if (autoPlayTimer.current) {
       clearInterval(autoPlayTimer.current);
       autoPlayTimer.current = null;
     }
   }, []);
+
+  const startAutoPlay = useCallback(() => {
+    stopAutoPlay();
+    autoPlayTimer.current = setInterval(goNext, autoPlayInterval);
+  }, [goNext, autoPlayInterval, stopAutoPlay]);
 
   /* ---- Initial mount ---- */
   useEffect(() => {

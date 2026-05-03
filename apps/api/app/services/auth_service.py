@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 import base64
+import inspect
 import os
 import secrets
 
@@ -16,6 +17,12 @@ from app.config import settings
 class AuthService:
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    async def _scalar_one_or_none(self, result):
+        value = result.scalar_one_or_none()
+        if inspect.isawaitable(value):
+            value = await value
+        return value
 
     def generate_kdf_salt(self) -> str:
         return base64.b64encode(os.urandom(32)).decode("ascii")
@@ -123,13 +130,16 @@ class AuthService:
         return session
 
     async def validate_session(self, token: str) -> Optional[User]:
+        if len(token) < 32:
+            return None
+
         result = await self.db.execute(
             select(Session).where(
                 Session.token == token,
                 Session.expires_at > datetime.now(timezone.utc)
             )
         )
-        session = result.scalar_one_or_none()
+        session = await self._scalar_one_or_none(result)
 
         if not session:
             return None
@@ -137,7 +147,7 @@ class AuthService:
         user_result = await self.db.execute(
             select(User).where(User.id == session.user_id)
         )
-        user = user_result.scalar_one_or_none()
+        user = await self._scalar_one_or_none(user_result)
         if user:
             await self.ensure_kdf_salt(user)
         return user

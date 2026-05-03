@@ -16,7 +16,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
 from app.database import async_session_factory
-from app.models.member import CIToken
+from app.models.member import CIToken, CISession
 
 
 # Constants
@@ -81,6 +81,24 @@ def create_ci_session(project_id: UUID, permissions: list[str]) -> tuple[str, da
     """
     session_token = f"{CI_SESSION_PREFIX}{secrets.token_urlsafe(32)}"
     expires_at = datetime.now(timezone.utc) + timedelta(seconds=CI_SESSION_EXPIRE_SECONDS)
+    return session_token, expires_at
+
+
+async def create_persisted_ci_session(db: AsyncSession, ci_token: CIToken) -> tuple[str, datetime]:
+    """Create and persist a temporary CI session for a validated CI token."""
+    permissions = getattr(ci_token, "scopes", None) or ["read:secrets"]
+    session_token, expires_at = create_ci_session(ci_token.project_id, permissions)
+
+    ci_session = CISession(
+        token_hash=hash_token(session_token),
+        ci_token_id=ci_token.id,
+        project_id=ci_token.project_id,
+        scopes=permissions,
+        environment_scope=getattr(ci_token, "environment_scope", None),
+        expires_at=expires_at,
+    )
+    db.add(ci_session)
+    await db.flush()
     return session_token, expires_at
 
 
@@ -172,23 +190,48 @@ async def validate_ci_session(session_token: str, project_id: UUID) -> dict:
             detail="Invalid session token format"
         )
     
-    # For now, we create a simple session validation
-    # In production, this should use Redis or similar for session storage
-    # For this implementation, we'll validate the token exists and isn't expired
-    
-    # TODO: Implement proper session storage with Redis
-    # For now, we just check the format is correct
     if len(session_token) < 20:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid session token"
         )
-    
-    return {
-        "session_token": session_token,
-        "expires_in": CI_SESSION_EXPIRE_SECONDS,
-        "project_id": str(project_id)
-    }
+
+    token_hash = hash_token(session_token)
+
+    async with async_session_factory() as db:
+        result = await db.execute(
+            select(CISession).where(
+                CISession.token_hash == token_hash,
+                CISession.project_id == project_id
+            )
+        )
+        ci_session = result.scalar_one_or_none()
+
+        if not ci_session:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid CI session"
+            )
+
+        if ci_session.expires_at and ci_session.expires_at < datetime.now(timezone.utc):
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="CI session has expired. Please run ci-login again."
+            )
+
+        ci_session.last_used_at = datetime.now(timezone.utc)
+        await db.commit()
+
+        scopes = getattr(ci_session, "scopes", None) or ["read:secrets"]
+        return {
+            "session": ci_session,
+            "session_token": session_token,
+            "expires_in": CI_SESSION_EXPIRE_SECONDS,
+            "project_id": str(ci_session.project_id),
+            "permissions": scopes,
+            "scopes": scopes,
+            "environment_scope": getattr(ci_session, "environment_scope", None),
+        }
 
 
 async def get_current_ci_user(request: Request) -> dict:

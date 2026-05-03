@@ -15,6 +15,17 @@ API_ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(API_ROOT))
 
 
+class AsyncSessionContext:
+    def __init__(self, session):
+        self.session = session
+
+    async def __aenter__(self):
+        return self.session
+
+    async def __aexit__(self, exc_type, exc, tb):
+        return None
+
+
 class TestCITokenHashing:
     """RED: Test CI token hashing"""
 
@@ -70,6 +81,7 @@ class TestCITokenValidation:
         mock_token.token_hash = token_hash
         mock_token.expires_at = None
         mock_token.last_used_at = None
+        mock_token.revoked_at = None
         
         mock_db = AsyncMock(spec=AsyncSession)
         mock_result = MagicMock()
@@ -80,8 +92,7 @@ class TestCITokenValidation:
             mock_session = AsyncMock(spec=AsyncSession)
             mock_session.execute = AsyncMock(return_value=mock_result)
             mock_session.commit = AsyncMock()
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock()
+            mock_factory.return_value = AsyncSessionContext(mock_session)
             
             result = await validate_ci_token(token, project_id)
             
@@ -106,8 +117,7 @@ class TestCITokenValidation:
             mock_session = AsyncMock(spec=AsyncSession)
             mock_session.execute = AsyncMock(return_value=mock_result)
             mock_session.rollback = AsyncMock()
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock()
+            mock_factory.return_value = AsyncSessionContext(mock_session)
             
             with pytest.raises(HTTPException) as exc_info:
                 await validate_ci_token(token, project_id)
@@ -142,8 +152,7 @@ class TestCITokenValidation:
             mock_session = AsyncMock(spec=AsyncSession)
             mock_session.execute = AsyncMock(return_value=mock_result)
             mock_session.rollback = AsyncMock()
-            mock_factory.return_value.__aenter__ = AsyncMock(return_value=mock_session)
-            mock_factory.return_value.__aexit__ = AsyncMock()
+            mock_factory.return_value = AsyncSessionContext(mock_session)
             
             with pytest.raises(HTTPException) as exc_info:
                 await validate_ci_token(token, project_id)
@@ -184,6 +193,49 @@ class TestCISessionCreation:
         assert expires_at <= after + expected_delta + timedelta(seconds=5)
 
 
+class TestCISessionValidation:
+    """Tests for persisted CI sessions."""
+
+    @pytest.mark.asyncio
+    async def test_fake_session_token_raises_401(self):
+        """A ci_s_ token must exist in storage before it is accepted."""
+        from app.middleware.ci_auth import validate_ci_session
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none = MagicMock(return_value=None)
+
+        with patch('app.middleware.ci_auth.async_session_factory') as mock_factory:
+            mock_session = AsyncMock(spec=AsyncSession)
+            mock_session.execute = AsyncMock(return_value=mock_result)
+            mock_factory.return_value = AsyncSessionContext(mock_session)
+
+            with pytest.raises(HTTPException) as exc_info:
+                await validate_ci_session(f"ci_s_{uuid4().hex}", uuid4())
+
+        assert exc_info.value.status_code == 401
+
+    @pytest.mark.asyncio
+    async def test_expired_session_token_raises_401(self):
+        """Expired persisted CI sessions should be rejected."""
+        from app.middleware.ci_auth import validate_ci_session
+
+        expired_session = MagicMock()
+        expired_session.expires_at = datetime.now(timezone.utc) - timedelta(minutes=1)
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none = MagicMock(return_value=expired_session)
+
+        with patch('app.middleware.ci_auth.async_session_factory') as mock_factory:
+            mock_session = AsyncMock(spec=AsyncSession)
+            mock_session.execute = AsyncMock(return_value=mock_result)
+            mock_factory.return_value = AsyncSessionContext(mock_session)
+
+            with pytest.raises(HTTPException) as exc_info:
+                await validate_ci_session(f"ci_s_{uuid4().hex}", uuid4())
+
+        assert exc_info.value.status_code == 401
+
+
 class TestCIMiddlewareIntegration:
     """RED: Test CI middleware integration with FastAPI"""
 
@@ -192,7 +244,7 @@ class TestCIMiddlewareIntegration:
         """Middleware should extract CI token from request"""
         from app.middleware.ci_auth import get_current_ci_user
         
-        token = f"ci_s_{uuid4().hex}"
+        token = f"ci_{uuid4().hex}"
         project_id = uuid4()
         
         mock_token = MagicMock()
@@ -206,6 +258,7 @@ class TestCIMiddlewareIntegration:
         
         mock_request = MagicMock()
         mock_request.headers = {"Authorization": f"Bearer {token}"}
+        mock_request.state.project_id = str(project_id)
         
         with patch('app.middleware.ci_auth.validate_ci_token', new=AsyncMock(return_value=mock_token)):
             with patch('app.middleware.ci_auth.create_ci_session', return_value=(f"s_{uuid4().hex}", datetime.now(timezone.utc) + timedelta(hours=1))):

@@ -75,7 +75,7 @@ export default function HelpPage() {
               Como adicionar secrets em um projeto?
             </h3>
             <p className="text-sm text-[var(--text-muted)] font-mono">
-              Acesse o projeto desejado, vá para a aba "Secrets" e clique em "Novo Secret".
+              Acesse o projeto desejado, vá para a aba &quot;Secrets&quot; e clique em &quot;Novo Secret&quot;.
               Insira a chave e o valor. Seus secrets são criptografados localmente antes de serem enviados.
             </p>
           </div>
@@ -105,7 +105,7 @@ export default function HelpPage() {
               Como funciona o sistema de convites?
             </h3>
             <p className="text-sm text-[var(--text-muted)] font-mono">
-              Na aba "Team" do projeto, você pode invitar membros com diferentes permissões:
+              Na aba &quot;Team&quot; do projeto, você pode invitar membros com diferentes permissões:
               Owner, Admin, Developer ou Viewer. Convites expiram automaticamente após 7 dias.
             </p>
           </div>

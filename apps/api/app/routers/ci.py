@@ -19,10 +19,12 @@ from app.models.vault import VaultBlob
 from app.models.environment import Environment
 from app.middleware.ci_auth import (
     hash_token,
-    create_ci_session,
+    create_persisted_ci_session,
     CI_TOKEN_PREFIX,
     CI_SESSION_PREFIX,
-    CI_SESSION_EXPIRE_SECONDS
+    CI_SESSION_EXPIRE_SECONDS,
+    ScopeValidator,
+    validate_ci_session,
 )
 from app.schemas.vault import VaultBlobPull, VaultPullResponse
 
@@ -69,6 +71,79 @@ def _force_load_blob(blob):
     _ = blob.created_at
     _ = blob.updated_at
     return blob
+
+
+def _extract_bearer_token(request: Request) -> str:
+    auth_header = request.headers.get("Authorization", "")
+    if not auth_header.startswith("Bearer "):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "MISSING_TOKEN",
+                "message": "Authorization header required"
+            }
+        )
+    return auth_header[7:]
+
+
+async def _authenticate_ci_secrets_request(
+    request: Request,
+    environment: str,
+) -> tuple[UUID, dict]:
+    session_token = _extract_bearer_token(request)
+
+    if not session_token.startswith(CI_SESSION_PREFIX):
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail={
+                "code": "INVALID_SESSION",
+                "message": "Invalid session token format"
+            }
+        )
+
+    project_id = request.query_params.get("project_id") or getattr(request.state, 'project_id', None)
+    if not project_id:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "MISSING_PROJECT",
+                "message": "Project ID required"
+            }
+        )
+
+    try:
+        project_uuid = UUID(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail={
+                "code": "INVALID_PROJECT_ID",
+                "message": "Invalid project ID format"
+            }
+        )
+
+    ci_session = await validate_ci_session(session_token, project_uuid)
+    scopes = ci_session.get("scopes", [])
+    if not ScopeValidator().has_scope(scopes, "read:secrets"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "INSUFFICIENT_SCOPE",
+                "message": "CI session requires read:secrets scope"
+            }
+        )
+
+    environment_scope = ci_session.get("environment_scope")
+    if environment_scope is not None and environment_scope != environment:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ENVIRONMENT_ACCESS_DENIED",
+                "message": f"Token is restricted to environment '{environment_scope}' and cannot access '{environment}'"
+            }
+        )
+
+    return project_uuid, ci_session
 
 
 @router.post("/auth/ci-login", response_model=CILoginResponse, tags=["CI/CD"])
@@ -118,6 +193,15 @@ async def ci_login(
                 "message": "Invalid CI token"
             }
         )
+
+    if payload.project_id and str(ci_token.project_id) != payload.project_id:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "PROJECT_ACCESS_DENIED",
+                "message": "CI token does not belong to the requested project"
+            }
+        )
     
     # Check if token is revoked
     if getattr(ci_token, 'revoked_at', None):
@@ -143,9 +227,8 @@ async def ci_login(
     ci_token.last_used_at = datetime.now(timezone.utc)
     await db.commit()
     
-    # Create session
     permissions = getattr(ci_token, 'scopes', ['read:secrets'])
-    session_token, expires_at = create_ci_session(ci_token.project_id, permissions)
+    session_token, expires_at = await create_persisted_ci_session(db, ci_token)
     
     return CILoginResponse(
         session_token=session_token,
@@ -176,56 +259,7 @@ async def get_ci_secrets(
         401: If session token is invalid
         404: If environment not found
     """
-    # Extract session token
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "code": "MISSING_TOKEN",
-                "message": "Authorization header required"
-            }
-        )
-    
-    session_token = auth_header[7:]
-    
-    # Validate session token format
-    if not session_token.startswith(CI_SESSION_PREFIX):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={
-                "code": "INVALID_SESSION",
-                "message": "Invalid session token format"
-            }
-        )
-    
-    # TODO: Validate session against Redis/DB in production
-    # For now, we just check the format is valid
-    
-    # Get project_id from query or state
-    project_id = request.query_params.get("project_id")
-    if not project_id:
-        project_id = getattr(request.state, 'project_id', None)
-    
-    if not project_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "code": "MISSING_PROJECT",
-                "message": "Project ID required"
-            }
-        )
-    
-    try:
-        project_uuid = UUID(project_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={
-                "code": "INVALID_PROJECT_ID",
-                "message": "Invalid project ID format"
-            }
-        )
+    project_uuid, _ci_session = await _authenticate_ci_secrets_request(request, environment)
     
     # Find environment
     env_result = await db.execute(
@@ -241,7 +275,7 @@ async def get_ci_secrets(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
                 "code": "ENVIRONMENT_NOT_FOUND",
-                "message": f"Environment '{environment}' not found in project '{project_id}'"
+                "message": f"Environment '{environment}' not found in project '{project_uuid}'"
             }
         )
     
@@ -280,38 +314,7 @@ async def list_ci_secrets_keys(
     Returns:
         dict: List of secret metadata (no values)
     """
-    # Same auth as get_ci_secrets
-    auth_header = request.headers.get("Authorization", "")
-    if not auth_header.startswith("Bearer "):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"code": "MISSING_TOKEN", "message": "Authorization header required"}
-        )
-    
-    session_token = auth_header[7:]
-    if not session_token.startswith(CI_SESSION_PREFIX):
-        raise HTTPException(
-            status_code=status.HTTP_401_UNAUTHORIZED,
-            detail={"code": "INVALID_SESSION", "message": "Invalid session token format"}
-        )
-    
-    project_id = request.query_params.get("project_id")
-    if not project_id:
-        project_id = getattr(request.state, 'project_id', None)
-    
-    if not project_id:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "MISSING_PROJECT", "message": "Project ID required"}
-        )
-    
-    try:
-        project_uuid = UUID(project_id)
-    except ValueError:
-        raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail={"code": "INVALID_PROJECT_ID", "message": "Invalid project ID format"}
-        )
+    project_uuid, _ci_session = await _authenticate_ci_secrets_request(request, environment)
     
     # Find environment
     env_result = await db.execute(

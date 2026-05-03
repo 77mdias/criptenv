@@ -23,7 +23,7 @@ jobs:
 | `token`          | Yes      | —                          | CI token from CriptEnv (starts with `ci_`)       |
 | `project`        | Yes      | —                          | Project ID from CriptEnv dashboard               |
 | `environment`    | No       | `production`               | Environment name (e.g., `production`, `staging`) |
-| `api-url`        | No       | `https://api.criptenv.com` | CriptEnv API URL                                 |
+| `api-url`        | No       | `https://api.criptenv.com/api/v1` | CriptEnv API URL, including the API version prefix |
 | `prefix`         | No       | `SECRET_`                  | Prefix for environment variables                 |
 | `version-output` | No       | `version`                  | Output name for secrets version                  |
 
@@ -46,6 +46,8 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -74,6 +76,22 @@ jobs:
 3. Go to "CI Tokens" section
 4. Click "Create Token"
 5. Copy the token (shown only once)
+
+Store these values as GitHub repository or organization secrets:
+
+- `CRIPTENV_TOKEN`: the one-time CI token value that starts with `ci_`
+- `CRIPTENV_PROJECT_ID`: the CriptEnv project ID
+
+## Zero-Knowledge Limitation
+
+CriptEnv stores secrets as encrypted vault blobs. This action exports the encrypted blob payload returned by the API. It does not receive user master passwords or project decryption keys, so it cannot decrypt secrets to plaintext by itself. Workflows that need plaintext values must use an application-side CriptEnv client/decryption step with the appropriate key material.
+
+## Publishing Checklist
+
+1. Commit `action.yml`, `dist/index.js`, README, and license files.
+2. Create a release tag, for example `v1.0.0`.
+3. Move or create the major tag, for example `v1`, pointing at the same commit.
+4. Complete the GitHub Marketplace publishing form from the repository's Releases page.
 
 ## Security
 

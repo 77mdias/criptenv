@@ -90,9 +90,6 @@ export function useAuth() {
     } catch {
       // ignore errors on signout
     }
-    if (typeof window !== 'undefined') {
-      window.localStorage.removeItem('criptenv-auth');
-    }
     clearAuth();
     router.push('/login');
   }, [clearAuth, router]);
@@ -102,9 +99,6 @@ export function useAuth() {
     <T>(promise: Promise<T>): Promise<T> => {
       return promise.catch((err) => {
         if (err instanceof ApiError && err.status === 401) {
-          if (typeof window !== 'undefined') {
-            window.localStorage.removeItem('criptenv-auth');
-          }
           clearAuth();
           router.push('/login');
         }

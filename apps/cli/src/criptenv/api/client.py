@@ -66,7 +66,11 @@ class CriptEnvClient:
         resp = await self._request(
             "POST", "/api/auth/signin", json={"email": email, "password": password}
         )
-        return resp.json()
+        data = resp.json()
+        token = resp.cookies.get("session_token")
+        if token:
+            data["token"] = token
+        return data
 
     async def signup(self, email: str, password: str, name: str) -> dict[str, Any]:
         """POST /api/auth/signup"""
@@ -75,7 +79,11 @@ class CriptEnvClient:
             "/api/auth/signup",
             json={"email": email, "password": password, "name": name},
         )
-        return resp.json()
+        data = resp.json()
+        token = resp.cookies.get("session_token")
+        if token:
+            data["token"] = token
+        return data
 
     async def signout(self) -> dict[str, Any]:
         """POST /api/auth/signout"""

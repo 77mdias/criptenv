@@ -12,9 +12,15 @@ Run with: pytest apps/api/tests/test_integration_rotation.py -v
 """
 
 import pytest
+import sys
 from datetime import datetime, timezone, timedelta
+from pathlib import Path
 from uuid import uuid4
 from unittest.mock import patch, AsyncMock, MagicMock
+
+CLI_SRC = Path(__file__).resolve().parents[3] / "apps" / "cli" / "src"
+if str(CLI_SRC) not in sys.path:
+    sys.path.insert(0, str(CLI_SRC))
 
 
 # ─── Fixtures ───────────────────────────────────────────────────────────────────

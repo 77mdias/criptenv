@@ -5,6 +5,7 @@ Business logic for managing external service integrations.
 
 from typing import Optional
 from uuid import UUID
+from datetime import datetime, timezone
 
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
@@ -22,6 +23,18 @@ class IntegrationService:
     
     def __init__(self, db: AsyncSession):
         self.db = db
+
+    def _get_provider(self, provider: str):
+        """Return registered provider by name."""
+        return get_provider(provider)
+
+    def _sanitize_error(self, message: str, config: Optional[dict] = None) -> str:
+        """Remove provider secret values from errors before persisting or returning them."""
+        sanitized = message
+        for value in (config or {}).values():
+            if isinstance(value, str) and len(value) >= 8:
+                sanitized = sanitized.replace(value, "[redacted]")
+        return sanitized
     
     async def create_integration(
         self,
@@ -94,7 +107,7 @@ class IntegrationService:
         if not integration:
             return False, "Integration not found"
         
-        provider = get_provider(integration.provider)
+        provider = self._get_provider(integration.provider)
         if not provider:
             return False, f"Unknown provider: {integration.provider}"
         
@@ -132,7 +145,7 @@ class IntegrationService:
         if not integration:
             return False, "Integration not found"
         
-        provider = get_provider(integration.provider)
+        provider = self._get_provider(integration.provider)
         if not provider:
             return False, f"Unknown provider: {integration.provider}"
         
@@ -153,7 +166,7 @@ class IntegrationService:
                 return False, f"Invalid direction: {direction}"
             
             if success:
-                integration.last_sync_at = self.db.bind.now_func() if hasattr(self.db.bind, 'now_func') else None
+                integration.last_sync_at = datetime.now(timezone.utc)
                 integration.last_error = None
                 integration.status = "active"
             else:
@@ -164,10 +177,11 @@ class IntegrationService:
             return success, None if success else f"Sync failed: {direction}"
             
         except Exception as e:
+            error_message = self._sanitize_error(str(e), integration.config)
             integration.status = "error"
-            integration.last_error = str(e)
+            integration.last_error = error_message
             await self.db.commit()
-            return False, str(e)
+            return False, error_message
     
     def get_available_providers(self) -> list[str]:
         """Get list of registered provider names."""

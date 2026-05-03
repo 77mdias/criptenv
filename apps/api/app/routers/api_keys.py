@@ -17,7 +17,7 @@ from app.middleware.auth import get_current_user
 from app.models.user import User
 
 
-router = APIRouter(prefix="/api/v1/projects/{project_id}/api-keys", tags=["API Keys"])
+router = APIRouter(prefix="/projects/{project_id}/api-keys", tags=["API Keys"])
 
 
 @router.post("", response_model=ApiKeyCreateResponse, status_code=status.HTTP_201_CREATED)

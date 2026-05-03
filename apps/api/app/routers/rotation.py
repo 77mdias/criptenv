@@ -231,6 +231,7 @@ async def get_rotation_status(
 async def list_expiring_secrets(
     project_id: UUID,
     days: int = Query(default=30, ge=1, le=365, description="Days to look ahead"),
+    include_expired: bool = Query(default=False, description="Include already expired secrets"),
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
@@ -252,12 +253,16 @@ async def list_expiring_secrets(
     # Get all expirations for project
     expirations, total = await rotation_service.list_expirations(
         project_id=project_id,
-        include_expired=False
+        include_expired=include_expired
     )
 
     # Filter by days
     cutoff = datetime.now(timezone.utc) + timedelta(days=days)
-    filtered = [e for e in expirations if e.expires_at <= cutoff]
+    now = datetime.now(timezone.utc)
+    filtered = [
+        e for e in expirations
+        if e.expires_at <= cutoff and (include_expired or e.expires_at >= now)
+    ]
 
     # Force-load fields
     for e in filtered:

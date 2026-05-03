@@ -19,7 +19,7 @@ inputs:
   api-url:
     description: "CriptEnv API URL"
     required: false
-    default: "https://api.criptenv.com"
+    default: "https://api.criptenv.com/api/v1"
   prefix:
     description: "Prefix for environment variables (default: SECRET_)"
     required: false
@@ -32,10 +32,8 @@ inputs:
 outputs:
   secrets-count:
     description: "Number of secrets loaded"
-    value: ${{ steps.criptenv.outputs.secrets-count }}
   version:
     description: "Version of the secrets loaded"
-    value: ${{ steps.criptenv.outputs.version }}
 
 runs:
   using: "node20"

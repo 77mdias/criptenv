@@ -9,6 +9,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Phase 3 Rescue
+
+- **Persistent CI sessions**: Added `ci_sessions` model/table and hardened CI secret endpoints so `ci_s_` tokens must be persisted, unexpired, scoped for `read:secrets`, and allowed for the requested environment.
+- **Expiration metadata in Web UI**: Secrets page now fetches `/api/v1/projects/{project_id}/secrets/expiring?include_expired=true` and displays real expiration badges per secret row.
+- **Vercel integrations UI**: Replaced integrations placeholder with project-scoped Vercel integration list/create/validate/delete UI.
+- **GitHub Action publishing readiness**: Fixed action metadata outputs, aligned default API URL with `/api/v1`, documented zero-knowledge limitation, and generated `dist/index.js`.
+- **Alembic migration setup**: Added Alembic async configuration, first revision for `ci_sessions`, and Makefile commands for upgrade/current/history/downgrade/revision workflows.
+
+### Changed
+
+- **Auth response hardening**: Signup/signin no longer return session tokens in JSON; the web app uses HTTP-only cookies only.
+- **CLI login compatibility**: CLI API client extracts `session_token` from response cookies and stores it encrypted locally.
+- **Integration service reliability**: Vercel integration sync now records real UTC timestamps and redacts configured secret values from stored/returned errors.
+- **Database operations**: `make db-migrate` is now an alias for `make db-upgrade`; the legacy shell script delegates to Alembic.
+
+### Fixed
+
+- **Settings test collection**: API settings now ignore unrelated environment variables so local OAuth placeholders do not break pytest collection.
+
 #### M3.5 Secret Alerts & Rotation
 
 ##### API (apps/api)

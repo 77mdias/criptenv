@@ -2,6 +2,7 @@
 
 from typing import Optional
 from uuid import UUID
+from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -44,9 +45,9 @@ class IntegrationResponse(BaseModel):
     provider: str
     name: str
     status: str
-    last_sync_at: Optional[str] = None
+    last_sync_at: Optional[datetime] = None
     last_error: Optional[str] = None
-    created_at: str
+    created_at: datetime
     
     class Config:
         from_attributes = True

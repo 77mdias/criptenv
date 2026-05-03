@@ -2,7 +2,7 @@ from app.models.user import User, Session
 from app.models.project import Project
 from app.models.environment import Environment
 from app.models.vault import VaultBlob
-from app.models.member import ProjectMember, ProjectInvite, CIToken
+from app.models.member import ProjectMember, ProjectInvite, CIToken, CISession
 from app.models.audit import AuditLog
 from app.models.api_key import APIKey
 
@@ -15,6 +15,7 @@ __all__ = [
     "ProjectMember",
     "ProjectInvite",
     "CIToken",
+    "CISession",
     "AuditLog",
     "APIKey"
 ]

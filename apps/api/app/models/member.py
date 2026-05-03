@@ -59,3 +59,19 @@ class CIToken(Base):
     created_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
 
     project = relationship("Project", back_populates="ci_tokens", foreign_keys=[project_id])
+
+
+class CISession(Base):
+    __tablename__ = "ci_sessions"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    token_hash = Column(String(255), nullable=False, unique=True, index=True)
+    ci_token_id = Column(UUID(as_uuid=True), ForeignKey("ci_tokens.id"), nullable=False, index=True)
+    project_id = Column(UUID(as_uuid=True), ForeignKey("projects.id"), nullable=False, index=True)
+    scopes = Column(JSON, default=["read:secrets"])
+    environment_scope = Column(String(255), nullable=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    last_used_at = Column(DateTime(timezone=True), nullable=True)
+
+    ci_token = relationship("CIToken", foreign_keys=[ci_token_id])

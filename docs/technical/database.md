@@ -14,7 +14,7 @@ CriptEnv uses PostgreSQL as its primary database with SQLAlchemy async for ORM o
 | **ORM** | SQLAlchemy (async) | 2.0+ |
 | **Driver** | asyncpg | 0.9+ |
 | **Connection Pool** | asyncpg built-in | — |
-| **Migrations** | Manual (no Alembic) | — |
+| **Migrations** | Alembic | 1.18+ |
 
 ---
 
@@ -23,11 +23,11 @@ CriptEnv uses PostgreSQL as its primary database with SQLAlchemy async for ORM o
 **Connection URL format:**
 
 ```python
-# Synchronous (SQLAlchemy core - not used)
-DATABASE_URL=postgresql+asyncpg://user:password@host:5432/db
+# App and Alembic input
+DATABASE_URL=postgresql://user:password@host:5432/db
 
-# Asynchronous (actual connection)
-ASYNC_DATABASE_URL=postgresql://user:password@host:5432/db
+# SQLAlchemy async runtime form (derived by Settings.async_database_url)
+postgresql+asyncpg://user:password@host:5432/db
 ```
 
 **Pool settings (in `apps/api/app/database.py`):**
@@ -35,7 +35,7 @@ ASYNC_DATABASE_URL=postgresql://user:password@host:5432/db
 - Max overflow: 5
 - Prepared statements: disabled (compatibility with pgbouncer)
 
-**Note:** The `ASYNC_DATABASE_URL` removes the `asyncpg` prefix because `asyncpg` connects directly without needing SQLAlchemy's native async driver translation.
+**Note:** `Settings.async_database_url` converts `postgresql://` to `postgresql+asyncpg://` and strips Prisma-only query params such as `pgbouncer` and `schema`.
 
 ---
 
@@ -116,6 +116,32 @@ ASYNC_DATABASE_URL=postgresql://user:password@host:5432/db
 | expires_at | DateTime | Nullable |
 | last_used_at | DateTime | Nullable |
 | created_at | DateTime | Server default |
+
+### CISession (Phase 3)
+
+**File:** `apps/api/app/models/member.py`
+
+Temporary CI sessions are created by `POST /api/v1/auth/ci-login` after a valid `ci_` token is presented. Only the hash of the temporary `ci_s_` token is stored.
+
+| Column | Type | Constraints |
+|--------|------|-------------|
+| id | UUID | Primary key |
+| token_hash | String(255) | Unique, indexed, not null |
+| ci_token_id | UUID | Foreign key → ci_tokens.id |
+| project_id | UUID | Foreign key → projects.id, indexed |
+| scopes | JSON | Defaults to `["read:secrets"]` |
+| environment_scope | String(255) | Nullable; null means all environments |
+| expires_at | DateTime | Indexed, not null |
+| created_at | DateTime | Server default |
+| last_used_at | DateTime | Nullable |
+
+#### Migration: `ci_sessions`
+
+Tracked by Alembic revision `20260503_0001_create_ci_sessions.py`. Apply with:
+
+```bash
+make db-upgrade
+```
 
 ### Invite
 
@@ -255,28 +281,27 @@ erDiagram
 
 ## Database Operations
 
-### Creating Tables
+### Migrations
 
-Tables are created via SQLAlchemy's `Base.metadata.create_all()` on app startup when `DEBUG=true`. In production, use proper migration tooling.
+Alembic is configured in `apps/api/alembic.ini` with async SQLAlchemy support in `apps/api/migrations/env.py`.
 
-```python
-# In apps/api/main.py or database.py
-from sqlalchemy.ext.asyncio import create_async_engine
-from models import Base
-
-async def init_db():
-    engine = create_async_engine(settings.async_database_url)
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+```bash
+make db-upgrade                 # Apply migrations to head
+make db-migrate                 # Alias for db-upgrade
+make db-current                 # Show current revision
+make db-history                 # Show migration history
+make db-downgrade REV=-1        # Downgrade one revision by default
+make db-revision MSG="message"  # Create autogenerate revision
 ```
 
-### Manual Migration Pattern
+### Migration Pattern
 
-For production, manual SQL migrations are stored in `apps/api/migrations/` (if created). The current approach:
+For schema changes:
 
 1. Make schema changes in models
-2. Generate migration SQL manually
-3. Apply via `psql` or migration tool
+2. Run `make db-revision MSG="describe change"`
+3. Review the generated file in `apps/api/migrations/versions/`
+4. Run `make db-upgrade`
 
 ---
 

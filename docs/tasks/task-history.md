@@ -6,6 +6,28 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-03 — Phase 3 Rescue Implementation
+
+**Resumo:**  
+Security P0, M3.5 ExpirationBadge, CI auth, GitHub Action readiness, and Vercel integration consolidation implemented from the Phase 3 rescue plan.
+
+**Arquivos criados:**  
+- `apps/web/src/lib/api/rotation.ts`
+- `apps/web/src/lib/api/integrations.ts`
+- `apps/cli/tests/test_api_client.py`
+
+**Arquivos alterados:**  
+- Auth response/session handling in API, CLI, and web auth hook
+- CI auth middleware/router/model with persisted `ci_sessions`
+- Web secrets page and integrations page
+- GitHub Action metadata, README, package config, and generated dist bundle
+- Phase 3 docs and database notes
+
+**Observações:**  
+Requires manual PostgreSQL migration for `ci_sessions` before real CI auth testing. Existing uncommitted docs and `testsprite_tests/` changes were preserved.
+
+---
+
 ## 2026-05-01 — Initial Documentation Organization
 
 **Resumo:**
@@ -61,6 +83,33 @@ Implementação de Secret Rotation, Expiration, Alerts e Webhooks para Phase 3.
 
 **Observações:**
 Ver CHANGELOG.md para detalhes completos.
+
+---
+
+## 2026-05-03 — Alembic Migration Setup
+
+**Resumo:**  
+Criação do setup Alembic async e aplicação da primeira revisão para `ci_sessions`.
+
+**Arquivos criados:**  
+- `apps/api/migrations/001_create_ci_sessions.sql`
+- `apps/api/alembic.ini`
+- `apps/api/migrations/env.py`
+- `apps/api/migrations/script.py.mako`
+- `apps/api/migrations/versions/20260503_0001_create_ci_sessions.py`
+- `scripts/db_migrate.sh`
+
+**Arquivos alterados:**  
+- `Makefile`
+- `apps/api/requirements.txt`
+- `docs/development/CHANGELOG.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**  
+- `make db-upgrade` foi executado com sucesso contra o `DATABASE_URL` de `apps/api/.env`.
+- `make db-migrate` agora é alias de `make db-upgrade`.
+- `scripts/db_migrate.sh` foi mantido como wrapper de compatibilidade.
+- Token sandbox Vercel removido do `.env` da API porque estava como linha inválida e deve ser cadastrado pela UI de integrações.
 
 ---
 

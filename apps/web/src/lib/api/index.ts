@@ -26,6 +26,11 @@ export type {
   UpdateMemberRequest,
   CreateInviteRequest,
   AuditQueryParams,
+  SecretExpiration,
+  SecretExpirationListResponse,
+  Integration,
+  IntegrationListResponse,
+  CreateIntegrationRequest,
 } from "./client";
 
 export { authApi } from "./auth";
@@ -35,3 +40,5 @@ export { vaultApi } from "./vault";
 export { membersApi } from "./members";
 export { auditApi } from "./audit";
 export { ciTokensApi } from "./ci-tokens";
+export { rotationApi } from "./rotation";
+export { integrationsApi } from "./integrations";

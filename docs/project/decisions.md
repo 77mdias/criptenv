@@ -272,6 +272,31 @@ Use Strategy pattern with `IntegrationProvider` interface:
 
 ---
 
+## DEC-012 — Cookie-Only Web Sessions and Persisted CI Sessions
+
+**Date:** 2026-05-03  
+**Status:** ✅ Accepted  
+**Context:**  
+Phase 2 security review identified CR-01 (session token in auth response body) and CR-02 (token in browser storage). Phase 3 CI auth also accepted any `ci_s_` token by format only.
+
+**Decision:**  
+- Web signup/signin responses return only user and session metadata; the session secret is delivered only via HTTP-only cookie.
+- CLI login extracts the same session token from `Set-Cookie` and stores it encrypted in the local vault.
+- CI login persists hashed temporary `ci_s_` sessions in `ci_sessions`; CI secret endpoints validate persisted session, scope, expiration, project, and environment.
+
+**Rationale:**  
+- Removes bearer token exposure from browser-readable JSON.
+- Preserves CLI bearer-token workflow without weakening web auth.
+- Prevents forged CI session tokens from accessing vault blobs.
+
+**Consequences:**  
+- ✅ Resolves CR-01/CR-02 for web auth.
+- ✅ CI sessions can be expired server-side.
+- ✅ `ci_sessions` can be applied and tracked with Alembic via `make db-upgrade`.
+- ⚠️ CLI depends on API clients preserving response cookies.
+
+---
+
 ## Pending Decisions
 
 ### DEC-010 — Rate Limiting Implementation
