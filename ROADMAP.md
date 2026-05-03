@@ -132,7 +132,7 @@ criptenv export -o .env                 # Exportar para .env
 | ------------------------ | --------------------------------------------- |
 | **Vinext App**           | Full-stack dashboard preparado para Cloudflare |
 | **Custom Session Auth**  | Session management                            |
-| **Supabase Realtime**    | Live updates no dashboard                     |
+| **Supabase PostgreSQL**  | Database (free tier, permanent)               |
 | **SSO Providers**        | GitHub, Google, GitLab                        |
 | **Cloudflare Runtime**   | Worker entry, wrangler config e edge deploy   |
 
@@ -278,11 +278,12 @@ GET    /api/v1/ci/secrets                  # CI session auth ✅
 
 | Service        | Phase 1   | Phase 2   | Phase 3    |
 | -------------- | --------- | --------- | ---------- |
-| **Supabase**   | $0 (free) | $25 (pro) | $75 (team) |
-| **Cloudflare Pages + Workers** | $0 (free) | $20 (paid) | $20        |
+| **Supabase PostgreSQL** | $0 (free, 500MB) | $0 (free) | $25 (pro) |
+| **Render API** | $0 (free tier) | $7 (starter) | $25 (standard) |
+| **Cloudflare Pages + Workers** | $0 (free) | $0 (free) | $20 (paid) |
 | **Domain**     | $12       | $12       | $12        |
 | **Monitoring** | $0        | $0        | $50        |
-| **Total**      | ~$12/mo   | ~$57/mo   | ~$157/mo   |
+| **Total**      | **~$0/mo** | **~$19/mo** | **~$132/mo** |
 
 ---
 

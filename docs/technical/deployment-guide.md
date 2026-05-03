@@ -9,18 +9,18 @@ Complete guide for deploying CriptEnv to production.
 ```
 ┌─────────────┐      HTTPS       ┌─────────────┐      HTTPS       ┌─────────────┐
 │   Cloudflare│ ◄──────────────► │   FastAPI   │ ◄──────────────► │  PostgreSQL  │
-│  Pages +    │   NEXT_PUBLIC_   │   API       │   DATABASE_URL   │  (Render/    │
-│  Workers    │   API_URL        │  (Render/   │                  │   Railway/   │
-│             │                  │   Railway)  │                  │   Supabase)  │
+│  Pages +    │   NEXT_PUBLIC_   │   API       │   DATABASE_URL   │  (Supabase   │
+│  Workers    │   API_URL        │  (Render    │                  │   Free Tier) │
+│             │                  │   Free)     │                  │              │
 └─────────────┘                  └─────────────┘                  └─────────────┘
 ```
 
-| Component | Platform | URL Pattern |
-|-----------|----------|-------------|
-| **Web** | Cloudflare Pages + Workers | `https://criptenv.com` |
-| **API** | Render or Railway | `https://api.criptenv.com` |
-| **Database** | Render PostgreSQL or Railway Postgres or Supabase | Internal |
-| **CLI** | PyPI | `pip install criptenv` |
+| Component | Platform | URL Pattern | Cost |
+|-----------|----------|-------------|------|
+| **Web** | Cloudflare Pages + Workers | `https://criptenv.com` | **Free** |
+| **API** | Render Free Tier | `https://api.criptenv.com` | **Free** (cold starts after 15min) |
+| **Database** | Supabase Free Tier | Internal | **Free** (500MB, permanent) |
+| **CLI** | PyPI | `pip install criptenv` | Free to users |
 
 ---
 
@@ -73,97 +73,114 @@ make web-deploy
 
 ---
 
-## 2. API — Render
+## 2. Database — Supabase (Free Tier)
 
 ### Prerequisites
 
-- Render account (free tier works)
+- Supabase account (free tier is permanent and generous)
+
+### Step 1: Create Project
+
+1. Go to [supabase.com](https://supabase.com) → New Project
+2. Choose a region close to your Render service (e.g., US East)
+3. Wait for provisioning (~2 minutes)
+
+### Step 2: Get Connection String
+
+1. Go to **Project Settings** → **Database**
+2. Copy **Connection String** → **URI** (the pooler one, port `6543`)
+   ```
+   postgresql://postgres.[project]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+   ```
+3. This URL already works with the API — `config.py` auto-converts `postgresql://` to `postgresql+asyncpg://` and strips Prisma-only params
+
+### Step 3: Run Migrations
+
+```bash
+cd apps/api
+# Set DATABASE_URL to your Supabase connection string
+export DATABASE_URL="postgresql://postgres.xxx:xxx@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
+
+# Run migrations
+alembic upgrade head
+```
+
+> The API already configures `statement_cache_size=0` and `prepared_statement_cache_size=0` for pgbouncer compatibility.
+
+---
+
+## 3. API — Render (Free Tier)
+
+### Prerequisites
+
+- Render account (free tier)
 - Git repository pushed to GitHub/GitLab
+- Supabase project created (see above)
+
+### Important Free Tier Limitations
+
+| Limitation | Detail |
+|------------|--------|
+| **Cold starts** | Service sleeps after 15min of inactivity → 30-60s first request |
+| **Uptime** | Not suitable for high-traffic production, perfect for MVP/demo |
+| **Custom domains** | Supported on free tier |
 
 ### Step 1: Blueprint Deploy (Recommended)
 
 Render supports `render.yaml` blueprints.
 
-1. Go to Render Dashboard → Blueprints
+1. Go to Render Dashboard → **Blueprints**
 2. Connect your Git repository
-3. Render will auto-detect `apps/api/render.yaml`
-4. Click "Apply"
+3. Render will auto-detect `apps/api/render.yaml` (configured for `plan: free`)
+4. Click **Apply**
 
-### Step 2: Manual Service Creation
+### Step 2: Set Environment Variables
+
+After the blueprint creates the service, add these in Render Dashboard:
+
+| Variable | Value |
+|----------|-------|
+| `DATABASE_URL` | Your Supabase connection string (port 6543) |
+| `SECRET_KEY` | Random 32+ char string |
+| `DEBUG` | `false` |
+| `CORS_ORIGINS` | `https://criptenv.com,https://*.pages.dev` |
+| `FRONTEND_URL` | `https://criptenv.com` |
+| `SCHEDULER_ENABLED` | `true` |
+
+### Step 3: Manual Service Creation (Alternative)
 
 1. **New Web Service** → Connect Git repo
 2. **Root Directory**: `apps/api`
 3. **Build Command**: `pip install -r requirements.txt`
-4. **Start Command**: `gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT`
-5. **Environment Variables**:
-   - `DATABASE_URL`: Your PostgreSQL connection string
-   - `SECRET_KEY`: Random 32+ char string
-   - `DEBUG`: `false`
-   - `CORS_ORIGINS`: `https://criptenv.com`
-   - `FRONTEND_URL`: `https://criptenv.com`
-   - `SCHEDULER_ENABLED`: `true`
-
-### Step 3: Database Migration
-
-After first deploy, run migrations:
-
-```bash
-# Via Render Shell
-alembic upgrade head
-
-# Or locally with production DATABASE_URL
-cd apps/api
-DATABASE_URL=postgresql+asyncpg://... alembic upgrade head
-```
+4. **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
+   > Use `uvicorn` directly on free tier (lighter than gunicorn + 4 workers)
+5. **Plan**: Select **Free**
 
 ---
 
-## 3. API — Railway
+## 4. API — Railway (Alternative to Render)
+
+If Render's cold starts become a problem, Railway is a good upgrade path.
 
 ### Prerequisites
 
-- Railway account (free tier available)
-- Railway CLI installed: `npm install -g @railway/cli`
+- Railway account
+- Railway CLI: `npm install -g @railway/cli`
 
-### Step 1: Login and Init
+### Deploy
 
 ```bash
 railway login
 railway init
-```
-
-### Step 2: Add PostgreSQL Database
-
-```bash
-railway add --database postgres
-```
-
-### Step 3: Configure Environment Variables
-
-```bash
-railway variables set SECRET_KEY="your-secret-key-min-32-chars"
-railway variables set DEBUG="false"
-railway variables set CORS_ORIGINS="https://criptenv.com"
-railway variables set FRONTEND_URL="https://criptenv.com"
-railway variables set SCHEDULER_ENABLED="true"
-```
-
-### Step 4: Deploy
-
-```bash
 cd apps/api
 railway up
 ```
 
-### Step 5: Run Migrations
-
-```bash
-railway run alembic upgrade head
-```
+Railway gives **$5/month credit** which often covers a small API + DB.
 
 ---
 
-## 4. CLI — PyPI
+## 5. CLI — PyPI
 
 ### Prerequisites
 
@@ -204,7 +221,7 @@ criptenv --version
 
 ---
 
-## 5. GitHub Action — Marketplace Publishing
+## 6. GitHub Action — Marketplace Publishing
 
 ### Step 1: Tag Release
 
@@ -238,7 +255,7 @@ git push origin v1.0.0
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | ✅ | PostgreSQL async URL (`postgresql+asyncpg://...`) |
+| `DATABASE_URL` | ✅ | Supabase connection string (port `6543` pooler) |
 | `SECRET_KEY` | ✅ | Min 32 chars, used for session signing |
 | `DEBUG` | ✅ | `false` in production |
 | `CORS_ORIGINS` | ✅ | Comma-separated allowed origins |
@@ -250,6 +267,8 @@ git push origin v1.0.0
 | `GOOGLE_CLIENT_SECRET` | ⚠️ | For Google OAuth |
 | `DISCORD_CLIENT_ID` | ⚠️ | For Discord OAuth |
 | `DISCORD_CLIENT_SECRET` | ⚠️ | For Discord OAuth |
+
+> **Supabase tip:** Use the **Connection Pooler** URL (port `6543`), not the direct connection (port `5432`). The pooler handles connection limits better for serverless environments.
 
 ---
 
@@ -294,10 +313,12 @@ npx wrangler login
 
 - [ ] Web: `NEXT_PUBLIC_API_URL` points to production API
 - [ ] Web: Build passes (`npm run build`)
-- [ ] API: `DATABASE_URL` configured and migrations run
+- [ ] **Supabase**: Project created and connection string copied (port 6543)
+- [ ] **Supabase**: Migrations run (`alembic upgrade head`)
+- [ ] API: `DATABASE_URL` pointing to Supabase pooler
 - [ ] API: `SECRET_KEY` is strong and unique
 - [ ] API: `DEBUG=false`
-- [ ] API: `CORS_ORIGINS` includes web domain
+- [ ] API: `CORS_ORIGINS` includes web domain + `.pages.dev`
 - [ ] API: OAuth credentials configured (if using OAuth)
 - [ ] CLI: Version bumped in `pyproject.toml`
 - [ ] CLI: Build passes (`python -m build`)

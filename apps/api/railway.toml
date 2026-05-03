@@ -2,7 +2,7 @@
 builder = "nixpacks"
 
 [deploy]
-startCommand = "gunicorn -w 4 -k uvicorn.workers.UvicornWorker main:app --bind 0.0.0.0:$PORT"
+startCommand = "uvicorn main:app --host 0.0.0.0 --port $PORT"
 healthcheckPath = "/health"
 healthcheckTimeout = 300
 restartPolicyType = "on_failure"
@@ -11,7 +11,7 @@ restartPolicyMaxRetries = 3
 [deploy.envs]
 PYTHON_VERSION = "3.11"
 DEBUG = "false"
-CORS_ORIGINS = "https://criptenv.com,https://www.criptenv.com"
+CORS_ORIGINS = "https://criptenv.com,https://www.criptenv.com,https://*.pages.dev"
 SCHEDULER_ENABLED = "true"
 SCHEDULER_INTERVAL_HOURS = "24"
 FRONTEND_URL = "https://criptenv.com"

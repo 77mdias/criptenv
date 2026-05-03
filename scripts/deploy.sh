@@ -7,6 +7,7 @@
 # Prerequisites:
 #   - Web (Cloudflare):  wrangler authenticated (npx wrangler login)
 #   - API (Render):      git remote configured, render.yaml in apps/api/
+#   - Database (Supabase): project created, connection string ready
 #   - API (Railway):     railway CLI installed & authenticated
 #   - CLI (PyPI):        twine installed, PYPI_API_TOKEN set
 # =============================================================================
@@ -50,20 +51,15 @@ deploy_web() {
 }
 
 # ---------------------------------------------------------------------------
-# API Deploy — Render (via Blueprint) or Railway
+# API Deploy — Render Free Tier (via Blueprint)
 # ---------------------------------------------------------------------------
 deploy_api_render() {
-    log "=== Deploying API to Render ==="
+    log "=== Deploying API to Render (Free Tier) ==="
     cd "$PROJECT_ROOT/apps/api"
 
-    if ! command -v render &>/dev/null; then
-        warn "Render CLI not found. Install: curl -fsSL https://render.com/install-render-cli | bash"
-        warn "Alternatively, push to GitHub and use Render's auto-deploy from blueprint."
-        return 1
-    fi
-
-    render blueprint apply render.yaml
-    ok "API deploy initiated on Render!"
+    log "Using render.yaml blueprint. Go to Render Dashboard → Blueprints to apply."
+    log "Remember to set DATABASE_URL to your Supabase connection string after deploy."
+    ok "Render blueprint ready at apps/api/render.yaml"
 }
 
 deploy_api_railway() {

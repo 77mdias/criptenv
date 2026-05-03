@@ -123,12 +123,12 @@ criptenv/
 
 ## 📦 Deploy
 
-| Serviço    | Plano                      | Uso                            |
-| ---------- | -------------------------- | ------------------------------ |
-| PostgreSQL | Free Tier                  | Database                       |
-| FastAPI    | Railway/Render             | Backend API                    |
-| Frontend   | Cloudflare Pages + Workers | Vinext + Wrangler + Edge Deployment |
-| CLI        | pip install                | Distribuição via PyPI (futuro) |
+| Serviço    | Plano                      | Uso                            | Custo |
+| ---------- | -------------------------- | ------------------------------ | ----- |
+| PostgreSQL | Supabase Free Tier         | Database (permanente, 500MB)   | **$0** |
+| FastAPI    | Render Free Tier           | Backend API (cold starts)      | **$0** |
+| Frontend   | Cloudflare Pages + Workers | Vinext + Wrangler + Edge       | **$0** |
+| CLI        | PyPI                       | Distribuição via pip           | Grátis para usuários |
 
 ## 📚 Documentação
 

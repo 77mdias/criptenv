@@ -21,10 +21,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 #### Deployment Artifacts
 
 - **`apps/web/.env.production`**: Production environment variables template
-- **`apps/api/Procfile`**: Gunicorn + Uvicorn worker configuration for Render/Railway
-- **`apps/api/render.yaml`**: Render Blueprint for one-click deploy with PostgreSQL
+- **`apps/api/Procfile`**: Uvicorn configuration for Render free tier
+- **`apps/api/render.yaml`**: Render Blueprint for free tier deploy (no database)
 - **`apps/api/railway.toml`**: Railway deployment configuration
 - **`scripts/deploy.sh`**: Unified deploy script supporting web/api/cli targets
+- **`docs/technical/deployment-guide.md`**: Complete deployment guide
+
+#### Architecture Decision — Free Tier Stack
+
+- **Database**: Supabase Free Tier (permanent, 500MB) instead of Render Postgres (expires in 90 days on free tier)
+- **API**: Render Free Tier instead of Starter ($7/mo) — accepts cold starts for MVP/demo phase
+- **Web**: Cloudflare Pages + Workers (free tier with generous limits)
+- **Total infrastructure cost**: **$0/month** for development/MVP phase
 
 #### Test Verification
 
