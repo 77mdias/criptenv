@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) avançado: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅. Resta Railway provider e hardening de segurança P0.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~90%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅. Resta Railway provider, Integration Config Encryption e Web Alert UI.**
 
 ---
 
@@ -12,7 +12,7 @@
 |-------|--------|------------|
 | **Phase 1 (CLI MVP)** | ✅ COMPLETE | 100% |
 | **Phase 2 (Web UI)** | ✅ COMPLETE | 100% |
-| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~85% |
+| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~90% |
 | **Phase 4 (Enterprise)** | 📋 PLANNED | 0% |
 
 ---
@@ -116,8 +116,8 @@
 |---------|----------|--------|
 | Railway provider | P1 | ⚠️ Not implemented |
 | Integration tokens at-rest encryption | P1 | ⚠️ config stored as plaintext JSONB |
-| Web integrations dashboard polish | P1 | ⚠️ Functional but basic |
-| Security review CR-01/CR-02 | P0 | ❌ Session in response body, localStorage token |
+| Web alert configuration UI | P1 | ⚠️ Not started |
+| Security review CR-01/CR-02 | P0 | ✅ Resolved (HTTP-only cookies) |
 
 ---
 
@@ -125,17 +125,17 @@
 
 | Risk | Level | Mitigation |
 |------|-------|------------|
-| Security issues unresolved | 🔴 High | CR-01/CR-02 need fixing before public launch |
+| Integration config plaintext | 🔴 High | Encrypt `config` field before public launch |
 | Railway provider missing | 🟡 Medium | P1 — can be added following Render pattern |
-| Integration config plaintext | 🟡 Medium | Encrypt `config` field in Integration model |
+| Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap |
 
 ---
 
 ## Next Recommended Steps
 
-1. **Security Hardening**: Fix CR-01 (session in body) and CR-02 (localStorage) before public API launch
+1. **Integration Config Encryption**: Encrypt at-rest tokens in `integrations.config` (security P0)
 2. **Railway Provider**: Implement following the RenderProvider pattern
-3. **Integration Config Encryption**: Encrypt at-rest tokens in `integrations.config`
+3. **Web Alert Configuration UI**: Complete M3.5 web gap
 
 ---
 

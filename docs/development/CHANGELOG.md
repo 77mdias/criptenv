@@ -7,6 +7,30 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation & Deployment Preparation (2026-05-03)
+
+#### Documentation Updates
+
+- **`docs/features/implemented.md`**: Updated to reflect all completed features including OAuth (M3.7), Public API (M3.4), Cloud Integrations (Vercel ✅, Render ✅), CI Tokens (M3.3), Secret Alerts web integration, APScheduler, and Alembic migrations. Marked CR-01/CR-02 as resolved.
+- **`docs/features/in-progress.md`**: Reorganized to show only genuinely pending work: RailwayProvider, Integration Config Encryption, Web Alert Configuration UI, GitHub Action publishing. Confirmed CR-01/CR-02 security issues are resolved.
+- **`docs/features/backlog.md`**: Removed implemented items from backlog. Reorganized priority tiers. Updated dependency map to show Phase 3 at ~90%.
+- **`docs/tasks/next-tasks.md`**: Marked TASK-066/067/051 as completed. Added implementation specifications for TASK-061 (RailwayProvider) and TASK-068 (Integration Config Encryption). Defined recommended execution order.
+- **`docs/project/current-state.md`**: Updated Phase 3 completion to ~90%. Marked security issues as resolved.
+- **`docs/technical/deployment-guide.md`** (new): Complete deployment guide for Web (Cloudflare), API (Render/Railway), CLI (PyPI), and GitHub Action Marketplace.
+
+#### Deployment Artifacts
+
+- **`apps/web/.env.production`**: Production environment variables template
+- **`apps/api/Procfile`**: Gunicorn + Uvicorn worker configuration for Render/Railway
+- **`apps/api/render.yaml`**: Render Blueprint for one-click deploy with PostgreSQL
+- **`apps/api/railway.toml`**: Railway deployment configuration
+- **`scripts/deploy.sh`**: Unified deploy script supporting web/api/cli targets
+
+#### Test Verification
+
+- **API tests**: 275 passed ✅
+- **CLI tests**: 127 passed ✅
+
 ### Added
 
 #### M3.4: Public API (Completed)

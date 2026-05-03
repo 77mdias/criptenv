@@ -2,64 +2,64 @@
 
 ## Overview
 
-Features currently under development.
+Features currently under active development or pending completion.
 
 ---
 
-## Phase 3: CI/CD Integrations
+## Phase 3: CI/CD Integrations (~85% Complete)
 
-### M3.7: OAuth Authentication (GitHub, Google, Discord)
+### M3.2: Cloud Integrations — Railway Provider
 
-**Status:** ✅ Implemented and tested
+**Status:** ⚠️ Pending Implementation
 
 #### What Exists
 
 | Component | Status | Files |
 |-----------|--------|-------|
-| `OAuthAccount` model | ✅ | `apps/api/app/models/oauth_account.py` |
-| `OAuthService` (3 providers) | ✅ | `apps/api/app/services/oauth_service.py` |
-| `OAuthRouter` endpoints | ✅ | `apps/api/app/routers/oauth.py` |
-| OAuth migration | ✅ | `migrations/versions/20260503_0002_create_oauth_accounts.py` |
-| `OAuthButton` component | ✅ | `apps/web/src/components/ui/oauth-button.tsx` |
-| `OAuthButtonGroup` | ✅ | `apps/web/src/components/ui/oauth-button.tsx` |
-| OAuth callback page | ✅ | `apps/web/src/app/(auth)/oauth/callback/page.tsx` |
-| Login/Signup OAuth integration | ✅ | `apps/web/src/app/(auth)/login/page.tsx`, `signup/page.tsx` |
-| OAuth tests (8) | ✅ | `apps/api/tests/test_oauth.py` |
+| `IntegrationProvider` interface | ✅ | `apps/api/app/strategies/integrations/base.py` |
+| `VercelProvider` | ✅ | `apps/api/app/strategies/integrations/vercel.py` |
+| `RenderProvider` | ✅ | `apps/api/app/strategies/integrations/render.py` |
+| `Integration` model | ✅ | `apps/api/app/models/integration.py` |
+| `IntegrationService` | ✅ | `apps/api/app/services/integration_service.py` |
+| `IntegrationRouter` | ✅ | `apps/api/app/routers/integrations.py` |
+| CLI `integrations` commands | ✅ | `apps/cli/src/criptenv/commands/integrations.py` |
+| Web integrations dashboard (Vercel) | ✅ | `apps/web/src/app/(dashboard)/integrations/page.tsx` |
 
-#### OAuth Providers
+#### What's Missing
 
-| Provider | Status | Implementation |
-|----------|--------|----------------|
-| GitHub | ✅ Tested | User info with avatar |
-| Google | ✅ | OAuth 2.0 with userinfo endpoint |
-| Discord | ✅ | OAuth 2.0 with avatar URL construction |
+| Component | Priority | Status |
+|-----------|----------|--------|
+| `RailwayProvider` strategy | P1 | ❌ Not started |
+| Web: Railway integration card | P1 | ❌ Not started |
+| CLI: Railway-specific commands | P2 | ❌ Not started |
 
-#### Flow
+#### RailwayProvider Expected Interface
 
-1. User clicks OAuth button → backend `/api/auth/oauth/{provider}`
-2. Backend sets `oauth_state` cookie → redirects to provider
-3. Provider redirects to `/api/auth/oauth/{provider}/callback?code=...&state=...`
-4. Backend validates state, creates session, sets `session_token` cookie
-5. Backend redirects to frontend `/oauth/callback`
-6. Frontend verifies session via `authApi.session()` → redirects to `/dashboard`
+Following the `RenderProvider` pattern in `apps/api/app/strategies/integrations/render.py`:
 
-#### Security Features
-
-- CSRF protection via state parameter
-- HTTP-only cookies (secure=False for dev, secure=True for prod)
-- OAuth users have no password (kdf_salt generated, email_verified=True)
+```python
+class RailwayProvider(IntegrationProvider):
+    @property
+    def name(self) -> str: ...
+    @property
+    def display_name(self) -> str: ...
+    async def validate_connection(self, config: dict) -> bool: ...
+    async def push_secrets(self, config: dict, secrets: dict, env: str = "production") -> bool: ...
+    async def pull_secrets(self, config: dict, env: str = "production") -> dict: ...
+```
 
 #### Next Steps
 
-1. ✅ OAuth implemented and working
-2. Add Google/Discord OAuth testing
-3. Add "link account" UI for linking multiple OAuth providers to single account
+1. Implement `RailwayProvider` following `RenderProvider` pattern
+2. Register in `apps/api/app/strategies/integrations/__init__.py`
+3. Add unit tests in `apps/api/tests/test_integration_providers.py`
+4. Update web UI to show Railway card
 
 ---
 
-### M3.5: Secret Alerts & Rotation
+### M3.5: Secret Alerts & Rotation — Web UI Polish
 
-**Target:** Complete secret expiration and rotation system
+**Status:** 🟡 Mostly Complete (API + CLI ✅, Web partial)
 
 #### What Exists
 
@@ -74,52 +74,62 @@ Features currently under development.
 | CLI `secrets expire` command | ✅ | `apps/cli/src/criptenv/commands/secrets.py` |
 | CLI `secrets alert` command | ✅ | `apps/cli/src/criptenv/commands/secrets.py` |
 | CLI `rotation list` command | ✅ | `apps/cli/src/criptenv/commands/secrets.py` |
-| `ExpirationBadge` component | ⚠️ Partial | `apps/web/src/components/shared/` |
-| Secret row integration | ⚠️ Partial | In progress |
+| `ExpirationBadge` component | ✅ | `apps/web/src/components/shared/expiration-badge.tsx` |
+| Secret row badge integration | ✅ | `apps/web/src/app/(dashboard)/projects/[id]/secrets/page.tsx` |
 
 #### What's Missing
 
 | Component | Priority | Status |
 |-----------|----------|--------|
-| Web: Full expiration UI | P1 | ❌ Not started |
 | Web: Alert configuration page | P1 | ❌ Not started |
+| Web: Rotation modal | P1 | ⚠️ Partial |
 | Webhook: Email notifications | P2 | ❌ Not started |
 | Webhook: Slack integration | P2 | ❌ Not started |
 | Rotation: Auto-rotation policy | P1 | ❌ Not started |
 
-#### Current Work
-
-**ExpirationBadge Component Integration:**
-
-The `ExpirationBadge` component exists but needs integration into the secrets table/row in the web dashboard. This requires:
-1. API endpoint to fetch expiration data per secret
-2. Pass expiration data to SecretRow component
-3. Display badge with appropriate color (green/yellow/red/expired)
-4. Click handler for rotation modal
-
-**Files to work on:**
-- `apps/web/src/components/shared/expiration-badge.tsx` (if exists)
-- `apps/web/src/app/(dashboard)/projects/[id]/secrets/page.tsx`
-- API endpoint for `/api/v1/.../secrets/expiring`
-
-#### Possible Issues
-
-1. **Background job reliability**: APScheduler runs in single process, no distributed scheduling
-2. **Webhook retry logic**: Need to verify exponential backoff is working correctly
-3. **Secret row integration**: Component structure may need adjustment
-
 #### Next Steps
 
-1. ✅ Complete ExpirationBadge integration in secrets table
-2. ✅ Create expiration configuration UI
-3. ✅ Add rotation modal to web dashboard
-4. ✅ Implement auto-rotation policy (future)
+1. Create alert configuration UI in project settings
+2. Add rotation modal to web dashboard
+3. Implement auto-rotation policy (future milestone)
 
 ---
 
-### M3.1: GitHub Action
+### Security Hardening — Integration Config Encryption
 
-**Status:** ✅ Implemented (action.yml and index.ts complete)
+**Status:** ⚠️ Pending
+
+#### Context
+
+Integration API tokens are currently stored as plaintext JSONB in the `config` column of the `Integration` model.
+
+#### What Needs to Happen
+
+| Component | Priority | Status |
+|-----------|----------|--------|
+| Encrypt `config` field at-rest | P1 | ❌ Not started |
+| Derive encryption key from `SECRET_KEY` | P1 | ❌ Not started |
+| Migration for existing data | P1 | ❌ Not started |
+| Validate connection still works | P1 | ❌ Not started |
+
+#### Files
+
+- `apps/api/app/models/integration.py`
+- `apps/api/app/services/integration_service.py`
+- `apps/api/app/strategies/integrations/` (all providers)
+
+#### Next Steps
+
+1. Add encryption/decryption layer in `IntegrationService`
+2. Update model to handle encrypted config transparently
+3. Write Alembic migration for existing integrations
+4. Test all providers after encryption
+
+---
+
+### GitHub Action Publishing
+
+**Status:** 🟡 Ready for Publishing
 
 #### What Exists
 
@@ -127,6 +137,7 @@ The `ExpirationBadge` component exists but needs integration into the secrets ta
 |-----------|--------|-------|
 | `action.yml` | ✅ | `packages/github-action/action.yml` |
 | Action source (TypeScript) | ✅ | `packages/github-action/src/index.ts` |
+| Compiled `dist/index.js` | ✅ | `packages/github-action/dist/index.js` |
 | Test infrastructure | ✅ | `packages/github-action/__tests__/` |
 
 #### What's Missing
@@ -139,122 +150,54 @@ The `ExpirationBadge` component exists but needs integration into the secrets ta
 
 #### Next Steps
 
-1. Complete README for the action
-2. Run E2E tests with test repository
-3. Publish to GitHub Marketplace
+1. Write action README with usage examples
+2. Create a release/tag on GitHub
+3. Submit to GitHub Marketplace
 4. Add badges and version tags
 
 ---
 
-### Pending: Cloud Integrations
+## Phase 2 Security Review — Resolved ✅
 
-**Status:** ❌ Not started
+### CR-01: Session Token in Response Body
 
-#### Vercel Integration
+**Status:** ✅ Resolved (2026-05-03)
 
-| Component | Priority |
-|-----------|----------|
-| `IntegrationProvider` interface | P0 |
-| `Integration` model | P0 |
-| `IntegrationService` | P0 |
-| `VercelProvider` strategy | P0 |
-| CLI `integrations` commands | P1 |
-| Web integrations dashboard | P1 |
+- `AuthResponse` no longer includes `token` in JSON body
+- Session token delivered exclusively via HTTP-only cookie (`session_token`)
+- Cookie attributes: `httponly=True`, `secure=True`, `samesite="lax"`
+- CLI login extracts token from `Set-Cookie` header and stores encrypted locally
 
-#### Railway Integration
+### CR-02: Token in localStorage
 
-| Component | Priority |
-|-----------|----------|
-| `RailwayProvider` strategy | P1 |
+**Status:** ✅ Resolved (2026-05-03)
 
-#### Render Integration
-
-| Component | Priority |
-|-----------|----------|
-| `RenderProvider` strategy | P1 |
-
-#### Strategy Pattern Structure
-
-```
-apps/api/app/strategies/integrations/
-├── base.py          # IntegrationProvider interface
-├── vercel.py        # VercelProvider
-├── railway.py       # RailwayProvider  
-├── render.py        # RenderProvider
-└── __init__.py
-```
-
----
-
-### Pending: Public API
-
-**Status:** ❌ Not started
-
-#### Requirements
-
-| Component | Priority |
-|-----------|----------|
-| API versioning (`/api/v1/` prefix) | P0 |
-| `APIKey` model | P0 |
-| `APIKey` router | P0 |
-| API key auth middleware | P0 |
-| Rate limiting middleware | P0 |
-| OpenAPI/Swagger documentation | P0 |
-| Rate limiting tests | P1 |
-
-#### Security Issues
-
-Before public API launch, resolve from Phase 2 Review:
-- **CR-01**: Session token in response body
-- **CR-02**: Token in localStorage
-
----
-
-## Phase 2: Incomplete Items
-
-### Web: Integrations Page
-
-**Status:** ⚠️ Placeholder
-
-The integrations page (`/integrations`) exists as a placeholder but has no real functionality.
-
-**Files:** `apps/web/src/app/(dashboard)/integrations/page.tsx`
-
-**Needed:**
-- Integration cards for GitHub, Vercel, Railway, Render
-- Connect/disconnect flow
-- Status display (connected/disconnected)
-
-### Security: Token Handling
-
-**Status:** ⚠️ Review needed
-
-- Session token exposure in response body (CR-01)
-- Token stored in localStorage (CR-02)
-
-These issues from Phase 2 Review should be resolved before Phase 3 public API work.
+- `useAuthStore` (Zustand) no longer persists to localStorage
+- Session verified via HTTP-only cookie on every page load
+- `authApi.session()` called on app initialization
+- Multi-tab auth works via cookie sharing
 
 ---
 
 ## Priority Order for In-Progress Work
 
 1. **High Priority**
-   - Resolve security issues (CR-01, CR-02)
-   - Complete expiration badge integration
-   - Implement Vercel integration (P0 for Phase 3)
+   - RailwayProvider implementation (M3.2 closure)
+   - Integration config at-rest encryption (security)
+   - Web alert configuration UI (M3.5 closure)
 
 2. **Medium Priority**
-   - Complete GitHub Action publishing
-   - Web alert configuration UI
-   - CLI `ci-login` / `ci-deploy` commands
+   - GitHub Action publishing to Marketplace
+   - Web rotation modal completion
+   - Email webhook notifications
 
 3. **Lower Priority**
-   - Railway/Render integrations
-   - Email/Slack webhook notifications
-   - Rate limiting implementation (beyond tests)
+   - Slack webhook integration
+   - Auto-rotation policy
+   - E2E tests for GitHub Action
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01  
-**Status**: Active Development
+**Document Version**: 1.1  
+**Last Updated**: 2026-05-03  
+**Status**: Active Development — Phase 3 (85%)
