@@ -8,6 +8,55 @@ Features currently under development.
 
 ## Phase 3: CI/CD Integrations
 
+### M3.7: OAuth Authentication (GitHub, Google, Discord)
+
+**Status:** ✅ Implemented and tested
+
+#### What Exists
+
+| Component | Status | Files |
+|-----------|--------|-------|
+| `OAuthAccount` model | ✅ | `apps/api/app/models/oauth_account.py` |
+| `OAuthService` (3 providers) | ✅ | `apps/api/app/services/oauth_service.py` |
+| `OAuthRouter` endpoints | ✅ | `apps/api/app/routers/oauth.py` |
+| OAuth migration | ✅ | `migrations/versions/20260503_0002_create_oauth_accounts.py` |
+| `OAuthButton` component | ✅ | `apps/web/src/components/ui/oauth-button.tsx` |
+| `OAuthButtonGroup` | ✅ | `apps/web/src/components/ui/oauth-button.tsx` |
+| OAuth callback page | ✅ | `apps/web/src/app/(auth)/oauth/callback/page.tsx` |
+| Login/Signup OAuth integration | ✅ | `apps/web/src/app/(auth)/login/page.tsx`, `signup/page.tsx` |
+| OAuth tests (8) | ✅ | `apps/api/tests/test_oauth.py` |
+
+#### OAuth Providers
+
+| Provider | Status | Implementation |
+|----------|--------|----------------|
+| GitHub | ✅ Tested | User info with avatar |
+| Google | ✅ | OAuth 2.0 with userinfo endpoint |
+| Discord | ✅ | OAuth 2.0 with avatar URL construction |
+
+#### Flow
+
+1. User clicks OAuth button → backend `/api/auth/oauth/{provider}`
+2. Backend sets `oauth_state` cookie → redirects to provider
+3. Provider redirects to `/api/auth/oauth/{provider}/callback?code=...&state=...`
+4. Backend validates state, creates session, sets `session_token` cookie
+5. Backend redirects to frontend `/oauth/callback`
+6. Frontend verifies session via `authApi.session()` → redirects to `/dashboard`
+
+#### Security Features
+
+- CSRF protection via state parameter
+- HTTP-only cookies (secure=False for dev, secure=True for prod)
+- OAuth users have no password (kdf_salt generated, email_verified=True)
+
+#### Next Steps
+
+1. ✅ OAuth implemented and working
+2. Add Google/Discord OAuth testing
+3. Add "link account" UI for linking multiple OAuth providers to single account
+
+---
+
 ### M3.5: Secret Alerts & Rotation
 
 **Target:** Complete secret expiration and rotation system

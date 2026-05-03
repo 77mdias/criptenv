@@ -48,7 +48,8 @@
 
 | Router | Endpoints | Status |
 |--------|-----------|--------|
-| `auth` | signup, signin, signout, session, sessions | ✅ |
+| `auth` | signup, signin, signout, session, sessions, **oauth/** | ✅ |
+| `auth/oauth` | github, google, discord initiation/callback/accounts/unlink | ✅ NEW |
 | `projects` | CRUD on projects | ✅ |
 | `environments` | CRUD per project | ✅ |
 | `vault` | push, pull, version | ✅ |

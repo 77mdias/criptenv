@@ -9,6 +9,57 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### M3.7: OAuth Authentication (GitHub, Google, Discord)
+
+##### Backend (apps/api)
+
+- **OAuthAccount model**: `app/models/oauth_account.py` — Links OAuth providers to users with fields: user_id, provider, provider_user_id, provider_email, access_token, refresh_token, expires_at, timestamps
+- **OAuthService**: `app/services/oauth_service.py` — Complete OAuth implementation with three providers:
+  - `GitHubOAuthProvider`: Exchanges code for token, fetches user info (id, name, email, avatar_url)
+  - `GoogleOAuthProvider`: OAuth 2.0 with userinfo endpoint
+  - `DiscordOAuthProvider`: OAuth 2.0 with avatar URL construction
+  - All providers use 30-second timeout for httpx requests
+  - `authenticate_with_oauth()` creates new users or links to existing accounts
+  - `generate_kdf_salt()` method for OAuth users (no password)
+  - State encoding/decoding for CSRF protection
+- **OAuthRouter**: `app/routers/oauth.py` — FastAPI endpoints:
+  - `GET /api/auth/oauth/{provider}` — Initiates OAuth flow, sets oauth_state cookie
+  - `GET /api/auth/oauth/{provider}/callback` — Handles callback, creates session, redirects to frontend
+  - `GET /api/auth/oauth/accounts` — Lists linked OAuth accounts
+  - `DELETE /api/auth/oauth/{provider}` — Unlinks OAuth account
+- **OAuth Migration**: `migrations/versions/20260503_0002_create_oauth_accounts.py` — Creates oauth_accounts table
+- **Config additions**: `FRONTEND_URL` setting for OAuth redirect destination
+- **authlib dependency**: Added to `requirements.txt` for OAuth support
+
+##### Frontend (apps/web)
+
+- **OAuthButton component**: `src/components/ui/oauth-button.tsx` — Button with FontAwesome brand icons (GitHub, Google, Discord), hover color effects
+- **OAuthButtonGroup**: Renders all three OAuth provider buttons
+- **OAuth callback page**: `src/app/(auth)/oauth/callback/page.tsx` — Handles post-OAuth redirect, verifies session via `authApi.session()`, redirects to dashboard
+- **Login page updated**: `login/page.tsx` — Added OAuthButtonGroup with separator
+- **Signup page updated**: `signup/page.tsx` — Added OAuthButtonGroup with separator
+- **Environment variables**: `NEXT_PUBLIC_API_URL` and `NEXT_PUBLIC_COOKIE_NAME` added to `.env`
+
+##### OAuth Flow
+
+1. User clicks OAuth button → frontend redirects to backend `/api/auth/oauth/{provider}`
+2. Backend sets `oauth_state` cookie and redirects to provider's authorization URL
+3. User authorizes → provider redirects to `/api/auth/oauth/{provider}/callback?code=...&state=...`
+4. Backend validates state, exchanges code for tokens, creates/links user, sets `session_token` cookie
+5. Backend redirects to frontend `/oauth/callback`
+6. Frontend calls `authApi.session()` to verify session, redirects to `/dashboard`
+
+##### Security Features
+
+- CSRF protection via state parameter (encoded in cookie, validated on callback)
+- HTTP-only, SameSite=Lax cookies for session
+- secure=True in production, secure=False for development HTTP
+- OAuth users have no password (kdf_salt generated, email_verified=True by default)
+
+### Changed
+
+- **Auth response hardening**: Signup/signin no longer return session tokens in JSON; the web app uses HTTP-only cookies only.
+
 #### Phase 3 Rescue
 
 - **Persistent CI sessions**: Added `ci_sessions` model/table and hardened CI secret endpoints so `ci_s_` tokens must be persisted, unexpired, scoped for `read:secrets`, and allowed for the requested environment.

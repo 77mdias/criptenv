@@ -18,7 +18,7 @@
                ✅ DONE
 ```
 
-> **Status**: Phase 1 ✅ COMPLETE (April 2026). Phase 2 ✅ COMPLETE (April 2026). Phase 3 next.
+> **Status**: Phase 1 ✅ COMPLETE (April 2026). Phase 2 ✅ COMPLETE (April 2026). Phase 3 🔄 IN PROGRESS (~60%). Phase 4 📋 PLANNED.
 
 ---
 
@@ -86,7 +86,7 @@ criptenv export -o .env                 # Exportar para .env
 
 ## Phase 2: Web UI & Cloudflare Runtime Alignment
 
-**Timeline**: 3 months (Q3 2024) → Completed April 2026
+**Timeline**: 3 months (Q1-Q2 2026) → Completed April 2026
 **Status**: ✅ COMPLETE
 **Goal**: Dashboard web completo com runtime Vinext e deploy em Cloudflare Pages + Workers
 
@@ -106,7 +106,7 @@ criptenv export -o .env                 # Exportar para .env
 | Vinext + Cloudflare edge | Vinext runtime on top of the existing App Router, targeting Cloudflare |
 | BetterAuth               | Custom session-based auth (apps/api/app/middleware/auth.py)            |
 | Supabase Realtime        | Not implemented                                                        |
-| GitHub/Google OAuth      | Not implemented                                                        |
+| GitHub/Google OAuth      | ✅ Implemented (M3.7) — GitHub tested, Google/Discord ready |
 | 2FA (TOTP)               | Not implemented                                                        |
 
 ### Deliverables
@@ -162,46 +162,50 @@ criptenv export -o .env                 # Exportar para .env
 
 ## Phase 3: CI/CD Integrations & Dynamic Secrets
 
-**Timeline**: 3 months (Q4 2024)  
+**Timeline**: 3 months (Q2-Q3 2026) — In Progress (~60% complete)
 **Goal**: Ecossistema de integrações
 
 ### Objectives
 
-- [ ] GitHub Actions official action
-- [ ] Vercel, Railway, Render integrations
-- [ ] CLI tokens for CI/CD
-- [ ] Secret expiration/alerts
-- [ ] Secret rotation basics
-- [ ] Public API
+- [x] GitHub Actions official action (action.yml + src/index.ts ✅)
+- [x] Secret expiration/alerts (API + CLI ✅, Web UI ⚠️ Partial)
+- [x] Secret rotation basics (API + CLI ✅)
+- [ ] Vercel, Railway, Render integrations (NOT STARTED)
+- [ ] CLI tokens for CI/CD (NOT STARTED - ci-login, ci-deploy, ci-secrets)
+- [ ] Public API (NOT STARTED - API key model, rate limiting)
 
 ### Deliverables
 
 #### Integrations
 
-| Integration          | Type           | Priority |
-| -------------------- | -------------- | -------- |
-| **@criptenv/action** | GitHub Actions | P0       |
-| **Vercel**           | Native API     | P0       |
-| **Railway**          | Native API     | P1       |
-| **Render**           | Native API     | P1       |
-| **Docker**           | Compose plugin | P1       |
-| **Kubernetes**       | Operator       | P2       |
-| **Terraform**        | Provider       | P2       |
+| Integration          | Type           | Priority | Status |
+| -------------------- | -------------- | -------- | ------ |
+| **@criptenv/action** | GitHub Actions | P0       | ✅ Implemented (publishing pending) |
+| **Vercel**           | Native API     | P0       | ❌ Not started |
+| **Railway**          | Native API     | P1       | ❌ Not started |
+| **Render**           | Native API     | P1       | ❌ Not started |
+| **Docker**           | Compose plugin | P1       | ❌ Not started |
+| **Kubernetes**       | Operator       | P2       | ❌ Not started |
+| **Terraform**        | Provider       | P2       | ❌ Not started |
 
 #### CLI Extensions
 
 ```bash
-criptenv ci-login          # Login com CI token
-criptenv ci-deploy         # Deploy com secrets
-criptenv ci-secrets        # Listar secrets disponíveis
-criptenv github connect     # Conectar repo GitHub
-criptenv vercel link        # Link project Vercel
+criptenv ci-login          # Login com CI token (NOT IMPLEMENTED)
+criptenv ci-deploy         # Deploy com secrets (NOT IMPLEMENTED)
+criptenv ci-secrets        # Listar secrets disponíveis (NOT IMPLEMENTED)
+criptenv github connect    # Conectar repo GitHub (NOT IMPLEMENTED)
+criptenv vercel link       # Link project Vercel (NOT IMPLEMENTED)
+criptenv rotate KEY        # Rotate secret ✅ IMPLEMENTED
+criptenv secrets expire    # Set expiration ✅ IMPLEMENTED
+criptenv secrets alert     # Configure alert timing ✅ IMPLEMENTED
+criptenv rotation list     # List pending rotation ✅ IMPLEMENTED
 ```
 
 #### API
 
 ```bash
-# REST API v1
+# REST API v1 (PARTIAL - needs versioning + API keys)
 GET    /api/v1/projects
 POST   /api/v1/projects
 GET    /api/v1/projects/:id/secrets
@@ -214,19 +218,20 @@ POST   /api/v1/integrations/verify
 
 ### Milestones
 
-| Milestone                    | Week | Criteria                  |
-| ---------------------------- | ---- | ------------------------- |
-| **M3.1**: GitHub Action      | 4    | Official action published |
-| **M3.2**: Cloud integrations | 6    | Vercel + Railway working  |
-| **M3.3**: CI tokens          | 8    | Token-based auth for CI   |
-| **M3.4**: Public API         | 10   | REST API documented       |
-| **M3.5**: Secret alerts      | 12   | Expiration notifications  |
+| Milestone                    | Week | Criteria                  | Status |
+| ---------------------------- | ---- | ------------------------- | ------ |
+| **M3.1**: GitHub Action      | 4    | Official action published | ⚠️ Partial (publishing pending) |
+| **M3.2**: Cloud integrations | 6    | Vercel + Railway working  | ❌ Not started |
+| **M3.3**: CI tokens          | 8    | Token-based auth for CI   | ❌ Not started |
+| **M3.4**: Public API         | 10   | REST API documented       | ❌ Not started |
+| **M3.5**: Secret alerts      | 12   | Expiration notifications  | ⚠️ Partial (API/CLI done, Web partial) |
+| **M3.6**: APScheduler        | -    | Background job lifespan   | ✅ Implemented |
 
 ---
 
 ## Phase 4: Enterprise Ready
 
-**Timeline**: 2025 Q1  
+**Timeline**: 2026 Q4 - 2027 Q1 (Planned)  
 **Goal**: Enterprise features
 
 ### Objectives
@@ -279,10 +284,10 @@ POST   /api/v1/integrations/verify
 | Risk                         | Probability | Impact   | Mitigation                      |
 | ---------------------------- | ----------- | -------- | ------------------------------- |
 | **Encryption vulnerability** | Low         | Critical | Audit by 3rd party              |
-| **Supabase pricing change**  | Medium      | Medium   | Migration path documented       |
 | **Low adoption**             | Medium      | High     | Early community building        |
 | **Competitor feature drop**  | High        | Medium   | Differentiate on UX + ZK        |
-| **Key derivation too slow**  | Low         | Medium   | Web Workers, progress indicator |
+| **API key leakage**         | Low         | Critical | Token rotation + scopes limited |
+| **Secret rotation data loss** | Low       | Critical | Versionamento + rollback        |
 
 ---
 
@@ -290,15 +295,14 @@ POST   /api/v1/integrations/verify
 
 ### External
 
-- Supabase CLI for local dev
-- BetterAuth stability
 - Vinext plugin maturity
 - npm registry availability
+- Vercel/Railway/Render API availability
 
 ### Internal
 
 - Phase 1 must complete before Phase 2 (CLI = primary product)
-- Web UI depends on BetterAuth web integration patterns
+- Web UI depends on session-based auth (FastAPI middleware)
 - CI/CD depends on having stable public API
 
 ---
@@ -318,7 +322,7 @@ Year 1 End:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2024  
-**Status**: Approved  
+**Document Version**: 2.0  
+**Last Updated**: 2026-05-03  
+**Status**: Active Development — Phase 3  
 **Next**: Technical Specifications

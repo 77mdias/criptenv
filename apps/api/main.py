@@ -10,6 +10,7 @@ from app.config import settings
 from app.database import close_db
 from app.routers import (
     auth_router,
+    oauth_router,
     projects_router,
     environments_router,
     vault_router,
@@ -187,6 +188,7 @@ app.include_router(v1_router)
 
 # Legacy routers (backwards compatibility - no prefix)
 app.include_router(auth_router)
+app.include_router(oauth_router)
 app.include_router(projects_router)
 app.include_router(environments_router)
 app.include_router(vault_router)
