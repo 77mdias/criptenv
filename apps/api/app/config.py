@@ -17,6 +17,20 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 5
     DB_POOL_TIMEOUT: int = 10
+    
+    # API URL for OAuth callbacks
+    API_URL: str = "http://localhost:8000"
+    
+    # Frontend URL for OAuth redirect after callback
+    FRONTEND_URL: str = "http://localhost:3000"
+    
+    # OAuth Provider Credentials
+    GITHUB_CLIENT_ID: str = ""
+    GITHUB_CLIENT_SECRET: str = ""
+    GOOGLE_CLIENT_ID: str = ""
+    GOOGLE_CLIENT_SECRET: str = ""
+    DISCORD_CLIENT_ID: str = ""
+    DISCORD_CLIENT_SECRET: str = ""
 
     @field_validator("DEBUG", mode="before")
     @classmethod
@@ -52,12 +66,16 @@ class Settings(BaseSettings):
         if url.startswith("postgresql://"):
             url = url.replace("postgresql://", "postgresql+asyncpg://", 1)
 
-        # Remove pgbouncer=true (Prisma-only, not supported by asyncpg)
+        # Remove Prisma/Supabase pooler-only params not supported by asyncpg
         parsed = urlparse(url)
         if parsed.query:
             params = parse_qs(parsed.query, keep_blank_values=True)
             params.pop("pgbouncer", None)
             params.pop("schema", None)
+            params.pop("sslmode", None)
+            params.pop("sslcert", None)
+            params.pop("sslkey", None)
+            params.pop("sslrootcert", None)
             new_query = urlencode(params, doseq=True)
             url = urlunparse(parsed._replace(query=new_query))
 
