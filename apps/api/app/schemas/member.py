@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -80,6 +80,13 @@ class CITokenResponse(BaseModel):
     expires_at: Optional[datetime] = None
     revoked_at: Optional[datetime] = None
     created_at: datetime
+
+    @field_validator("scopes", mode="before")
+    @classmethod
+    def normalize_scopes(cls, v):
+        if v is None:
+            return ["read:secrets"]
+        return v
 
     class Config:
         from_attributes = True

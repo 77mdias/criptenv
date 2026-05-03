@@ -221,6 +221,25 @@ class TestCITokenSchemaScopes:
         assert response.environment_scope == "staging"
         assert response.description == "Test token"
 
+    def test_citoken_response_normalizes_null_scopes(self):
+        """CITokenResponse should normalize NULL scopes from DB to default"""
+        from app.schemas.member import CITokenResponse
+        
+        class FakeToken:
+            id = uuid4()
+            project_id = uuid4()
+            name = "Legacy Token"
+            description = None
+            scopes = None  # Simulates old DB record
+            environment_scope = None
+            last_used_at = None
+            expires_at = None
+            revoked_at = None
+            created_at = datetime.now(timezone.utc)
+        
+        response = CITokenResponse.model_validate(FakeToken())
+        assert response.scopes == ["read:secrets"]
+
 
 # ============================================================================
 # RED: Test Environment Scoping

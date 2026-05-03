@@ -67,6 +67,13 @@ class ApiKeyResponse(BaseModel):
     expires_at: Optional[datetime] = None
     created_at: datetime
     
+    @field_validator("scopes", mode="before")
+    @classmethod
+    def normalize_scopes(cls, v):
+        if v is None:
+            return ["read:secrets"]
+        return v
+    
     model_config = {"from_attributes": True}
 
 
@@ -88,6 +95,13 @@ class ApiKeyCreateResponse(BaseModel):
     environment_scope: Optional[str] = None
     expires_at: Optional[datetime] = None
     created_at: datetime
+    
+    @field_validator("scopes", mode="before")
+    @classmethod
+    def normalize_scopes(cls, v):
+        if v is None:
+            return ["read:secrets"]
+        return v
     
     model_config = {"from_attributes": True}
 
