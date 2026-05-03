@@ -1,0 +1,52 @@
+[
+  {
+    "id": "TC001",
+    "title": "post api auth signup user creation",
+    "description": "Test user account creation by sending POST request to /api/auth/signup with valid email and password, expecting 201 response with user_id."
+  },
+  {
+    "id": "TC002",
+    "title": "post api auth login valid credentials",
+    "description": "Test user login by sending POST request to /api/auth/login with valid credentials, expecting 200 response with session_token in response body."
+  },
+  {
+    "id": "TC003",
+    "title": "get api profile authorized access",
+    "description": "Test fetching user profile by sending GET request to /api/profile with valid Authorization header containing session_token, expecting 200 response with user profile data."
+  },
+  {
+    "id": "TC004",
+    "title": "post api projects create project authorized",
+    "description": "Test creating a new project by sending POST request to /api/projects with valid Authorization header and project data, expecting 201 response with project_id."
+  },
+  {
+    "id": "TC005",
+    "title": "post api vaults push encrypted blob",
+    "description": "Test pushing encrypted vault blob by sending POST request to /api/vaults/{project_id}/{env_id}/push with valid Authorization and encrypted_blob, expecting 200 acknowledgement."
+  },
+  {
+    "id": "TC006",
+    "title": "post api projects secrets create secret metadata",
+    "description": "Test creating secret metadata by sending POST request to /api/projects/{project_id}/secrets with valid Authorization and encrypted secret data, expecting 201 response with secret_id."
+  },
+  {
+    "id": "TC007",
+    "title": "post api projects invites create invite",
+    "description": "Test inviting a collaborator by sending POST request to /api/projects/{project_id}/invites with valid Authorization and invitee email and role, expecting 201 response with invite_id and invite_token."
+  },
+  {
+    "id": "TC008",
+    "title": "post api projects ci tokens create ci token",
+    "description": "Test creating a scoped CI token by sending POST request to /api/projects/{project_id}/ci-tokens with valid Authorization and token details, expecting 201 response with token_id and one-time token_value."
+  },
+  {
+    "id": "TC009",
+    "title": "get api projects audit logs authorized",
+    "description": "Test retrieving audit logs by sending GET request to /api/projects/{project_id}/audit-logs with valid Authorization, expecting 200 response with list of audit events."
+  },
+  {
+    "id": "TC010",
+    "title": "post api projects webhooks register webhook",
+    "description": "Test registering a webhook by sending POST request to /api/projects/{project_id}/webhooks with valid Authorization and webhook URL and events, expecting 201 response with webhook_id."
+  }
+]

@@ -29,7 +29,7 @@ export default function IntegrationsPage() {
   const [form, setForm] = useState({
     name: "Vercel Production",
     apiToken: "",
-    vercelProjectId: "prj_HxmAHcps00wzNRYvFXq1nsjvqa8g",
+    vercelProjectId: "",
   });
 
   const selectedProject = useMemo(
