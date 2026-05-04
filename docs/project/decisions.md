@@ -238,6 +238,26 @@ Centralize the frontend API base URL resolution and remove any hardcoded `localh
 - ✅ API URL resolution is now shared instead of duplicated
 - ❌ Deployments without a public API URL must still provide same-origin API routing or a proper env value
 
+## DEC-010 — Cloudflare Worker Proxies Production API Traffic
+
+**Date:** 2026-05-04  
+**Status:** ✅ Accepted  
+**Context:**  
+Cloudflare runtime secrets are available to the worker, but `NEXT_PUBLIC_*` values are not guaranteed to be embedded into the browser bundle when configured only as secrets. This caused production requests to hit the worker's own `/api/*` paths and return 404.
+
+**Decision:**  
+Use the Cloudflare worker as a same-origin bridge for `/api/*` requests. The worker forwards requests to the backend API using runtime env bindings and adds forwarded host/protocol headers so the backend can generate correct public OAuth callback URLs.
+
+**Rationale:**  
+- Removes production dependence on client-side env injection for core API connectivity
+- Keeps same-origin browser requests viable on Cloudflare
+- Allows OAuth cookies and redirects to align with the worker domain when proxied
+
+**Consequences:**  
+- ✅ Production frontend works even if the API URL exists only as a worker secret
+- ✅ Same-origin API requests avoid browser-side cross-origin complexity
+- ❌ The worker must have `API_URL` or `NEXT_PUBLIC_API_URL` configured at runtime
+
 **Date:** 2026-04 (Phase 3)  
 **Status:** ✅ Accepted  
 **Context:**  

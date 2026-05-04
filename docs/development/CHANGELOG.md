@@ -15,6 +15,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **OAuth callback session cookie**: Fixed [`apps/api/app/routers/oauth.py`](../apps/api/app/routers/oauth.py) so the OAuth callback writes the `session_token` cookie onto the redirect response that is actually returned to the browser.
 - **Regression coverage**: Added backend coverage to verify OAuth callback redirects to `FRONTEND_URL` and carries the session cookie in the response.
 
+#### Cloudflare Worker API Bridge (2026-05-04)
+
+- **Runtime API proxy**: [`apps/web/worker/index.ts`](../apps/web/worker/index.ts) now proxies `/api/*` requests to the configured backend URL using Cloudflare runtime bindings, preventing production 404s when the client bundle does not receive `NEXT_PUBLIC_API_URL`.
+- **Forwarded OAuth callback origin**: [`apps/api/app/services/oauth_service.py`](../apps/api/app/services/oauth_service.py) and [`apps/api/app/routers/oauth.py`](../apps/api/app/routers/oauth.py) now honor forwarded host/protocol headers so OAuth callback URLs can stay on the public worker domain when requests are proxied through Cloudflare.
+
 ### Documentation & Deployment Preparation (2026-05-03)
 
 #### Documentation Updates

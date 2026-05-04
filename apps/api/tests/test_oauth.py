@@ -154,7 +154,14 @@ def test_oauth_callback_invalid_state_cookie():
 
 def test_oauth_callback_sets_session_cookie_and_redirects(monkeypatch):
     """Test that OAuth callback sets the session cookie on the redirect response."""
-    async def fake_authenticate_with_oauth(self, provider, code, ip_address=None, user_agent=None):
+    async def fake_authenticate_with_oauth(
+        self,
+        provider,
+        code,
+        base_url=None,
+        ip_address=None,
+        user_agent=None,
+    ):
         return make_user(), make_session()
 
     monkeypatch.setattr(OAuthService, "authenticate_with_oauth", fake_authenticate_with_oauth)
@@ -174,3 +181,25 @@ def test_oauth_callback_sets_session_cookie_and_redirects(monkeypatch):
     assert response.status_code == 307
     assert response.headers["location"] == "https://criptenv.jean-carlos3.workers.dev/oauth/callback"
     assert "session_token=super-secret-session-token" in response.headers["set-cookie"]
+
+
+def test_oauth_init_uses_forwarded_host_for_callback(monkeypatch):
+    """Test that OAuth initiation uses the public forwarded host in redirect_uri."""
+    monkeypatch.setattr(settings, "GITHUB_CLIENT_ID", "github-client-id")
+    monkeypatch.setattr(settings, "GITHUB_CLIENT_SECRET", "github-client-secret")
+
+    with TestClient(make_app()) as client:
+        response = client.get(
+            "/api/auth/oauth/github",
+            headers={
+                "x-forwarded-host": "criptenv.jean-carlos3.workers.dev",
+                "x-forwarded-proto": "https",
+            },
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 307
+    assert (
+        "redirect_uri=https://criptenv.jean-carlos3.workers.dev/api/auth/oauth/github/callback"
+        in response.headers["location"]
+    )

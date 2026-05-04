@@ -4,6 +4,7 @@ from uuid import UUID, uuid4
 import base64
 import secrets
 import httpx
+from urllib.parse import urlsplit, urlunsplit
 
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -224,39 +225,54 @@ class OAuthService:
     def __init__(self, db: AsyncSession):
         self.db = db
         self._providers: dict[str, OAuthProvider] = {}
-    
-    def _get_provider_config(self, provider: str) -> tuple[str, str, str]:
+
+    @staticmethod
+    def normalize_base_url(base_url: Optional[str]) -> str:
+        normalized = (base_url or settings.API_URL).strip()
+        if not normalized:
+            normalized = settings.API_URL
+
+        parsed = urlsplit(normalized)
+        if not parsed.scheme or not parsed.netloc:
+            return settings.API_URL.rstrip("/")
+
+        return urlunsplit((parsed.scheme, parsed.netloc, "", "", "")).rstrip("/")
+
+    def _get_provider_config(self, provider: str, base_url: Optional[str] = None) -> tuple[str, str, str]:
         """Get provider configuration from settings."""
+        normalized_base_url = self.normalize_base_url(base_url)
         if provider == "github":
             return (
                 settings.GITHUB_CLIENT_ID,
                 settings.GITHUB_CLIENT_SECRET,
-                f"{settings.API_URL}/api/auth/oauth/github/callback",
+                f"{normalized_base_url}/api/auth/oauth/github/callback",
             )
         elif provider == "google":
             return (
                 settings.GOOGLE_CLIENT_ID,
                 settings.GOOGLE_CLIENT_SECRET,
-                f"{settings.API_URL}/api/auth/oauth/google/callback",
+                f"{normalized_base_url}/api/auth/oauth/google/callback",
             )
         elif provider == "discord":
             return (
                 settings.DISCORD_CLIENT_ID,
                 settings.DISCORD_CLIENT_SECRET,
-                f"{settings.API_URL}/api/auth/oauth/discord/callback",
+                f"{normalized_base_url}/api/auth/oauth/discord/callback",
             )
         else:
             raise ValueError(f"Unknown OAuth provider: {provider}")
-    
-    def get_provider(self, provider: str) -> OAuthProvider:
+
+    def get_provider(self, provider: str, base_url: Optional[str] = None) -> OAuthProvider:
         """Get or create OAuth provider instance."""
-        if provider not in self._providers:
-            client_id, client_secret, redirect_uri = self._get_provider_config(provider)
+        client_id, client_secret, redirect_uri = self._get_provider_config(provider, base_url)
+        cache_key = f"{provider}:{redirect_uri}"
+
+        if cache_key not in self._providers:
             provider_class = self.PROVIDERS.get(provider)
             if not provider_class:
                 raise ValueError(f"Unknown OAuth provider: {provider}")
-            self._providers[provider] = provider_class(client_id, client_secret, redirect_uri)
-        return self._providers[provider]
+            self._providers[cache_key] = provider_class(client_id, client_secret, redirect_uri)
+        return self._providers[cache_key]
     
     @staticmethod
     def generate_state() -> str:
@@ -276,19 +292,20 @@ class OAuthService:
         provider, state = combined.split(":", 1)
         return provider, state
     
-    async def get_authorization_url(self, provider: str) -> str:
+    async def get_authorization_url(self, provider: str, base_url: Optional[str] = None) -> str:
         """Get authorization URL for the given provider."""
         if provider not in self.PROVIDERS:
             raise ValueError(f"Unknown OAuth provider: {provider}")
         
         state = self.generate_state()
-        oauth_provider = self.get_provider(provider)
+        oauth_provider = self.get_provider(provider, base_url)
         return await oauth_provider.get_authorization_url(state), state
     
     async def authenticate_with_oauth(
         self,
         provider: str,
         code: str,
+        base_url: Optional[str] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
     ) -> tuple[User, Session]:
@@ -297,7 +314,7 @@ class OAuthService:
         
         Returns (user, session) tuple.
         """
-        oauth_provider = self.get_provider(provider)
+        oauth_provider = self.get_provider(provider, base_url)
         
         # Exchange code for tokens
         token_data = await oauth_provider.exchange_code(code)

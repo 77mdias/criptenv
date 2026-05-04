@@ -12,6 +12,18 @@ from app.models.user import User
 router = APIRouter(prefix="/api/auth/oauth", tags=["Authentication"])
 
 
+def _get_public_request_base_url(request: Request) -> str:
+    forwarded_host = request.headers.get("x-forwarded-host")
+    forwarded_proto = request.headers.get("x-forwarded-proto")
+
+    if forwarded_host:
+        host = forwarded_host.split(",", 1)[0].strip()
+        proto = (forwarded_proto or request.url.scheme).split(",", 1)[0].strip()
+        return f"{proto}://{host}"
+
+    return settings.API_URL.rstrip("/")
+
+
 def _user_to_response(user: User) -> UserResponse:
     return UserResponse(
         id=user.id,
@@ -41,6 +53,7 @@ def _session_to_response(session) -> SessionResponse:
 @router.get("/{provider}")
 async def oauth_initiate(
     provider: str,
+    request: Request,
     response: Response,
     db: AsyncSession = Depends(get_db),
 ):
@@ -56,9 +69,10 @@ async def oauth_initiate(
         )
     
     oauth_service = OAuthService(db)
+    public_base_url = _get_public_request_base_url(request)
     
     try:
-        auth_url, state = await oauth_service.get_authorization_url(provider)
+        auth_url, state = await oauth_service.get_authorization_url(provider, public_base_url)
     except ValueError as e:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -129,6 +143,7 @@ async def oauth_callback(
         user, session = await oauth_service.authenticate_with_oauth(
             provider=provider,
             code=code,
+            base_url=_get_public_request_base_url(request),
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("User-Agent"),
         )
