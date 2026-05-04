@@ -1,8 +1,10 @@
 // CriptEnv Base API Client
 // Typed fetch wrapper for the FastAPI backend
 
-// Use relative URL in browser to leverage Vite proxy, or absolute URL from env
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL || "";
+import { API_BASE_URL } from "./base-url";
+
+// Use relative URL in development if no public API URL is configured.
+const BASE_URL = API_BASE_URL;
 const GET_CACHE_TTL_MS = 15_000;
 
 interface CacheEntry {

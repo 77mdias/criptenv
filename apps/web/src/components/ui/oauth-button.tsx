@@ -4,6 +4,7 @@ import * as React from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGithubAlt, faGoogle, faDiscord } from "@fortawesome/free-brands-svg-icons"
 import { Button, type ButtonProps } from "@/components/ui/button"
+import { buildApiUrl } from "@/lib/api/base-url"
 import { cn } from "@/lib/utils"
 
 // OAuth provider configuration
@@ -51,8 +52,7 @@ export function OAuthButton({
     if (disabled || loading) return
     
     // Redirect to backend OAuth initiation endpoint
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-    window.location.href = `${apiUrl}/api/auth/oauth/${provider}`
+    window.location.href = buildApiUrl(`/api/auth/oauth/${provider}`)
   }
 
   return (

@@ -5,6 +5,7 @@ from uuid import uuid4
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
+from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.routers.oauth import router as oauth_router
@@ -149,3 +150,27 @@ def test_oauth_callback_invalid_state_cookie():
         )
     
     assert response.status_code == 401
+
+
+def test_oauth_callback_sets_session_cookie_and_redirects(monkeypatch):
+    """Test that OAuth callback sets the session cookie on the redirect response."""
+    async def fake_authenticate_with_oauth(self, provider, code, ip_address=None, user_agent=None):
+        return make_user(), make_session()
+
+    monkeypatch.setattr(OAuthService, "authenticate_with_oauth", fake_authenticate_with_oauth)
+    monkeypatch.setattr(settings, "FRONTEND_URL", "https://criptenv.jean-carlos3.workers.dev")
+    monkeypatch.setattr(settings, "DEBUG", False)
+
+    encoded_state = OAuthService.encode_state("github", "expected_state")
+
+    with TestClient(make_app()) as client:
+        response = client.get(
+            "/api/auth/oauth/github/callback",
+            params={"code": "test_code", "state": "expected_state"},
+            cookies={"oauth_state": encoded_state},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "https://criptenv.jean-carlos3.workers.dev/oauth/callback"
+    assert "session_token=super-secret-session-token" in response.headers["set-cookie"]

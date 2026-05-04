@@ -2,6 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings
 from app.database import get_db
 from app.services.oauth_service import OAuthService
 from app.schemas.auth import AuthResponse, UserResponse, SessionResponse
@@ -87,7 +88,6 @@ async def oauth_callback(
     code: str,
     state: str,
     request: Request,
-    response: Response,
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -123,9 +123,6 @@ async def oauth_callback(
             detail="OAuth state mismatch. Please try again."
         )
     
-    # Clear state cookie
-    response.delete_cookie("oauth_state")
-    
     oauth_service = OAuthService(db)
     
     try:
@@ -143,22 +140,20 @@ async def oauth_callback(
             detail=f"OAuth authentication failed: {type(e).__name__}: {str(e) or 'No details'}"
         )
     
-    # Set session cookie - always allow in development for HTTP
-    # In production with HTTPS, use secure=True
-    response.set_cookie(
+    # Redirect to frontend OAuth callback page
+    # The session cookie will be sent with this redirect
+    frontend_callback_url = f"{settings.FRONTEND_URL.rstrip('/')}/oauth/callback"
+    redirect_response = RedirectResponse(url=frontend_callback_url, status_code=307)
+    redirect_response.delete_cookie("oauth_state")
+    redirect_response.set_cookie(
         key="session_token",
         value=session.token,
         httponly=True,
-        secure=False,  # Allow over HTTP for development
+        secure=not settings.DEBUG,
         samesite="lax",
         max_age=30 * 24 * 60 * 60,
     )
-    
-    # Redirect to frontend OAuth callback page
-    # The session cookie will be sent with this redirect
-    from app.config import settings
-    frontend_callback_url = f"{settings.FRONTEND_URL}/oauth/callback"
-    return RedirectResponse(url=frontend_callback_url, status_code=307)
+    return redirect_response
 
 
 @router.get("/accounts", response_model=list)

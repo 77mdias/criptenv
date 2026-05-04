@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### OAuth Production Redirects (2026-05-04)
+
+- **Frontend OAuth base URL**: Removed the hardcoded `http://localhost:8000` fallback from [`apps/web/src/components/ui/oauth-button.tsx`](../apps/web/src/components/ui/oauth-button.tsx) and centralized public API URL resolution for web auth flows.
+- **OAuth callback session cookie**: Fixed [`apps/api/app/routers/oauth.py`](../apps/api/app/routers/oauth.py) so the OAuth callback writes the `session_token` cookie onto the redirect response that is actually returned to the browser.
+- **Regression coverage**: Added backend coverage to verify OAuth callback redirects to `FRONTEND_URL` and carries the session cookie in the response.
+
 ### Documentation & Deployment Preparation (2026-05-03)
 
 #### Documentation Updates

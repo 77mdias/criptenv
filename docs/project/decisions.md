@@ -218,6 +218,26 @@ Frontend needs clear state boundaries between client state and server state.
 
 ## DEC-008 — APScheduler for Background Jobs
 
+## DEC-009 — OAuth URLs Must Never Fallback to Localhost
+
+**Date:** 2026-05-04  
+**Status:** ✅ Accepted  
+**Context:**  
+The production OAuth entry flow redirected users to `http://localhost:8000` when the frontend button did not receive a public API URL. This created a production-only auth failure even when provider-side redirect URLs were configured correctly.
+
+**Decision:**  
+Centralize the frontend API base URL resolution and remove any hardcoded `localhost` fallback from OAuth redirects. When no public API URL is configured, the web app now falls back to a relative path instead of assuming a local backend origin.
+
+**Rationale:**  
+- Prevents production redirects to developer-only origins
+- Keeps OAuth initiation aligned with the rest of the web API client
+- Makes missing environment configuration fail safely instead of silently targeting localhost
+
+**Consequences:**  
+- ✅ Production OAuth links no longer hardcode localhost
+- ✅ API URL resolution is now shared instead of duplicated
+- ❌ Deployments without a public API URL must still provide same-origin API routing or a proper env value
+
 **Date:** 2026-04 (Phase 3)  
 **Status:** ✅ Accepted  
 **Context:**  
