@@ -344,7 +344,7 @@ export function PricingCardCarousel({
 
       {/* ---- 3-D card stage ---- */}
       <div
-        className="relative mx-auto h-[440px] w-full max-w-sm sm:h-[460px]"
+        className="relative mx-auto h-[440px] w-full max-w-[calc(100vw-2rem)] sm:max-w-sm sm:h-[460px]"
         style={{ perspective: "1000px", perspectiveOrigin: "50% 45%" }}
       >
         {cards.map((card, index) => {
@@ -358,7 +358,7 @@ export function PricingCardCarousel({
               aria-hidden={!isFront}
               aria-label={`Pricing plan: ${card.name}`}
               className={cn(
-                "absolute inset-x-0 top-0 mx-auto w-full max-w-sm cursor-default",
+                "absolute inset-x-0 top-0 mx-auto w-full max-w-[calc(100vw-2rem)] sm:max-w-sm cursor-default",
                 isFront && "pointer-events-auto",
                 !isFront && "pointer-events-none",
               )}

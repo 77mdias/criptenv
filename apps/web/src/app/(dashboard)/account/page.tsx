@@ -121,9 +121,9 @@ export default function AccountPage() {
 
       {/* Sessions */}
       <Card className="p-6">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           <h3 className="font-semibold text-[var(--text-primary)]">Sessões ativas</h3>
-          <Button variant="danger" size="sm" onClick={handleSignOutAll}>
+          <Button variant="danger" size="sm" onClick={handleSignOutAll} className="self-start sm:self-auto">
             Sair de todas
           </Button>
         </div>

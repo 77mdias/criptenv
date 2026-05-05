@@ -1,39 +1,33 @@
-"use client"
+"use client";
 
-import { cn } from "@/lib/utils"
-import { useUIStore } from "@/stores/ui"
-import { SidebarNav } from "./sidebar-nav"
-import { TopNav } from "./top-nav"
-import { CommandPalette } from "@/components/shared/command-palette"
-import { DashboardFloatingBar } from "./dashboard-floating-bar"
+import { cn } from "@/lib/utils";
+import { useUIStore } from "@/stores/ui";
+import { SidebarNav } from "./sidebar-nav";
+import { MobileSidebarNav } from "./mobile-sidebar-nav";
+import { TopNav } from "./top-nav";
+import { CommandPalette } from "@/components/shared/command-palette";
+import { DashboardFloatingBar } from "./dashboard-floating-bar";
 
 interface AppShellProps {
-  children: React.ReactNode
-  breadcrumbs?: { label: string; href: string }[]
+  children: React.ReactNode;
+  breadcrumbs?: { label: string; href: string }[];
 }
 
 function AppShell({ children, breadcrumbs }: AppShellProps) {
-  const { desktopSidebarOpen, sidebarMobileOpen, setSidebarMobileOpen } = useUIStore()
+  const { desktopSidebarOpen } = useUIStore();
 
   return (
-    <div className="min-h-screen bg-[var(--background-subtle)]">
+    <div className="min-h-screen bg-(--background-subtle) overflow-x-hidden">
       {/* Sidebar */}
       <SidebarNav />
+      <MobileSidebarNav />
       <DashboardFloatingBar />
-
-      {/* Mobile overlay */}
-      {sidebarMobileOpen && (
-        <div
-          className="fixed inset-0 bg-black/50 z-40 lg:hidden"
-          onClick={() => setSidebarMobileOpen(false)}
-        />
-      )}
 
       {/* Main content */}
       <div
         className={cn(
           "transition-[margin] duration-300 ease-out motion-reduce:transition-none",
-          desktopSidebarOpen ? "lg:ml-60" : "lg:ml-0"
+          desktopSidebarOpen ? "lg:ml-60" : "lg:ml-0",
         )}
       >
         <TopNav breadcrumbs={breadcrumbs} />
@@ -43,7 +37,7 @@ function AppShell({ children, breadcrumbs }: AppShellProps) {
       </div>
       <CommandPalette />
     </div>
-  )
+  );
 }
 
-export { AppShell }
+export { AppShell };

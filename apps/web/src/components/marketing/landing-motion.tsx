@@ -1,6 +1,6 @@
 "use client"
 
-import { useRef, type ReactNode } from "react"
+import { useRef, useEffect, type ReactNode } from "react"
 import gsap from "gsap"
 import { ScrollTrigger } from "gsap/ScrollTrigger"
 import { useGSAP } from "@gsap/react"
@@ -13,6 +13,27 @@ interface LandingMotionProps {
 
 function LandingMotion({ children }: LandingMotionProps) {
   const scope = useRef<HTMLDivElement>(null)
+
+  // Fallback: ensure content is visible after a short delay even if animations fail
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (scope.current) {
+        const targets = scope.current.querySelectorAll<HTMLElement>(
+          "[data-motion='reveal'], [data-motion='hero']"
+        )
+        targets.forEach((el) => {
+          const style = window.getComputedStyle(el)
+          const opacity = parseFloat(style.opacity)
+          if (opacity < 0.5) {
+            el.style.opacity = "1"
+            el.style.transform = "none"
+            el.style.filter = "none"
+          }
+        })
+      }
+    }, 800)
+    return () => clearTimeout(timer)
+  }, [])
 
   useGSAP(
     () => {

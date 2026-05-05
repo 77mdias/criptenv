@@ -175,7 +175,7 @@ function TerminalPanel() {
           encrypted session
         </span>
       </div>
-      <div className="space-y-3 p-5 font-mono text-xs text-[var(--text-secondary)] sm:p-6">
+      <div className="space-y-3 p-5 font-mono text-xs text-[var(--text-secondary)] sm:p-6 break-all">
         <p>
           <span className="text-green-400">$</span> criptenv init
         </p>

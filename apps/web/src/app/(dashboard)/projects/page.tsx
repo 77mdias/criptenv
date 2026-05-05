@@ -70,14 +70,14 @@ export default function ProjectsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
           <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
             Gerencie seus projetos e secrets
           </p>
         </div>
-        <Button icon={Plus} onClick={() => setDialogOpen(true)}>
+        <Button icon={Plus} onClick={() => setDialogOpen(true)} className="self-start sm:self-auto">
           Novo Projeto
         </Button>
       </div>
