@@ -6,18 +6,52 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-05 — Project-Scoped Vault Passwords
+
+**Resumo:**
+Implementado vault password por projeto com zero-knowledge rígido para API, Web e CLI. A senha do vault nunca é armazenada nem enviada em claro; o backend guarda apenas metadata sanitizada e hash bcrypt da prova.
+
+**Arquivos criados:**
+- `apps/api/tests/test_project_vault_security.py` — cobertura de sanitização, criação obrigatória com vault config e push sem prova
+
+**Arquivos alterados:**
+- `apps/api/app/schemas/project.py` — `ProjectVaultConfig`, `vault_config`, `vault_proof`, rekey payload e resposta sanitizada
+- `apps/api/app/services/project_service.py` — hash/verificação de `vault_proof`, settings sanitizados e update de vault settings
+- `apps/api/app/routers/projects.py` — criação com vault config e endpoint `/vault/rekey`
+- `apps/api/app/routers/vault.py` — `push` exige `vault_proof` para projetos v1
+- `apps/web/src/lib/crypto.ts` — contrato cripto de vault por projeto, proof e HKDF por environment
+- `apps/web/src/components/shared/create-project-dialog.tsx` — senha do vault na criação
+- `apps/web/src/components/shared/vault-unlock-panel.tsx` — unlock com senha do projeto
+- `apps/web/src/app/(dashboard)/projects/[id]/secrets/page.tsx` — decrypt/encrypt com key material do projeto
+- `apps/web/src/app/(dashboard)/projects/[id]/settings/page.tsx` — rotação de senha com recriptografia client-side
+- `apps/cli/src/criptenv/commands/projects.py` — `criptenv projects create`
+- `apps/cli/src/criptenv/commands/sync.py` — push/pull convertem entre vault local e vault do projeto
+- `apps/cli/src/criptenv/commands/ci.py` — `ci deploy` exige/converte com `CRIPTENV_VAULT_PASSWORD`
+- `docs/project/decisions.md` — DEC-013
+
+**Verificação:**
+- API: 280 passed ✅
+- CLI: 130 passed ✅
+- Web: `npm run lint` ✅, `npm run check:vinext` ✅, `npm run build` ✅
+
+**Observações:**
+- Projetos legados sem `vault_config` podem ser migrados pela seção de senha do vault em Settings.
+- Recuperação de senha esquecida permanece impossível por decisão zero-knowledge.
+
+---
+
 ## 2026-05-03 — Phase 3 Objectives Closure (M3.2 + M3.3 + M3.4)
 
-**Resumo:**  
+**Resumo:**
 Fechamento dos 3 objetivos pendentes do ROADMAP marcados como NOT STARTED: Public API (M3.4), CI Tokens (M3.3), e Cloud Integrations (M3.2 — Vercel + Render).
 
-**Arquivos criados:**  
+**Arquivos criados:**
 - `apps/api/app/strategies/integrations/render.py` — RenderProvider implementation
 - `apps/api/tests/test_dual_auth.py` — 7 integration tests for dual auth
 - `apps/cli/src/criptenv/commands/integrations.py` — CLI integrations commands
 - `apps/cli/src/criptenv/commands/ci.py` (rewritten) — Real ci deploy + cli_context fix
 
-**Arquivos alterados:**  
+**Arquivos alterados:**
 - `apps/api/main.py` — RateLimitMiddleware registered, custom OpenAPI with dual security
 - `apps/api/app/middleware/auth.py` — `get_current_user_or_api_key()` for dual auth
 - `apps/api/app/middleware/rate_limit.py` — Already existed, now activated
@@ -35,7 +69,7 @@ Fechamento dos 3 objetivos pendentes do ROADMAP marcados como NOT STARTED: Publi
 - `docs/project/current-state.md` — Updated to ~85% Phase 3
 - `docs/tasks/current-task.md` — Session closure documented
 
-**Observações:**  
+**Observações:**
 - Railway provider (TASK-061) ainda pendente — segue mesmo padrão do RenderProvider
 - Integration config encryption at-rest ainda pendente
 - Todos os testes passando: API 275 ✅, CLI 127 ✅
@@ -44,22 +78,22 @@ Fechamento dos 3 objetivos pendentes do ROADMAP marcados como NOT STARTED: Publi
 
 ## 2026-05-03 — Phase 3 Rescue Implementation
 
-**Resumo:**  
+**Resumo:**
 Security P0, M3.5 ExpirationBadge, CI auth, GitHub Action readiness, and Vercel integration consolidation implemented from the Phase 3 rescue plan.
 
-**Arquivos criados:**  
+**Arquivos criados:**
 - `apps/web/src/lib/api/rotation.ts`
 - `apps/web/src/lib/api/integrations.ts`
 - `apps/cli/tests/test_api_client.py`
 
-**Arquivos alterados:**  
+**Arquivos alterados:**
 - Auth response/session handling in API, CLI, and web auth hook
 - CI auth middleware/router/model with persisted `ci_sessions`
 - Web secrets page and integrations page
 - GitHub Action metadata, README, package config, and generated dist bundle
 - Phase 3 docs and database notes
 
-**Observações:**  
+**Observações:**
 Requires manual PostgreSQL migration for `ci_sessions` before real CI auth testing. Existing uncommitted docs and `testsprite_tests/` changes were preserved.
 
 ---
@@ -124,10 +158,10 @@ Ver CHANGELOG.md para detalhes completos.
 
 ## 2026-05-03 — Alembic Migration Setup
 
-**Resumo:**  
+**Resumo:**
 Criação do setup Alembic async e aplicação da primeira revisão para `ci_sessions`.
 
-**Arquivos criados:**  
+**Arquivos criados:**
 - `apps/api/migrations/001_create_ci_sessions.sql`
 - `apps/api/alembic.ini`
 - `apps/api/migrations/env.py`
@@ -135,13 +169,13 @@ Criação do setup Alembic async e aplicação da primeira revisão para `ci_ses
 - `apps/api/migrations/versions/20260503_0001_create_ci_sessions.py`
 - `scripts/db_migrate.sh`
 
-**Arquivos alterados:**  
+**Arquivos alterados:**
 - `Makefile`
 - `apps/api/requirements.txt`
 - `docs/development/CHANGELOG.md`
 - `docs/tasks/task-history.md`
 
-**Observações:**  
+**Observações:**
 - `make db-upgrade` foi executado com sucesso contra o `DATABASE_URL` de `apps/api/.env`.
 - `make db-migrate` agora é alias de `make db-upgrade`.
 - `scripts/db_migrate.sh` foi mantido como wrapper de compatibilidade.
@@ -189,20 +223,20 @@ Ver CHANGELOG.md para detalhes completos.
 ```markdown
 ## YYYY-MM-DD — [Task Title]
 
-**Resumo:**  
+**Resumo:**
 [Brief description of what was done]
 
-**Arquivos criados:**  
+**Arquivos criados:**
 - `path/to/file`
 
-**Arquivos alterados:**  
+**Arquivos alterados:**
 - `path/to/file`
 
-**Observações:**  
+**Observações:**
 [Any important notes, blockers, or follow-up items]
 ```
 
 ---
 
-**Document Version**: 1.1  
+**Document Version**: 1.1
 **Last Updated**: 2026-05-03

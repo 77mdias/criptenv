@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~90%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅. Resta Railway provider, Integration Config Encryption e Web Alert UI.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~90%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Resta Railway provider, Integration Config Encryption e Web Alert UI.**
 
 ---
 
@@ -34,6 +34,7 @@
 | `pull` | Download from cloud | ✅ |
 | `env` | Environment management | ✅ |
 | `projects` | Project management | ✅ |
+| `projects create` | Create cloud project with project vault password | ✅ |
 | `doctor` | Diagnostic checks | ✅ |
 | `import` | Import from `.env` file | ✅ |
 | `export` | Export to `.env` file | ✅ |
@@ -53,7 +54,7 @@
 | `integrations disconnect` | Disconnect provider | ✅ |
 | `integrations sync` | Sync secrets with provider | ✅ |
 
-**CLI Tests**: 127 unit tests passing
+**CLI Tests**: 130 unit tests passing
 
 ### API Backend (apps/api)
 
@@ -61,9 +62,9 @@
 |--------|-----------|--------|
 | `auth` | signup, signin, signout, session, sessions, oauth | ✅ |
 | `auth/oauth` | github, google, discord | ✅ |
-| `projects` | CRUD + list/get with API key | ✅ |
+| `projects` | CRUD + list/get with API key + vault rekey | ✅ |
 | `environments` | CRUD + list/get with API key | ✅ |
-| `vault` | push (session), pull/version (session + API key) | ✅ |
+| `vault` | push with vault proof, pull/version (session + API key) | ✅ |
 | `members` | CRUD on team members | ✅ |
 | `invites` | create, list, accept, revoke | ✅ |
 | `tokens` | CI/CD tokens CRUD | ✅ |
@@ -74,7 +75,7 @@
 | `ci` | CI login, CI secrets | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
 
-**API Tests**: 275 tests passing
+**API Tests**: 280 tests passing
 
 ### Web Frontend (apps/web)
 
@@ -87,10 +88,10 @@
 | Dashboard | `/dashboard` | ✅ |
 | Projects List | `/projects` | ✅ |
 | Project Detail | `/projects/[id]` | ✅ |
-| Secrets Browser | `/projects/[id]/secrets` | ✅ |
+| Secrets Browser | `/projects/[id]/secrets` | ✅ Project vault unlock |
 | Audit Log | `/projects/[id]/audit` | ✅ |
 | Team Settings | `/projects/[id]/members` | ✅ |
-| Project Settings | `/projects/[id]/settings` | ✅ |
+| Project Settings | `/projects/[id]/settings` | ✅ Vault password rotation |
 | Account | `/account` | ✅ |
 | Integrations | `/integrations` | ⚠️ Functional for Vercel, placeholder UI |
 
@@ -139,6 +140,6 @@
 
 ---
 
-**Document Version**: 1.2  
-**Last Updated**: 2026-05-03  
+**Document Version**: 1.2
+**Last Updated**: 2026-05-05
 **Status**: Active Development — Phase 3 (85% complete)
