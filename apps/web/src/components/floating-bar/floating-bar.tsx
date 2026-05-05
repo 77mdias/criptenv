@@ -1,6 +1,6 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useState } from "react"
+import { useCallback, useEffect, useState } from "react";
 import {
   Home,
   Layers,
@@ -9,13 +9,13 @@ import {
   CreditCard,
   Rocket,
   type LucideIcon,
-} from "lucide-react"
-import { cn } from "@/lib/utils"
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface NavItem {
-  href: string
-  label: string
-  icon: LucideIcon
+  href: string;
+  label: string;
+  icon: LucideIcon;
 }
 
 const navItems: NavItem[] = [
@@ -25,71 +25,75 @@ const navItems: NavItem[] = [
   { href: "#security", label: "Security", icon: Shield },
   { href: "#pricing", label: "Pricing", icon: CreditCard },
   { href: "#cta", label: "Get Started", icon: Rocket },
-]
+];
 
 function getSectionId(href: string) {
-  return href.replace("#", "")
+  return href.replace("#", "");
 }
 
 export function FloatingBar() {
-  const [activeSection, setActiveSection] = useState(navItems[0]?.href ?? "#hero")
+  const [activeSection, setActiveSection] = useState(
+    navItems[0]?.href ?? "#hero",
+  );
 
   const syncActiveSection = useCallback(() => {
     const sections = navItems
       .map((item) => {
-        const element = document.getElementById(getSectionId(item.href))
+        const element = document.getElementById(getSectionId(item.href));
         if (!element) {
-          return null
+          return null;
         }
 
         return {
           href: item.href,
           top: element.getBoundingClientRect().top,
-        }
+        };
       })
-      .filter((section): section is { href: string; top: number } => section !== null)
+      .filter(
+        (section): section is { href: string; top: number } => section !== null,
+      );
 
-    const currentSection = sections.reduce<{ href: string; top: number } | null>(
-      (closest, section) => {
-        if (section.top <= 180) {
-          return section
-        }
+    const currentSection = sections.reduce<{
+      href: string;
+      top: number;
+    } | null>((closest, section) => {
+      if (section.top <= 180) {
+        return section;
+      }
 
-        return closest
-      },
-      sections[0] ?? null,
-    )
+      return closest;
+    }, sections[0] ?? null);
 
     if (currentSection) {
-      setActiveSection(currentSection.href)
+      setActiveSection(currentSection.href);
     }
-  }, [])
+  }, []);
 
   useEffect(() => {
-    window.addEventListener("scroll", syncActiveSection, { passive: true })
+    window.addEventListener("scroll", syncActiveSection, { passive: true });
 
-    const frameId = window.requestAnimationFrame(syncActiveSection)
+    const frameId = window.requestAnimationFrame(syncActiveSection);
 
     return () => {
-      window.cancelAnimationFrame(frameId)
-      window.removeEventListener("scroll", syncActiveSection)
-    }
-  }, [syncActiveSection])
+      window.cancelAnimationFrame(frameId);
+      window.removeEventListener("scroll", syncActiveSection);
+    };
+  }, [syncActiveSection]);
 
   const handleClick = (href: string) => {
-    const target = document.getElementById(getSectionId(href))
+    const target = document.getElementById(getSectionId(href));
 
     if (target) {
-      target.scrollIntoView({ behavior: "smooth", block: "start" })
-      setActiveSection(href)
+      target.scrollIntoView({ behavior: "smooth", block: "start" });
+      setActiveSection(href);
     }
-  }
+  };
 
   return (
     <aside className="fixed left-6 top-1/2 z-40 hidden -translate-y-1/2 lg:block">
-      <nav className="flex flex-col items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--surface-elevated)] p-2 shadow-lg backdrop-blur-sm">
+      <nav className="flex flex-col items-center gap-2 rounded-full border border-(--border) bg-(--surface-elevated) p-2 shadow-lg backdrop-blur-sm">
         {navItems.map((item) => {
-          const isActive = activeSection === item.href
+          const isActive = activeSection === item.href;
 
           return (
             <button
@@ -101,18 +105,18 @@ export function FloatingBar() {
               className={cn(
                 "group relative grid h-10 w-10 place-items-center rounded-full transition-colors",
                 isActive
-                  ? "bg-[var(--accent)] text-[var(--accent-foreground)]"
-                  : "text-[var(--text-muted)] hover:bg-[var(--background-subtle)] hover:text-[var(--text-primary)]",
+                  ? "bg-(--accent) text-(--accent-foreground)"
+                  : "text-(--text-muted) hover:bg-(--background-subtle) hover:text-(--text-primary)",
               )}
             >
               <item.icon className="h-4 w-4" />
-              <span className="pointer-events-none absolute left-12 whitespace-nowrap rounded-md bg-[var(--text-primary)] px-2 py-1 text-xs text-[var(--background)] opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
+              <span className="pointer-events-none absolute left-12 whitespace-nowrap rounded-md bg-(--text-primary) px-2 py-1 text-xs text-(--background) opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
                 {item.label}
               </span>
             </button>
-          )
+          );
         })}
       </nav>
     </aside>
-  )
+  );
 }

@@ -1,0 +1,26 @@
+- generic [ref=e48]:
+  - banner [ref=e49]:
+    - generic [ref=e50]:
+      - button "Toggle menu" [ref=e51] [cursor=pointer]:
+        - img [ref=e52]
+      - link "CriptEnv home" [ref=e53] [cursor=pointer]:
+        - /url: /dashboard
+        - img "CriptEnv logo" [ref=e56]
+    - generic [ref=e57]:
+      - button "Search" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+      - button "Notifications" [ref=e62] [cursor=pointer]:
+        - img [ref=e63]
+      - button "Switch to light mode" [ref=e67] [cursor=pointer]:
+        - img [ref=e68]
+      - generic [ref=e70]: U
+  - main [ref=e71]:
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - heading "Dashboard" [level=1] [ref=e76]
+          - paragraph [ref=e77]: Bem-vindo de volta. Aqui está o overview dos seus projetos.
+        - generic [ref=e78]: Tudo sincronizado
+      - generic [ref=e104]:
+        - heading "Atividade Recente" [level=3] [ref=e105]
+        - paragraph [ref=e106]: Últimas operações nos seus projetos

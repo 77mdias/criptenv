@@ -1,0 +1,39 @@
+- generic [ref=e3]:
+  - link "CriptEnv home" [ref=e5] [cursor=pointer]:
+    - /url: /
+    - generic [ref=e6]:
+      - img "CriptEnv logo" [ref=e8]
+      - generic [ref=e9]: Zero-Knowledge Secrets
+  - generic [ref=e10]:
+    - generic [ref=e11]:
+      - heading "Entrar" [level=1] [ref=e12]
+      - paragraph [ref=e13]: Acesse sua conta CriptEnv
+    - generic [ref=e14]:
+      - generic [ref=e15]:
+        - generic [ref=e16]: Email
+        - generic [ref=e17]:
+          - img [ref=e18]
+          - textbox "Email" [ref=e21]:
+            - /placeholder: voce@email.com
+      - generic [ref=e22]:
+        - generic [ref=e23]: Senha
+        - generic [ref=e24]:
+          - img [ref=e25]
+          - textbox "Senha" [ref=e28]:
+            - /placeholder: ••••••••
+      - button "Entrar" [ref=e29] [cursor=pointer]
+    - generic [ref=e31]: ou continue com
+    - generic [ref=e32]:
+      - button "Entrar com GitHub" [ref=e33] [cursor=pointer]:
+        - img [ref=e34]
+        - text: Entrar com GitHub
+      - button "Entrar com Google" [ref=e36] [cursor=pointer]:
+        - img [ref=e37]
+        - text: Entrar com Google
+      - button "Entrar com Discord" [ref=e39] [cursor=pointer]:
+        - img [ref=e40]
+        - text: Entrar com Discord
+    - paragraph [ref=e42]:
+      - text: Não tem conta?
+      - link "Cadastre-se" [ref=e43] [cursor=pointer]:
+        - /url: /signup

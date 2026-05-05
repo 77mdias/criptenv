@@ -1,0 +1,50 @@
+- generic [ref=e48]:
+  - banner [ref=e49]:
+    - generic [ref=e50]:
+      - button "Toggle menu" [active] [ref=e51] [cursor=pointer]:
+        - img [ref=e52]
+      - link "CriptEnv home" [ref=e53] [cursor=pointer]:
+        - /url: /dashboard
+        - img "CriptEnv logo" [ref=e56]
+    - generic [ref=e57]:
+      - button "Search" [ref=e58] [cursor=pointer]:
+        - img [ref=e59]
+      - button "Notifications" [ref=e62] [cursor=pointer]:
+        - img [ref=e63]
+      - button "Switch to light mode" [ref=e67] [cursor=pointer]:
+        - img [ref=e68]
+      - generic [ref=e70]: U
+  - main [ref=e71]:
+    - generic [ref=e73]:
+      - generic [ref=e74]:
+        - generic [ref=e75]:
+          - heading "Dashboard" [level=1] [ref=e76]
+          - paragraph [ref=e77]: Bem-vindo de volta. Aqui está o overview dos seus projetos.
+        - generic [ref=e78]: Tudo sincronizado
+      - generic [ref=e81]:
+        - generic [ref=e82]:
+          - generic [ref=e83]:
+            - img [ref=e127]
+            - generic [ref=e85]:
+              - paragraph [ref=e129]: Projects
+              - paragraph [ref=e130]: "0"
+          - paragraph [ref=e131]: Nenhum projeto ainda
+        - generic [ref=e89]:
+          - generic [ref=e90]:
+            - img [ref=e133]
+            - generic [ref=e92]:
+              - paragraph [ref=e137]: Secrets
+              - paragraph [ref=e138]: "0"
+          - paragraph [ref=e139]: Nenhuma secret ainda
+        - generic [ref=e96]:
+          - generic [ref=e97]:
+            - img [ref=e141]
+            - generic [ref=e99]:
+              - paragraph [ref=e144]: Last Sync
+              - paragraph [ref=e145]: —
+          - paragraph [ref=e146]: Última atividade
+      - generic [ref=e103]:
+        - generic [ref=e104]:
+          - heading "Atividade Recente" [level=3] [ref=e105]
+          - paragraph [ref=e106]: Últimas operações nos seus projetos
+        - paragraph [ref=e148]: Nenhuma atividade recente

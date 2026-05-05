@@ -1,0 +1,23 @@
+- banner [ref=e3]:
+  - generic [ref=e4]:
+    - link "CriptEnv home" [ref=e5] [cursor=pointer]:
+      - /url: /
+      - img "CriptEnv logo" [ref=e8]
+    - navigation [ref=e9]:
+      - link "Features" [ref=e10] [cursor=pointer]:
+        - /url: "#features"
+      - link "How It Works" [ref=e11] [cursor=pointer]:
+        - /url: "#how-it-works"
+      - link "Security" [ref=e12] [cursor=pointer]:
+        - /url: "#security"
+      - link "Pricing" [ref=e13] [cursor=pointer]:
+        - /url: "#pricing"
+    - generic [ref=e14]:
+      - button "Switch to dark mode" [ref=e15] [cursor=pointer]:
+        - img [ref=e16]
+      - link "Entrar" [ref=e22] [cursor=pointer]:
+        - /url: /login
+        - button "Entrar" [ref=e23]
+      - link "Começar" [ref=e24] [cursor=pointer]:
+        - /url: /signup
+        - button "Começar" [ref=e25]
