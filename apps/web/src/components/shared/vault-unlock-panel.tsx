@@ -5,28 +5,28 @@ import { KeyRound, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
-import { deriveSessionKeyFromBase64Salt } from "@/lib/crypto"
+import { unlockProjectVault, type ProjectVaultConfig, type ProjectVaultMaterial } from "@/lib/crypto"
 
 interface VaultUnlockPanelProps {
-  kdfSalt?: string
-  onUnlock: (key: CryptoKey) => void
+  vaultConfig?: ProjectVaultConfig | null
+  onUnlock: (material: ProjectVaultMaterial) => void
 }
 
-export function VaultUnlockPanel({ kdfSalt, onUnlock }: VaultUnlockPanelProps) {
+export function VaultUnlockPanel({ vaultConfig, onUnlock }: VaultUnlockPanelProps) {
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    if (!password || !kdfSalt) return
+    if (!password || !vaultConfig) return
 
     setLoading(true)
     setError(null)
     try {
-      const key = await deriveSessionKeyFromBase64Salt(password, kdfSalt)
+      const material = await unlockProjectVault(password, vaultConfig)
       setPassword("")
-      onUnlock(key)
+      onUnlock(material)
     } catch {
       setError("Não foi possível desbloquear o vault com essa senha.")
     } finally {
@@ -45,7 +45,7 @@ export function VaultUnlockPanel({ kdfSalt, onUnlock }: VaultUnlockPanelProps) {
             Desbloquear vault
           </h2>
           <p className="font-mono text-xs text-[var(--text-muted)]">
-            A senha mestra fica apenas no browser e a chave some ao recarregar.
+            Use a senha do vault deste projeto. A chave fica apenas no browser e some ao recarregar.
           </p>
         </div>
       </div>
@@ -60,12 +60,12 @@ export function VaultUnlockPanel({ kdfSalt, onUnlock }: VaultUnlockPanelProps) {
           error={error ?? undefined}
           icon={KeyRound}
         />
-        {!kdfSalt && (
+        {!vaultConfig && (
           <p className="font-mono text-xs text-red-600">
-            Sua sessão não tem kdf_salt. Faça login novamente para renovar o contrato de criptografia.
+            Este projeto ainda não tem configuração de vault por projeto.
           </p>
         )}
-        <Button type="submit" loading={loading} disabled={!password || !kdfSalt} fullWidth>
+        <Button type="submit" loading={loading} disabled={!password || !vaultConfig} fullWidth>
           Desbloquear
         </Button>
       </form>

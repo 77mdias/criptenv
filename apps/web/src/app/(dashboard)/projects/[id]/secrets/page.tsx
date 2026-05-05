@@ -20,13 +20,13 @@ import {
   type SecretCountState,
 } from "@/components/shared/secret-counts"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
-import { checksum, decrypt, encrypt } from "@/lib/crypto"
-import { environmentsApi, peekCached, rotationApi, vaultApi } from "@/lib/api"
-import { useAuthStore } from "@/stores/auth"
+import { checksum, decrypt, deriveProjectEnvironmentKey, encrypt } from "@/lib/crypto"
+import { environmentsApi, peekCached, projectsApi, rotationApi, vaultApi } from "@/lib/api"
 import { useCryptoStore } from "@/stores/crypto"
 import type {
   Environment,
   EnvironmentListResponse,
+  Project,
   SecretExpiration,
   VaultBlob,
   VaultBlobPush,
@@ -74,12 +74,21 @@ async function encryptVault(
 export default function SecretsPage() {
   const params = useParams()
   const projectId = params.id as string
-  const user = useAuthStore((state) => state.user)
-  const { sessionKey, isUnlocked, setSessionKey, clearSession } = useCryptoStore()
+  const {
+    projectId: unlockedProjectId,
+    keyMaterial,
+    vaultProof,
+    isUnlocked,
+    unlockProject,
+    clearSession,
+  } = useCryptoStore()
+  const isProjectUnlocked = isUnlocked && unlockedProjectId === projectId && Boolean(keyMaterial && vaultProof)
   const cachedEnvironments = peekCached<EnvironmentListResponse>(
     `/api/v1/projects/${projectId}/environments`
   )
+  const cachedProject = peekCached<Project>(`/api/v1/projects/${projectId}`)
 
+  const [project, setProject] = useState<Project | null>(cachedProject)
   const [environments, setEnvironments] = useState<Environment[]>(cachedEnvironments?.environments ?? [])
   const [activeEnv, setActiveEnv] = useState<Environment | null>(
     cachedEnvironments?.environments[0] ?? null
@@ -106,6 +115,17 @@ export default function SecretsPage() {
 
   useEffect(() => {
     let cancelled = false
+
+    projectsApi
+      .get(projectId)
+      .then((data) => {
+        if (!cancelled) setProject(data)
+      })
+      .catch((err) => {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : "Erro ao carregar projeto")
+        }
+      })
 
     const loadExpirations = async () => {
       try {
@@ -185,6 +205,12 @@ export default function SecretsPage() {
     }
   }, [projectId])
 
+  useEffect(() => {
+    if (unlockedProjectId && unlockedProjectId !== projectId) {
+      clearSession()
+    }
+  }, [clearSession, projectId, unlockedProjectId])
+
   const secretsWithExpiration = useMemo(() => {
     if (!activeEnv) return secrets
 
@@ -218,8 +244,9 @@ export default function SecretsPage() {
         setSecretCountState((currentState) =>
           setEnvironmentSecretMetadata(currentState, environment.id, data.blobs.length, data.version)
         )
-        if (sessionKey) {
-          setSecrets(await decryptVault(data.blobs, sessionKey))
+        if (keyMaterial) {
+          const envKey = await deriveProjectEnvironmentKey(keyMaterial, environment.id)
+          setSecrets(await decryptVault(data.blobs, envKey))
         } else {
           setSecrets([])
         }
@@ -231,7 +258,7 @@ export default function SecretsPage() {
         setVaultLoading(false)
       }
     },
-    [projectId, sessionKey]
+    [keyMaterial, projectId]
   )
 
   useEffect(() => {
@@ -242,7 +269,8 @@ export default function SecretsPage() {
     vaultApi
       .pull(projectId, activeEnv.id)
       .then(async (data) => {
-        const nextSecrets = sessionKey ? await decryptVault(data.blobs, sessionKey) : []
+        const envKey = keyMaterial ? await deriveProjectEnvironmentKey(keyMaterial, activeEnv.id) : null
+        const nextSecrets = envKey ? await decryptVault(data.blobs, envKey) : []
         if (cancelled) return
         setVaultBlobs(data.blobs)
         setVaultVersion(data.version)
@@ -267,7 +295,7 @@ export default function SecretsPage() {
     return () => {
       cancelled = true
     }
-  }, [activeEnv, projectId, sessionKey])
+  }, [activeEnv, keyMaterial, projectId])
 
   useEffect(() => {
     const openNewSecret = () => {
@@ -280,11 +308,12 @@ export default function SecretsPage() {
 
   useEffect(() => {
     let cancelled = false
-    if (!sessionKey) {
+    if (!keyMaterial || !activeEnv) {
       return
     }
 
-    decryptVault(vaultBlobs, sessionKey)
+    deriveProjectEnvironmentKey(keyMaterial, activeEnv.id)
+      .then((envKey) => decryptVault(vaultBlobs, envKey))
       .then((nextSecrets) => {
         if (!cancelled) {
           setSecrets(nextSecrets)
@@ -301,25 +330,26 @@ export default function SecretsPage() {
     return () => {
       cancelled = true
     }
-  }, [sessionKey, vaultBlobs])
+  }, [activeEnv, keyMaterial, vaultBlobs])
 
   const activeEnvName = activeEnv?.display_name || activeEnv?.name || "environment"
   const activeSecretCount = activeEnv ? (secretCounts[activeEnv.id] ?? secrets.length) : secrets.length
 
   const pushSecrets = async (nextSecrets: DecryptedSecret[]) => {
-    if (!activeEnv || !sessionKey) return
+    if (!activeEnv || !keyMaterial || !vaultProof) return
 
     setSaving(true)
     setError(null)
     try {
-      const blobs = await encryptVault(nextSecrets, sessionKey, vaultVersion + 1)
-      const data = await vaultApi.push(projectId, activeEnv.id, { blobs })
+      const envKey = await deriveProjectEnvironmentKey(keyMaterial, activeEnv.id)
+      const blobs = await encryptVault(nextSecrets, envKey, vaultVersion + 1)
+      const data = await vaultApi.push(projectId, activeEnv.id, { blobs, vault_proof: vaultProof })
       setVaultBlobs(data.blobs)
       setVaultVersion(data.version)
       setSecretCountState((currentState) =>
         setEnvironmentSecretMetadata(currentState, activeEnv.id, data.blobs.length, data.version)
       )
-      setSecrets(await decryptVault(data.blobs, sessionKey))
+      setSecrets(await decryptVault(data.blobs, envKey))
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao salvar secrets")
     } finally {
@@ -397,7 +427,7 @@ export default function SecretsPage() {
           </p>
         </div>
         <div className="flex flex-wrap gap-2">
-          {isUnlocked && (
+      {isProjectUnlocked && (
             <>
               <Button variant="secondary" size="sm" icon={Upload} onClick={() => setImportOpen(true)}>
                 Importar
@@ -444,8 +474,11 @@ export default function SecretsPage() {
         }}
       />
 
-      {!isUnlocked ? (
-        <VaultUnlockPanel kdfSalt={user?.kdf_salt} onUnlock={setSessionKey} />
+      {!isProjectUnlocked ? (
+        <VaultUnlockPanel
+          vaultConfig={project?.vault_config}
+          onUnlock={(material) => unlockProject(projectId, material.keyMaterial, material.vaultProof)}
+        />
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">

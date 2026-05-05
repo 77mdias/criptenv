@@ -52,10 +52,24 @@ export interface MessageResponse {
 
 export interface Project {
   id: string;
+  owner_id: string;
   name: string;
+  slug?: string;
   description: string | null;
+  vault_config?: ProjectVaultConfig | null;
   created_at: string;
   updated_at: string;
+}
+
+export interface ProjectVaultConfig {
+  version: number;
+  kdf: string;
+  iterations: number;
+  salt: string;
+  proof_salt: string;
+  verifier_iv: string;
+  verifier_ciphertext: string;
+  verifier_auth_tag: string;
 }
 
 export interface ProjectListResponse {
@@ -105,6 +119,7 @@ export interface VaultBlobPush {
 
 export interface VaultPushRequest {
   blobs: VaultBlobPush[];
+  vault_proof?: string;
 }
 
 export interface VaultPullResponse {
@@ -180,11 +195,25 @@ export interface AuditLogListResponse {
 export interface CreateProjectRequest {
   name: string;
   description?: string;
+  vault_config: ProjectVaultConfig;
+  vault_proof: string;
 }
 
 export interface UpdateProjectRequest {
   name?: string;
   description?: string;
+}
+
+export interface VaultRekeyEnvironmentPayload {
+  environment_id: string;
+  blobs: VaultBlobPush[];
+}
+
+export interface VaultRekeyRequest {
+  current_vault_proof: string;
+  new_vault_config: ProjectVaultConfig;
+  new_vault_proof: string;
+  environments: VaultRekeyEnvironmentPayload[];
 }
 
 export interface CreateEnvironmentRequest {
