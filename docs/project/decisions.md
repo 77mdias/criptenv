@@ -366,6 +366,58 @@ The Web vault unlock flow previously derived a temporary browser key from the us
 
 ---
 
+## DEC-014 — Docs Navbar Brand Alignment
+
+**Date:** 2026-05-05
+**Status:** ✅ Accepted
+**Context:**
+The `/docs` navbar should visually align with the AbacatePay documentation reference while preserving CriptEnv's black/white theme system and the existing documentation information architecture.
+
+**Decision:**
+- Use `apps/web/public/images/logocriptenv.png` directly for the docs brand mark, rendered monochrome with theme-aware CSS filters.
+- Keep the brand and a new visible `Início` nav item linked to `/`.
+- Use a two-row docs header with one separator between the brand/search/action row and the docs tab row, plus one lower boundary under the tabs.
+- Preserve existing docs sections and search modal behavior, adding click-to-open search from the navbar.
+
+**Rationale:**
+- Reuses the existing brand asset without creating duplicate logo files.
+- Makes the landing page route discoverable from docs.
+- Keeps docs navigation visually close to the requested reference without importing AbacatePay's green accent.
+
+**Consequences:**
+- ✅ Docs navbar better matches the requested reference.
+- ✅ Theme switching keeps the logo black in light mode and white in dark mode.
+- ✅ Search remains keyboard-accessible and gains mouse/touch activation.
+- ✅ The full logo image, including its embedded wordmark, remains visible without an extra text label beside it.
+
+---
+
+## DEC-015 — Floating Bar Documentation Entry
+
+**Date:** 2026-05-05
+**Status:** ✅ Accepted
+**Context:**
+The landing page floating-bar did not expose the documentation route, and the `/docs` welcome page did not share that quick navigation affordance.
+
+**Decision:**
+- Add a final, visually separated `Docs` item to the floating-bar that links to `/docs`.
+- Keep existing landing section items as smooth-scroll anchors when their target exists.
+- When a section target is missing on the current route, navigate to the landing page with the matching hash, such as `/#how-it-works`.
+- Render the floating-bar only on the `/docs` welcome page, not on docs subroutes with sidebar/TOC.
+
+**Rationale:**
+- Makes documentation discoverable from the landing navigation without changing the main marketing sections.
+- Keeps section navigation reliable when the floating-bar is rendered from `/docs`.
+- Avoids visual overlap with the documentation sidebar and table of contents on nested docs pages.
+- Lets the floating-bar remain useful when rendered from `/docs` by navigating missing section anchors back to landing hashes.
+
+**Consequences:**
+- ✅ Landing users can reach documentation from the floating-bar.
+- ✅ `/docs` shows the same quick navigation surface and can jump back to landing sections.
+- ✅ Docs subroutes keep their existing reading layout uncluttered.
+
+---
+
 ## Pending Decisions
 
 ### DEC-010 — Rate Limiting Implementation
