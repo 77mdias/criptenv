@@ -2,6 +2,7 @@ import re
 from typing import Optional
 from uuid import UUID, uuid4
 
+import bcrypt
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -41,6 +42,42 @@ class ProjectService:
     def __init__(self, db: AsyncSession):
         self.db = db
 
+    @staticmethod
+    def _sanitize_settings(settings: Optional[dict]) -> dict:
+        next_settings = dict(settings or {})
+        next_settings.pop("vault", None)
+        return next_settings
+
+    @staticmethod
+    def hash_vault_proof(vault_proof: str) -> str:
+        return bcrypt.hashpw(vault_proof.encode("utf-8"), bcrypt.gensalt()).decode("utf-8")
+
+    @staticmethod
+    def verify_vault_proof(project: Project, vault_proof: str | None) -> bool:
+        if not vault_proof:
+            return False
+
+        vault_settings = (project.settings or {}).get("vault")
+        if not isinstance(vault_settings, dict):
+            return True
+
+        proof_hash = vault_settings.get("proof_hash")
+        if not proof_hash:
+            return False
+
+        return bcrypt.checkpw(vault_proof.encode("utf-8"), proof_hash.encode("utf-8"))
+
+    @staticmethod
+    def has_vault_config(project: Project) -> bool:
+        vault_settings = (project.settings or {}).get("vault")
+        return isinstance(vault_settings, dict) and vault_settings.get("version") == 1
+
+    @classmethod
+    def build_vault_settings(cls, vault_config, vault_proof: str) -> dict:
+        config = vault_config.model_dump() if hasattr(vault_config, "model_dump") else dict(vault_config)
+        config["proof_hash"] = cls.hash_vault_proof(vault_proof)
+        return config
+
     async def create_project(
         self,
         owner_id: UUID,
@@ -48,8 +85,13 @@ class ProjectService:
         slug: Optional[str] = None,
         description: Optional[str] = None,
         encryption_key_id: Optional[str] = None,
-        settings: Optional[dict] = None
+        settings: Optional[dict] = None,
+        vault_config=None,
+        vault_proof: Optional[str] = None,
     ) -> Project:
+        if vault_config is None or not vault_proof:
+            raise ValueError("Project vault configuration is required")
+
         base_slug = _generate_slug(slug or name)
         slug = base_slug
         counter = 1
@@ -63,6 +105,9 @@ class ProjectService:
             slug = _slug_with_suffix(base_slug, counter)
             counter += 1
 
+        safe_settings = self._sanitize_settings(settings)
+        safe_settings["vault"] = self.build_vault_settings(vault_config, vault_proof)
+
         project = Project(
             id=uuid4(),
             owner_id=owner_id,
@@ -70,7 +115,7 @@ class ProjectService:
             slug=slug,
             description=description,
             encryption_key_id=encryption_key_id,
-            settings=settings or {},
+            settings=safe_settings,
             archived=False
         )
         self.db.add(project)
@@ -167,10 +212,26 @@ class ProjectService:
         if description is not None:
             project.description = description
         if settings is not None:
-            project.settings = settings
+            current_settings = dict(project.settings or {})
+            next_settings = self._sanitize_settings(settings)
+            if "vault" in current_settings:
+                next_settings["vault"] = current_settings["vault"]
+            project.settings = next_settings
         if archived is not None:
             project.archived = archived
 
+        await self.db.flush()
+        await self.db.refresh(project)
+        return project
+
+    async def update_vault_settings(self, project_id: UUID, vault_config, vault_proof: str) -> Optional[Project]:
+        project = await self.get_project(project_id)
+        if not project:
+            return None
+
+        settings = dict(project.settings or {})
+        settings["vault"] = self.build_vault_settings(vault_config, vault_proof)
+        project.settings = settings
         await self.db.flush()
         await self.db.refresh(project)
         return project

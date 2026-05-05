@@ -58,6 +58,19 @@ async def push_vault(
             detail="Project not found or insufficient permissions"
         )
 
+    project = await project_service.get_project(project_uuid)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+
+    if project_service.has_vault_config(project) and not project_service.verify_vault_proof(project, payload.vault_proof):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid vault password"
+        )
+
     try:
         blobs_data = [blob.model_dump() for blob in payload.blobs]
         created_blobs, conflict = await vault_service.push_blobs(

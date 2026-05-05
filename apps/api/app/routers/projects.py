@@ -6,7 +6,14 @@ from typing import Optional
 from app.database import get_db
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
-from app.schemas.project import ProjectCreate, ProjectUpdate, ProjectResponse, ProjectListResponse
+from app.schemas.project import (
+    ProjectCreate,
+    ProjectUpdate,
+    ProjectResponse,
+    ProjectListResponse,
+    ProjectVaultRekeyRequest,
+)
+from app.services.vault_service import VaultService
 from app.middleware.auth import get_current_user, get_current_user_or_api_key
 from app.models.user import User
 
@@ -30,7 +37,9 @@ async def create_project(
             slug=payload.slug,
             description=payload.description,
             encryption_key_id=payload.encryption_key_id,
-            settings=payload.settings
+            settings=payload.settings,
+            vault_config=payload.vault_config,
+            vault_proof=payload.vault_proof,
         )
     except ValueError as e:
         raise HTTPException(
@@ -69,7 +78,7 @@ async def create_project(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return ProjectResponse.model_validate(project)
+    return ProjectResponse.from_project(project)
 
 
 @router.get("", response_model=ProjectListResponse)
@@ -85,7 +94,7 @@ async def list_projects(
     )
 
     return ProjectListResponse(
-        projects=[ProjectResponse.model_validate(p) for p in projects],
+        projects=[ProjectResponse.from_project(p) for p in projects],
         total=len(projects)
     )
 
@@ -122,7 +131,7 @@ async def get_project(
             detail="Project not found"
         )
 
-    return ProjectResponse.model_validate(project)
+    return ProjectResponse.from_project(project)
 
 
 @router.patch("/{project_id}", response_model=ProjectResponse)
@@ -177,7 +186,82 @@ async def update_project(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return ProjectResponse.model_validate(project)
+    return ProjectResponse.from_project(project)
+
+
+@router.post("/{project_id}/vault/rekey", response_model=ProjectResponse)
+async def rekey_project_vault(
+    project_id: str,
+    request: Request,
+    payload: ProjectVaultRekeyRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    from uuid import UUID
+
+    project_service = ProjectService(db)
+    vault_service = VaultService(db)
+    audit_service = AuditService(db)
+
+    try:
+        project_uuid = UUID(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID"
+        )
+
+    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or insufficient permissions"
+        )
+
+    project = await project_service.get_project(project_uuid)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+
+    if not project_service.verify_vault_proof(project, payload.current_vault_proof):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Invalid vault password"
+        )
+
+    try:
+        for environment_payload in payload.environments:
+            await vault_service.push_blobs(
+                project_id=project_uuid,
+                environment_id=environment_payload.environment_id,
+                blobs=environment_payload.blobs,
+            )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail=str(e)
+        )
+
+    project = await project_service.update_vault_settings(
+        project_id=project_uuid,
+        vault_config=payload.new_vault_config,
+        vault_proof=payload.new_vault_proof,
+    )
+
+    await audit_service.log(
+        action="project.vault_rekeyed",
+        resource_type="project",
+        resource_id=project_uuid,
+        user_id=current_user.id,
+        project_id=project_uuid,
+        metadata={"environment_count": len(payload.environments)},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+
+    return ProjectResponse.from_project(project)
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)
