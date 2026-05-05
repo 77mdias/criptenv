@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Floating Bar Docs Link (2026-05-05)
+
+- **Landing floating bar**: Added a `Docs` item that links directly to `/docs` while preserving smooth scrolling for landing-page section anchors.
+- **Docs welcome page**: Rendered the floating bar on `/docs` so the documentation entry page exposes the same quick navigation affordance.
+- **Cross-route section links**: Section items clicked from `/docs` now navigate to landing hashes such as `/#how-it-works`, and `Docs` is the final floating-bar item separated by a visual divider.
+
+#### Docs Navbar Brand Alignment (2026-05-05)
+
+- **Docs navbar**: Updated `/docs` navigation to match the AbacatePay-style two-row header, with clean row separators, the CriptEnv logo asset rendered in black/white theme colors, a visible `Início` link to `/`, and a compact Dashboard CTA with chevron.
+- **Docs search**: The navbar search field now opens the existing documentation search modal on click while preserving the `Ctrl K` shortcut.
+
 #### Project-Scoped Vault Passwords (2026-05-05)
 
 - **Project vault config**: Project creation now requires client-generated `vault_config` and `vault_proof`; the API stores only sanitized vault metadata plus a bcrypt proof hash in `projects.settings.vault`.

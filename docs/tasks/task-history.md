@@ -6,6 +6,41 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-05 — Floating Bar Docs Link
+
+**Resumo:**
+Adicionado link `Docs` no floating-bar da landing page e renderizado o floating-bar na página inicial de `/docs`, mantendo os links de seção com navegação suave quando a seção está presente e navegação por hash para a landing quando a seção não existe na rota atual.
+
+**Arquivos alterados:**
+- `apps/web/src/components/floating-bar/floating-bar.tsx`
+- `apps/web/src/app/(docs)/layout.tsx`
+- `docs/project/decisions.md`
+- `docs/development/CHANGELOG.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+O item `Docs` fica por último e separado por uma linha visual; nas subrotas de docs, o floating-bar não é renderizado para evitar conflito visual com sidebar e TOC.
+
+---
+
+## 2026-05-05 — Docs Navbar Brand Alignment
+
+**Resumo:**
+Ajustada a navbar de `/docs` para ficar mais próxima da referência AbacatePay, usando o logo CriptEnv em black/white theme, linhas visuais limpas, link `Início` para `/`, CTA `Dashboard` compacto e abertura da busca por clique.
+
+**Arquivos alterados:**
+- `apps/web/src/app/(docs)/layout.tsx`
+- `apps/web/src/app/(docs)/docs.css`
+- `apps/web/src/components/docs/search-modal.tsx`
+- `docs/project/decisions.md`
+- `docs/development/CHANGELOG.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+O lint já falhava antes da alteração por erros preexistentes em páginas de docs; o erro relacionado ao `search-modal.tsx` foi corrigido junto com a integração do clique na busca.
+
+---
+
 ## 2026-05-05 — Project-Scoped Vault Passwords
 
 **Resumo:**

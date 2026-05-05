@@ -1,0 +1,56 @@
+# CriptEnv Documentation Index
+
+> CriptEnv is an open-source Zero-Knowledge secret management platform.
+> All secrets are encrypted 100% client-side with AES-256-GCM.
+> https://criptenv.dev
+
+## Getting Started
+- [Welcome](https://criptenv.dev/docs) - Overview and introduction to CriptEnv
+- [Quickstart](https://criptenv.dev/docs/getting-started/quickstart) - Get started in 5 minutes
+- [Installation](https://criptenv.dev/docs/getting-started/installation) - Install the CLI on macOS, Linux, Windows
+- [Core Concepts](https://criptenv.dev/docs/getting-started/concepts) - Zero-Knowledge, Projects, Environments, Vault
+
+## CLI
+- [CLI Overview](https://criptenv.dev/docs/cli) - Terminal-first secret management
+- [Command Reference](https://criptenv.dev/docs/cli/commands) - All CLI commands documented
+- [Configuration](https://criptenv.dev/docs/cli/configuration) - ~/.criptenv/ directory, vault.db, config
+
+## API Reference
+- [API Introduction](https://criptenv.dev/docs/api) - Base URL, auth, response format, status codes
+- [Authentication](https://criptenv.dev/docs/api/authentication) - Session tokens, API keys, CI tokens, OAuth
+- [Projects](https://criptenv.dev/docs/api/projects) - CRUD operations for projects
+- [Environments](https://criptenv.dev/docs/api/environments) - CRUD operations for environments
+- [Vault](https://criptenv.dev/docs/api/vault) - Push/pull encrypted secrets
+- [Members](https://criptenv.dev/docs/api/members) - Team member management
+- [Invites](https://criptenv.dev/docs/api/invites) - Email-based invitation system
+- [Audit](https://criptenv.dev/docs/api/audit) - Audit log queries
+- [Rotation](https://criptenv.dev/docs/api/rotation) - Secret rotation and expiration
+- [Integrations](https://criptenv.dev/docs/api/integrations) - Vercel, Railway, Render sync
+- [CI Tokens](https://criptenv.dev/docs/api/ci-tokens) - CI/CD token management
+- [Health](https://criptenv.dev/docs/api/health) - Health and readiness checks
+
+## Security
+- [Security Overview](https://criptenv.dev/docs/security) - Zero-Knowledge architecture
+- [Encryption Protocol](https://criptenv.dev/docs/security/encryption) - AES-256-GCM, PBKDF2, HKDF
+- [Zero-Knowledge](https://criptenv.dev/docs/security/zero-knowledge) - What the server sees vs doesn't
+- [Threat Model](https://criptenv.dev/docs/security/threat-model) - Attack scenarios and mitigations
+
+## Integrations
+- [Integrations Overview](https://criptenv.dev/docs/integrations) - Cloud provider sync
+- [GitHub Action](https://criptenv.dev/docs/integrations/github-action) - @criptenv/action for CI/CD
+- [Vercel](https://criptenv.dev/docs/integrations/vercel) - Vercel environment variables sync
+- [Railway](https://criptenv.dev/docs/integrations/railway) - Railway service variables sync
+- [Render](https://criptenv.dev/docs/integrations/render) - Render environment groups sync
+
+## SDKs
+- [SDK Overview](https://criptenv.dev/docs/sdks) - Client libraries
+- [JavaScript/TypeScript](https://criptenv.dev/docs/sdks/javascript) - @criptenv/sdk for Node.js and browsers
+- [Python](https://criptenv.dev/docs/sdks/python) - criptenv-sdk for Python
+
+## Guides
+- [Guides Index](https://criptenv.dev/docs/guides) - Practical step-by-step guides
+- [First Project](https://criptenv.dev/docs/guides/first-project) - From zero to managed secrets
+- [Team Setup](https://criptenv.dev/docs/guides/team-setup) - Invites, roles, permissions
+- [CI/CD Setup](https://criptenv.dev/docs/guides/cicd-setup) - GitHub Actions, GitLab CI, CircleCI
+- [Secret Rotation](https://criptenv.dev/docs/guides/secret-rotation) - Manual and automated rotation
+- [Migration](https://criptenv.dev/docs/guides/migration) - Migrating from .env files
