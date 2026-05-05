@@ -2,9 +2,39 @@
 
 import click
 import base64
+import getpass
+import os
 
 from criptenv.context import cli_context, local_vault, run_async, _resolve_env_id
 from criptenv.vault import queries
+from criptenv.crypto import (
+    decrypt,
+    derive_env_key,
+    derive_project_env_key,
+    derive_vault_proof,
+    encrypt,
+    verify_project_vault_password,
+)
+
+
+def _get_vault_password() -> str:
+    password = os.getenv("CRIPTENV_VAULT_PASSWORD")
+    if password:
+        return password
+    return getpass.getpass("Vault password: ")
+
+
+def _load_project_vault(client, project_id: str) -> tuple[dict, str]:
+    project = run_async(client.get_project(project_id))
+    vault_config = project.get("vault_config")
+    if not vault_config:
+        raise click.ClickException("Project does not have vault password configuration.")
+
+    password = _get_vault_password()
+    if not verify_project_vault_password(password, vault_config):
+        raise click.ClickException("Invalid vault password.")
+
+    return vault_config, password
 
 
 @click.command()
@@ -44,23 +74,39 @@ def push_command(env_name: str | None, project_id: str, force: bool):
                 click.echo("Cancelled.")
                 return
 
-        # Serialize secrets as base64 blobs
+        try:
+            vault_config, vault_password = _load_project_vault(client, project_id)
+        except click.ClickException as e:
+            click.echo(f"Error: {e.message}", err=True)
+            raise SystemExit(1)
+
+        local_env_key = derive_env_key(master_key, env_id)
+        project_env_key = derive_project_env_key(vault_password, vault_config, env_id)
+        vault_proof = derive_vault_proof(
+            vault_password,
+            vault_config["proof_salt"],
+            int(vault_config.get("iterations", 100000)),
+        )
+
+        # Decrypt local blobs and re-encrypt for the project vault.
         blobs = []
         for secret in local_secrets:
+            plaintext = decrypt(secret.ciphertext, secret.iv, secret.auth_tag, local_env_key)
+            ciphertext, iv, auth_tag, checksum = encrypt(plaintext, project_env_key)
             blob = {
                 "key_id": secret.key_id,
-                "iv": base64.b64encode(secret.iv).decode("ascii"),
-                "ciphertext": base64.b64encode(secret.ciphertext).decode("ascii"),
-                "auth_tag": base64.b64encode(secret.auth_tag).decode("ascii"),
+                "iv": base64.b64encode(iv).decode("ascii"),
+                "ciphertext": base64.b64encode(ciphertext).decode("ascii"),
+                "auth_tag": base64.b64encode(auth_tag).decode("ascii"),
                 "version": secret.version,
-                "checksum": secret.checksum,
+                "checksum": checksum,
             }
             blobs.append(blob)
 
         click.echo(f"Pushing {len(blobs)} secret(s)...")
 
         try:
-            result = run_async(client.push_vault(project_id, env_id, blobs))
+            result = run_async(client.push_vault(project_id, env_id, blobs, vault_proof=vault_proof))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
             raise SystemExit(1)
@@ -87,6 +133,11 @@ def pull_command(env_name: str | None, project_id: str, force: bool):
     """
     with cli_context(require_auth=True) as (db, master_key, client):
         env_id = run_async(_resolve_env_id(db, env_name))
+        try:
+            vault_config, vault_password = _load_project_vault(client, project_id)
+        except click.ClickException as e:
+            click.echo(f"Error: {e.message}", err=True)
+            raise SystemExit(1)
 
         click.echo("Pulling secrets from cloud...")
 
@@ -111,6 +162,8 @@ def pull_command(env_name: str | None, project_id: str, force: bool):
         import uuid
         from criptenv.vault.models import Secret
 
+        local_env_key = derive_env_key(master_key, env_id)
+        project_env_key = derive_project_env_key(vault_password, vault_config, env_id)
         pulled = 0
         skipped = 0
 
@@ -125,17 +178,25 @@ def pull_command(env_name: str | None, project_id: str, force: bool):
                     skipped += 1
                     continue
 
-            # Save to local vault
+            plaintext = decrypt(
+                base64.b64decode(blob["ciphertext"]),
+                base64.b64decode(blob["iv"]),
+                base64.b64decode(blob["auth_tag"]),
+                project_env_key,
+            )
+            ciphertext, iv, auth_tag, checksum = encrypt(plaintext, local_env_key)
+
+            # Save re-encrypted blob to local vault
             existing = local_keys.get(key_id)
             secret = Secret(
                 id=existing.id if existing else f"sec_{uuid.uuid4().hex[:16]}",
                 environment_id=env_id,
                 key_id=key_id,
-                iv=base64.b64decode(blob["iv"]),
-                ciphertext=base64.b64decode(blob["ciphertext"]),
-                auth_tag=base64.b64decode(blob["auth_tag"]),
+                iv=iv,
+                ciphertext=ciphertext,
+                auth_tag=auth_tag,
                 version=blob["version"],
-                checksum=blob["checksum"],
+                checksum=checksum,
                 created_at=existing.created_at if existing else int(time.time()),
                 updated_at=int(time.time()),
             )
