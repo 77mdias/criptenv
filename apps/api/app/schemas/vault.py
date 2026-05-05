@@ -32,6 +32,7 @@ class VaultBlobPull(BaseModel):
 
 class VaultPushRequest(BaseModel):
     blobs: list[VaultBlobPush]
+    vault_proof: Optional[str] = None
 
 
 class VaultPullResponse(BaseModel):

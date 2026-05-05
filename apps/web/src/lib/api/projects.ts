@@ -4,6 +4,7 @@ import type {
   ProjectListResponse,
   CreateProjectRequest,
   UpdateProjectRequest,
+  VaultRekeyRequest,
 } from './client';
 
 export const projectsApi = {
@@ -21,6 +22,10 @@ export const projectsApi = {
 
   update(id: string, body: UpdateProjectRequest): Promise<Project> {
     return request('PATCH', `/api/v1/projects/${id}`, body);
+  },
+
+  rekeyVault(id: string, body: VaultRekeyRequest): Promise<Project> {
+    return request('POST', `/api/v1/projects/${id}/vault/rekey`, body);
   },
 
   delete(id: string): Promise<void> {

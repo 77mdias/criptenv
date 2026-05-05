@@ -1,6 +1,7 @@
 import asyncio
 from uuid import uuid4
 
+from app.schemas.project import ProjectVaultConfig
 from app.services.project_service import ProjectService, _generate_slug
 
 
@@ -34,6 +35,19 @@ def run(coro):
     return asyncio.run(coro)
 
 
+def vault_config() -> ProjectVaultConfig:
+    return ProjectVaultConfig(
+        version=1,
+        kdf="PBKDF2-SHA256",
+        iterations=100000,
+        salt="project-salt",
+        proof_salt="proof-salt",
+        verifier_iv="iv",
+        verifier_ciphertext="ciphertext",
+        verifier_auth_tag="tag",
+    )
+
+
 def test_generate_slug_falls_back_when_slug_is_too_short():
     assert _generate_slug("A") == "project"
 
@@ -51,7 +65,10 @@ def test_create_project_normalizes_explicit_slug():
             owner_id=uuid4(),
             name="Project Name",
             slug="  My Custom Slug!!!  ",
+            vault_config=vault_config(),
+            vault_proof="proof",
         )
     )
 
     assert project.slug == "my-custom-slug"
+    assert "proof_hash" in project.settings["vault"]

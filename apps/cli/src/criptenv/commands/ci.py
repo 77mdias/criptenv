@@ -10,6 +10,7 @@ Implements M3.3 CI Tokens Enhancement specification:
 import asyncio
 import base64
 import json
+import os
 import time
 from typing import Optional
 
@@ -17,7 +18,14 @@ import click
 
 from criptenv.api.client import CriptEnvClient
 from criptenv.context import cli_context, _resolve_env_id
-from criptenv.crypto import encrypt, decrypt
+from criptenv.crypto import (
+    decrypt,
+    derive_env_key,
+    derive_project_env_key,
+    derive_vault_proof,
+    encrypt,
+    verify_project_vault_password,
+)
 from criptenv.vault.models import CISession
 from criptenv.vault import queries
 
@@ -283,28 +291,57 @@ def ci_deploy(environment: str, provider: Optional[str], dry_run: bool):
                     click.echo(f"  - {secret.key_id} (v{secret.version})")
                 return
 
-            click.echo(f"Deploying {len(local_secrets)} secret(s) to {environment}...")
+            vault_password = os.getenv("CRIPTENV_VAULT_PASSWORD")
+            if not vault_password:
+                click.echo(
+                    "Error: CI deploy requires CRIPTENV_VAULT_PASSWORD for project vault encryption.",
+                    err=True,
+                )
+                return
 
-            # Serialize blobs for API push
-            blobs = []
-            for secret in local_secrets:
-                blobs.append({
-                    "key_id": secret.key_id,
-                    "iv": base64.b64encode(secret.iv).decode("ascii"),
-                    "ciphertext": base64.b64encode(secret.ciphertext).decode("ascii"),
-                    "auth_tag": base64.b64encode(secret.auth_tag).decode("ascii"),
-                    "version": secret.version,
-                    "checksum": secret.checksum,
-                })
-
-            # Push to API
             client = await manager.get_authenticated_client()
             if not client:
                 click.echo("Error: Invalid CI session. Run 'criptenv ci login --token <token>' again.", err=True)
                 return
 
             try:
-                result = await client.push_vault(session.project_id, env_id, blobs)
+                project = await client.get_project(session.project_id)
+            except Exception as e:
+                click.echo(f"Error fetching project vault config: {e}", err=True)
+                return
+
+            vault_config = project.get("vault_config")
+            if not vault_config or not verify_project_vault_password(vault_password, vault_config):
+                click.echo("Error: Invalid project vault password.", err=True)
+                return
+
+            local_env_key = derive_env_key(master_key, env_id)
+            project_env_key = derive_project_env_key(vault_password, vault_config, env_id)
+            vault_proof = derive_vault_proof(
+                vault_password,
+                vault_config["proof_salt"],
+                int(vault_config.get("iterations", 100000)),
+            )
+
+            click.echo(f"Deploying {len(local_secrets)} secret(s) to {environment}...")
+
+            # Re-encrypt local blobs for the project vault.
+            blobs = []
+            for secret in local_secrets:
+                plaintext = decrypt(secret.ciphertext, secret.iv, secret.auth_tag, local_env_key)
+                ciphertext, iv, auth_tag, checksum = encrypt(plaintext, project_env_key)
+                blobs.append({
+                    "key_id": secret.key_id,
+                    "iv": base64.b64encode(iv).decode("ascii"),
+                    "ciphertext": base64.b64encode(ciphertext).decode("ascii"),
+                    "auth_tag": base64.b64encode(auth_tag).decode("ascii"),
+                    "version": secret.version,
+                    "checksum": checksum,
+                })
+
+            # Push to API
+            try:
+                result = await client.push_vault(session.project_id, env_id, blobs, vault_proof=vault_proof)
                 version = result.get("version", "unknown")
                 click.echo(f"✓ Deployment complete (version {version})")
             except Exception as e:

@@ -6,22 +6,35 @@ import { create } from "zustand"
  * Keys are lost on page refresh (user must re-enter password).
  */
 interface CryptoState {
-  sessionKey: CryptoKey | null
+  projectId: string | null
+  keyMaterial: CryptoKey | null
+  vaultProof: string | null
   isUnlocked: boolean
   unlockedAt: string | null
-  setSessionKey: (key: CryptoKey | null) => void
+  unlockProject: (projectId: string, keyMaterial: CryptoKey, vaultProof: string) => void
   clearSession: () => void
 }
 
 export const useCryptoStore = create<CryptoState>((set) => ({
-  sessionKey: null,
+  projectId: null,
+  keyMaterial: null,
+  vaultProof: null,
   isUnlocked: false,
   unlockedAt: null,
-  setSessionKey: (key) =>
+  unlockProject: (projectId, keyMaterial, vaultProof) =>
     set({
-      sessionKey: key,
-      isUnlocked: key !== null,
-      unlockedAt: key ? new Date().toISOString() : null,
+      projectId,
+      keyMaterial,
+      vaultProof,
+      isUnlocked: true,
+      unlockedAt: new Date().toISOString(),
     }),
-  clearSession: () => set({ sessionKey: null, isUnlocked: false, unlockedAt: null }),
+  clearSession: () =>
+    set({
+      projectId: null,
+      keyMaterial: null,
+      vaultProof: null,
+      isUnlocked: false,
+      unlockedAt: null,
+    }),
 }))

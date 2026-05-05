@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { createProjectSchema, type CreateProjectInput } from "@/lib/validators/schemas"
 import { projectsApi } from "@/lib/api"
+import { buildProjectVaultConfig } from "@/lib/crypto"
 
 interface CreateProjectDialogProps {
   open: boolean
@@ -32,9 +33,12 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
     setLoading(true)
     setError(null)
     try {
+      const { vaultConfig, vaultProof } = await buildProjectVaultConfig(data.vaultPassword)
       await projectsApi.create({
         name: data.name,
         description: data.description,
+        vault_config: vaultConfig,
+        vault_proof: vaultProof,
       })
       reset()
       onOpenChange(false)
@@ -93,6 +97,22 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
               <p className="text-xs text-red-600">{errors.description.message}</p>
             )}
           </div>
+
+          <Input
+            label="Senha do vault"
+            type="password"
+            autoComplete="new-password"
+            error={errors.vaultPassword?.message}
+            {...register("vaultPassword")}
+          />
+
+          <Input
+            label="Confirmar senha do vault"
+            type="password"
+            autoComplete="new-password"
+            error={errors.confirmVaultPassword?.message}
+            {...register("confirmVaultPassword")}
+          />
 
           {error && (
             <p className="text-xs text-red-600 font-mono">{error}</p>

@@ -2,56 +2,52 @@
 
 ## Status atual
 
-**Fechamento dos objetivos pendentes do ROADMAP (M3.2, M3.3, M3.4) — COMPLETO.**
+**Project-scoped vault passwords — IMPLEMENTADO.**
 
 ---
 
 ## Tarefa em foco
 
-**Atualização da documentação após implementação de M3.2 + M3.3 + M3.4**
-
-Todas as implementações de código foram finalizadas. Esta tarefa foca em manter a documentação sincronizada com o código.
+Implementar senha de vault por projeto com zero-knowledge rígido em API, Web e CLI.
 
 ---
 
 ## O que foi implementado nesta sessão
 
-### M3.4: Public API ✅
-- RateLimitMiddleware registrado e ativo em `main.py`
-- Dual auth (session + API key) em endpoints de leitura
-- Documentação OpenAPI com esquemas BearerAuth + ApiKeyAuth
-- 7 testes de integração em `test_dual_auth.py`
+### Vault password por projeto ✅
+- Criação de projeto exige `vault_config` e `vault_proof`.
+- API armazena apenas metadata criptográfica e hash bcrypt da prova em `projects.settings.vault`.
+- Respostas de projeto expõem `vault_config` sanitizado e nunca retornam `proof_hash`.
+- Vault `push` exige `vault_proof` para projetos v1.
+- Settings ganhou rotação de senha do vault com recriptografia client-side.
+- Settings também migra projetos legados sem `vault_config` usando a senha legada derivada do `kdf_salt` do usuário.
+- CLI ganhou `criptenv projects create`; `push`, `pull` e `ci deploy` convertem entre vault local e vault do projeto.
 
-### M3.3: CI Tokens ✅
-- `ci deploy` implementado com push real de secrets
-- Todos os comandos CI corrigidos para usar `cli_context()`
-- `CRIPTENV_MASTER_PASSWORD` env var para CI/CD não-interativo
-- Métodos `list_integrations()` e `sync_integration()` no API client
-
-### M3.2: Cloud Integrations ✅
-- `RenderProvider` implementado (`render.py`)
-- CLI commands: `integrations list`, `connect`, `disconnect`, `sync`
-- 6 testes para RenderProvider
+### Segurança ✅
+- Senha do vault nunca é enviada nem armazenada em claro.
+- A prova de escrita/rekey é derivada separadamente da chave de descriptografia.
+- Política de recuperação é zero-knowledge rígida: senha esquecida não é recuperável.
 
 ---
 
 ## Documentação atualizada
 
-- [x] `ROADMAP.md` — status de integrações, CLI extensions, API endpoints, milestones
-- [x] `docs/development/CHANGELOG.md` — seção "M3.2 + M3.3 + M3.4 Completion"
-- [x] `docs/project/current-state.md` — estado geral do projeto (~85% Phase 3)
+- [x] `docs/project/decisions.md` — DEC-013
+- [x] `docs/development/CHANGELOG.md` — seção Project-Scoped Vault Passwords
+- [x] `docs/project/current-state.md` — estado e contagens atualizadas
+- [x] `docs/tasks/task-history.md` — sessão registrada
 - [x] `docs/tasks/current-task.md` — este arquivo
 
 ---
 
-## Próximos passos recomendados (fora do escopo desta sessão)
+## Próximos passos recomendados
 
-1. **RailwayProvider** — seguir o padrão RenderProvider
-2. **Security hardening** — CR-01 (session in body), CR-02 (localStorage)
-3. **Integration config encryption** — criptografar tokens at-rest
+1. Planejar transferência rápida de membros entre projetos como feature separada.
+2. Continuar pendências Phase 3: RailwayProvider, Integration Config Encryption e Web Alert UI.
+3. Validar manualmente a migração de um projeto legado real antes de remover qualquer fallback antigo.
 
 ---
 
-**Document Version**: 1.2  
-**Last Updated**: 2026-05-03  
-**Status**: Documentation sync complete — ready to close session
+**Document Version**: 1.3
+**Last Updated**: 2026-05-05
+**Status**: Implementation complete — ready for review

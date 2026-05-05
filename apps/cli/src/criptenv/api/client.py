@@ -102,12 +102,30 @@ class CriptEnvClient:
         resp = await self._request("GET", "/api/v1/projects")
         return resp.json()
 
-    async def create_project(self, name: str, slug: str | None = None) -> dict[str, Any]:
+    async def create_project(
+        self,
+        name: str,
+        slug: str | None = None,
+        description: str | None = None,
+        vault_config: dict[str, Any] | None = None,
+        vault_proof: str | None = None,
+    ) -> dict[str, Any]:
         """POST /api/v1/projects"""
         payload: dict[str, Any] = {"name": name}
         if slug:
             payload["slug"] = slug
+        if description:
+            payload["description"] = description
+        if vault_config is not None:
+            payload["vault_config"] = vault_config
+        if vault_proof is not None:
+            payload["vault_proof"] = vault_proof
         resp = await self._request("POST", "/api/v1/projects", json=payload)
+        return resp.json()
+
+    async def get_project(self, project_id: str) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}"""
+        resp = await self._request("GET", f"/api/v1/projects/{project_id}")
         return resp.json()
 
     # ─── Environments ─────────────────────────────────────────────────────────
@@ -134,13 +152,16 @@ class CriptEnvClient:
     # ─── Vault ────────────────────────────────────────────────────────────────
 
     async def push_vault(
-        self, project_id: str, env_id: str, blobs: list[dict]
+        self, project_id: str, env_id: str, blobs: list[dict], vault_proof: str | None = None
     ) -> dict[str, Any]:
         """POST /api/v1/projects/{id}/environments/{eid}/vault/push"""
+        payload: dict[str, Any] = {"blobs": blobs}
+        if vault_proof:
+            payload["vault_proof"] = vault_proof
         resp = await self._request(
             "POST",
             f"/api/v1/projects/{project_id}/environments/{env_id}/vault/push",
-            json={"blobs": blobs},
+            json=payload,
         )
         return resp.json()
 

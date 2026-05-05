@@ -27,6 +27,11 @@ export const createProjectSchema = z.object({
     .max(50, "Nome deve ter 3-50 caracteres")
     .regex(/^[a-zA-Z0-9-]+$/, "Apenas letras, números e hífens"),
   description: z.string().max(255).optional(),
+  vaultPassword: z.string().min(8, "Senha do vault deve ter pelo menos 8 caracteres"),
+  confirmVaultPassword: z.string(),
+}).refine((data) => data.vaultPassword === data.confirmVaultPassword, {
+  message: "Senhas do vault não conferem",
+  path: ["confirmVaultPassword"],
 })
 
 export const createSecretSchema = z.object({

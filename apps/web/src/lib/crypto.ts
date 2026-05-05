@@ -9,6 +9,24 @@ const PBKDF2_ITERATIONS = 100_000
 const SALT_LENGTH = 32
 const IV_LENGTH = 12
 const KEY_LENGTH = 256
+const VAULT_VERIFIER_TEXT = "criptenv-vault-verifier-v1"
+const VAULT_HKDF_INFO = "criptenv-vault-v1"
+
+export interface ProjectVaultConfig {
+  version: number
+  kdf: "PBKDF2-SHA256" | string
+  iterations: number
+  salt: string
+  proof_salt: string
+  verifier_iv: string
+  verifier_ciphertext: string
+  verifier_auth_tag: string
+}
+
+export interface ProjectVaultMaterial {
+  keyMaterial: CryptoKey
+  vaultProof: string
+}
 
 export class CryptoError extends Error {
   constructor(message: string, public code: string) {
@@ -54,11 +72,124 @@ export async function deriveSessionKey(
   )
 }
 
+async function derivePbkdf2Bits(
+  password: string,
+  salt: Uint8Array,
+  iterations: number
+): Promise<Uint8Array> {
+  const encoder = new TextEncoder()
+  const keyMaterial = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(password),
+    "PBKDF2",
+    false,
+    ["deriveBits"]
+  )
+
+  const bits = await crypto.subtle.deriveBits(
+    {
+      name: "PBKDF2",
+      salt: salt.buffer as ArrayBuffer,
+      iterations,
+      hash: "SHA-256",
+    },
+    keyMaterial,
+    KEY_LENGTH
+  )
+
+  return new Uint8Array(bits)
+}
+
+async function importAesKey(rawKey: Uint8Array): Promise<CryptoKey> {
+  return crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, ["encrypt", "decrypt"])
+}
+
+async function importHkdfKey(rawKey: Uint8Array): Promise<CryptoKey> {
+  return crypto.subtle.importKey("raw", rawKey, "HKDF", false, ["deriveKey"])
+}
+
 export async function deriveSessionKeyFromBase64Salt(
   password: string,
   saltBase64: string
 ): Promise<CryptoKey> {
   return deriveSessionKey(password, base64ToBuffer(saltBase64))
+}
+
+export async function deriveVaultProof(
+  password: string,
+  proofSaltBase64: string,
+  iterations = PBKDF2_ITERATIONS
+): Promise<string> {
+  const proof = await derivePbkdf2Bits(password, base64ToBuffer(proofSaltBase64), iterations)
+  return bufferToBase64(proof)
+}
+
+export async function buildProjectVaultConfig(
+  password: string
+): Promise<{ vaultConfig: ProjectVaultConfig; vaultProof: string }> {
+  const salt = generateSalt()
+  const proofSalt = generateSalt()
+  const masterBits = await derivePbkdf2Bits(password, salt, PBKDF2_ITERATIONS)
+  const masterAesKey = await importAesKey(masterBits)
+  const verifier = await encrypt(VAULT_VERIFIER_TEXT, masterAesKey)
+
+  const vaultConfig: ProjectVaultConfig = {
+    version: 1,
+    kdf: "PBKDF2-SHA256",
+    iterations: PBKDF2_ITERATIONS,
+    salt: bufferToBase64(salt),
+    proof_salt: bufferToBase64(proofSalt),
+    verifier_iv: verifier.iv,
+    verifier_ciphertext: verifier.ciphertext,
+    verifier_auth_tag: verifier.authTag,
+  }
+
+  return {
+    vaultConfig,
+    vaultProof: await deriveVaultProof(password, vaultConfig.proof_salt, vaultConfig.iterations),
+  }
+}
+
+export async function unlockProjectVault(
+  password: string,
+  vaultConfig: ProjectVaultConfig
+): Promise<ProjectVaultMaterial> {
+  const iterations = vaultConfig.iterations || PBKDF2_ITERATIONS
+  const masterBits = await derivePbkdf2Bits(password, base64ToBuffer(vaultConfig.salt), iterations)
+  const masterAesKey = await importAesKey(masterBits)
+  const verifier = await decrypt(
+    vaultConfig.verifier_ciphertext,
+    masterAesKey,
+    vaultConfig.verifier_iv,
+    vaultConfig.verifier_auth_tag
+  )
+
+  if (verifier !== VAULT_VERIFIER_TEXT) {
+    throw new CryptoError("Invalid vault password", "INVALID_VAULT_PASSWORD")
+  }
+
+  return {
+    keyMaterial: await importHkdfKey(masterBits),
+    vaultProof: await deriveVaultProof(password, vaultConfig.proof_salt, iterations),
+  }
+}
+
+export async function deriveProjectEnvironmentKey(
+  keyMaterial: CryptoKey,
+  environmentId: string
+): Promise<CryptoKey> {
+  return crypto.subtle.deriveKey(
+    {
+      name: "HKDF",
+      hash: "SHA-256",
+      salt: new TextEncoder().encode(environmentId),
+      info: new TextEncoder().encode(VAULT_HKDF_INFO),
+    },
+    keyMaterial,
+    { name: "AES-GCM", length: KEY_LENGTH },
+    false,
+    ["encrypt", "decrypt"]
+  )
 }
 
 /**

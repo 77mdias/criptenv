@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Project-Scoped Vault Passwords (2026-05-05)
+
+- **Project vault config**: Project creation now requires client-generated `vault_config` and `vault_proof`; the API stores only sanitized vault metadata plus a bcrypt proof hash in `projects.settings.vault`.
+- **Vault write protection**: Vault `push` requires a valid `vault_proof` for v1 project vaults, while pull/version continue returning ciphertext only.
+- **Vault rekey**: Added `POST /api/v1/projects/{id}/vault/rekey` for admin/owner password rotation with client-side re-encryption of all environment blobs.
+- **Web vault flow**: Project creation asks for a vault password, secrets unlock with the project vault password, and project settings can rotate or migrate the vault password.
+- **CLI vault flow**: Added `criptenv projects create`; `push`, `pull`, and `ci deploy` now convert between the local master-key vault and the project vault key using `CRIPTENV_VAULT_PASSWORD` when non-interactive.
+- **Tests**: API vault security coverage added; CLI crypto tests now cover project vault config/proof/verifier derivation.
+
 ### Fixed
 
 #### OAuth Production Redirects (2026-05-04)

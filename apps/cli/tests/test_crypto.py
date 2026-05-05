@@ -4,7 +4,15 @@ import pytest
 import os
 
 from criptenv.crypto.core import encrypt, decrypt
-from criptenv.crypto.keys import generate_salt, derive_master_key, derive_env_key
+from criptenv.crypto.keys import (
+    build_project_vault_config,
+    derive_env_key,
+    derive_master_key,
+    derive_project_env_key,
+    derive_vault_proof,
+    generate_salt,
+    verify_project_vault_password,
+)
 from criptenv.crypto.utils import to_base64, from_base64, compute_checksum, generate_id
 
 
@@ -70,6 +78,31 @@ class TestKeyDerivation:
         key1 = derive_env_key(master, "env-staging")
         key2 = derive_env_key(master, "env-production")
         assert key1 != key2
+
+    def test_project_vault_config_verifies_only_correct_password(self):
+        """Project vault config should validate the project password locally."""
+        config, proof = build_project_vault_config("project-password")
+
+        assert proof
+        assert verify_project_vault_password("project-password", config) is True
+        assert verify_project_vault_password("wrong-password", config) is False
+
+    def test_project_vault_proof_is_separate_from_environment_key(self):
+        """Proof derivation should not equal environment encryption keys."""
+        config, proof = build_project_vault_config("project-password")
+        env_key = derive_project_env_key("project-password", config, "env-123")
+
+        assert proof != to_base64(env_key)
+        assert derive_vault_proof("project-password", config["proof_salt"]) == proof
+
+    def test_project_environment_key_is_environment_specific(self):
+        """Same project password should derive distinct keys per environment."""
+        config, _ = build_project_vault_config("project-password")
+
+        key_a = derive_project_env_key("project-password", config, "env-a")
+        key_b = derive_project_env_key("project-password", config, "env-b")
+
+        assert key_a != key_b
 
 
 class TestEncryptDecrypt:
