@@ -37,19 +37,19 @@ export default function DocsLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] docs-root pt-[7.5rem]">
+    <div className="min-h-screen bg-(--background) text-(--text-primary) docs-root pt-30">
       <SearchModal />
 
       {/* Docs Navbar — AbacatePay style */}
-      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-[var(--background)]/90 backdrop-blur-xl">
+      <header className="fixed top-0 left-0 right-0 z-40 w-full bg-(--background)/90 backdrop-blur-xl">
         {/* Row 1: Brand | Search | External links */}
-        <div className="max-w-[1400px] mx-auto flex items-center justify-between h-[4.5rem] px-4 lg:px-6 border-b border-[var(--border)]">
+        <div className="max-w-350 mx-auto flex items-center justify-between h-18 px-4 lg:px-6 border-b border-(--border)">
           {/* Left: Brand */}
           <div className="flex min-w-0 items-center gap-2.5">
             <Link
               href="/"
               aria-label="CriptEnv landing page"
-              className="flex items-center rounded-md text-[var(--text-primary)] transition-opacity hover:opacity-80"
+              className="flex items-center rounded-md text-(--text-primary) transition-opacity hover:opacity-80"
             >
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
@@ -58,22 +58,22 @@ export default function DocsLayout({
                 className="h-14 w-auto shrink-0 brightness-0 dark:invert"
               />
             </Link>
-            <span className="text-[10px] font-mono text-[var(--text-muted)] bg-[var(--background-muted)] px-1.5 py-0.5 rounded border border-[var(--border)]">
+            <span className="text-[10px] font-mono text-(--text-muted) bg-(--background-muted) px-1.5 py-0.5 rounded border border-(--border)">
               v2
             </span>
-            <ChevronDown className="h-3 w-3 text-[var(--text-muted)]" />
+            <ChevronDown className="h-3 w-3 text-(--text-muted)" />
           </div>
 
           {/* Center: Search */}
           <button
             type="button"
             onClick={openDocSearch}
-            className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-[var(--text-tertiary)] border border-[var(--border)] rounded-lg bg-[var(--background)] hover:bg-[var(--background-muted)] transition-colors w-full max-w-md mx-4"
+            className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-tertiary) border border-(--border) rounded-lg bg-(--background) hover:bg-(--background-muted) transition-colors w-full max-w-md mx-4"
             aria-label="Buscar documentação"
           >
             <Search className="h-4 w-4 shrink-0" />
             <span className="flex-1 text-left truncate">Buscar...</span>
-            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)] bg-[var(--background-subtle)] rounded border border-[var(--border)]">
+            <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-(--text-muted) bg-(--background-subtle) rounded border border-(--border)">
               Ctrl K
             </kbd>
           </button>
@@ -82,13 +82,13 @@ export default function DocsLayout({
           <div className="flex items-center gap-3">
             <Link
               href="/"
-              className="flex items-center text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+              className="flex items-center text-sm text-(--text-tertiary) hover:text-(--text-primary) transition-colors"
             >
               Início
             </Link>
             <Link
               href="/llms.txt"
-              className="hidden lg:flex items-center text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+              className="hidden lg:flex items-center text-sm text-(--text-tertiary) hover:text-(--text-primary) transition-colors"
             >
               llms.txt
             </Link>
@@ -96,7 +96,7 @@ export default function DocsLayout({
               href="https://github.com/criptenv/criptenv"
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden lg:flex items-center gap-1.5 text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors"
+              className="hidden lg:flex items-center gap-1.5 text-sm text-(--text-tertiary) hover:text-(--text-primary) transition-colors"
             >
               <GithubIcon className="h-4 w-4" />
               Repositório
@@ -106,7 +106,7 @@ export default function DocsLayout({
 
             <Link
               href="/dashboard"
-              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-[var(--accent)] px-4 py-2 text-sm font-medium text-[var(--accent-foreground)] transition-opacity hover:opacity-90"
+              className="hidden sm:inline-flex items-center gap-1.5 rounded-xl bg-(--accent) px-4 py-2 text-sm font-medium text-(--accent-foreground) transition-opacity hover:opacity-90"
             >
               Dashboard
               <ChevronRight className="h-3.5 w-3.5" />
@@ -115,8 +115,8 @@ export default function DocsLayout({
         </div>
 
         {/* Row 2: Doc tabs — separated by a visual line */}
-        <div className="border-b border-[var(--border)]">
-          <div className="max-w-[1400px] mx-auto px-4 lg:px-6">
+        <div className="border-b border-(--border)">
+          <div className="max-w-350 mx-auto px-4 lg:px-6">
             <nav className="flex items-center gap-1 -mb-px overflow-x-auto scrollbar-hide">
               {topNavTabs.map((tab) => (
                 <DocTab key={tab.href} href={tab.href} exact={tab.exact}>
@@ -143,7 +143,7 @@ function DocsMainContent({ children }: { children: React.ReactNode }) {
     return (
       <>
         <FloatingBar />
-        <main className="docs-welcome max-w-[900px] mx-auto px-4 lg:px-6 py-8">
+        <main className="docs-welcome max-w-225 mx-auto px-4 lg:px-6 py-8">
           {children}
         </main>
       </>
@@ -186,13 +186,13 @@ function DocTab({
       className={cn(
         "relative flex items-center h-12 px-3 text-sm font-medium whitespace-nowrap transition-colors",
         isActive
-          ? "text-[var(--text-primary)]"
-          : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)]",
+          ? "text-(--text-primary)"
+          : "text-(--text-tertiary) hover:text-(--text-primary)",
       )}
     >
       {children}
       {isActive && (
-        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-[var(--text-primary)] rounded-t-full" />
+        <span className="absolute bottom-0 left-0 right-0 h-0.5 bg-(--text-primary) rounded-t-full" />
       )}
     </Link>
   );

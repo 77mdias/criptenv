@@ -61,3 +61,5 @@ supabase/.temp/
 # CI/CD
 .github/workflows/*.local.yml
 .vercel/
+
+.playwright*
