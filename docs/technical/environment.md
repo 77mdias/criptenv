@@ -13,6 +13,7 @@ ASYNC_DATABASE_URL=postgresql://user:password@host:5432/database
 
 # Authentication
 SECRET_KEY=your-secret-key-at-least-32-characters-long
+INTEGRATION_CONFIG_SECRET=your-different-secret-at-least-32-characters-long
 ALGORITHM=HS256
 ACCESS_TOKEN_EXPIRE_MINUTES=30
 

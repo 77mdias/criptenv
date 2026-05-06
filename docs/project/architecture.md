@@ -294,6 +294,7 @@ Encrypted Blob ──────────► Server (never sees plain-text)
 | Decision | Status | Impact |
 |----------|--------|--------|
 | Strategy pattern for integrations | ✅ Implemented | Extensible provider system |
+| Integration config encryption | ✅ Implemented | Provider tokens encrypted at rest with dedicated API secret |
 | Service layer for business logic | ✅ Implemented | Testable, maintainable |
 | Async SQLAlchemy with asyncpg | ✅ Implemented | Non-blocking DB operations |
 | Route groups in Next.js | ✅ Implemented | Organized layouts |

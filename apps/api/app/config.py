@@ -20,6 +20,7 @@ class Settings(BaseSettings):
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STORAGE: str = "memory"
     REDIS_URL: str = ""
+    INTEGRATION_CONFIG_SECRET: str = ""
     
     # API URL for OAuth callbacks
     API_URL: str = "http://localhost:8000"

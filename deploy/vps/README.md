@@ -16,6 +16,7 @@ This compose stack runs the CriptEnv API on a VPS behind Nginx Proxy Manager.
 cd deploy/vps
 cp .env.example .env
 # edit .env with Supabase, DuckDNS, API_URL, FRONTEND_URL, and secrets
+# keep SECRET_KEY and INTEGRATION_CONFIG_SECRET different and persistent
 docker compose up -d --build
 docker compose ps
 curl http://localhost:8000/health

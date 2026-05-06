@@ -6,6 +6,37 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-06 — TASK-068 Integration Config Encryption
+
+**Resumo:**
+Criptografia at-rest para `integrations.config`, protegendo tokens de Vercel/Render com AES-256-GCM e chave dedicada `INTEGRATION_CONFIG_SECRET`.
+
+**Arquivos criados:**
+- `apps/api/app/crypto/__init__.py`
+- `apps/api/app/crypto/integration_config.py`
+- `apps/api/migrations/versions/20260506_0003_encrypt_integration_configs.py`
+- `apps/api/tests/test_integration_config_encryption.py`
+
+**Arquivos alterados:**
+- `apps/api/app/config.py` — adiciona `INTEGRATION_CONFIG_SECRET`
+- `apps/api/app/services/integration_service.py` — encrypt on create, decrypt on sync/validate, legacy re-encrypt
+- `apps/api/tests/test_integration_providers.py` — cobertura service/provider decrypt flow
+- `apps/api/.env.example`, `apps/api/.env.production.example`, `deploy/vps/.env.example` — nova env dedicada
+- `docs/project/decisions.md` — DEC-017 Integration Config At-Rest Encryption
+- `docs/project/current-state.md`, `docs/tasks/current-task.md`, `docs/tasks/next-tasks.md`, `docs/development/CHANGELOG.md`
+
+**Verificação:**
+- API tests: 292 passed ✅
+- CLI tests: 130 passed ✅
+- Web build: passed ✅
+- Alembic history/heads: `20260506_0003` is the single head ✅
+
+**Observações:**
+- A migration não altera schema; `config` permanece JSONB com envelope criptografado.
+- `INTEGRATION_CONFIG_SECRET` deve ser preservado em produção; perdê-lo torna configs de integração irrecuperáveis.
+
+---
+
 ## 2026-05-06 — VPS Backend Migration Validated
 
 **Resumo:**

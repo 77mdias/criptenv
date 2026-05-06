@@ -6,6 +6,8 @@ from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
 from datetime import datetime, timezone
 
+from app.models.oauth_account import OAuthAccount  # noqa: F401
+
 
 class TestIntegrationProviderInterface:
     """RED: Test IntegrationProvider abstract interface"""
@@ -270,6 +272,7 @@ class TestIntegrationService:
     async def test_create_integration(self):
         """Should create integration with provider and config"""
         from app.services.integration_service import IntegrationService
+        from app.crypto.integration_config import IntegrationConfigEncryption
         
         mock_db = MagicMock()
         mock_db.flush = AsyncMock()
@@ -287,11 +290,14 @@ class TestIntegrationService:
         assert result is not None
         assert result.provider == "vercel"
         assert result.name == "Production"
+        assert IntegrationConfigEncryption.is_encrypted(result.config)
+        assert "tok_xxx" not in str(result.config)
 
     @pytest.mark.asyncio
     async def test_sync_secrets_push(self):
         """Should push secrets to provider during sync"""
         from app.services.integration_service import IntegrationService
+        from app.crypto.integration_config import IntegrationConfigEncryption
         
         mock_db = MagicMock()
         mock_db.commit = AsyncMock()
@@ -301,7 +307,11 @@ class TestIntegrationService:
         mock_integration = MagicMock()
         mock_integration.id = uuid4()
         mock_integration.provider = "vercel"
-        mock_integration.config = {"api_token": "tok_xxx", "project_id": "prj_123"}
+        plain_config = {"api_token": "tok_xxx", "project_id": "prj_123"}
+        mock_integration.config = IntegrationConfigEncryption.encrypt(
+            plain_config,
+            "test-integration-config-secret-32-chars",
+        )
         mock_integration.status = "active"
         
         # Mock vault secrets
@@ -324,7 +334,102 @@ class TestIntegrationService:
                 
                 assert success is True
                 assert error is None
-                mock_provider.push_secrets.assert_called_once()
+                mock_provider.push_secrets.assert_called_once_with(
+                    mock_blobs,
+                    plain_config,
+                    "production",
+                )
+
+    @pytest.mark.asyncio
+    async def test_validate_integration_decrypts_config_for_provider(self):
+        """Should pass decrypted config to provider validation."""
+        from app.services.integration_service import IntegrationService
+        from app.crypto.integration_config import IntegrationConfigEncryption
+
+        mock_db = MagicMock()
+        mock_db.commit = AsyncMock()
+        service = IntegrationService(db=mock_db)
+
+        plain_config = {"api_token": "tok_xxx", "project_id": "prj_123"}
+        mock_integration = MagicMock()
+        mock_integration.id = uuid4()
+        mock_integration.provider = "vercel"
+        mock_integration.config = IntegrationConfigEncryption.encrypt(
+            plain_config,
+            "test-integration-config-secret-32-chars",
+        )
+
+        with patch.object(service, "get_integration", new=AsyncMock(return_value=mock_integration)):
+            with patch.object(service, "_get_provider", new=MagicMock()) as mock_get_provider:
+                mock_provider = AsyncMock()
+                mock_provider.validate_connection = AsyncMock(return_value=True)
+                mock_get_provider.return_value = mock_provider
+
+                success, error = await service.validate_integration(mock_integration.id)
+
+                assert success is True
+                assert error is None
+                mock_provider.validate_connection.assert_called_once_with(plain_config)
+
+    @pytest.mark.asyncio
+    async def test_legacy_plaintext_config_is_reencrypted_on_validate(self):
+        """Should re-encrypt legacy plaintext config after successful access."""
+        from app.services.integration_service import IntegrationService
+        from app.crypto.integration_config import IntegrationConfigEncryption
+
+        mock_db = MagicMock()
+        mock_db.commit = AsyncMock()
+        service = IntegrationService(db=mock_db)
+
+        plain_config = {"api_token": "tok_xxx", "project_id": "prj_123"}
+        mock_integration = MagicMock()
+        mock_integration.id = uuid4()
+        mock_integration.provider = "vercel"
+        mock_integration.config = dict(plain_config)
+
+        with patch.object(service, "get_integration", new=AsyncMock(return_value=mock_integration)):
+            with patch.object(service, "_get_provider", new=MagicMock()) as mock_get_provider:
+                mock_provider = AsyncMock()
+                mock_provider.validate_connection = AsyncMock(return_value=True)
+                mock_get_provider.return_value = mock_provider
+
+                success, error = await service.validate_integration(mock_integration.id)
+
+                assert success is True
+                assert error is None
+                assert IntegrationConfigEncryption.is_encrypted(mock_integration.config)
+                assert "tok_xxx" not in str(mock_integration.config)
+
+    @pytest.mark.asyncio
+    async def test_missing_integration_config_secret_returns_clear_error(self, monkeypatch):
+        """Should fail clearly when encryption secret is not configured."""
+        from app.config import settings
+        from app.services.integration_service import IntegrationService
+
+        monkeypatch.setattr(settings, "INTEGRATION_CONFIG_SECRET", "")
+
+        mock_db = MagicMock()
+        mock_db.commit = AsyncMock()
+        service = IntegrationService(db=mock_db)
+        mock_integration = MagicMock()
+        mock_integration.id = uuid4()
+        mock_integration.provider = "vercel"
+        mock_integration.config = {"api_token": "tok_xxx", "project_id": "prj_123"}
+
+        with patch.object(service, "get_integration", new=AsyncMock(return_value=mock_integration)):
+            with patch.object(service, "_get_provider", new=MagicMock()) as mock_get_provider:
+                mock_provider = AsyncMock()
+                mock_provider.push_secrets = AsyncMock(return_value=True)
+                mock_get_provider.return_value = mock_provider
+
+                success, error = await service.sync_integration(
+                    integration_id=mock_integration.id,
+                    direction="push",
+                    secrets=[{"key": "DATABASE_URL", "value": "postgres://..."}],
+                )
+
+        assert success is False
+        assert "INTEGRATION_CONFIG_SECRET" in error
 
 
 class TestIntegrationModel:
@@ -349,6 +454,12 @@ class TestIntegrationModel:
         
         # This is validated at the service/router level
         assert len(valid_statuses) == 3
+
+    def test_integration_response_excludes_config(self):
+        """Integration API responses should not expose provider config."""
+        from app.routers.integrations import IntegrationResponse
+
+        assert "config" not in IntegrationResponse.model_fields
 
 
 class TestVercelProviderSpecific:

@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Integration Config Encryption (TASK-068) (2026-05-06)
+
+- **At-rest encryption**: Added AES-256-GCM envelope encryption for `integrations.config`, with HKDF-SHA256 key derivation from dedicated `INTEGRATION_CONFIG_SECRET`.
+- **Service compatibility**: `IntegrationService` now stores encrypted provider config, decrypts before calling Vercel/Render providers, and re-encrypts legacy plaintext config on access.
+- **Migration**: Added Alembic revision `20260506_0003_encrypt_integration_configs` to backfill existing plaintext integration configs without changing the JSONB schema.
+- **Env templates**: Added `INTEGRATION_CONFIG_SECRET` to API and VPS production examples.
+- **Tests**: Added coverage for roundtrip encryption, wrong-key failure, plaintext non-leakage, legacy detection, provider-service decrypt flow, and missing-secret errors.
+
 #### VPS Backend Migration Planning (2026-05-06)
 
 - **VPS deploy stack**: Added Docker artifacts for FastAPI on a VPS with Gunicorn/Uvicorn, Redis, Nginx Proxy Manager, and DuckDNS.

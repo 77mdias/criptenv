@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~90%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, DuckDNS (`criptenv.duckdns.org`), Nginx Proxy Manager e Supabase externo. Resta Railway provider, Integration Config Encryption, Web Alert UI e validação app-level pós-deploy.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, DuckDNS (`criptenv.duckdns.org`), Nginx Proxy Manager e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
 
 ---
 
@@ -12,7 +12,7 @@
 |-------|--------|------------|
 | **Phase 1 (CLI MVP)** | ✅ COMPLETE | 100% |
 | **Phase 2 (Web UI)** | ✅ COMPLETE | 100% |
-| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~90% |
+| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~92% |
 | **Phase 4 (Enterprise)** | 📋 PLANNED | 0% |
 
 ---
@@ -71,13 +71,14 @@
 | `audit` | Paginated audit logs | ✅ |
 | `rotation` | Secret rotation operations | ✅ |
 | `integrations` | Vercel + Render providers, sync, validate | ✅ |
+| `integration config encryption` | AES-256-GCM encrypted provider configs at rest | ✅ |
 | `api-keys` | API key CRUD | ✅ |
 | `ci` | CI login, CI secrets | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
 | `vps deploy` | Docker Compose API + Redis + Nginx Proxy Manager + DuckDNS | ✅ Live smoke validated |
 | `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
 
-**API Tests**: 280 tests passing
+**API Tests**: 292 tests passing
 
 ### Web Frontend (apps/web)
 
@@ -118,7 +119,7 @@
 | Feature | Priority | Status |
 |---------|----------|--------|
 | Railway provider | P1 | ⚠️ Not implemented |
-| Integration tokens at-rest encryption | P1 | ⚠️ config stored as plaintext JSONB |
+| Integration tokens at-rest encryption | P1 | ✅ AES-256-GCM envelope in JSONB |
 | Web alert configuration UI | P1 | ⚠️ Not started |
 | Security review CR-01/CR-02 | P0 | ✅ Resolved (HTTP-only cookies) |
 
@@ -128,26 +129,24 @@
 
 | Risk | Level | Mitigation |
 |------|-------|------------|
-| Integration config plaintext | 🔴 High | Encrypt `config` field before public launch |
 | Railway provider missing | 🟡 Medium | P1 — can be added following Render pattern |
 | Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap |
 | APScheduler duplication with multiple workers | 🟡 Medium | Public API workers disable scheduler; dedicated one-worker scheduler service owns jobs |
 | Nginx Proxy Manager admin exposure | 🟡 Medium | Bind port 81 to localhost by default and restrict firewall access |
 | VPS operational ownership | 🟡 Medium | Add basic backups, patching routine, container log rotation, and uptime checks |
-| App-level production validation pending | 🟡 Medium | Manually test signup/signin, OAuth, project list, and vault push/pull through Workers frontend |
+| App-level production validation | ✅ Closed | Signup/signin/OAuth/projects/vault flows validated through Workers frontend |
 
 ---
 
 ## Next Recommended Steps
 
-1. **Integration Config Encryption**: Encrypt at-rest tokens in `integrations.config` (security P0)
-2. **Production app flow validation**: Test login/signup, OAuth callback, project list, and vault push/pull through `https://criptenv.jean-carlos3.workers.dev`
-3. **VPS operations baseline**: Backups for NPM volumes, firewall review, OS patching routine, and uptime/health monitoring
-4. **Railway Provider**: Implement following the RenderProvider pattern
-5. **Web Alert Configuration UI**: Complete M3.5 web gap
+1. **Apply TASK-068 in production**: Configure `INTEGRATION_CONFIG_SECRET`, rebuild API/scheduler, and run `alembic upgrade head`.
+2. **VPS operations baseline**: Backups for NPM volumes, firewall review, OS patching routine, and uptime/health monitoring.
+3. **Railway Provider**: Implement following the RenderProvider pattern.
+4. **Web Alert Configuration UI**: Complete M3.5 web gap.
 
 ---
 
-**Document Version**: 1.3
+**Document Version**: 1.4
 **Last Updated**: 2026-05-06
-**Status**: Active Development — Phase 3 (90% complete, VPS backend live smoke validated)
+**Status**: Active Development — Phase 3 (92% complete, VPS backend and app flows validated)

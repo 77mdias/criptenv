@@ -323,9 +323,11 @@ Audit log filtering and aggregation.
 
 Strategy pattern for cloud providers:
 - `base.py` — Interface definition
-- `vercel.py` — Vercel integration (pending)
+- `vercel.py` — Vercel integration
 - `railway.py` — Railway integration (pending)
-- `render.py` — Render integration (pending)
+- `render.py` — Render integration
+
+Provider configs are encrypted at rest by `IntegrationService` before being stored in `integrations.config`; providers receive decrypted config dictionaries only at sync/validation time.
 
 ---
 

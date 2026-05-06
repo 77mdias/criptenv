@@ -370,6 +370,13 @@ All completed features organized by phase.
 **Files:** `apps/api/app/strategies/integrations/render.py`  
 **Tests:** `test_integration_providers.py`
 
+## Integration Config Encryption
+
+**Status:** ✅ Implemented
+**Description:** Provider configs in `integrations.config` are encrypted at rest with AES-256-GCM using dedicated `INTEGRATION_CONFIG_SECRET`; legacy plaintext configs are upgraded by migration or first access.
+**Files:** `apps/api/app/crypto/integration_config.py`, `apps/api/app/services/integration_service.py`, `apps/api/migrations/versions/20260506_0003_encrypt_integration_configs.py`
+**Tests:** `test_integration_config_encryption.py`, `test_integration_providers.py`
+
 ## CLI Integrations Commands
 
 **Status:** ✅ Implemented  

@@ -30,6 +30,13 @@
 **Files modified:** `deploy/vps/docker-compose.yml`, `apps/api/Dockerfile`, `apps/api/app/middleware/rate_limit.py`, `apps/api/main.py`, deployment docs
 **Tests:** API/CLI/Web build locais passaram; smoke tests públicos `https://criptenv.duckdns.org/health`, `https://criptenv.duckdns.org/api/health` e `https://criptenv.jean-carlos3.workers.dev/api/health` validados manualmente.
 
+### TASK-068 — Criptografar Integration Config At-Rest ✅
+
+**Status:** Completed 2026-05-06
+**Resolution:** `integrations.config` agora é salvo em envelope JSONB criptografado com AES-256-GCM e chave dedicada `INTEGRATION_CONFIG_SECRET`; configs plaintext legadas são recriptografadas por migration ou primeiro acesso.
+**Files modified:** `apps/api/app/crypto/integration_config.py`, `apps/api/app/services/integration_service.py`, `apps/api/migrations/versions/20260506_0003_encrypt_integration_configs.py`, env examples, docs
+**Tests:** Cobertura adicionada para roundtrip, ausência de plaintext no envelope, chave errada, compatibilidade legacy, provider decrypt flow e erro claro sem secret.
+
 ---
 
 ## Prioridade Alta
@@ -88,59 +95,6 @@ class RailwayProvider(IntegrationProvider):
 - [ ] Unit tests passando (mínimo 6, seguindo padrão RenderProvider)
 
 **Dependências:** VercelProvider/RenderProvider pattern ✅
-
----
-
-### TASK-068 — Criptografar Integration Config At-Rest
-
-**Objetivo:** Criptografar tokens de API de integrações no banco de dados
-
-**Complexidade:** Média-Alta (envolve migration + criptografia + backward compatibility)  
-**Tempo estimado:** 3-4 horas
-
-#### Arquivos
-
-- `apps/api/app/services/integration_service.py` (adicionar encrypt/decrypt)
-- `apps/api/app/models/integration.py` (garantir campo config como JSONB)
-- `apps/api/alembic/versions/` (nova migration para re-encriptar existentes)
-- `apps/api/app/crypto/` ou reutilizar lógica de criptografia existente
-
-#### Especificação de Implementação
-
-1. **Chave de criptografia:** Derivada de `SECRET_KEY` via HKDF-SHA256 com contexto fixo `criptenv-integration-config-v1`
-2. **Algoritmo:** AES-256-GCM (mesmo padrão do projeto)
-3. **Abordagem:** Criptografar o JSON serializado do config inteiro, armazenar como `bytes`/`JSONB` com prefixo de versão
-4. **Backward compatibility:** Se não detectar prefixo de criptografia, tratar como plaintext e re-encriptar no primeiro acesso
-
-```python
-# Pseudocode
-class IntegrationConfigEncryption:
-    PREFIX = b"CEv1:"
-    
-    @classmethod
-    def encrypt(cls, config: dict, secret_key: str) -> bytes:
-        key = cls._derive_key(secret_key)
-        plaintext = json.dumps(config).encode()
-        # AES-256-GCM encrypt
-        return cls.PREFIX + ciphertext + tag + nonce
-    
-    @classmethod
-    def decrypt(cls, data: bytes, secret_key: str) -> dict:
-        if not data.startswith(cls.PREFIX):
-            # Legacy plaintext JSONB
-            return json.loads(data)
-        # decrypt...
-```
-
-#### Critério de aceite
-
-- [ ] Campo `config` criptografado com AES-256-GCM
-- [ ] Chave de criptografia derivada de `SECRET_KEY`
-- [ ] Validação de conexão ainda funciona após criptografia
-- [ ] Migration para dados existentes (se houver)
-- [ ] Todos os providers (Vercel, Render, Railway futuro) funcionam
-
-**Dependências:** Nenhuma (mas idealmente fazer antes do Railway para não criar dados não-encriptados)
 
 ---
 
@@ -292,13 +246,12 @@ class EmailChannel(NotificationChannel):
 ## Recommended Execution Order
 
 ```
-1. TASK-068 (Integration Config Encryption) — Security hardening, do first
-2. TASK-061 (RailwayProvider) — Close M3.2 milestone
-3. TASK-063 (Web Alert Configuration UI) — Close M3.5 web gap
-4. TASK-064 (GitHub Action Publishing) — Marketing/DevEx win
-5. TASK-065 (Email Notifications) — Complete notification system
-6. TASK-069 (Slack) — Nice to have
-7. TASK-070 (Auto-Rotation) — Future milestone
+1. TASK-061 (RailwayProvider) — Close M3.2 milestone
+2. TASK-063 (Web Alert Configuration UI) — Close M3.5 web gap
+3. TASK-064 (GitHub Action Publishing) — Marketing/DevEx win
+4. TASK-065 (Email Notifications) — Complete notification system
+5. TASK-069 (Slack) — Nice to have
+6. TASK-070 (Auto-Rotation) — Future milestone
 ```
 
 ---
@@ -309,5 +262,5 @@ Tarefas completadas são registradas em `docs/tasks/task-history.md`.
 
 ---
 
-**Document Version**: 1.2  
-**Last Updated**: 2026-05-03
+**Document Version**: 1.3
+**Last Updated**: 2026-05-06

@@ -108,6 +108,7 @@ Fill:
 | `CORS_ORIGINS` | `https://criptenv.jean-carlos3.workers.dev` |
 | `DATABASE_URL` | Supabase pooler URL |
 | `SECRET_KEY` | Random 64+ char secret |
+| `INTEGRATION_CONFIG_SECRET` | Different random 64+ char secret |
 | `RATE_LIMIT_STORAGE` | `redis` |
 | `REDIS_URL` | `redis://redis:6379/0` |
 | `WEB_CONCURRENCY` | `3` for the 8GB VPS default |
@@ -168,6 +169,7 @@ Do not remove `RenderProvider`; it is unrelated to where CriptEnv itself is host
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | Supabase PostgreSQL pooler URL |
 | `SECRET_KEY` | Yes | Session signing secret |
+| `INTEGRATION_CONFIG_SECRET` | Yes | Encrypts provider integration config at rest |
 | `DEBUG` | Yes | `false` in production |
 | `API_URL` | Yes | Public DuckDNS API URL |
 | `FRONTEND_URL` | Yes | Cloudflare Pages frontend URL |

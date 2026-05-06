@@ -10,6 +10,11 @@ from datetime import datetime, timezone
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
+from app.config import settings
+from app.crypto.integration_config import (
+    IntegrationConfigEncryption,
+    IntegrationConfigEncryptionError,
+)
 from app.models.integration import Integration
 from app.strategies.integrations.base import get_provider, list_providers
 
@@ -35,6 +40,25 @@ class IntegrationService:
             if isinstance(value, str) and len(value) >= 8:
                 sanitized = sanitized.replace(value, "[redacted]")
         return sanitized
+
+    def _encrypt_config(self, config: dict) -> dict:
+        """Encrypt provider config before persistence."""
+        return IntegrationConfigEncryption.encrypt(
+            config,
+            settings.INTEGRATION_CONFIG_SECRET,
+        )
+
+    def _decrypt_config_for_use(self, integration: Integration) -> tuple[dict, bool]:
+        """Return provider config and upgrade legacy plaintext config if needed."""
+        config = IntegrationConfigEncryption.decrypt_legacy_or_encrypted(
+            integration.config,
+            settings.INTEGRATION_CONFIG_SECRET,
+        )
+        if IntegrationConfigEncryption.is_encrypted(integration.config):
+            return config, False
+
+        integration.config = self._encrypt_config(config)
+        return config, True
     
     async def create_integration(
         self,
@@ -58,7 +82,7 @@ class IntegrationService:
             project_id=project_id,
             provider=provider,
             name=name,
-            config=config,
+            config=self._encrypt_config(config),
             status="active"
         )
         
@@ -111,7 +135,16 @@ class IntegrationService:
         if not provider:
             return False, f"Unknown provider: {integration.provider}"
         
-        is_valid = await provider.validate_connection(integration.config)
+        try:
+            config, _ = self._decrypt_config_for_use(integration)
+        except IntegrationConfigEncryptionError as e:
+            error_message = str(e)
+            integration.status = "error"
+            integration.last_error = error_message
+            await self.db.commit()
+            return False, error_message
+
+        is_valid = await provider.validate_connection(config)
         
         if is_valid:
             integration.status = "active"
@@ -150,16 +183,18 @@ class IntegrationService:
             return False, f"Unknown provider: {integration.provider}"
         
         try:
+            config, _ = self._decrypt_config_for_use(integration)
+
             if direction == "push":
                 if not secrets:
                     return False, "No secrets provided for push"
                 
                 success = await provider.push_secrets(
-                    secrets, integration.config, environment
+                    secrets, config, environment
                 )
             elif direction == "pull":
                 secrets = await provider.pull_secrets(
-                    integration.config, environment
+                    config, environment
                 )
                 success = True
             else:
@@ -177,7 +212,17 @@ class IntegrationService:
             return success, None if success else f"Sync failed: {direction}"
             
         except Exception as e:
-            error_message = self._sanitize_error(str(e), integration.config)
+            if isinstance(e, IntegrationConfigEncryptionError):
+                error_message = str(e)
+            else:
+                try:
+                    config = IntegrationConfigEncryption.decrypt_legacy_or_encrypted(
+                        integration.config,
+                        settings.INTEGRATION_CONFIG_SECRET,
+                    )
+                except IntegrationConfigEncryptionError:
+                    config = None
+                error_message = self._sanitize_error(str(e), config)
             integration.status = "error"
             integration.last_error = error_message
             await self.db.commit()

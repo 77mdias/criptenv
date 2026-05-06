@@ -12,6 +12,7 @@ from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.models.project import Project
+from app.crypto.integration_config import IntegrationConfigEncryptionError
 from app.services.integration_service import IntegrationService
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
@@ -124,12 +125,18 @@ async def create_integration(
         )
     
     # Create integration
-    integration = await integration_service.create_integration(
-        project_id=project_uuid,
-        provider=payload.provider,
-        name=payload.name,
-        config=payload.config
-    )
+    try:
+        integration = await integration_service.create_integration(
+            project_id=project_uuid,
+            provider=payload.provider,
+            name=payload.name,
+            config=payload.config
+        )
+    except IntegrationConfigEncryptionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
     
     # Log audit
     await audit_service.log(

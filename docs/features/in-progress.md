@@ -6,7 +6,7 @@ Features currently under active development or pending completion.
 
 ---
 
-## Phase 3: CI/CD Integrations (~85% Complete)
+## Phase 3: CI/CD Integrations (~92% Complete)
 
 ### M3.2: Cloud Integrations — Railway Provider
 
@@ -95,38 +95,6 @@ class RailwayProvider(IntegrationProvider):
 
 ---
 
-### Security Hardening — Integration Config Encryption
-
-**Status:** ⚠️ Pending
-
-#### Context
-
-Integration API tokens are currently stored as plaintext JSONB in the `config` column of the `Integration` model.
-
-#### What Needs to Happen
-
-| Component | Priority | Status |
-|-----------|----------|--------|
-| Encrypt `config` field at-rest | P1 | ❌ Not started |
-| Derive encryption key from `SECRET_KEY` | P1 | ❌ Not started |
-| Migration for existing data | P1 | ❌ Not started |
-| Validate connection still works | P1 | ❌ Not started |
-
-#### Files
-
-- `apps/api/app/models/integration.py`
-- `apps/api/app/services/integration_service.py`
-- `apps/api/app/strategies/integrations/` (all providers)
-
-#### Next Steps
-
-1. Add encryption/decryption layer in `IntegrationService`
-2. Update model to handle encrypted config transparently
-3. Write Alembic migration for existing integrations
-4. Test all providers after encryption
-
----
-
 ### GitHub Action Publishing
 
 **Status:** 🟡 Ready for Publishing
@@ -198,6 +166,6 @@ Integration API tokens are currently stored as plaintext JSONB in the `config` c
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: 2026-05-03  
-**Status**: Active Development — Phase 3 (85%)
+**Document Version**: 1.2
+**Last Updated**: 2026-05-06
+**Status**: Active Development — Phase 3 (92%)

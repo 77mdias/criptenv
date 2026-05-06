@@ -2,55 +2,55 @@
 
 ## Status atual
 
-**VPS backend migration — VALIDADA EM PRODUÇÃO.**
+**TASK-068 — Integration Config Encryption implementada localmente; pronta para deploy/migration na VPS.**
 
 ---
 
 ## Tarefa em foco
 
-Migrar o plano de produção da API de Render Free Tier para VPS Docker com DuckDNS, Nginx Proxy Manager, Let's Encrypt, Supabase externo e Redis para rate limiting multi-worker.
+Criptografar `integrations.config` at-rest com AES-256-GCM e chave dedicada `INTEGRATION_CONFIG_SECRET`, mantendo compatibilidade com configs plaintext legadas.
 
 ---
 
 ## O que foi implementado nesta sessão
 
-### VPS backend deployment ✅
-- API ganhou `Dockerfile` para Gunicorn/Uvicorn.
-- `deploy/vps/docker-compose.yml` define API, scheduler dedicado, Redis, Nginx Proxy Manager e DuckDNS updater.
-- Redis passa a ser opção real para rate limiting em produção multi-worker.
-- Cloudflare Workers mantém chamadas de browser relativas e configura `API_URL=https://criptenv.duckdns.org` no runtime.
-- Render hosting fica como legado/rollback; RenderProvider continua como integração de produto.
-- Nginx Proxy Manager foi acessado por túnel SSH na porta local `8181`, preservando o admin na VPS como `127.0.0.1:81`.
-- Proxy público `criptenv.duckdns.org -> api:8000` foi salvo e validado.
-- Health aliases `/api/health` e `/api/health/ready` foram adicionados para compatibilidade com o Worker proxy `/api/*`.
+### TASK-068 — Integration Config Encryption ✅
+- Criado helper `app.crypto.integration_config` com AES-256-GCM, envelope JSONB versionado e HKDF-SHA256.
+- `IntegrationService` agora salva `config` criptografado e decripta apenas antes de chamar providers.
+- Configs plaintext legadas são aceitas temporariamente e regravadas criptografadas no primeiro acesso.
+- Adicionada migration Alembic `20260506_0003_encrypt_integration_configs` para backfill de configs existentes.
+- Adicionado `INTEGRATION_CONFIG_SECRET` aos exemplos de env da API e VPS.
+- Fluxos reais do deploy VPS/Workers foram validados manualmente antes desta task.
 
-### Smoke tests validados ✅
+### Smoke tests VPS validados ✅
 - `curl https://criptenv.duckdns.org/health`
 - `curl https://criptenv.duckdns.org/api/health`
 - `curl https://criptenv.jean-carlos3.workers.dev/api/health`
+- Login/signup/OAuth/projetos/vault pelo frontend Workers foram validados manualmente.
 
 ---
 
 ## Documentação atualizada
 
-- [x] `docs/project/decisions.md` — DEC-016
-- [x] `docs/development/CHANGELOG.md` — seção VPS Backend Migration Planning
+- [x] `docs/project/decisions.md` — DEC-017
+- [x] `docs/development/CHANGELOG.md` — seção Integration Config Encryption
 - [x] `docs/project/current-state.md` — estado e contagens atualizadas
-- [x] `docs/tasks/task-history.md` — migração registrada
-- [x] `docs/tasks/session-compact.md` — handoff compacto da sessão
+- [x] `docs/tasks/task-history.md` — TASK-068 registrada
+- [x] `docs/tasks/next-tasks.md` — TASK-068 movida para completed
 - [x] `docs/tasks/current-task.md` — este arquivo
 
 ---
 
 ## Próximos passos recomendados
 
-1. Validar manualmente login/signup, OAuth callback, listagem de projetos e fluxo de vault pelo frontend em `https://criptenv.jean-carlos3.workers.dev`.
-2. Aplicar/confirmar migrations no Supabase de produção com `alembic upgrade head`.
-3. Configurar backup/monitoramento básico da VPS e volumes do Nginx Proxy Manager.
-4. Continuar pendências Phase 3: Integration Config Encryption, RailwayProvider e Web Alert UI.
+1. Configurar `INTEGRATION_CONFIG_SECRET` real no `deploy/vps/.env`.
+2. Recriar API/scheduler na VPS: `docker compose up -d --build --force-recreate api scheduler`.
+3. Aplicar migration no Supabase de produção com `alembic upgrade head`.
+4. Confirmar via banco que `integrations.config` usa envelope criptografado.
+5. Continuar pendências Phase 3: RailwayProvider e Web Alert UI.
 
 ---
 
-**Document Version**: 1.5
+**Document Version**: 1.6
 **Last Updated**: 2026-05-06
-**Status**: VPS migration validated — app flow validation pending
+**Status**: TASK-068 implemented — production migration pending

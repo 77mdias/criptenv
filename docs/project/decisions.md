@@ -450,6 +450,33 @@ The API was prepared for Render Free Tier hosting, but the project now has an av
 
 ---
 
+## DEC-017 — Integration Config At-Rest Encryption
+
+**Date:** 2026-05-06
+**Status:** ✅ Accepted
+**Context:**
+Cloud provider integrations store operational API tokens and provider IDs in `integrations.config`. Keeping that JSONB config as plaintext would expose provider tokens if the production database is inspected or leaked.
+
+**Decision:**
+- Encrypt the full provider config JSON before storing it in `integrations.config`.
+- Use AES-256-GCM with a versioned JSONB envelope and HKDF-SHA256 key derivation.
+- Derive the encryption key from a dedicated `INTEGRATION_CONFIG_SECRET`, not from `SECRET_KEY`.
+- Keep the public API contract unchanged: create requests still accept `config`, and list/get responses still omit it.
+- Accept legacy plaintext configs temporarily and re-encrypt them on migration or first service access.
+
+**Rationale:**
+- Separates auth token signing from integration-token encryption and enables independent rotation later.
+- Protects all current and future provider-specific config fields without per-provider branching.
+- Keeps provider strategies simple: they still receive normal decrypted `dict` config from `IntegrationService`.
+
+**Consequences:**
+- ✅ Vercel/Render tokens are encrypted at rest.
+- ✅ RailwayProvider can be added without introducing new plaintext token storage.
+- ✅ Existing plaintext rows have a migration path.
+- ❌ Production deploys must configure and preserve `INTEGRATION_CONFIG_SECRET`; losing it makes encrypted integration configs unrecoverable.
+
+---
+
 ## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation

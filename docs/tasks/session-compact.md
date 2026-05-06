@@ -1,7 +1,7 @@
 # Session Compact — VPS Backend Migration
 
 **Date:** 2026-05-06
-**Status:** Backend VPS smoke validated; app-level flow validation pending.
+**Status:** Backend VPS smoke and app-level flows validated; TASK-068 implemented locally and pending production migration.
 
 ## Current Architecture
 
@@ -29,6 +29,7 @@ All three returned successfully during the session.
 - `NEXT_PUBLIC_API_URL` should stay empty in Cloudflare production.
 - `FRONTEND_URL` and `CORS_ORIGINS` should use the exact Workers URL, not a wildcard.
 - Public API workers run with `SCHEDULER_ENABLED=false`; the dedicated `scheduler` service runs with `SCHEDULER_ENABLED=true`.
+- `integrations.config` is encrypted at rest with `INTEGRATION_CONFIG_SECRET`; set this value before running the TASK-068 migration in production.
 - Nginx Proxy Manager admin stays bound to localhost and should be accessed through SSH port forwarding:
 
 ```bash
@@ -37,7 +38,6 @@ ssh -L 8181:127.0.0.1:81 root@<VPS_IP>
 
 ## Remaining Gaps
 
-- Confirm Supabase production migrations with `alembic upgrade head`.
-- Validate login/signup, OAuth callback, project list, and vault push/pull through the production frontend.
+- Configure `INTEGRATION_CONFIG_SECRET` on the VPS and run `alembic upgrade head` against Supabase production.
 - Add VPS operational baseline: firewall review, OS patch routine, NPM volume backups, log rotation, and uptime monitoring.
-- Continue Phase 3 product gaps: Integration Config Encryption, RailwayProvider, and Web Alert UI.
+- Continue Phase 3 product gaps: RailwayProvider and Web Alert UI.

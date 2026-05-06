@@ -18,15 +18,6 @@ Planned and future features organized by priority.
   - Files: `apps/api/app/strategies/integrations/railway.py`
   - Status: Not started
 
-#### Integration Config Encryption
-
-- [ ] **At-Rest Encryption for Integration Tokens**
-  - Encrypt `config` field in `Integration` model with AES-256-GCM
-  - Derive key from `SECRET_KEY`
-  - Alembic migration for existing data
-  - Files: `apps/api/app/services/integration_service.py`, `apps/api/app/models/integration.py`
-  - Status: Not started
-
 #### Web Alert Configuration UI
 
 - [ ] **Alert Configuration Page**
@@ -247,7 +238,7 @@ These are ideas that have been discussed but not validated with users:
 ## Dependency Map
 
 ```
-Phase 3 (CI/CD) — 85% Complete
+Phase 3 (CI/CD) — 92% Complete
 ├── M3.1: GitHub Action ✅ (publishing pending)
 ├── M3.2: Cloud Integrations
 │   ├── Vercel ✅
@@ -261,7 +252,7 @@ Phase 3 (CI/CD) — 85% Complete
 │   └── Rotation modal ──► P1 pending
 ├── M3.6: APScheduler ✅
 ├── M3.7: OAuth ✅
-└── Integration Config Encryption ──► P1 security
+└── Integration Config Encryption ✅
 
 Phase 4 (Enterprise)
 ├── SSO/SAML ──► Depends on user research validation
