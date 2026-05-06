@@ -15,13 +15,13 @@ Complete production deployment guide for the current stack.
                                              ▲
                                              │ DuckDNS + Nginx Proxy Manager
                                              ▼
-                                  https://<API_DUCKDNS_HOST>
+                                  https://criptenv.duckdns.org
 ```
 
 | Component | Platform | URL Pattern | Notes |
 |-----------|----------|-------------|-------|
-| **Web** | Cloudflare Pages + Workers | `https://<project>.pages.dev` | Browser calls use relative `/api/*` |
-| **API** | VPS Docker | `https://<subdomain>.duckdns.org` | Gunicorn/Uvicorn behind Nginx Proxy Manager |
+| **Web** | Cloudflare Pages + Workers | `https://criptenv.jean-carlos3.workers.dev` | Browser calls use relative `/api/*` |
+| **API** | VPS Docker | `https://criptenv.duckdns.org` | Gunicorn/Uvicorn behind Nginx Proxy Manager |
 | **Rate limits** | Redis on VPS | internal | Shared counters across API workers |
 | **Database** | Supabase | internal | Use pooler URL on port `6543` |
 | **CLI** | PyPI future | `pip install criptenv` | Not required for hosting the web/API MVP |
@@ -38,9 +38,9 @@ Set these in Cloudflare Pages:
 
 ```bash
 NEXT_PUBLIC_API_URL=
-API_URL=https://<API_DUCKDNS_HOST>
+API_URL=https://criptenv.duckdns.org
 NEXT_PUBLIC_COOKIE_NAME=criptenv_session
-NEXT_PUBLIC_APP_URL=https://<project>.pages.dev
+NEXT_PUBLIC_APP_URL=https://criptenv.jean-carlos3.workers.dev
 ```
 
 `NEXT_PUBLIC_API_URL` should stay empty in production so browser requests use the same-origin Worker proxy. The Worker reads `API_URL` at runtime and forwards `/api/*` to the VPS API.
@@ -102,10 +102,10 @@ Fill:
 
 | Variable | Value |
 |----------|-------|
-| `API_DUCKDNS_HOST` | `<subdomain>.duckdns.org` |
-| `API_URL` | `https://<API_DUCKDNS_HOST>` |
-| `FRONTEND_URL` | Cloudflare Pages URL |
-| `CORS_ORIGINS` | Cloudflare Pages URL and optional `https://*.pages.dev` |
+| `API_DUCKDNS_HOST` | `criptenv.duckdns.org` |
+| `API_URL` | `https://criptenv.duckdns.org` |
+| `FRONTEND_URL` | `https://criptenv.jean-carlos3.workers.dev` |
+| `CORS_ORIGINS` | `https://criptenv.jean-carlos3.workers.dev` |
 | `DATABASE_URL` | Supabase pooler URL |
 | `SECRET_KEY` | Random 64+ char secret |
 | `RATE_LIMIT_STORAGE` | `redis` |
@@ -126,9 +126,15 @@ curl http://localhost:8000/health/ready
 
 Open the admin UI through a trusted path, create a proxy host, then request a Let's Encrypt certificate:
 
+```bash
+ssh -L 8181:127.0.0.1:81 root@<VPS_IP>
+```
+
+Then open `http://127.0.0.1:8181` locally.
+
 | Setting | Value |
 |---------|-------|
-| Domain Names | `<API_DUCKDNS_HOST>` |
+| Domain Names | `criptenv.duckdns.org` |
 | Scheme | `http` |
 | Forward Hostname/IP | `api` |
 | Forward Port | `8000` |
@@ -137,7 +143,9 @@ Open the admin UI through a trusted path, create a proxy host, then request a Le
 Then verify:
 
 ```bash
-curl https://<API_DUCKDNS_HOST>/health
+curl https://criptenv.duckdns.org/health
+curl https://criptenv.duckdns.org/api/health
+curl https://criptenv.jean-carlos3.workers.dev/api/health
 ```
 
 The compose stack runs API workers with `SCHEDULER_ENABLED=false` and a separate internal `scheduler` service with one worker and `SCHEDULER_ENABLED=true`, preventing duplicate APScheduler jobs.
@@ -182,19 +190,20 @@ Do not remove `RenderProvider`; it is unrelated to where CriptEnv itself is host
 
 ## Quick Deployment Checklist
 
-- [ ] Supabase migrations applied.
-- [ ] `deploy/vps/.env` filled on the VPS.
-- [ ] `docker compose up -d --build` succeeds.
-- [ ] `curl http://localhost:8000/health` returns `ok`.
-- [ ] Nginx Proxy Manager proxy host forwards to `api:8000`.
-- [ ] Let's Encrypt certificate is issued and Force SSL is enabled.
-- [ ] `curl https://<API_DUCKDNS_HOST>/health` returns `ok`.
-- [ ] Cloudflare Pages has `API_URL=https://<API_DUCKDNS_HOST>`.
-- [ ] Cloudflare Pages leaves `NEXT_PUBLIC_API_URL` empty.
-- [ ] `/api/health` works through the deployed frontend Worker.
+- [ ] Supabase migrations applied/confirmed.
+- [x] `deploy/vps/.env` filled on the VPS.
+- [x] `docker compose up -d --build` succeeds.
+- [x] `curl http://localhost:8000/health` returns `ok` from the container/host path.
+- [x] Nginx Proxy Manager proxy host forwards to `api:8000`.
+- [x] Let's Encrypt certificate is issued and Force SSL is enabled.
+- [x] `curl https://criptenv.duckdns.org/health` returns `ok`.
+- [x] Cloudflare Pages/Workers has `API_URL=https://criptenv.duckdns.org`.
+- [x] Cloudflare Pages/Workers leaves `NEXT_PUBLIC_API_URL` empty.
+- [x] `/api/health` works through the deployed frontend Worker.
 - [ ] Login/signup and OAuth set HTTP-only cookies on the frontend origin.
+- [ ] Vault push/pull validated through the production frontend.
 
 ---
 
-**Document Version**: 2.0
+**Document Version**: 2.1
 **Last Updated**: 2026-05-06

@@ -33,7 +33,7 @@ flowchart TD
     GH -->|CI Token| API
 ```
 
-Production deployment uses Cloudflare Pages + Worker for the web app, a VPS-hosted Docker Compose stack for the API, Redis, DuckDNS updater, and Nginx Proxy Manager, and Supabase PostgreSQL as the external managed database. Render hosting artifacts remain only as rollback/legacy references; RenderProvider remains a product integration for user-owned Render services.
+Production deployment uses Cloudflare Pages + Worker for the web app (`https://criptenv.jean-carlos3.workers.dev`), a VPS-hosted Docker Compose stack for the API (`https://criptenv.duckdns.org`), Redis, DuckDNS updater, Nginx Proxy Manager, and Supabase PostgreSQL as the external managed database. Render hosting artifacts remain only as rollback/legacy references; RenderProvider remains a product integration for user-owned Render services.
 
 ---
 
@@ -302,5 +302,5 @@ Encrypted Blob ──────────► Server (never sees plain-text)
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-05-06

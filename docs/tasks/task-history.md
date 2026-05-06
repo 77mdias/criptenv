@@ -6,6 +6,46 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-06 — VPS Backend Migration Validated
+
+**Resumo:**
+Migração do backend de Render Free Tier para VPS Docker validada com DuckDNS, Nginx Proxy Manager, Redis rate limiting, Supabase externo e Cloudflare Workers proxy `/api/*`.
+
+**Arquivos criados:**
+- `.dockerignore`
+- `apps/api/Dockerfile`
+- `apps/api/.env.production.example`
+- `deploy/vps/.env.example`
+- `deploy/vps/README.md`
+- `deploy/vps/docker-compose.yml`
+- `docs/tasks/session-compact.md`
+
+**Arquivos alterados:**
+- `apps/api/app/middleware/rate_limit.py` — Redis-backed rate limit storage
+- `apps/api/main.py` — config-driven rate limit storage and `/api/health` aliases
+- `apps/api/tests/test_rate_limit.py` — Redis storage behavior coverage
+- `apps/api/tests/test_openapi_docs.py` — Worker proxy health alias coverage
+- `docs/project/decisions.md` — DEC-016 VPS Docker Backend Deployment
+- `docs/technical/deployment-guide.md` e `docs/technical/deployment.md` — deployment stack atualizado
+- `docs/project/current-state.md`, `docs/tasks/current-task.md`, `docs/tasks/next-tasks.md`, `docs/development/CHANGELOG.md`
+
+**Verificação:**
+- API tests: 282 passed ✅
+- CLI tests: 130 passed ✅
+- Web build: passed ✅
+- Docker Compose config: valid ✅
+- Production smoke:
+  - `https://criptenv.duckdns.org/health` ✅
+  - `https://criptenv.duckdns.org/api/health` ✅
+  - `https://criptenv.jean-carlos3.workers.dev/api/health` ✅
+
+**Observações:**
+- Nginx Proxy Manager admin permanece privado em `127.0.0.1:81`; acesso recomendado via `ssh -L 8181:127.0.0.1:81 root@<VPS_IP>`.
+- `NEXT_PUBLIC_API_URL` deve ficar vazio em produção; o Worker usa `API_URL=https://criptenv.duckdns.org`.
+- Ainda falta validar fluxos de app completos: login/signup, OAuth, projetos e vault push/pull.
+
+---
+
 ## 2026-05-05 — Floating Bar Docs Link
 
 **Resumo:**

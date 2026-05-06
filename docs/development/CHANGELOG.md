@@ -15,6 +15,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Redis rate limits**: Added Redis-backed rate-limit storage for multi-worker API deployments while keeping in-memory storage as the local default.
 - **Scheduler isolation**: Documented and configured a dedicated one-worker scheduler service so APScheduler does not duplicate jobs across public API workers.
 - **Deployment docs**: Updated production guidance from Render Free Tier to VPS Docker + DuckDNS + Let's Encrypt, with Render retained as rollback/legacy hosting.
+- **Production validation**: Smoke tested `https://criptenv.duckdns.org/health`, `https://criptenv.duckdns.org/api/health`, and `https://criptenv.jean-carlos3.workers.dev/api/health`.
+- **Worker health aliases**: Added `/api/health` and `/api/health/ready` backend aliases so the Cloudflare Worker `/api/*` proxy can expose health checks without path rewriting.
 
 #### Floating Bar Docs Link (2026-05-05)
 

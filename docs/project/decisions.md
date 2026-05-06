@@ -427,7 +427,7 @@ The API was prepared for Render Free Tier hosting, but the project now has an av
 
 **Decision:**
 - Host the FastAPI backend on the VPS with Docker Compose.
-- Expose the API through DuckDNS + Nginx Proxy Manager + Let's Encrypt.
+- Expose the API through DuckDNS + Nginx Proxy Manager + Let's Encrypt at `https://criptenv.duckdns.org`.
 - Keep Cloudflare Pages as the web host and configure the Worker runtime `API_URL` to proxy `/api/*` to the VPS API.
 - Use Redis for rate-limit counters so multiple Gunicorn/Uvicorn workers share limits.
 - Run APScheduler in a dedicated one-worker scheduler service and keep it disabled in public API workers.
@@ -444,6 +444,7 @@ The API was prepared for Render Free Tier hosting, but the project now has an av
 - ✅ API can run multiple workers with shared operational counters.
 - ✅ Frontend can remain on Cloudflare Pages without owning a custom domain.
 - ✅ Supabase stays the managed production database.
+- ✅ Smoke tests are validated through DuckDNS and the Workers frontend health proxy.
 - ❌ The VPS now needs OS patching, firewall management, backups for proxy config, and container monitoring.
 - ⚠️ DuckDNS availability becomes part of production availability.
 
@@ -465,5 +466,5 @@ Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI
 
 ---
 
-**Document Version**: 1.0
-**Last Updated**: 2026-05-05
+**Document Version**: 1.1
+**Last Updated**: 2026-05-06

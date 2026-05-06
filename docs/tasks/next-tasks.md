@@ -23,33 +23,16 @@
 **Files modified:** `apps/web/src/components/shared/expiration-badge.tsx`, `apps/web/src/app/(dashboard)/projects/[id]/secrets/page.tsx`  
 **Tests:** Manual verification
 
+### TASK-070 — Executar migração VPS Backend ✅
+
+**Status:** Completed 2026-05-06
+**Resolution:** API migrada para VPS Docker com DuckDNS (`criptenv.duckdns.org`), Nginx Proxy Manager, Redis rate limiting, scheduler dedicado e frontend Cloudflare Workers usando proxy `/api/*`.
+**Files modified:** `deploy/vps/docker-compose.yml`, `apps/api/Dockerfile`, `apps/api/app/middleware/rate_limit.py`, `apps/api/main.py`, deployment docs
+**Tests:** API/CLI/Web build locais passaram; smoke tests públicos `https://criptenv.duckdns.org/health`, `https://criptenv.duckdns.org/api/health` e `https://criptenv.jean-carlos3.workers.dev/api/health` validados manualmente.
+
 ---
 
 ## Prioridade Alta
-
-### TASK-069 — Executar migração VPS Backend
-
-**Objetivo:** Subir a API em produção na VPS usando os artefatos em `deploy/vps` e apontar a Cloudflare Pages para o novo endpoint DuckDNS.
-
-**Complexidade:** Média
-**Tempo estimado:** 2-4 horas
-
-#### Checklist
-
-- [ ] Copiar `deploy/vps/.env.example` para `.env` na VPS e preencher Supabase, DuckDNS, `SECRET_KEY`, `API_URL`, `FRONTEND_URL` e OAuth.
-- [ ] Rodar `docker compose up -d --build` e validar `api`, `scheduler`, `redis`, `nginx-proxy-manager` e `duckdns-updater`.
-- [ ] Criar proxy host no Nginx Proxy Manager: `<API_DUCKDNS_HOST> -> api:8000`.
-- [ ] Emitir certificado Let's Encrypt e ativar Force SSL.
-- [ ] Configurar Cloudflare Pages com `API_URL=https://<API_DUCKDNS_HOST>` e `NEXT_PUBLIC_API_URL` vazio.
-- [ ] Validar `/health`, `/health/ready`, `/api/health`, signup/signin, OAuth e um fluxo de vault.
-- [ ] Manter Render como rollback até a VPS ficar estável.
-
-#### Critério de aceite
-
-- [ ] API pública responde via HTTPS no DuckDNS.
-- [ ] Frontend usa Worker proxy e mantém cookies HTTP-only no domínio Pages.
-- [ ] Rate limit usa Redis em produção.
-- [ ] APScheduler roda apenas no serviço `scheduler`.
 
 ### TASK-061 — Implementar RailwayProvider
 

@@ -21,6 +21,13 @@ docker compose ps
 curl http://localhost:8000/health
 ```
 
+Current production values:
+
+- API: `https://criptenv.duckdns.org`
+- Frontend: `https://criptenv.jean-carlos3.workers.dev`
+- Worker runtime: `API_URL=https://criptenv.duckdns.org`
+- Browser bundle: `NEXT_PUBLIC_API_URL=` empty
+
 In Nginx Proxy Manager, create a proxy host:
 
 - Domain: the `API_DUCKDNS_HOST` value.
@@ -29,4 +36,18 @@ In Nginx Proxy Manager, create a proxy host:
 - Forward port: `8000`.
 - SSL: request a Let's Encrypt certificate and force SSL.
 
-Keep admin port `81` bound to localhost or restrict it with the VPS firewall.
+Keep admin port `81` bound to localhost or restrict it with the VPS firewall. The recommended access path is:
+
+```bash
+ssh -L 8181:127.0.0.1:81 root@<VPS_IP>
+```
+
+Then open `http://127.0.0.1:8181` locally.
+
+## Smoke Tests
+
+```bash
+curl https://criptenv.duckdns.org/health
+curl https://criptenv.duckdns.org/api/health
+curl https://criptenv.jean-carlos3.workers.dev/api/health
+```

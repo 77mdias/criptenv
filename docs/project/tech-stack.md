@@ -219,5 +219,5 @@ NEXT_PUBLIC_COOKIE_NAME=criptenv_session
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-05-06
