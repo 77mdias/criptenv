@@ -67,6 +67,14 @@ class TestOpenAPISchema:
             assert "/api/v1/projects" in paths
 
     @pytest.mark.asyncio
+    async def test_worker_proxy_health_alias_exists(self, transport, mock_db):
+        """Cloudflare Worker /api/* proxy should expose a health alias."""
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get("/api/health")
+            assert response.status_code == 200
+            assert response.json() == {"status": "ok", "service": "criptenv-api"}
+
+    @pytest.mark.asyncio
     async def test_openapi_has_components(self, transport, mock_db):
         """OpenAPI should have components section with schemas."""
         async with AsyncClient(transport=transport, base_url="http://test") as client:

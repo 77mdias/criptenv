@@ -178,6 +178,11 @@ async def health_check():
     return {"status": "ok", "service": "criptenv-api"}
 
 
+@app.get("/api/health", tags=["Health"])
+async def api_health_check():
+    return await health_check()
+
+
 @app.get("/health/ready", tags=["Health"])
 async def readiness_check():
     from app.database import engine
@@ -193,6 +198,11 @@ async def readiness_check():
             status_code=503,
             content={"status": "not ready", "database": "disconnected"}
         )
+
+
+@app.get("/api/health/ready", tags=["Health"])
+async def api_readiness_check():
+    return await readiness_check()
 
 
 # M3.4: Include v1 API router with /api/v1/ prefix
