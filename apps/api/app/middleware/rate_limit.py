@@ -22,7 +22,7 @@ PUBLIC_RATE_LIMIT = "100/minute"    # Public endpoints: 100 req/min per IP
 # Error code
 RATE_LIMIT_ERROR_CODE = "RATE_LIMIT_EXCEEDED"
 
-# In-memory storage for rate limit counters (replace with Redis in production)
+# In-memory fallback for local development; VPS production uses Redis storage.
 _rate_limit_storage: dict[str, tuple[int, float]] = {}
 
 
@@ -33,11 +33,13 @@ class RateLimitConfig:
         self,
         default_limit: str = "100/minute",
         enabled: bool = True,
-        storage_uri: Optional[str] = None
+        storage_uri: Optional[str] = None,
+        storage_backend: str = "memory",
     ):
         self.default_limit = default_limit
         self.enabled = enabled
         self.storage_uri = storage_uri
+        self.storage_backend = storage_backend
 
 
 class RateLimitHeaders:
@@ -77,22 +79,56 @@ class RateLimitStorage:
     GRASP Protected Variations: Can be swapped between in-memory and Redis.
     """
     
-    def __init__(self):
+    def __init__(
+        self,
+        storage_backend: str = "memory",
+        storage_uri: Optional[str] = None,
+        redis_client: Optional[object] = None,
+    ):
+        self.storage_backend = storage_backend.strip().lower()
         self._storage = _rate_limit_storage
+        self._redis = redis_client
+        self._storage_uri = storage_uri
+
+        if self.storage_backend not in {"memory", "redis"}:
+            raise ValueError("RATE_LIMIT_STORAGE must be 'memory' or 'redis'")
+
+        if self.storage_backend == "redis" and self._redis is None:
+            if not storage_uri:
+                raise ValueError("REDIS_URL is required when RATE_LIMIT_STORAGE=redis")
+            try:
+                from redis.asyncio import Redis
+            except ImportError as exc:
+                raise RuntimeError(
+                    "redis package is required when RATE_LIMIT_STORAGE=redis"
+                ) from exc
+            self._redis = Redis.from_url(storage_uri, decode_responses=False)
     
-    def get_count(self, key: str) -> int:
+    async def get_count(self, key: str) -> int:
         """Get current request count for key."""
+        if self.storage_backend == "redis":
+            value = await self._redis.get(key)
+            if value is None:
+                return 0
+            return int(value)
+
         if key not in self._storage:
             return 0
         count, timestamp = self._storage[key]
         # Check if window expired
         if self._is_window_expired(timestamp):
-            self.reset(key)
+            await self.reset(key)
             return 0
         return count
     
-    def increment_count(self, key: str) -> int:
+    async def increment_count(self, key: str, window_seconds: int = 60) -> int:
         """Increment count and return new value."""
+        if self.storage_backend == "redis":
+            count = int(await self._redis.incr(key))
+            if count == 1:
+                await self._redis.expire(key, window_seconds)
+            return count
+
         now = time.time()
         if key not in self._storage or self._is_window_expired(self._storage[key][1]):
             self._storage[key] = (1, now)
@@ -101,8 +137,12 @@ class RateLimitStorage:
         self._storage[key] = (count + 1, self._storage[key][1])
         return count + 1
     
-    def reset(self, key: str):
+    async def reset(self, key: str):
         """Reset counter for key."""
+        if self.storage_backend == "redis":
+            await self._redis.delete(key)
+            return
+
         if key in self._storage:
             del self._storage[key]
     
@@ -187,7 +227,10 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
     def __init__(self, app, config: Optional[RateLimitConfig] = None):
         super().__init__(app)
         self.config = config or RateLimitConfig()
-        self.storage = RateLimitStorage()
+        self.storage = RateLimitStorage(
+            storage_backend=self.config.storage_backend,
+            storage_uri=self.config.storage_uri,
+        )
     
     async def dispatch(self, request: Request, call_next):
         # Skip rate limiting for health checks and docs
@@ -210,7 +253,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             rate_key = f"ip:{request.client.host if request.client else 'unknown'}"
         
         if rate_key:
-            current_count = self.storage.get_count(rate_key)
+            current_count = await self.storage.get_count(rate_key)
             
             if current_count >= limit_count:
                 # Rate limit exceeded
@@ -231,7 +274,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 return response
             
             # Increment counter
-            self.storage.increment_count(rate_key)
+            await self.storage.increment_count(rate_key, window_seconds)
             remaining = limit_count - current_count - 1
         else:
             remaining = limit_count - 1

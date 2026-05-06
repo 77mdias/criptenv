@@ -17,6 +17,9 @@ class Settings(BaseSettings):
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 5
     DB_POOL_TIMEOUT: int = 10
+    RATE_LIMIT_ENABLED: bool = True
+    RATE_LIMIT_STORAGE: str = "memory"
+    REDIS_URL: str = ""
     
     # API URL for OAuth callbacks
     API_URL: str = "http://localhost:8000"

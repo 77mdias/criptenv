@@ -1,0 +1,119 @@
+services:
+  api:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SCHEDULER_ENABLED: "false"
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - --bind
+      - 0.0.0.0:8000
+      - --workers
+      - "${WEB_CONCURRENCY:-3}"
+      - --timeout
+      - "60"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+    depends_on:
+      redis:
+        condition: service_healthy
+    ports:
+      - "127.0.0.1:${API_LOCAL_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+    networks:
+      - criptenv
+
+  scheduler:
+    build:
+      context: ../..
+      dockerfile: apps/api/Dockerfile
+    restart: unless-stopped
+    env_file:
+      - .env
+    environment:
+      SCHEDULER_ENABLED: "true"
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - --bind
+      - 0.0.0.0:8000
+      - --workers
+      - "1"
+      - --timeout
+      - "60"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - criptenv
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    command: ["redis-server", "--save", "", "--appendonly", "no"]
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+    networks:
+      - criptenv
+
+  nginx-proxy-manager:
+    image: jc21/nginx-proxy-manager:latest
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "${NPM_ADMIN_BIND:-127.0.0.1}:81:81"
+    volumes:
+      - npm-data:/data
+      - npm-letsencrypt:/etc/letsencrypt
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - criptenv
+
+  duckdns-updater:
+    image: alpine:3.20
+    restart: unless-stopped
+    environment:
+      DUCKDNS_SUBDOMAIN: "${DUCKDNS_SUBDOMAIN}"
+      DUCKDNS_TOKEN: "${DUCKDNS_TOKEN}"
+      DUCKDNS_UPDATE_SECONDS: "${DUCKDNS_UPDATE_SECONDS:-300}"
+    command: >
+      sh -c 'while true; do
+        wget -qO- "https://www.duckdns.org/update?domains=$${DUCKDNS_SUBDOMAIN}&token=$${DUCKDNS_TOKEN}&ip=";
+        echo;
+        sleep $${DUCKDNS_UPDATE_SECONDS:-300};
+      done'
+    networks:
+      - criptenv
+
+networks:
+  criptenv:
+
+volumes:
+  npm-data:
+  npm-letsencrypt:

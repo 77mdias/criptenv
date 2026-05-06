@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~90%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Resta Railway provider, Integration Config Encryption e Web Alert UI.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~90%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Deploy backend migrando de Render Free Tier para VPS Docker com Redis rate limiting, DuckDNS, Nginx Proxy Manager e Supabase externo. Resta Railway provider, Integration Config Encryption e Web Alert UI.**
 
 ---
 
@@ -74,6 +74,7 @@
 | `api-keys` | API key CRUD | ✅ |
 | `ci` | CI login, CI secrets | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
+| `vps deploy` | Docker Compose API + Redis + Nginx Proxy Manager + DuckDNS | ✅ Planned/Artifacts ready |
 
 **API Tests**: 280 tests passing
 
@@ -129,17 +130,20 @@
 | Integration config plaintext | 🔴 High | Encrypt `config` field before public launch |
 | Railway provider missing | 🟡 Medium | P1 — can be added following Render pattern |
 | Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap |
+| APScheduler duplication with multiple workers | 🟡 Medium | Public API workers disable scheduler; dedicated one-worker scheduler service owns jobs |
+| Nginx Proxy Manager admin exposure | 🟡 Medium | Bind port 81 to localhost by default and restrict firewall access |
 
 ---
 
 ## Next Recommended Steps
 
 1. **Integration Config Encryption**: Encrypt at-rest tokens in `integrations.config` (security P0)
-2. **Railway Provider**: Implement following the RenderProvider pattern
-3. **Web Alert Configuration UI**: Complete M3.5 web gap
+2. **VPS migration smoke test**: Run compose on VPS, issue Let's Encrypt cert, configure Cloudflare Pages `API_URL`, and verify `/api/health`
+3. **Railway Provider**: Implement following the RenderProvider pattern
+4. **Web Alert Configuration UI**: Complete M3.5 web gap
 
 ---
 
 **Document Version**: 1.2
-**Last Updated**: 2026-05-05
-**Status**: Active Development — Phase 3 (85% complete)
+**Last Updated**: 2026-05-06
+**Status**: Active Development — Phase 3 (90% complete)

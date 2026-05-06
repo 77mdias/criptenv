@@ -418,22 +418,38 @@ The landing page floating-bar did not expose the documentation route, and the `/
 
 ---
 
-## Pending Decisions
+## DEC-016 — VPS Docker Backend Deployment
 
-### DEC-010 — Rate Limiting Implementation
-
-**Status:** Under Review
+**Date:** 2026-05-06
+**Status:** ✅ Accepted
 **Context:**
-Public API needs rate limiting to prevent abuse. Current tests exist but implementation is incomplete.
+The API was prepared for Render Free Tier hosting, but the project now has an available 8GB VPS. Render cold starts and single-process assumptions are no longer the preferred production path, while the frontend remains on Cloudflare Pages and the database remains Supabase.
 
-**Options:**
-1. Slowapi (Flask-rate-limit port for FastAPI)
-2. Custom middleware with Redis
-3. Custom middleware with in-memory store
+**Decision:**
+- Host the FastAPI backend on the VPS with Docker Compose.
+- Expose the API through DuckDNS + Nginx Proxy Manager + Let's Encrypt.
+- Keep Cloudflare Pages as the web host and configure the Worker runtime `API_URL` to proxy `/api/*` to the VPS API.
+- Use Redis for rate-limit counters so multiple Gunicorn/Uvicorn workers share limits.
+- Run APScheduler in a dedicated one-worker scheduler service and keep it disabled in public API workers.
+- Keep Render/Railway deployment files as legacy rollback references; do not remove RenderProvider because it is a user-facing integration provider.
 
-**Recommended:** Start with in-memory (for single-instance), migrate to Redis when scaling.
+**Rationale:**
+- VPS hosting removes Render Free Tier cold starts and gives stable capacity without adding monthly hosting cost.
+- DuckDNS provides a stable public hostname without buying a domain.
+- Nginx Proxy Manager keeps TLS and proxy management simple for a small VPS deployment.
+- Same-origin Cloudflare Worker proxy preserves HTTP-only cookie behavior for the dashboard.
+- Redis-backed rate limiting prevents per-worker in-memory counters from diverging.
+
+**Consequences:**
+- ✅ API can run multiple workers with shared operational counters.
+- ✅ Frontend can remain on Cloudflare Pages without owning a custom domain.
+- ✅ Supabase stays the managed production database.
+- ❌ The VPS now needs OS patching, firewall management, backups for proxy config, and container monitoring.
+- ⚠️ DuckDNS availability becomes part of production availability.
 
 ---
+
+## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation
 

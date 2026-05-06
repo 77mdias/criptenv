@@ -27,6 +27,30 @@
 
 ## Prioridade Alta
 
+### TASK-069 — Executar migração VPS Backend
+
+**Objetivo:** Subir a API em produção na VPS usando os artefatos em `deploy/vps` e apontar a Cloudflare Pages para o novo endpoint DuckDNS.
+
+**Complexidade:** Média
+**Tempo estimado:** 2-4 horas
+
+#### Checklist
+
+- [ ] Copiar `deploy/vps/.env.example` para `.env` na VPS e preencher Supabase, DuckDNS, `SECRET_KEY`, `API_URL`, `FRONTEND_URL` e OAuth.
+- [ ] Rodar `docker compose up -d --build` e validar `api`, `scheduler`, `redis`, `nginx-proxy-manager` e `duckdns-updater`.
+- [ ] Criar proxy host no Nginx Proxy Manager: `<API_DUCKDNS_HOST> -> api:8000`.
+- [ ] Emitir certificado Let's Encrypt e ativar Force SSL.
+- [ ] Configurar Cloudflare Pages com `API_URL=https://<API_DUCKDNS_HOST>` e `NEXT_PUBLIC_API_URL` vazio.
+- [ ] Validar `/health`, `/health/ready`, `/api/health`, signup/signin, OAuth e um fluxo de vault.
+- [ ] Manter Render como rollback até a VPS ficar estável.
+
+#### Critério de aceite
+
+- [ ] API pública responde via HTTPS no DuckDNS.
+- [ ] Frontend usa Worker proxy e mantém cookies HTTP-only no domínio Pages.
+- [ ] Rate limit usa Redis em produção.
+- [ ] APScheduler roda apenas no serviço `scheduler`.
+
 ### TASK-061 — Implementar RailwayProvider
 
 **Objetivo:** Implementar integração com Railway API seguindo o padrão RenderProvider

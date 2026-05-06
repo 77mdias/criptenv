@@ -12,12 +12,14 @@ flowchart TD
     end
     
     subgraph Server["Server Side"]
-        API[FastAPI Backend]
+        API[FastAPI Backend on VPS Docker]
+        REDIS[(Redis rate limit counters)]
         DB[(PostgreSQL)]
     end
     
     CLI -->|HTTPS| API
-    WEB -->|HTTPS| API
+    WEB -->|same-origin /api proxy| API
+    API -->|rate limit counters| REDIS
     API -->|SQL| DB
     
     subgraph External["External Services"]
@@ -30,6 +32,8 @@ flowchart TD
     API -->|Webhook/Integrations| External
     GH -->|CI Token| API
 ```
+
+Production deployment uses Cloudflare Pages + Worker for the web app, a VPS-hosted Docker Compose stack for the API, Redis, DuckDNS updater, and Nginx Proxy Manager, and Supabase PostgreSQL as the external managed database. Render hosting artifacts remain only as rollback/legacy references; RenderProvider remains a product integration for user-owned Render services.
 
 ---
 

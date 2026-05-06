@@ -7,7 +7,7 @@ Backend FastAPI para o projeto CriptEnv.
 - **Framework**: FastAPI
 - **Database**: PostgreSQL (SQLAlchemy async)
 - **Auth**: JWT-like session tokens with bcrypt
-- **Server**: Uvicorn
+- **Server**: Uvicorn locally, Gunicorn/Uvicorn on VPS Docker
 
 ## Setup
 
@@ -24,6 +24,10 @@ cp .env.example .env
 # Rodar
 uvicorn main:app --reload
 ```
+
+## Production Deploy
+
+Current production target is the VPS Docker stack in `../../deploy/vps`, with DuckDNS, Nginx Proxy Manager, Redis-backed rate limiting, and Supabase PostgreSQL. `render.yaml`, `railway.toml`, and `Procfile` are retained only as legacy rollback references for hosted platforms.
 
 ## Endpoints
 

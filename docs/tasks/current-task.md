@@ -2,52 +2,45 @@
 
 ## Status atual
 
-**Project-scoped vault passwords — IMPLEMENTADO.**
+**VPS backend migration — ARTEFATOS E DOCUMENTAÇÃO EM IMPLEMENTAÇÃO.**
 
 ---
 
 ## Tarefa em foco
 
-Implementar senha de vault por projeto com zero-knowledge rígido em API, Web e CLI.
+Migrar o plano de produção da API de Render Free Tier para VPS Docker com DuckDNS, Nginx Proxy Manager, Let's Encrypt, Supabase externo e Redis para rate limiting multi-worker.
 
 ---
 
 ## O que foi implementado nesta sessão
 
-### Vault password por projeto ✅
-- Criação de projeto exige `vault_config` e `vault_proof`.
-- API armazena apenas metadata criptográfica e hash bcrypt da prova em `projects.settings.vault`.
-- Respostas de projeto expõem `vault_config` sanitizado e nunca retornam `proof_hash`.
-- Vault `push` exige `vault_proof` para projetos v1.
-- Settings ganhou rotação de senha do vault com recriptografia client-side.
-- Settings também migra projetos legados sem `vault_config` usando a senha legada derivada do `kdf_salt` do usuário.
-- CLI ganhou `criptenv projects create`; `push`, `pull` e `ci deploy` convertem entre vault local e vault do projeto.
-
-### Segurança ✅
-- Senha do vault nunca é enviada nem armazenada em claro.
-- A prova de escrita/rekey é derivada separadamente da chave de descriptografia.
-- Política de recuperação é zero-knowledge rígida: senha esquecida não é recuperável.
+### VPS backend deployment ✅
+- API ganhou `Dockerfile` para Gunicorn/Uvicorn.
+- `deploy/vps/docker-compose.yml` define API, scheduler dedicado, Redis, Nginx Proxy Manager e DuckDNS updater.
+- Redis passa a ser opção real para rate limiting em produção multi-worker.
+- Cloudflare Pages deve manter chamadas de browser relativas e configurar `API_URL` no Worker runtime.
+- Render hosting fica como legado/rollback; RenderProvider continua como integração de produto.
 
 ---
 
 ## Documentação atualizada
 
-- [x] `docs/project/decisions.md` — DEC-013
-- [x] `docs/development/CHANGELOG.md` — seção Project-Scoped Vault Passwords
+- [x] `docs/project/decisions.md` — DEC-016
+- [x] `docs/development/CHANGELOG.md` — seção VPS Backend Migration Planning
 - [x] `docs/project/current-state.md` — estado e contagens atualizadas
-- [x] `docs/tasks/task-history.md` — sessão registrada
 - [x] `docs/tasks/current-task.md` — este arquivo
 
 ---
 
 ## Próximos passos recomendados
 
-1. Planejar transferência rápida de membros entre projetos como feature separada.
-2. Continuar pendências Phase 3: RailwayProvider, Integration Config Encryption e Web Alert UI.
-3. Validar manualmente a migração de um projeto legado real antes de remover qualquer fallback antigo.
+1. Subir `deploy/vps` na VPS e configurar Nginx Proxy Manager para `API_DUCKDNS_HOST -> api:8000`.
+2. Configurar Cloudflare Pages runtime `API_URL=https://<API_DUCKDNS_HOST>` e deixar `NEXT_PUBLIC_API_URL` vazio.
+3. Rodar smoke tests: `/health`, `/health/ready`, `/api/health` via Worker, login/signup e OAuth.
+4. Continuar pendências Phase 3: Integration Config Encryption, RailwayProvider e Web Alert UI.
 
 ---
 
-**Document Version**: 1.3
-**Last Updated**: 2026-05-05
-**Status**: Implementation complete — ready for review
+**Document Version**: 1.4
+**Last Updated**: 2026-05-06
+**Status**: Implementation in progress — deployment artifacts ready

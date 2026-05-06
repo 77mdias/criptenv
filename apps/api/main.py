@@ -24,7 +24,7 @@ from app.routers import (
 )
 from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
-from app.middleware.rate_limit import RateLimitMiddleware  # M3.4: Rate limiting
+from app.middleware.rate_limit import RateLimitConfig, RateLimitMiddleware  # M3.4: Rate limiting
 
 logging.basicConfig(
     level=logging.INFO if settings.DEBUG else logging.WARNING,
@@ -131,7 +131,14 @@ app.add_middleware(
 app.add_middleware(APIVersionMiddleware)
 
 # Add Rate Limit middleware (M3.4)
-app.add_middleware(RateLimitMiddleware)
+app.add_middleware(
+    RateLimitMiddleware,
+    config=RateLimitConfig(
+        enabled=settings.RATE_LIMIT_ENABLED,
+        storage_backend=settings.RATE_LIMIT_STORAGE,
+        storage_uri=settings.REDIS_URL or None,
+    ),
+)
 
 
 @app.middleware("http")

@@ -1,330 +1,200 @@
 # Deployment Guide — CriptEnv
 
-Complete guide for deploying CriptEnv to production.
+Complete production deployment guide for the current stack.
 
 ---
 
 ## Architecture Overview
 
 ```
-┌─────────────┐      HTTPS       ┌─────────────┐      HTTPS       ┌─────────────┐
-│   Cloudflare│ ◄──────────────► │   FastAPI   │ ◄──────────────► │  PostgreSQL  │
-│  Pages +    │   NEXT_PUBLIC_   │   API       │   DATABASE_URL   │  (Supabase   │
-│  Workers    │   API_URL        │  (Render    │                  │   Free Tier) │
-│             │                  │   Free)     │                  │              │
-└─────────────┘                  └─────────────┘                  └─────────────┘
+┌─────────────┐   same-origin /api   ┌─────────────┐   HTTPS/TLS   ┌─────────────┐
+│ Cloudflare  │ ───────────────────► │ VPS Docker  │ ────────────► │ Supabase    │
+│ Pages +     │ Worker API_URL proxy │ FastAPI API │ DATABASE_URL  │ PostgreSQL  │
+│ Workers     │                      │ + Redis     │               │ Pooler      │
+└─────────────┘                      └─────────────┘               └─────────────┘
+                                             ▲
+                                             │ DuckDNS + Nginx Proxy Manager
+                                             ▼
+                                  https://<API_DUCKDNS_HOST>
 ```
 
-| Component | Platform | URL Pattern | Cost |
-|-----------|----------|-------------|------|
-| **Web** | Cloudflare Pages + Workers | `https://criptenv.com` | **Free** |
-| **API** | Render Free Tier | `https://api.criptenv.com` | **Free** (cold starts after 15min) |
-| **Database** | Supabase Free Tier | Internal | **Free** (500MB, permanent) |
-| **CLI** | PyPI | `pip install criptenv` | Free to users |
+| Component | Platform | URL Pattern | Notes |
+|-----------|----------|-------------|-------|
+| **Web** | Cloudflare Pages + Workers | `https://<project>.pages.dev` | Browser calls use relative `/api/*` |
+| **API** | VPS Docker | `https://<subdomain>.duckdns.org` | Gunicorn/Uvicorn behind Nginx Proxy Manager |
+| **Rate limits** | Redis on VPS | internal | Shared counters across API workers |
+| **Database** | Supabase | internal | Use pooler URL on port `6543` |
+| **CLI** | PyPI future | `pip install criptenv` | Not required for hosting the web/API MVP |
+
+Render Free Tier is now a legacy rollback option for API hosting. The user-facing Render integration provider remains part of the product.
 
 ---
 
 ## 1. Web — Cloudflare Pages + Workers
 
-### Prerequisites
+### Environment
 
-- Cloudflare account (free tier works)
-- Domain configured in Cloudflare (optional, `.pages.dev` works too)
-- Node.js 20+ and npm
-
-### Step 1: Configure Environment Variables
-
-Edit `apps/web/.env.production`:
+Set these in Cloudflare Pages:
 
 ```bash
-NEXT_PUBLIC_API_URL=https://api.criptenv.com
+NEXT_PUBLIC_API_URL=
+API_URL=https://<API_DUCKDNS_HOST>
 NEXT_PUBLIC_COOKIE_NAME=criptenv_session
-NEXT_PUBLIC_APP_URL=https://criptenv.com
+NEXT_PUBLIC_APP_URL=https://<project>.pages.dev
 ```
 
-### Step 2: Authenticate Wrangler
+`NEXT_PUBLIC_API_URL` should stay empty in production so browser requests use the same-origin Worker proxy. The Worker reads `API_URL` at runtime and forwards `/api/*` to the VPS API.
+
+### Deploy
 
 ```bash
 cd apps/web
-npx wrangler login
-```
-
-Follow the OAuth flow in your browser.
-
-### Step 3: Build and Deploy
-
-```bash
-cd apps/web
+npm install
 npm run build
-npx wrangler deploy
+npm run deploy
 ```
 
-Or use the Makefile from project root:
+Or from the repository root:
 
 ```bash
 make web-deploy
 ```
 
-### Cloudflare-specific Settings
-
-1. **Pages Domain**: Add custom domain in Cloudflare Pages dashboard
-2. **Environment Variables**: Set in Cloudflare Pages dashboard → Settings → Environment Variables
-3. **Compatibility Date**: Set in `wrangler.jsonc` (currently `2026-04-30`)
-
 ---
 
-## 2. Database — Supabase (Free Tier)
+## 2. Database — Supabase
 
-### Prerequisites
+Create a Supabase PostgreSQL project and copy the pooler connection string:
 
-- Supabase account (free tier is permanent and generous)
+```bash
+postgresql://postgres.[project]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
+```
 
-### Step 1: Create Project
-
-1. Go to [supabase.com](https://supabase.com) → New Project
-2. Choose a region close to your Render service (e.g., US East)
-3. Wait for provisioning (~2 minutes)
-
-### Step 2: Get Connection String
-
-1. Go to **Project Settings** → **Database**
-2. Copy **Connection String** → **URI** (the pooler one, port `6543`)
-   ```
-   postgresql://postgres.[project]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
-   ```
-3. This URL already works with the API — `config.py` auto-converts `postgresql://` to `postgresql+asyncpg://` and strips Prisma-only params
-
-### Step 3: Run Migrations
+Apply migrations from a trusted machine or from the VPS:
 
 ```bash
 cd apps/api
-# Set DATABASE_URL to your Supabase connection string
-export DATABASE_URL="postgresql://postgres.xxx:xxx@aws-0-us-east-1.pooler.supabase.com:6543/postgres"
-
-# Run migrations
+export DATABASE_URL="postgresql://postgres.xxx:xxx@aws-0-region.pooler.supabase.com:6543/postgres"
 alembic upgrade head
 ```
 
-> The API already configures `statement_cache_size=0` and `prepared_statement_cache_size=0` for pgbouncer compatibility.
+The API strips pooler-only query params and disables asyncpg prepared statement caches for pgbouncer compatibility.
 
 ---
 
-## 3. API — Render (Free Tier)
+## 3. API — VPS Docker
 
 ### Prerequisites
 
-- Render account (free tier)
-- Git repository pushed to GitHub/GitLab
-- Supabase project created (see above)
+- VPS with Docker Engine and Docker Compose plugin.
+- DuckDNS subdomain and token.
+- Ports `80` and `443` open publicly.
+- Port `81` restricted to localhost or trusted IPs only.
 
-### Important Free Tier Limitations
+### Configure
 
-| Limitation | Detail |
-|------------|--------|
-| **Cold starts** | Service sleeps after 15min of inactivity → 30-60s first request |
-| **Uptime** | Not suitable for high-traffic production, perfect for MVP/demo |
-| **Custom domains** | Supported on free tier |
+```bash
+cd deploy/vps
+cp .env.example .env
+```
 
-### Step 1: Blueprint Deploy (Recommended)
-
-Render supports `render.yaml` blueprints.
-
-1. Go to Render Dashboard → **Blueprints**
-2. Connect your Git repository
-3. Render will auto-detect `apps/api/render.yaml` (configured for `plan: free`)
-4. Click **Apply**
-
-### Step 2: Set Environment Variables
-
-After the blueprint creates the service, add these in Render Dashboard:
+Fill:
 
 | Variable | Value |
 |----------|-------|
-| `DATABASE_URL` | Your Supabase connection string (port 6543) |
-| `SECRET_KEY` | Random 32+ char string |
-| `DEBUG` | `false` |
-| `CORS_ORIGINS` | `https://criptenv.com,https://*.pages.dev` |
-| `FRONTEND_URL` | `https://criptenv.com` |
-| `SCHEDULER_ENABLED` | `true` |
+| `API_DUCKDNS_HOST` | `<subdomain>.duckdns.org` |
+| `API_URL` | `https://<API_DUCKDNS_HOST>` |
+| `FRONTEND_URL` | Cloudflare Pages URL |
+| `CORS_ORIGINS` | Cloudflare Pages URL and optional `https://*.pages.dev` |
+| `DATABASE_URL` | Supabase pooler URL |
+| `SECRET_KEY` | Random 64+ char secret |
+| `RATE_LIMIT_STORAGE` | `redis` |
+| `REDIS_URL` | `redis://redis:6379/0` |
+| `WEB_CONCURRENCY` | `3` for the 8GB VPS default |
+| `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | `2` / `2` default to protect Supabase pooler |
 
-### Step 3: Manual Service Creation (Alternative)
+### Start
 
-1. **New Web Service** → Connect Git repo
-2. **Root Directory**: `apps/api`
-3. **Build Command**: `pip install -r requirements.txt`
-4. **Start Command**: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-   > Use `uvicorn` directly on free tier (lighter than gunicorn + 4 workers)
-5. **Plan**: Select **Free**
+```bash
+docker compose up -d --build
+docker compose ps
+curl http://localhost:8000/health
+curl http://localhost:8000/health/ready
+```
+
+### Nginx Proxy Manager
+
+Open the admin UI through a trusted path, create a proxy host, then request a Let's Encrypt certificate:
+
+| Setting | Value |
+|---------|-------|
+| Domain Names | `<API_DUCKDNS_HOST>` |
+| Scheme | `http` |
+| Forward Hostname/IP | `api` |
+| Forward Port | `8000` |
+| SSL | Let's Encrypt, Force SSL enabled |
+
+Then verify:
+
+```bash
+curl https://<API_DUCKDNS_HOST>/health
+```
+
+The compose stack runs API workers with `SCHEDULER_ENABLED=false` and a separate internal `scheduler` service with one worker and `SCHEDULER_ENABLED=true`, preventing duplicate APScheduler jobs.
 
 ---
 
-## 4. API — Railway (Alternative to Render)
+## 4. Render Rollback
 
-If Render's cold starts become a problem, Railway is a good upgrade path.
+`apps/api/render.yaml`, `apps/api/Procfile`, and `apps/api/railway.toml` are retained as rollback/legacy references. If the VPS has an outage during migration, redeploying the previous Render service is acceptable after updating Cloudflare Pages `API_URL` back to the Render API URL.
 
-### Prerequisites
-
-- Railway account
-- Railway CLI: `npm install -g @railway/cli`
-
-### Deploy
-
-```bash
-railway login
-railway init
-cd apps/api
-railway up
-```
-
-Railway gives **$5/month credit** which often covers a small API + DB.
-
----
-
-## 5. CLI — PyPI
-
-### Prerequisites
-
-- PyPI account
-- API token from https://pypi.org/manage/account/token/
-
-### Step 1: Build
-
-```bash
-cd apps/cli
-python -m build
-```
-
-This creates:
-- `dist/criptenv-0.1.0.tar.gz`
-- `dist/criptenv-0.1.0-py3-none-any.whl`
-
-### Step 2: Upload
-
-```bash
-python -m twine upload dist/* \
-  --username __token__ \
-  --password "$PYPI_API_TOKEN"
-```
-
-Or set `PYPI_API_TOKEN` and use the deploy script:
-
-```bash
-PYPI_API_TOKEN=pypi-xxx... ./scripts/deploy.sh cli
-```
-
-### Step 3: Verify
-
-```bash
-pip install criptenv
-criptenv --version
-```
-
----
-
-## 6. GitHub Action — Marketplace Publishing
-
-### Step 1: Tag Release
-
-```bash
-cd packages/github-action
-git tag -a v1.0.0 -m "Release v1.0.0"
-git push origin v1.0.0
-```
-
-### Step 2: Create GitHub Release
-
-1. Go to GitHub → Releases → Draft New Release
-2. Choose tag `v1.0.0`
-3. Add release notes
-4. **Check "Publish this Action to the GitHub Marketplace"**
-5. Publish release
+Do not remove `RenderProvider`; it is unrelated to where CriptEnv itself is hosted.
 
 ---
 
 ## Environment Variables Reference
 
-### Web (`apps/web/.env.production`)
-
-| Variable | Description | Example |
-|----------|-------------|---------|
-| `NEXT_PUBLIC_API_URL` | Backend API URL | `https://api.criptenv.com` |
-| `NEXT_PUBLIC_COOKIE_NAME` | Session cookie name | `criptenv_session` |
-| `NEXT_PUBLIC_APP_URL` | Frontend URL | `https://criptenv.com` |
-
-### API (`apps/api/.env`)
+### API
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | ✅ | Supabase connection string (port `6543` pooler) |
-| `SECRET_KEY` | ✅ | Min 32 chars, used for session signing |
-| `DEBUG` | ✅ | `false` in production |
-| `CORS_ORIGINS` | ✅ | Comma-separated allowed origins |
-| `FRONTEND_URL` | ✅ | For OAuth redirects |
-| `SCHEDULER_ENABLED` | ⚠️ | `true` to enable background jobs |
-| `GITHUB_CLIENT_ID` | ⚠️ | For GitHub OAuth |
-| `GITHUB_CLIENT_SECRET` | ⚠️ | For GitHub OAuth |
-| `GOOGLE_CLIENT_ID` | ⚠️ | For Google OAuth |
-| `GOOGLE_CLIENT_SECRET` | ⚠️ | For Google OAuth |
-| `DISCORD_CLIENT_ID` | ⚠️ | For Discord OAuth |
-| `DISCORD_CLIENT_SECRET` | ⚠️ | For Discord OAuth |
+| `DATABASE_URL` | Yes | Supabase PostgreSQL pooler URL |
+| `SECRET_KEY` | Yes | Session signing secret |
+| `DEBUG` | Yes | `false` in production |
+| `API_URL` | Yes | Public DuckDNS API URL |
+| `FRONTEND_URL` | Yes | Cloudflare Pages frontend URL |
+| `CORS_ORIGINS` | Yes | Allowed frontend origins |
+| `RATE_LIMIT_STORAGE` | Yes | `redis` for VPS production |
+| `REDIS_URL` | Yes when Redis enabled | `redis://redis:6379/0` |
+| `WEB_CONCURRENCY` | VPS compose | API worker count |
+| `SCHEDULER_ENABLED` | Compose-controlled | Disabled in `api`, enabled in `scheduler` |
 
-> **Supabase tip:** Use the **Connection Pooler** URL (port `6543`), not the direct connection (port `5432`). The pooler handles connection limits better for serverless environments.
+### Web
 
----
-
-## Troubleshooting
-
-### Web Build Fails
-
-```bash
-cd apps/web
-rm -rf node_modules dist .vinext
-npm install
-npm run build
-```
-
-### API Import Error on Deploy
-
-Ensure `apps/api` is the root directory for the service. The import path must be `main:app`.
-
-### Database Connection Failed
-
-- Verify `DATABASE_URL` uses `postgresql+asyncpg://` scheme
-- Check if IP is allowlisted (Render/Railway usually handle this)
-- For Supabase: use connection pooler URL for serverless environments
-
-### CLI Upload to PyPI Fails
-
-- Verify `PYPI_API_TOKEN` starts with `pypi-`
-- Check version is unique (PyPI doesn't allow overwrites)
-- Bump version in `apps/cli/pyproject.toml` if re-uploading
-
-### Wrangler Authentication Issues
-
-```bash
-cd apps/web
-npx wrangler logout
-npx wrangler login
-```
+| Variable | Required | Description |
+|----------|----------|-------------|
+| `NEXT_PUBLIC_API_URL` | No | Empty in production for same-origin proxy |
+| `API_URL` | Yes | Worker runtime backend target |
+| `NEXT_PUBLIC_COOKIE_NAME` | Yes | `criptenv_session` |
+| `NEXT_PUBLIC_APP_URL` | Yes | Cloudflare Pages URL |
 
 ---
 
-## Quick Deploy Checklist
+## Quick Deployment Checklist
 
-- [ ] Web: `NEXT_PUBLIC_API_URL` points to production API
-- [ ] Web: Build passes (`npm run build`)
-- [ ] **Supabase**: Project created and connection string copied (port 6543)
-- [ ] **Supabase**: Migrations run (`alembic upgrade head`)
-- [ ] API: `DATABASE_URL` pointing to Supabase pooler
-- [ ] API: `SECRET_KEY` is strong and unique
-- [ ] API: `DEBUG=false`
-- [ ] API: `CORS_ORIGINS` includes web domain + `.pages.dev`
-- [ ] API: OAuth credentials configured (if using OAuth)
-- [ ] CLI: Version bumped in `pyproject.toml`
-- [ ] CLI: Build passes (`python -m build`)
-- [ ] GitHub Action: `dist/index.js` is compiled and committed
+- [ ] Supabase migrations applied.
+- [ ] `deploy/vps/.env` filled on the VPS.
+- [ ] `docker compose up -d --build` succeeds.
+- [ ] `curl http://localhost:8000/health` returns `ok`.
+- [ ] Nginx Proxy Manager proxy host forwards to `api:8000`.
+- [ ] Let's Encrypt certificate is issued and Force SSL is enabled.
+- [ ] `curl https://<API_DUCKDNS_HOST>/health` returns `ok`.
+- [ ] Cloudflare Pages has `API_URL=https://<API_DUCKDNS_HOST>`.
+- [ ] Cloudflare Pages leaves `NEXT_PUBLIC_API_URL` empty.
+- [ ] `/api/health` works through the deployed frontend Worker.
+- [ ] Login/signup and OAuth set HTTP-only cookies on the frontend origin.
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-03
+**Document Version**: 2.0
+**Last Updated**: 2026-05-06

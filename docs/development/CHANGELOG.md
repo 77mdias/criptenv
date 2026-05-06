@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### VPS Backend Migration Planning (2026-05-06)
+
+- **VPS deploy stack**: Added Docker artifacts for FastAPI on a VPS with Gunicorn/Uvicorn, Redis, Nginx Proxy Manager, and DuckDNS.
+- **Redis rate limits**: Added Redis-backed rate-limit storage for multi-worker API deployments while keeping in-memory storage as the local default.
+- **Scheduler isolation**: Documented and configured a dedicated one-worker scheduler service so APScheduler does not duplicate jobs across public API workers.
+- **Deployment docs**: Updated production guidance from Render Free Tier to VPS Docker + DuckDNS + Let's Encrypt, with Render retained as rollback/legacy hosting.
+
 #### Floating Bar Docs Link (2026-05-05)
 
 - **Landing floating bar**: Added a `Docs` item that links directly to `/docs` while preserving smooth scrolling for landing-page section anchors.

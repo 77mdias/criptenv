@@ -1,3 +1,5 @@
+# Legacy rollback reference only. Current production API target is the VPS Docker
+# stack in deploy/vps with DuckDNS, Nginx Proxy Manager, and Redis rate limits.
 [build]
 builder = "nixpacks"
 

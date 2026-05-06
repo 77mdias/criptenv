@@ -126,9 +126,12 @@ criptenv/
 | Serviço    | Plano                      | Uso                            | Custo |
 | ---------- | -------------------------- | ------------------------------ | ----- |
 | PostgreSQL | Supabase Free Tier         | Database (permanente, 500MB)   | **$0** |
-| FastAPI    | Render Free Tier           | Backend API (cold starts)      | **$0** |
-| Frontend   | Cloudflare Pages + Workers | Vinext + Wrangler + Edge       | **$0** |
+| FastAPI    | VPS Docker + Nginx Proxy Manager | Backend API via DuckDNS + Let's Encrypt | VPS existente |
+| Redis      | VPS Docker                 | Rate limit counters            | VPS existente |
+| Frontend   | Cloudflare Pages + Workers | Vinext + Worker proxy `/api/*` | **$0** |
 | CLI        | PyPI                       | Distribuição via pip           | Grátis para usuários |
+
+O deploy antigo da API no Render Free Tier fica apenas como rollback/legado. A integração Render do produto continua existindo para sincronizar secrets com contas Render de usuários.
 
 ## 📚 Documentação
 

@@ -107,8 +107,10 @@ aiosqlite>=0.20.0
 | Service | Platform | Purpose |
 |---------|----------|---------|
 | **Database** | PostgreSQL (Free Tier) | Primary store |
-| **Backend** | Railway/Render | FastAPI server |
-| **Frontend** | Cloudflare Pages + Workers | Vinext deployment |
+| **Backend** | VPS Docker + Gunicorn/Uvicorn | FastAPI server |
+| **Reverse Proxy** | Nginx Proxy Manager | DuckDNS hostname + Let's Encrypt TLS |
+| **Rate Limit Store** | Redis | Shared counters across API workers |
+| **Frontend** | Cloudflare Pages + Workers | Vinext deployment + `/api/*` proxy |
 | **CLI Distribution** | PyPI (future) | Package distribution |
 
 ---
@@ -143,7 +145,8 @@ aiosqlite>=0.20.0
 ```bash
 # Database
 DATABASE_URL=postgresql+asyncpg://user:pass@host:5432/db
-ASYNC_DATABASE_URL=postgresql://user:pass@host:5432/db  # Without asyncpg prefix
+DB_POOL_SIZE=2
+DB_MAX_OVERFLOW=2
 
 # Auth
 SECRET_KEY=your-secret-key-min-32-chars
@@ -153,6 +156,8 @@ ACCESS_TOKEN_EXPIRE_MINUTES=30
 # App
 DEBUG=true
 CORS_ORIGINS=http://localhost:3000
+RATE_LIMIT_STORAGE=memory
+# REDIS_URL=redis://redis:6379/0
 
 # Scheduler
 SCHEDULER_ENABLED=true
@@ -163,7 +168,8 @@ SCHEDULER_INTERVAL_HOURS=24
 
 ```bash
 # API
-NEXT_PUBLIC_API_URL=http://localhost:8000
+NEXT_PUBLIC_API_URL=
+API_URL=https://criptenv.duckdns.org
 
 # Auth
 NEXT_PUBLIC_COOKIE_NAME=criptenv_session

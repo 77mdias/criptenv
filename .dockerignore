@@ -1,0 +1,26 @@
+# Keep Docker build contexts small when building services from the repo root.
+
+.git
+.github
+.idea
+.vscode
+
+**/.venv
+**/venv
+**/__pycache__
+**/*.pyc
+
+apps/web/node_modules
+apps/web/dist
+apps/web/.next
+apps/web/.vinext
+apps/web/.wrangler
+
+apps/cli/.venv
+apps/api/.env
+apps/web/.env.local
+
+coverage
+tmp
+temp
+*.log

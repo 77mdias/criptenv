@@ -219,3 +219,53 @@ def test_rate_limit_storage_interface():
     assert hasattr(storage, 'get_count')
     assert hasattr(storage, 'increment_count')
     assert hasattr(storage, 'reset')
+
+
+def test_redis_rate_limit_storage_requires_url():
+    """Redis storage should fail clearly when enabled without REDIS_URL."""
+    from app.middleware.rate_limit import RateLimitStorage
+
+    with pytest.raises(ValueError, match="REDIS_URL"):
+        RateLimitStorage(storage_backend="redis")
+
+
+class FakeRedis:
+    """Tiny async Redis double for shared counter behavior."""
+
+    def __init__(self):
+        self.values: dict[str, int] = {}
+        self.expirations: dict[str, int] = {}
+
+    async def get(self, key: str):
+        value = self.values.get(key)
+        if value is None:
+            return None
+        return str(value).encode()
+
+    async def incr(self, key: str):
+        self.values[key] = self.values.get(key, 0) + 1
+        return self.values[key]
+
+    async def expire(self, key: str, seconds: int):
+        self.expirations[key] = seconds
+        return True
+
+    async def delete(self, key: str):
+        self.values.pop(key, None)
+        self.expirations.pop(key, None)
+        return 1
+
+
+@pytest.mark.asyncio
+async def test_redis_rate_limit_storage_shares_counters_between_instances():
+    """Redis-backed counters should be shared across API worker instances."""
+    from app.middleware.rate_limit import RateLimitStorage
+
+    redis_client = FakeRedis()
+    storage_a = RateLimitStorage(storage_backend="redis", redis_client=redis_client)
+    storage_b = RateLimitStorage(storage_backend="redis", redis_client=redis_client)
+
+    assert await storage_a.increment_count("rate:shared", 60) == 1
+    assert await storage_b.get_count("rate:shared") == 1
+    assert await storage_b.increment_count("rate:shared", 60) == 2
+    assert redis_client.expirations["rate:shared"] == 60
