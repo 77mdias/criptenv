@@ -12,10 +12,19 @@ CLI_DIR := apps/cli
 API_VENV := $(API_DIR)/.venv
 CLI_VENV := $(CLI_DIR)/.venv
 
+# Docker configuration
+DOCKER_REGISTRY ?= 77mdias
+CRIPTENV_VERSION ?= latest
+DOCKER_COMPOSE_DEV := docker compose -f docker-compose.dev.yml
+DOCKER_COMPOSE_PROD := docker compose -f docker-compose.yml
+
 .PHONY: help install lint test check \
 	web-install web-dev web-build web-start web-lint web-check-vinext web-migrate-vinext web-deploy \
 	api-install api-dev api-test db-current db-downgrade db-history db-migrate db-revision db-upgrade \
-	cli-install cli-test
+	cli-install cli-test \
+	docker-dev docker-dev-down docker-dev-logs docker-dev-build \
+	docker-build docker-push docker-build-push docker-clean \
+	docker-build-api docker-build-web docker-push-api docker-push-web
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -92,3 +101,57 @@ cli-install: $(CLI_VENV)/bin/python ## Create CLI virtualenv and install depende
 
 cli-test: cli-install ## Run the CLI test suite
 	cd $(CLI_DIR) && $(abspath $(CLI_VENV))/bin/python -m pytest tests -q
+
+# ===========================================
+# Docker Commands
+# ===========================================
+
+docker-dev: ## Start development environment with Docker (hot-reload)
+	$(DOCKER_COMPOSE_DEV) up --build
+
+docker-dev-down: ## Stop development Docker environment
+	$(DOCKER_COMPOSE_DEV) down
+
+docker-dev-logs: ## Show development Docker logs
+	$(DOCKER_COMPOSE_DEV) logs -f
+
+docker-dev-build: ## Build development Docker images (no start)
+	$(DOCKER_COMPOSE_DEV) build
+
+docker-build: ## Build production Docker images
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh build
+
+docker-build-api: ## Build API production image only
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh build api
+
+docker-build-web: ## Build Web production image only
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh build web
+
+docker-push: ## Push all images to Docker Hub
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh push
+
+docker-push-api: ## Push API image to Docker Hub
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh push api
+
+docker-push-web: ## Push Web image to Docker Hub
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh push web
+
+docker-build-push: ## Build and push all images to Docker Hub
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh build-push
+
+docker-clean: ## Remove local Docker images
+	DOCKER_REGISTRY=$(DOCKER_REGISTRY) CRIPTENV_VERSION=$(CRIPTENV_VERSION) \
+		./scripts/docker.sh clean
+
+docker-up: ## Start production containers locally
+	$(DOCKER_COMPOSE_PROD) up -d
+
+docker-down: ## Stop production containers
+	$(DOCKER_COMPOSE_PROD) down
