@@ -1,0 +1,92 @@
+# ===========================================
+# CriptEnv - Docker Compose (Development)
+# ===========================================
+# Ambiente de desenvolvimento com hot-reload.
+# Usa os arquivos .env existentes em cada app.
+# Banco de dados: Supabase (serverless, não precisa container).
+#
+# Uso:
+#   docker compose -f docker-compose.dev.yml up
+#   docker compose -f docker-compose.dev.yml up -d
+#   docker compose -f docker-compose.dev.yml down
+#   docker compose -f docker-compose.dev.yml logs -f api
+# ===========================================
+
+services:
+  # -------------------------------------------
+  # API - FastAPI (Python)
+  # -------------------------------------------
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+    container_name: criptenv-api
+    restart: unless-stopped
+    env_file:
+      - apps/api/.env
+    environment:
+      APP_ENV: development
+      DEBUG: "true"
+      SCHEDULER_ENABLED: "false"
+    volumes:
+      # Mount source for hot-reload
+      - ./apps/api:/app
+      # Preserve installed packages
+      - api-venv:/app/.venv
+    command:
+      - uvicorn
+      - main:app
+      - --host
+      - "0.0.0.0"
+      - --port
+      - "8000"
+      - --reload
+      - --reload-dir
+      - /app
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
+    networks:
+      - criptenv-dev
+
+  # -------------------------------------------
+  # Web - Vinext (Vite + React)
+  # -------------------------------------------
+  web:
+    image: node:22-alpine
+    container_name: criptenv-web
+    restart: unless-stopped
+    env_file:
+      - apps/web/.env.local
+    environment:
+      NEXT_PUBLIC_API_URL: http://localhost:8000
+      NEXT_PUBLIC_COOKIE_NAME: criptenv_session
+      NEXT_PUBLIC_APP_URL: http://localhost:3000
+    volumes:
+      # Mount source for hot-reload
+      - ./apps/web:/app
+      # Preserve node_modules
+      - web-node-modules:/app/node_modules
+    working_dir: /app
+    command: ["npm", "run", "dev"]
+    ports:
+      - "3000:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      - criptenv-dev
+
+networks:
+  criptenv-dev:
+    name: criptenv-dev
+
+volumes:
+  api-venv:
+  web-node-modules:

@@ -1,0 +1,118 @@
+# ===========================================
+# CriptEnv - Docker Compose (Production Images)
+# ===========================================
+# Build e push de imagens para Docker Hub.
+# Para deploy em VPS, use deploy/vps/docker-compose.yml.
+#
+# Uso:
+#   # Build imagens
+#   docker compose build
+#
+#   # Push para Docker Hub
+#   docker compose push
+#
+#   # Executar localmente (produção)
+#   docker compose up -d
+#
+#   # Com tag customizada
+#   CRIPTENV_VERSION=1.0.0 docker compose build
+# ===========================================
+
+x-common: &common
+  restart: unless-stopped
+  networks:
+    - criptenv
+
+services:
+  # -------------------------------------------
+  # API - FastAPI (Python)
+  # -------------------------------------------
+  api:
+    <<: *common
+    image: ${DOCKER_REGISTRY:-77mdias}/criptenv-api:${CRIPTENV_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+      target: runtime
+      args:
+        - APP_ENV=production
+    container_name: criptenv-api
+    env_file:
+      - apps/api/.env
+    environment:
+      SCHEDULER_ENABLED: "false"
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - --bind
+      - "0.0.0.0:8000"
+      - --workers
+      - "${WEB_CONCURRENCY:-3}"
+      - --timeout
+      - "60"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+    ports:
+      - "127.0.0.1:${API_PORT:-8000}:8000"
+    healthcheck:
+      test: ["CMD", "curl", "-fsS", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 30s
+
+  # -------------------------------------------
+  # Scheduler - Background Jobs (same image as API)
+  # -------------------------------------------
+  scheduler:
+    <<: *common
+    image: ${DOCKER_REGISTRY:-77mdias}/criptenv-api:${CRIPTENV_VERSION:-latest}
+    container_name: criptenv-scheduler
+    env_file:
+      - apps/api/.env
+    environment:
+      SCHEDULER_ENABLED: "true"
+    command:
+      - gunicorn
+      - main:app
+      - -k
+      - uvicorn.workers.UvicornWorker
+      - --bind
+      - "0.0.0.0:8000"
+      - --workers
+      - "1"
+      - --timeout
+      - "60"
+      - --access-logfile
+      - "-"
+      - --error-logfile
+      - "-"
+
+  # -------------------------------------------
+  # Web - Vinext (Vite + React)
+  # -------------------------------------------
+  web:
+    <<: *common
+    image: ${DOCKER_REGISTRY:-77mdias}/criptenv-web:${CRIPTENV_VERSION:-latest}
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+      target: runner
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000}
+        NEXT_PUBLIC_COOKIE_NAME: ${NEXT_PUBLIC_COOKIE_NAME:-criptenv_session}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    container_name: criptenv-web
+    ports:
+      - "127.0.0.1:${WEB_PORT:-3000}:3000"
+    depends_on:
+      api:
+        condition: service_healthy
+
+networks:
+  criptenv:
+    name: criptenv

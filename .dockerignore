@@ -1,26 +1,76 @@
-# Keep Docker build contexts small when building services from the repo root.
+# ===========================================
+# CriptEnv - Docker Ignore
+# ===========================================
+# Keep Docker build contexts small.
 
+# Version control
 .git
 .github
+.gitignore
+
+# IDE
 .idea
 .vscode
+.claude
+.hermes
+.serena
 
+# Python
 **/.venv
 **/venv
 **/__pycache__
 **/*.pyc
+**/*.pyo
+**/*.egg-info
+.coverage
+htmlcov
 
+# Node
 apps/web/node_modules
 apps/web/dist
 apps/web/.next
 apps/web/.vinext
 apps/web/.wrangler
+apps/web/.turbo
 
-apps/cli/.venv
+# Environment files (secrets)
 apps/api/.env
+apps/web/.env
 apps/web/.env.local
+apps/web/.env.production
+deploy/vps/.env
 
+# Documentation & planning
+docs/
+plans/
+specs/
+discovery/
+guidelines/
+ux-ui/
+user-stories/
+testsprite_tests/
+duckdns/
+
+# Deploy configs (not needed in build context)
+deploy/
+
+# Scripts & CI
+scripts/
+.claude/
+.hermes/
+.serena/
+
+# Build artifacts
 coverage
 tmp
 temp
 *.log
+*.md
+!README.md
+
+# GitHub Action (separate build)
+packages/github-action/node_modules
+packages/github-action/dist
+
+# CLI (separate package)
+apps/cli/.venv
