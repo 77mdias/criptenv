@@ -1,20 +1,35 @@
+# ===========================================
+# CriptEnv - VPS Docker Compose (Production)
+# ===========================================
+# Deploys the backend using pre-built images from Docker Hub.
+# Watchtower auto-polls for new images every 5 minutes.
+#
+# Prerequisites:
+#   1. Set secrets in .env (see .env.example)
+#   2. docker login (if private registry)
+#   3. docker compose up -d
+# ===========================================
+
 services:
+  # -------------------------------------------
+  # API - FastAPI (from Docker Hub)
+  # -------------------------------------------
   api:
-    build:
-      context: ../..
-      dockerfile: apps/api/Dockerfile
-    restart: unless-stopped
+    image: ${DOCKER_REGISTRY:-77mdias}/criptenv-api:${CRIPTENV_VERSION:-latest}
+    restart: always
     env_file:
       - .env
     environment:
       SCHEDULER_ENABLED: "false"
+      RATE_LIMIT_STORAGE: redis
+      REDIS_URL: redis://redis:6379/0
     command:
       - gunicorn
       - main:app
       - -k
       - uvicorn.workers.UvicornWorker
       - --bind
-      - 0.0.0.0:8000
+      - "0.0.0.0:8000"
       - --workers
       - "${WEB_CONCURRENCY:-3}"
       - --timeout
@@ -37,22 +52,25 @@ services:
     networks:
       - criptenv
 
+  # -------------------------------------------
+  # Scheduler - Background Jobs
+  # -------------------------------------------
   scheduler:
-    build:
-      context: ../..
-      dockerfile: apps/api/Dockerfile
-    restart: unless-stopped
+    image: ${DOCKER_REGISTRY:-77mdias}/criptenv-api:${CRIPTENV_VERSION:-latest}
+    restart: always
     env_file:
       - .env
     environment:
       SCHEDULER_ENABLED: "true"
+      RATE_LIMIT_STORAGE: redis
+      REDIS_URL: redis://redis:6379/0
     command:
       - gunicorn
       - main:app
       - -k
       - uvicorn.workers.UvicornWorker
       - --bind
-      - 0.0.0.0:8000
+      - "0.0.0.0:8000"
       - --workers
       - "1"
       - --timeout
@@ -67,9 +85,12 @@ services:
     networks:
       - criptenv
 
+  # -------------------------------------------
+  # Redis - Session & Rate Limit Cache
+  # -------------------------------------------
   redis:
     image: redis:7-alpine
-    restart: unless-stopped
+    restart: always
     command: ["redis-server", "--save", "", "--appendonly", "no"]
     healthcheck:
       test: ["CMD", "redis-cli", "ping"]
@@ -79,9 +100,28 @@ services:
     networks:
       - criptenv
 
+  # -------------------------------------------
+  # Watchtower - Auto-update containers
+  # -------------------------------------------
+  watchtower:
+    image: containrrr/watchtower:latest
+    restart: always
+    environment:
+      WATCHTOWER_CLEANUP: "true"
+      WATCHTOWER_POLL_INTERVAL: "300"
+      WATCHTOWER_INCLUDE_STOPPED: "false"
+      WATCHTOWER_ROLLING_RESTART: "true"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock
+    networks:
+      - criptenv
+
+  # -------------------------------------------
+  # Nginx Proxy Manager - Reverse Proxy + SSL
+  # -------------------------------------------
   nginx-proxy-manager:
     image: jc21/nginx-proxy-manager:latest
-    restart: unless-stopped
+    restart: always
     ports:
       - "80:80"
       - "443:443"
@@ -95,9 +135,12 @@ services:
     networks:
       - criptenv
 
+  # -------------------------------------------
+  # DuckDNS - Dynamic DNS Updater
+  # -------------------------------------------
   duckdns-updater:
     image: alpine:3.20
-    restart: unless-stopped
+    restart: always
     environment:
       DUCKDNS_SUBDOMAIN: "${DUCKDNS_SUBDOMAIN}"
       DUCKDNS_TOKEN: "${DUCKDNS_TOKEN}"
