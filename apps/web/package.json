@@ -88,5 +88,8 @@
     "wait-on": "^9.0.5",
     "wrangler": "^4.87.0"
   },
+  "overrides": {
+    "postcss": "^8.5.12"
+  },
   "type": "module"
 }
