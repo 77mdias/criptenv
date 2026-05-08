@@ -9,6 +9,8 @@ from app.routers.audit import router as audit_router
 from app.routers.tokens import router as tokens_router
 from app.routers.ci import router as ci_router
 from app.routers.integrations import router as integrations_router
+from app.routers.contributions import router as contributions_router
+from app.routers.webhooks import router as webhooks_router
 
 __all__ = [
     "auth_router",
@@ -21,5 +23,7 @@ __all__ = [
     "audit_router",
     "tokens_router",
     "ci_router",
-    "integrations_router"
+    "integrations_router",
+    "contributions_router",
+    "webhooks_router"
 ]

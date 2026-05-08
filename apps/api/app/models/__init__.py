@@ -5,6 +5,7 @@ from app.models.vault import VaultBlob
 from app.models.member import ProjectMember, ProjectInvite, CIToken, CISession
 from app.models.audit import AuditLog
 from app.models.api_key import APIKey
+from app.models.contribution import Contribution
 
 __all__ = [
     "User",
@@ -17,5 +18,6 @@ __all__ = [
     "CIToken",
     "CISession",
     "AuditLog",
-    "APIKey"
+    "APIKey",
+    "Contribution"
 ]

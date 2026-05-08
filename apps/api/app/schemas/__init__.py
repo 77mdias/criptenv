@@ -5,4 +5,5 @@ from app.schemas.vault import *
 from app.schemas.member import *
 from app.schemas.audit import *
 from app.schemas.api_key import *
+from app.schemas.contribution import *
 from app.schemas.error import *

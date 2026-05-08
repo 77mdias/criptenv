@@ -30,6 +30,16 @@ class Settings(BaseSettings):
     # Frontend URL for OAuth redirect after callback
     FRONTEND_URL: str = "http://localhost:3000"
     
+    # ===========================================
+    # MERCADO PAGO (CONTRIBUTIONS / PAYMENTS)
+    # ===========================================
+    MERCADO_PAGO_ACCESS_TOKEN: str = ""
+    MERCADO_PAGO_PUBLIC_KEY: str = ""
+    MERCADO_PAGO_WEBHOOK_SECRET: str = ""
+    MERCADO_PAGO_BASE_URL: str = "https://api.mercadopago.com"
+    PAYMENTS_ENABLED: bool = True
+    PAYMENTS_ENV: str = "sandbox"
+    
     # OAuth Provider Credentials
     GITHUB_CLIENT_ID: str = ""
     GITHUB_CLIENT_SECRET: str = ""

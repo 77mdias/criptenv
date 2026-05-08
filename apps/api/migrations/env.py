@@ -27,6 +27,7 @@ from app.models import (  # noqa: F401
 )
 from app.models.integration import Integration  # noqa: F401
 from app.models.secret_expiration import SecretExpiration  # noqa: F401
+from app.models.contribution import Contribution  # noqa: F401
 
 config = context.config
 
