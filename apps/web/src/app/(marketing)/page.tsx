@@ -115,48 +115,47 @@ const scatteredSecrets = [
 
 const plans = [
   {
-    name: "Contribua",
-    description: "Apoie o projeto open source",
+    name: "Contribute",
+    description: "Support independent open-source work",
     price: "R$ 5+",
     features: [
-      "100% open source",
-      "Zero taxas de intermediário",
-      "Pix instantâneo",
-      "Ajude a manter o projeto vivo",
+      "Pix support for the project",
+      "No paid plan required",
+      "Helps keep CriptEnv independent",
+      "Funds infrastructure and docs",
     ],
-    cta: "Contribuir Agora",
-    featured: false,
+    cta: "Contribute now",
+    featured: true,
+    badge: "Open support",
     href: "/contribute",
   },
   {
-    name: "Construct",
-    description: "Para equipes em crescimento",
-    price: "$9",
-    suffix: "/seat/mo",
+    name: "Open Source",
+    description: "Use the current CLI and web dashboard",
+    price: "Free",
     features: [
-      "Everything in Protocol",
-      "Unlimited environments",
-      "Unlimited members",
-      "1-year audit log",
-      "Priority support",
+      "Zero-knowledge secret storage",
+      "CLI-first encrypted workflows",
+      "Team sync and audit trail",
+      "MIT licensed codebase",
     ],
-    cta: "Start Free Trial",
-    featured: true,
+    cta: "Start free",
+    featured: false,
+    href: "/signup",
   },
   {
-    name: "Enterprise",
-    description: "Para grandes organizações",
-    price: "Custom",
+    name: "Maybe Later",
+    description: "Hosted plans may arrive after the core is stable",
+    price: "Future",
     features: [
-      "Everything in Construct",
-      "SSO/SAML",
-      "SCIM provisioning",
-      "SIEM export",
-      "Self-hosted option",
-      "Dedicated support",
+      "No pricing promise today",
+      "Roadmap stays transparent",
+      "Self-hosting remains a priority",
+      "Built around developer trust",
     ],
-    cta: "Contact Sales",
+    cta: "Read the docs",
     featured: false,
+    href: "/docs",
   },
 ]
 
@@ -504,7 +503,7 @@ export default function LandingPage() {
 
         <div className="relative z-10 mx-auto w-full max-w-6xl">
           <div data-motion="reveal">
-            <SectionHeading align="center" label="Pricing" title="Simples e transparente" />
+            <SectionHeading align="center" label="Pricing" title="Simple and transparent" />
           </div>
           <div data-motion="reveal">
             <PricingCardCarousel cards={plans} autoPlayInterval={4000} />

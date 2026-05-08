@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Landing Pricing Redesign (2026-05-08)
+
+- **Pricing cards**: Reworked the landing pricing carousel around honest project states: `Contribute`, `Open Source`, and `Maybe Later`.
+- **Contribution CTA**: The contribution pricing card now links directly to `/contribute`.
+- **Carousel stability**: Fixed stale autoplay/navigation state so timed rotation, arrows, and dots stay aligned with the visible card.
+
 #### Mercado Pago Pix Contribution Flow (2026-05-08)
 
 - **Public contribution page**: Added `/contribute` with a Pix amount form, optional payer name/email fields, QR code display, copy-paste Pix code, and status states for pending, paid, expired, and error outcomes.

@@ -43,6 +43,7 @@ export interface PricingPlan {
   features: string[];
   cta: string;
   featured?: boolean;
+  badge?: string;
   href?: string;
 }
 
@@ -104,8 +105,6 @@ const CARD_STATES: CardState[] = [
 /* ------------------------------------------------------------------ */
 
 const STATE_DURATION_ENTER = 0.9;
-const STATE_DURATION_EXIT = 0.55;
-const EASE_IN = "power2.in";
 const EASE_OUT = "power3.out";
 
 function orderedIndices(active: number, len: number): [number, number, number] {
@@ -127,8 +126,10 @@ export function PricingCardCarousel({
 
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const activeIndexRef = useRef(0);
   const isAnimating = useRef(false);
   const autoPlayTimer = useRef<ReturnType<typeof setInterval> | null>(null);
+  const prefersReducedMotion = useRef(false);
 
   /* ---- Position all cards for a given base index ---- */
   const positionCards = useCallback(
@@ -161,104 +162,74 @@ export function PricingCardCarousel({
   /* ---- Transition to a new active index ---- */
   const transitionTo = useCallback(
     (nextActive: number) => {
-      if (isAnimating.current) return;
+      const normalizedNext = ((nextActive % len) + len) % len;
+      if (isAnimating.current || normalizedNext === activeIndexRef.current) return;
       isAnimating.current = true;
 
-      const [frontIdx, midIdx, backIdx] = orderedIndices(activeIndex, len);
+      const [frontIdx, midIdx, backIdx] = orderedIndices(normalizedNext, len);
+      const stateMap: Record<number, CardState> = {
+        [frontIdx]: CARD_STATES[0],
+        [midIdx]: CARD_STATES[1],
+        [backIdx]: CARD_STATES[2],
+      };
+      const visibleEls = Object.keys(stateMap)
+        .map((index) => cardRefs.current[Number(index)])
+        .filter(Boolean) as HTMLDivElement[];
 
-      const frontEl = cardRefs.current[frontIdx];
-      const midEl = cardRefs.current[midIdx];
-      const backEl = cardRefs.current[backIdx];
-
-      if (!frontEl || !midEl || !backEl) {
+      if (visibleEls.length < Math.min(len, CARD_STATES.length)) {
         isAnimating.current = false;
         return;
       }
 
+      gsap.killTweensOf(visibleEls);
+
       const tl = gsap.timeline({
         onComplete: () => {
-          // Reposition the exited card to back of stack
-          gsap.set(frontEl, {
-            rotateY: CARD_STATES[2].rotateY,
-            z: CARD_STATES[2].z,
-            y: CARD_STATES[2].y,
-            opacity: CARD_STATES[2].opacity,
-            scale: CARD_STATES[2].scale,
-            zIndex: CARD_STATES[2].zIndex,
-            filter: CARD_STATES[2].filter,
-          });
+          activeIndexRef.current = normalizedNext;
+          setActiveIndex(normalizedNext);
+          positionCards(normalizedNext);
           isAnimating.current = false;
-          setActiveIndex(nextActive);
         },
       });
 
-      // Phase 1 — Front card rotates OUT (0 -> 80, fades)
-      tl.to(
-        frontEl,
-        {
-          rotateY: 80,
-          opacity: 0,
-          z: 50,
-          scale: 0.95,
-          filter: "blur(1.5px)",
-          duration: STATE_DURATION_EXIT,
-          ease: EASE_IN,
-        },
-        0,
-      );
-
-      // Phase 2 — Middle card advances to FRONT (-6 -> 0)
-      tl.to(
-        midEl,
-        {
-          rotateY: CARD_STATES[0].rotateY,
-          opacity: CARD_STATES[0].opacity,
-          z: CARD_STATES[0].z,
-          y: CARD_STATES[0].y,
-          scale: CARD_STATES[0].scale,
-          zIndex: CARD_STATES[0].zIndex,
-          filter: CARD_STATES[0].filter,
-          duration: STATE_DURATION_ENTER,
-          ease: EASE_OUT,
-        },
-        0.15,
-      );
-
-      // Phase 3 — Back card advances to MIDDLE (-10 -> -6)
-      tl.to(
-        backEl,
-        {
-          rotateY: CARD_STATES[1].rotateY,
-          opacity: CARD_STATES[1].opacity,
-          z: CARD_STATES[1].z,
-          y: CARD_STATES[1].y,
-          scale: CARD_STATES[1].scale,
-          zIndex: CARD_STATES[1].zIndex,
-          filter: CARD_STATES[1].filter,
-          duration: STATE_DURATION_ENTER,
-          ease: EASE_OUT,
-        },
-        0.15,
-      );
+      Object.entries(stateMap).forEach(([index, state]) => {
+        const el = cardRefs.current[Number(index)];
+        if (!el) return;
+        tl.to(
+          el,
+          {
+            rotateY: state.rotateY,
+            opacity: state.opacity,
+            z: state.z,
+            y: state.y,
+            scale: state.scale,
+            zIndex: state.zIndex,
+            filter: state.filter,
+            duration: prefersReducedMotion.current ? 0 : STATE_DURATION_ENTER,
+            ease: EASE_OUT,
+          },
+          0,
+        );
+      });
     },
-    [activeIndex, len],
+    [len, positionCards],
   );
 
   /* ---- Navigation ---- */
   const goNext = useCallback(() => {
-    transitionTo((activeIndex + 1) % len);
-  }, [activeIndex, len, transitionTo]);
+    transitionTo(activeIndexRef.current + 1);
+  }, [transitionTo]);
 
   const goPrev = useCallback(() => {
-    transitionTo((activeIndex - 1 + len) % len);
-  }, [activeIndex, len, transitionTo]);
+    transitionTo(activeIndexRef.current - 1);
+  }, [transitionTo]);
 
   const goTo = useCallback(
     (target: number) => {
-      if (target === activeIndex || isAnimating.current) return;
+      if (target === activeIndexRef.current || isAnimating.current) return;
       transitionTo(target);
     },
-    [activeIndex, transitionTo],
+    [transitionTo],
   );
 
   /* ---- Auto-play ---- */
@@ -270,17 +241,20 @@ export function PricingCardCarousel({
   }, []);
 
   const startAutoPlay = useCallback(() => {
+    if (prefersReducedMotion.current || len < 2 || autoPlayInterval <= 0) return;
     stopAutoPlay();
-    autoPlayTimer.current = setInterval(goNext, autoPlayInterval);
-  }, [goNext, autoPlayInterval, stopAutoPlay]);
+    autoPlayTimer.current = setInterval(() => {
+      transitionTo(activeIndexRef.current + 1);
+    }, autoPlayInterval);
+  }, [autoPlayInterval, len, stopAutoPlay, transitionTo]);
 
   /* ---- Initial mount ---- */
   useEffect(() => {
+    activeIndexRef.current = activeIndex;
     positionCards(activeIndex);
     startAutoPlay();
     return () => stopAutoPlay();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [activeIndex, positionCards, startAutoPlay, stopAutoPlay]);
 
   /* ---- Keyboard navigation ---- */
   useEffect(() => {
@@ -295,8 +269,18 @@ export function PricingCardCarousel({
   /* ---- Reduced motion: disable auto-play ---- */
   useEffect(() => {
     const mq = window.matchMedia("(prefers-reduced-motion: reduce)");
-    if (mq.matches) stopAutoPlay();
-  }, [stopAutoPlay]);
+    const syncPreference = () => {
+      prefersReducedMotion.current = mq.matches;
+      if (mq.matches) {
+        stopAutoPlay();
+      } else {
+        startAutoPlay();
+      }
+    };
+    syncPreference();
+    mq.addEventListener("change", syncPreference);
+    return () => mq.removeEventListener("change", syncPreference);
+  }, [startAutoPlay, stopAutoPlay]);
 
   /* ---- Touch / swipe ---- */
   const touchStartX = useRef(0);
@@ -379,7 +363,7 @@ export function PricingCardCarousel({
               {isFront && (
                 <div
                   aria-hidden
-                  className="pointer-events-none absolute inset-0 z-10 rounded-2xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
+                  className="pointer-events-none absolute inset-0 z-10 rounded-xl opacity-0 transition-opacity duration-300 group-hover:opacity-100"
                   style={{
                     background:
                       "radial-gradient(circle at var(--mouse-x, 50%) var(--mouse-y, 50%), rgba(255,255,255,0.06) 0%, transparent 60%)",
@@ -390,20 +374,20 @@ export function PricingCardCarousel({
               {/* Card body */}
               <div
                 className={cn(
-                  "group relative flex flex-col rounded-2xl border p-6 backdrop-blur-md transition-shadow duration-300",
+                  "group relative flex min-h-[376px] flex-col rounded-xl border p-6 backdrop-blur-md transition-shadow duration-300",
                   card.featured
                     ? isDark
                       ? "border-[var(--accent)]/50 bg-[#161618] shadow-lg shadow-[var(--glow-soft)]"
-                      : "border-[var(--accent)]/30 bg-white shadow-xl shadow-black/10"
+                      : "border-[var(--accent)]/35 bg-white shadow-xl shadow-black/10"
                     : isDark
-                      ? "border-[var(--border)] bg-[#141416]"
+                      ? "border-white/10 bg-[#111113]"
                       : "border-[var(--border)] bg-white shadow-lg shadow-black/5",
                 )}
               >
                 {/* Featured badge */}
                 {card.featured && (
                   <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--accent)] px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-foreground)]">
-                    Most Popular
+                    {card.badge || "Featured"}
                   </div>
                 )}
 

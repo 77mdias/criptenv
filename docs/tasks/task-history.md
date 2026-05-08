@@ -6,6 +6,22 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-08 — Landing Pricing Redesign
+
+**Resumo:**
+Redesenhada a seção pricing da landing para manter o carousel com 3 cards honestos e compatíveis com o estado atual do produto: contribuição, open source e roadmap futuro.
+
+**Arquivos alterados:**
+- `apps/web/src/app/(marketing)/page.tsx` — novos cards em inglês, título atualizado e CTA de contribuição apontando para `/contribute`.
+- `apps/web/src/components/marketing/pricing-card-carousel.tsx` — autoplay e navegação passam a usar o índice real atual, evitando troca para card inesperado.
+- `docs/development/CHANGELOG.md`, `docs/tasks/current-task.md`, `docs/tasks/task-history.md`.
+
+**Observações:**
+- Não foi criada nova DEC porque a mudança é visual/conteúdo de landing.
+- Planos comerciais fictícios foram removidos da copy pública.
+
+---
+
 ## 2026-05-08 — Mercado Pago Pix Contribution Flow
 
 **Resumo:**

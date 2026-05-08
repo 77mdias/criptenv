@@ -2,46 +2,43 @@
 
 ## Status atual
 
-**Mercado Pago Pix Contribution Flow — implementação local concluída, em verificação final.**
+**Landing Pricing Redesign — implementação local em verificação final.**
 
 ---
 
 ## Tarefa em foco
 
-Finalizar a integração pública de contribuições via Mercado Pago Pix na rota `/contribute`.
+Refazer a seção pricing da landing mantendo o carousel com 3 cards compatíveis com o estado real do projeto e corrigir a automação de troca dos cards.
 
 ---
 
 ## O que foi implementado nesta sessão
 
-### Mercado Pago Pix Contribution Flow ✅
-- Criada rota pública `/contribute` com formulário React Hook Form + Zod.
-- Valor do input numérico é convertido para `number` via `valueAsNumber` antes da validação.
-- Nome/email opcionais são trimados e omitidos quando vazios.
-- Página integra criação de Pix, QR code, Pix copia-e-cola, pending, paid, expired e error states.
-- Status usa webhook como fonte primária e polling/sync leve como fallback de UX.
-- Backend permite criação anônima de contribuição e mantém validação de valor/metadados.
-- Testes adicionados para schema, página de contribuição e criação anônima no backend.
+### Landing Pricing Redesign ✅
+- Pricing agora usa os cards `Contribute`, `Open Source` e `Maybe Later`, todos em inglês.
+- Card `Contribute` destaca apoio Pix/open source e aponta para `/contribute`.
+- Cards comerciais fictícios foram removidos da landing.
+- Carousel mantém 3 cards, mas o autoplay agora usa o índice atual real para evitar card inesperado após alguns ciclos.
+- Navegação por setas e dots foi alinhada ao mesmo fluxo de estado do autoplay.
 
 ---
 
 ## Documentação atualizada
 
-- [x] `docs/project/decisions.md` — DEC-020
-- [x] `docs/development/CHANGELOG.md` — seção Mercado Pago Pix Contribution Flow
-- [x] `docs/tasks/task-history.md` — registro do fluxo de contribuição
+- [x] `docs/development/CHANGELOG.md` — seção Landing Pricing Redesign
+- [x] `docs/tasks/task-history.md` — registro do redesign de pricing
 - [x] `docs/tasks/current-task.md` — este arquivo
 
 ---
 
 ## Próximos passos recomendados
 
-1. Rodar a verificação completa local e corrigir qualquer falha residual.
-2. Validar o fluxo manualmente com credenciais sandbox do Mercado Pago.
-3. Confirmar webhook público em produção após deploy.
+1. Rodar verificações web e corrigir qualquer falha residual.
+2. Validar visualmente a seção pricing em desktop e mobile.
+3. Confirmar manualmente o link `/contribute` no card principal.
 
 ---
 
-**Document Version**: 1.9
+**Document Version**: 1.10
 **Last Updated**: 2026-05-08
-**Status**: Mercado Pago contribution flow implemented locally
+**Status**: Landing pricing redesign implemented locally
