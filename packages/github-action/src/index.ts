@@ -1,15 +1,15 @@
 /**
  * CriptEnv GitHub Action
  *
- * Pulls secrets from CriptEnv and injects them as environment variables.
+ * Pulls encrypted secrets from CriptEnv and exports them as environment
+ * variables for the current GitHub Actions job.
  */
 
 import * as core from "@actions/core";
 import * as httpClient from "@actions/http-client";
 
-// Retry configuration
 const MAX_RETRIES = 3;
-const RETRY_DELAYS = [1000, 2000, 4000]; // Exponential backoff
+const RETRY_DELAYS = [1000, 2000, 4000];
 
 interface LoginResponse {
   session_token: string;
@@ -34,7 +34,7 @@ interface SecretsResponse {
   environment: string;
 }
 
-interface ActionInputs {
+export interface ActionInputs {
   token: string;
   project: string;
   environment: string;
@@ -43,7 +43,9 @@ interface ActionInputs {
   versionOutput: string;
 }
 
-async function retry<T>(
+type HttpClientFactory = () => httpClient.HttpClient;
+
+export async function retry<T>(
   fn: () => Promise<T>,
   retries: number = MAX_RETRIES,
   delays: number[] = RETRY_DELAYS,
@@ -57,17 +59,17 @@ async function retry<T>(
       lastError = error as Error;
 
       if (i < retries) {
-        const delay = delays[i] || delays[delays.length - 1];
+        const delay = delays[i] ?? delays[delays.length - 1] ?? 0;
         core.info(`Retry ${i + 1}/${retries} after ${delay}ms...`);
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
   }
 
-  throw lastError;
+  throw lastError ?? new Error("Operation failed");
 }
 
-function getInputs(): ActionInputs {
+export function getInputs(): ActionInputs {
   return {
     token: core.getInput("token", { required: true }),
     project: core.getInput("project", { required: true }),
@@ -78,18 +80,21 @@ function getInputs(): ActionInputs {
   };
 }
 
-function normalizeKeyName(keyId: string): string {
-  // Convert to uppercase, replace non-alphanumeric with underscores
+export function normalizeKeyName(keyId: string): string {
   return keyId.toUpperCase().replace(/[^A-Z0-9]/g, "_");
 }
 
-async function ciLogin(
+function createHttpClient(): httpClient.HttpClient {
+  return new httpClient.HttpClient("criptenv-action");
+}
+
+export async function ciLogin(
   apiUrl: string,
   token: string,
   projectId: string,
+  clientFactory: HttpClientFactory = createHttpClient,
 ): Promise<LoginResponse> {
-  const client = new httpClient.HttpClient("criptenv-action");
-
+  const client = clientFactory();
   const url = `${apiUrl}/auth/ci-login`;
   const body = JSON.stringify({ token, project_id: projectId });
 
@@ -101,25 +106,19 @@ async function ciLogin(
     throw new Error(`Login failed: ${response.statusCode}`);
   }
 
-  core.info(
-    `Login successful. Session expires in ${response.result.expires_in}s`,
-  );
+  core.info(`Login successful. Session expires in ${response.result.expires_in}s`);
   return response.result;
 }
 
-async function getSecrets(
+export async function getSecrets(
   apiUrl: string,
   sessionToken: string,
   projectId: string,
   environment: string,
+  clientFactory: HttpClientFactory = createHttpClient,
 ): Promise<SecretsResponse> {
-  const client = new httpClient.HttpClient("criptenv-action");
-
-  const params = new URLSearchParams({
-    project_id: projectId,
-    environment,
-  });
-
+  const client = clientFactory();
+  const params = new URLSearchParams({ project_id: projectId, environment });
   const url = `${apiUrl}/ci/secrets?${params.toString()}`;
 
   const response = await client.getJson<SecretsResponse>(url, {
@@ -140,45 +139,28 @@ async function getSecrets(
   return response.result;
 }
 
-function decryptSecret(blob: VaultBlob): string {
-  /**
-   * Decrypt a secret blob.
-   *
-   * The blob contains:
-   * - iv: Initialization vector (base64)
-   * - ciphertext: Encrypted data (base64)
-   * - auth_tag: Authentication tag (base64)
-   *
-   * In a real implementation, this would use the project's encryption key
-   * to decrypt the ciphertext using AES-256-GCM.
-   *
-   * For this action, we return the ciphertext as-is since the user will
-   * need to provide their own decryption key. The secrets are meant to
-   * be injected as encrypted values that the application will decrypt
-   * at runtime using the CriptEnv client library.
-   */
-
-  // Return the ciphertext directly - the consuming application
-  // should use the CriptEnv client library to decrypt
+export function decryptSecret(blob: VaultBlob): string {
   return blob.ciphertext;
 }
 
-async function run(): Promise<void> {
-  const inputs = getInputs();
-
-  core.info(`CriptEnv Secrets Action`);
+export async function run(
+  inputs: ActionInputs = getInputs(),
+  clientFactory: HttpClientFactory = createHttpClient,
+  retryDelays: number[] = RETRY_DELAYS,
+): Promise<void> {
+  core.info("CriptEnv Secrets Action");
   core.info(`Project: ${inputs.project}`);
   core.info(`Environment: ${inputs.environment}`);
   core.info(`API URL: ${inputs.apiUrl}`);
 
   try {
-    // Step 1: CI Login
     core.info("Authenticating with CriptEnv...");
     const loginResponse = await retry(() =>
-      ciLogin(inputs.apiUrl, inputs.token, inputs.project),
+      ciLogin(inputs.apiUrl, inputs.token, inputs.project, clientFactory),
+      MAX_RETRIES,
+      retryDelays,
     );
 
-    // Step 2: Get Secrets
     core.info("Fetching secrets...");
     const secrets = await retry(() =>
       getSecrets(
@@ -186,13 +168,13 @@ async function run(): Promise<void> {
         loginResponse.session_token,
         inputs.project,
         inputs.environment,
+        clientFactory,
       ),
+      MAX_RETRIES,
+      retryDelays,
     );
 
-    // Step 3: Export as environment variables
-    core.info(
-      `Found ${secrets.blobs.length} secrets (version ${secrets.version})`,
-    );
+    core.info(`Found ${secrets.blobs.length} secrets (version ${secrets.version})`);
 
     let count = 0;
     const errors: string[] = [];
@@ -204,7 +186,6 @@ async function run(): Promise<void> {
 
         core.setSecret(secretValue);
         core.exportVariable(varName, secretValue);
-
         core.debug(`Exported ${varName}`);
         count++;
       } catch (error) {
@@ -214,19 +195,15 @@ async function run(): Promise<void> {
       }
     }
 
-    // Set outputs
     core.setOutput("secrets-count", count.toString());
     core.setOutput(inputs.versionOutput, secrets.version.toString());
 
     core.info(`Successfully loaded ${count} secrets`);
 
     if (errors.length > 0) {
-      core.warning(
-        `Encountered ${errors.length} errors while processing secrets`,
-      );
+      core.warning(`Encountered ${errors.length} errors while processing secrets`);
     }
 
-    // Summary
     core.info("=== Summary ===");
     core.info(`Secrets loaded: ${count}`);
     core.info(`Secrets version: ${secrets.version}`);
@@ -237,7 +214,8 @@ async function run(): Promise<void> {
   }
 }
 
-// Run the action
-run().catch((error) => {
-  core.setFailed(`Unexpected error: ${error}`);
-});
+if (require.main === module) {
+  run().catch((error) => {
+    core.setFailed(`Unexpected error: ${error}`);
+  });
+}

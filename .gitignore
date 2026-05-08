@@ -6,12 +6,15 @@ node_modules/
 __pycache__/
 *.py[cod]
 .env
+.env.test
 .venv
 venv/
 ENV/
 
 # Build outputs
 dist/
+!packages/github-action/dist/
+!packages/github-action/dist/**
 build/
 *.tsbuildinfo
 .next/
@@ -53,6 +56,7 @@ temp/
 .env.local
 .env.*.local
 !.env.example
+!.env.test.example
 
 # Supabase
 supabase/.branches/
