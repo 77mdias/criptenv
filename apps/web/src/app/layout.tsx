@@ -14,7 +14,8 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head>
+      <head />
+      <body className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased">
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){
@@ -27,8 +28,6 @@ export default function RootLayout({
             })()`,
           }}
         />
-      </head>
-      <body className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased">
         {children}
       </body>
     </html>

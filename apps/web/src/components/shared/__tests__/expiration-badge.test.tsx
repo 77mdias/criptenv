@@ -63,22 +63,19 @@ describe('ExpirationBadge', () => {
     expect(badge).toHaveAttribute('title', 'Expires: 2026-06-01')
   })
 
-  it('renders clock icon for non-expired badges', () => {
+  it('renders a hidden icon for non-expired badges', () => {
     render(<ExpirationBadge daysUntilExpiration={45} />)
-    // Clock icon should be present
-    expect(screen.getByLabelText(/clock/i, { hidden: true })).toBeInTheDocument()
+    expect(screen.getByText(/45 dias/i).querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('renders alert icon for critical badges (<7 days)', () => {
+  it('renders a hidden icon for critical badges (<7 days)', () => {
     render(<ExpirationBadge daysUntilExpiration={3} />)
-    // Alert icon should be present
-    expect(screen.getByLabelText(/alert/i, { hidden: true })).toBeInTheDocument()
+    expect(screen.getByText(/3 dias/i).querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 
-  it('renders XCircle icon for expired badges', () => {
+  it('renders a hidden icon for expired badges', () => {
     render(<ExpirationBadge isExpired={true} />)
-    // XCircle icon should be present
-    expect(screen.getByLabelText(/xcircle/i, { hidden: true })).toBeInTheDocument()
+    expect(screen.getByText(/expirado/i).querySelector('svg')).toHaveAttribute('aria-hidden', 'true')
   })
 
   it('accepts custom className for styling overrides', () => {

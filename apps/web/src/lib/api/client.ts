@@ -11,9 +11,11 @@ interface CacheEntry {
   data?: unknown;
   expiresAt: number;
   promise?: Promise<unknown>;
+  generation: number;
 }
 
 const responseCache = new Map<string, CacheEntry>();
+let cacheGeneration = 0;
 
 // ─── Error Class ───────────────────────────────────────────────────────────────
 
@@ -344,6 +346,7 @@ function buildUrl(
 }
 
 function invalidateCache() {
+  cacheGeneration += 1;
   responseCache.clear();
 }
 
@@ -369,6 +372,7 @@ export async function request<T>(
 ): Promise<T> {
   const url = buildUrl(path, params);
   const cacheKey = url.toString();
+  const requestGeneration = cacheGeneration;
 
   if (method === "GET" && typeof window !== "undefined") {
     const cached = responseCache.get(cacheKey);
@@ -411,10 +415,15 @@ export async function request<T>(
       );
     }
 
-    if (method === "GET" && typeof window !== "undefined") {
+    if (
+      method === "GET" &&
+      typeof window !== "undefined" &&
+      requestGeneration === cacheGeneration
+    ) {
       responseCache.set(cacheKey, {
         data,
         expiresAt: Date.now() + GET_CACHE_TTL_MS,
+        generation: cacheGeneration,
       });
     } else if (method !== "GET") {
       invalidateCache();
@@ -427,6 +436,7 @@ export async function request<T>(
     responseCache.set(cacheKey, {
       expiresAt: Date.now() + GET_CACHE_TTL_MS,
       promise: fetchPromise,
+      generation: requestGeneration,
     });
   }
 
@@ -434,7 +444,10 @@ export async function request<T>(
     return await fetchPromise;
   } catch (error) {
     if (method === "GET" && typeof window !== "undefined") {
-      responseCache.delete(cacheKey);
+      const cached = responseCache.get(cacheKey);
+      if (cached?.generation === requestGeneration) {
+        responseCache.delete(cacheKey);
+      }
     }
     throw error;
   }

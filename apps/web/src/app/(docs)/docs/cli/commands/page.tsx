@@ -5,8 +5,6 @@ import {
   InlineCode,
   Callout,
   ParamTable,
-  Steps,
-  Step,
   Tabs,
   Tab,
   Breadcrumb,

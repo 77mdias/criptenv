@@ -1,5 +1,3 @@
-import assert from "node:assert/strict"
-import { describe, it } from "node:test"
 import {
   applySecretCountMetadata,
   setEnvironmentSecretMetadata,
@@ -14,7 +12,7 @@ describe("secretCounts helpers", () => {
       { id: "staging", secrets_count: 0, secrets_version: 1 },
     ])
 
-    assert.deepEqual(state, {
+    expect(state).toEqual({
       counts: {
         production: 2,
         development: 8,
@@ -51,7 +49,7 @@ describe("secretCounts helpers", () => {
       previousState
     )
 
-    assert.deepEqual(state, previousState)
+    expect(state).toEqual(previousState)
   })
 
   it("hydrates exact counts from metadata before the vault is unlocked", () => {
@@ -67,7 +65,7 @@ describe("secretCounts helpers", () => {
       { environmentId: "staging", count: 0, version: 1 },
     ])
 
-    assert.deepEqual(hydratedState.counts, {
+    expect(hydratedState.counts).toEqual({
       production: 2,
       development: 8,
       staging: 0,
@@ -92,7 +90,7 @@ describe("secretCounts helpers", () => {
     const afterImport = setEnvironmentSecretMetadata(afterCreate, "staging", 4, 3)
     const afterDelete = setEnvironmentSecretMetadata(afterImport, "staging", 3, 4)
 
-    assert.deepEqual(afterCreate, {
+    expect(afterCreate).toEqual({
       counts: {
         production: 2,
         development: 8,
@@ -104,7 +102,7 @@ describe("secretCounts helpers", () => {
         staging: 2,
       },
     })
-    assert.deepEqual(afterImport, {
+    expect(afterImport).toEqual({
       counts: {
         production: 2,
         development: 8,
@@ -116,7 +114,7 @@ describe("secretCounts helpers", () => {
         staging: 3,
       },
     })
-    assert.deepEqual(afterDelete, {
+    expect(afterDelete).toEqual({
       counts: {
         production: 2,
         development: 8,
@@ -148,7 +146,7 @@ describe("secretCounts helpers", () => {
       { environmentId: "staging", count: 1, version: 2 },
     ])
 
-    assert.deepEqual(nextState, currentState)
+    expect(nextState).toEqual(currentState)
   })
 
   it("accepts metadata from the same or newer version", () => {
@@ -165,7 +163,7 @@ describe("secretCounts helpers", () => {
       { environmentId: "production", count: 2, version: 3 },
     ])
 
-    assert.deepEqual(nextState, {
+    expect(nextState).toEqual({
       counts: {
         production: 2,
       },

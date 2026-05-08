@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from "react"
+import { useId, useState } from "react"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { FolderPlus } from "lucide-react"
@@ -17,6 +17,7 @@ interface CreateProjectDialogProps {
 }
 
 export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreateProjectDialogProps) {
+  const descriptionId = useId()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -85,10 +86,14 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
           />
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label
+              htmlFor={descriptionId}
+              className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono"
+            >
               Descrição
             </label>
             <textarea
+              id={descriptionId}
               className="flex min-h-[80px] w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
               placeholder="Descrição opcional do projeto"
               {...register("description")}

@@ -3,6 +3,7 @@
 import {
   Breadcrumb,
   Callout,
+  CodeBlock,
   StatusTable,
 } from '@/components/docs';
 

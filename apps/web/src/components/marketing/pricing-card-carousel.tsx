@@ -306,7 +306,11 @@ export function PricingCardCarousel({
   const handleTouchEnd = (e: React.TouchEvent) => {
     const dx = e.changedTouches[0].clientX - touchStartX.current;
     if (Math.abs(dx) > 40) {
-      dx < 0 ? goNext() : goPrev();
+      if (dx < 0) {
+        goNext();
+      } else {
+        goPrev();
+      }
     }
     startAutoPlay();
   };

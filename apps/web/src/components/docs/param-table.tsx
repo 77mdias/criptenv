@@ -16,7 +16,7 @@ interface ParamTableProps {
   className?: string
 }
 
-function ParamTable({ params, rows, title, className }: ParamTableProps) {
+function ParamTable({ params, rows, className }: ParamTableProps) {
   const items = params || rows
   if (!items || items.length === 0) return null
   return (

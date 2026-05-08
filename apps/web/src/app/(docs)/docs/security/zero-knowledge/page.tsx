@@ -37,7 +37,7 @@ export default function ZeroKnowledgePage() {
       <h2 className="text-2xl font-semibold mt-10 mb-4">O Que É Conhecimento Zero?</h2>
 
       <p className="text-muted-foreground mb-4">
-        No contexto do CriptEnv, "conhecimento zero" significa que o servidor
+        No contexto do CriptEnv, &quot;conhecimento zero&quot; significa que o servidor
         pode confirmar que você tem a senha correta (através do vault proof) sem
         jamais saber qual é essa senha ou ter acesso às chaves derivadas dela.
       </p>
@@ -147,15 +147,15 @@ Na autenticação, compara o proof enviado com o armazenado.
 Se coincidir → acesso autorizado.
 Se não coincidir → acesso negado.
 
-Importante: o vault proof é derivado da mesma senha mestra,
-mas com salt diferente ("proof_salt"), garantindo que:
+        Importante: o vault proof é derivado da mesma senha mestra,
+        mas com salt diferente (&quot;proof_salt&quot;), garantindo que:
 • O proof não pode ser usado para derivar a chave de criptografia
 • A chave de criptografia não pode gerar o proof
 • São dois caminhos criptográficos independentes`}
       />
 
       <Callout type="warning">
-        O vault proof usa um salt constante ("proof_salt") porque seu propósito é
+        O vault proof usa um salt constante (&quot;proof_salt&quot;) porque seu propósito é
         autenticação, não proteção de dados. Isso é seguro porque o proof não pode
         ser revertido para obter a chave de criptografia.
       </Callout>

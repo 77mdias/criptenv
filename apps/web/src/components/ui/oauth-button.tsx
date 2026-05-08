@@ -39,8 +39,6 @@ interface OAuthButtonProps extends Omit<ButtonProps, "variant" | "children"> {
 
 export function OAuthButton({
   provider,
-  onClick,
-  redirectUri,
   className,
   disabled,
   loading,
@@ -76,7 +74,6 @@ export function OAuthButton({
 
 // OAuth button group for displaying all providers
 interface OAuthButtonGroupProps {
-  onProviderSelect?: (provider: OAuthProvider) => void
   className?: string
 }
 

@@ -19,7 +19,7 @@ DOCKER_COMPOSE_DEV := docker compose -f docker-compose.dev.yml
 DOCKER_COMPOSE_PROD := docker compose -f docker-compose.yml
 
 .PHONY: help install lint test check \
-	web-install web-dev web-build web-start web-lint web-check-vinext web-migrate-vinext web-deploy \
+	web-install web-dev web-build web-start web-lint web-test web-test-unit web-test-e2e web-test-e2e-open web-check-vinext web-migrate-vinext web-deploy \
 	api-install api-dev api-test db-current db-downgrade db-history db-migrate db-revision db-upgrade \
 	cli-install cli-test \
 	docker-dev docker-dev-down docker-dev-logs docker-dev-build \
@@ -51,6 +51,17 @@ web-start: ## Start the local production server
 
 web-lint: ## Run frontend linting
 	cd $(WEB_DIR) && $(NPM) run lint
+
+web-test: web-test-unit web-test-e2e ## Run frontend unit and E2E tests
+
+web-test-unit: ## Run frontend Jest unit and interaction tests
+	cd $(WEB_DIR) && $(NPM) run test:unit
+
+web-test-e2e: api-install ## Run frontend Cypress E2E tests against local test stack
+	cd $(WEB_DIR) && $(NPM) run test:e2e
+
+web-test-e2e-open: api-install ## Open Cypress against the local test stack
+	cd $(WEB_DIR) && $(NPM) run test:e2e:open
 
 web-check-vinext: ## Run the Vinext compatibility scan
 	cd $(WEB_DIR) && $(NPM) run check:vinext

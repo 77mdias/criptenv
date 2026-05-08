@@ -9,7 +9,6 @@ export default function OAuthCallbackPage() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
-  const [isChecking, setIsChecking] = useState(true)
 
   useEffect(() => {
     const checkSession = async () => {
@@ -18,7 +17,6 @@ export default function OAuthCallbackPage() {
         const errorParam = searchParams.get("error")
         if (errorParam) {
           setError(errorParam)
-          setIsChecking(false)
           setTimeout(() => {
             router.push("/login?error=oauth_failed")
           }, 2000)
@@ -34,14 +32,12 @@ export default function OAuthCallbackPage() {
         } else {
           // Session invalid
           setError("Falha ao autenticar com OAuth. Por favor, tente novamente.")
-          setIsChecking(false)
           setTimeout(() => {
             router.push("/login?error=oauth_failed")
           }, 2000)
         }
-      } catch (err) {
+      } catch {
         setError("Erro de conexão. Por favor, tente novamente.")
-        setIsChecking(false)
         setTimeout(() => {
           router.push("/login?error=network_error")
         }, 2000)
