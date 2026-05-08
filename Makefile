@@ -25,7 +25,7 @@ DOCKER_COMPOSE_PROD := docker compose -f docker-compose.yml
 	docker-dev docker-dev-down docker-dev-logs docker-dev-build \
 	docker-build docker-push docker-build-push docker-clean \
 	docker-build-api docker-build-web docker-push-api docker-push-web \
-	api-test-contributions api-test-webhook api-test-flow
+	api-test-contributions api-test-webhook api-test-flow api-test-webhook-prod production-checklist
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -96,6 +96,13 @@ api-test-webhook: api-install ## Test webhook endpoint with valid signature
 api-test-flow: api-install ## Run complete contribution flow end-to-end
 	@echo "Running complete contribution flow..."
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python scripts/test_contribution_flow.py
+
+api-test-webhook-prod: api-install ## Test production webhook endpoint
+	@echo "Testing production webhook..."
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python scripts/test_webhook_production.py --secret $(MP_WEBHOOK_SECRET)
+
+production-checklist: ## Verify production deployment checklist
+	@bash scripts/production-checklist.sh
 
 db-upgrade: api-install ## Apply Alembic migrations to the configured API database
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/alembic -c alembic.ini upgrade head
