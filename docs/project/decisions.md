@@ -477,6 +477,60 @@ Cloud provider integrations store operational API tokens and provider IDs in `in
 
 ---
 
+## DEC-018 — Frontend Test Suite With Isolated E2E Database
+
+**Date:** 2026-05-07
+**Status:** ✅ Accepted
+**Context:**
+The web app had only orphaned component tests and no runnable frontend test workflow. Critical auth, project, vault, and secret flows needed automated coverage without using production or Supabase data.
+
+**Decision:**
+- Use Jest with React Testing Library for unit and user-interaction tests.
+- Use Cypress for browser E2E against a real local Vinext + FastAPI + PostgreSQL test stack.
+- Keep local `.env.test` files ignored and commit only `.env.test.example` templates with disposable credentials.
+- Run E2E database reset tooling only against local database URLs whose database name includes `test`.
+
+**Rationale:**
+- Jest/RTL keeps component and form behavior fast and deterministic.
+- Cypress catches regressions across routing, cookies, API calls, client-side crypto, and vault interactions.
+- An isolated PostgreSQL database validates realistic backend behavior without risking production data.
+
+**Consequences:**
+- ✅ Frontend changes can be verified with `make web-test`.
+- ✅ E2E tests cover the real cookie/session and zero-knowledge vault browser flow.
+- ✅ Test env defaults are safe to commit and easy to recreate locally.
+- ❌ E2E requires Docker and local API dependencies to be available.
+
+---
+
+## DEC-019 — Blocking Test, Security, and Build Gates
+
+**Date:** 2026-05-08
+**Status:** ✅ Accepted
+**Context:**
+CriptEnv had strong local API/CLI test suites and a new frontend E2E stack, but no pull-request gates for tests, lint, security scans, Docker builds, or the packaged GitHub Action bundle. Several regressions were still able to live in the workspace: stale frontend GET cache after mutations, duplicate `/api/v1/api/v1` routes, missing GitHub Action tests, and lint debt in docs pages.
+
+**Decision:**
+- Add blocking GitHub Actions for CI, Cypress E2E, security scans, and Docker image builds.
+- Keep E2E on an isolated local PostgreSQL service and upload Cypress screenshots on failure.
+- Add a backend database integration test that is opt-in locally and enabled in the E2E workflow.
+- Treat the GitHub Action package as a release artifact: lint, test, typecheck, build, and verify `dist/` is committed.
+- Use Dependabot for npm, pip, and GitHub Actions updates.
+
+**Rationale:**
+- Security-sensitive secret-management code needs automated checks before merge, not only local manual runs.
+- The web dashboard depends on browser cookies, client crypto, API cache behavior, and a real backend; unit tests alone do not catch those integration risks.
+- The GitHub Action marketplace entry references `dist/index.js`, so source and bundle must stay in sync.
+
+**Consequences:**
+- ✅ PRs now have repeatable gates for API, CLI, Web, GitHub Action, E2E, security, and Docker builds.
+- ✅ Stale cache and duplicate route regressions are covered by automated tests.
+- ✅ The scheduler now opens a fresh DB session per background execution.
+- ❌ Contributors need Docker available for E2E runs.
+- ⚠️ Security dependency audits may require periodic triage when upstream advisories appear.
+
+---
+
 ## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation
@@ -493,5 +547,5 @@ Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2026-05-06
+**Document Version**: 1.2
+**Last Updated**: 2026-05-08

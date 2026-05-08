@@ -6,6 +6,60 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-08 — Blocking CI/Test/Security Gates
+
+**Resumo:**
+Adicionados gates de CI, E2E, segurança e Docker build, com correções de estabilidade para frontend cache/E2E, API route manifest, scheduler, CLI e GitHub Action.
+
+**Arquivos criados:**
+- `.github/workflows/ci.yml`
+- `.github/workflows/e2e.yml`
+- `.github/workflows/security.yml`
+- `.github/workflows/docker-build.yml`
+- `.github/dependabot.yml`
+- `apps/api/tests/test_backend_integration_db.py`
+- `apps/cli/tests/test_integrations_commands.py`
+- `apps/web/src/app/(auth)/signup/__tests__/page.test.tsx`
+- `apps/web/src/__tests__/proxy.test.ts`
+- `packages/github-action/jest.config.js`
+- `packages/github-action/.eslintrc.cjs`
+- `packages/github-action/src/__tests__/index.test.ts`
+- `packages/github-action/dist/`
+
+**Arquivos alterados:**
+- `apps/web/src/lib/api/client.ts` — cache generation para evitar GET stale após mutation.
+- `apps/api/app/routers/v1.py` — remove re-mount duplicado de routers já versionados.
+- `apps/api/app/jobs/expiration_check.py`, `apps/api/app/jobs/scheduler.py`, `apps/api/main.py` — scheduler com sessão DB por execução.
+- `apps/cli/src/criptenv/context.py`, `apps/cli/src/criptenv/commands/ci.py`, `apps/cli/src/criptenv/commands/integrations.py` — contexto async para CI deploy e erro claro para Railway pendente.
+- `packages/github-action/src/index.ts` — funções exportadas e runner testável.
+
+**Observações:**
+- E2E e backend DB integration usam apenas banco local com `test` no nome.
+- Security workflow é blocking e pode exigir triagem de advisory em dependências.
+
+---
+
+## 2026-05-07 — Frontend Test Suite With Local E2E Database
+
+**Resumo:**
+Adicionada suíte de testes frontend com Jest, React Testing Library e Cypress usando FastAPI + PostgreSQL local isolado para E2E.
+
+**Arquivos criados:**
+- `apps/web/jest.config.cjs`, `apps/web/jest.setup.ts`
+- `apps/web/cypress.config.ts`, `apps/web/cypress/`
+- `docker-compose.e2e.yml`
+- `apps/api/scripts/reset_e2e_db.py`, `apps/api/scripts/run_e2e_api.py`
+- `apps/api/.env.test.example`, `apps/web/.env.test.example`
+
+**Verificação:**
+- Unit/RTL: 41 passed ✅
+- Cypress E2E: 4 passed ✅
+- API tests: 292 passed ✅
+- Web build: passed ✅
+- Web lint: still blocked by pre-existing docs lint errors (`CodeBlock` missing and unescaped quotes) ⚠️
+
+---
+
 ## 2026-05-06 — TASK-068 Integration Config Encryption
 
 **Resumo:**

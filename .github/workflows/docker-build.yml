@@ -1,0 +1,42 @@
+name: Docker Build
+
+on:
+  pull_request:
+  push:
+    branches:
+      - main
+
+permissions:
+  contents: read
+
+jobs:
+  docker-build:
+    name: Build production images
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: api
+            dockerfile: apps/api/Dockerfile
+            target: runtime
+          - name: web
+            dockerfile: apps/web/Dockerfile
+            target: runner
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/setup-buildx-action@v3
+      - name: Build ${{ matrix.name }} image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ${{ matrix.dockerfile }}
+          target: ${{ matrix.target }}
+          push: false
+          cache-from: type=gha,scope=${{ matrix.name }}
+          cache-to: type=gha,mode=max,scope=${{ matrix.name }}
+          build-args: |
+            APP_ENV=production
+            NEXT_PUBLIC_API_URL=http://localhost:8000
+            NEXT_PUBLIC_COOKIE_NAME=criptenv_session
+            NEXT_PUBLIC_APP_URL=http://localhost:3000

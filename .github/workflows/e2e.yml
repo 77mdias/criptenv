@@ -1,0 +1,71 @@
+name: E2E
+
+on:
+  pull_request:
+    paths:
+      - "apps/api/**"
+      - "apps/web/**"
+      - "docker-compose.e2e.yml"
+      - ".github/workflows/e2e.yml"
+  push:
+    branches:
+      - main
+    paths:
+      - "apps/api/**"
+      - "apps/web/**"
+      - "docker-compose.e2e.yml"
+      - ".github/workflows/e2e.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  e2e:
+    name: API integration and Cypress E2E
+    runs-on: ubuntu-latest
+    env:
+      DATABASE_URL: postgresql://criptenv_test:criptenv_test@localhost:55432/criptenv_test
+      SECRET_KEY: test-secret-key-minimum-32-chars
+      ALGORITHM: HS256
+      ACCESS_TOKEN_EXPIRE_MINUTES: "30"
+      DEBUG: "true"
+      CORS_ORIGINS: http://localhost:3000
+      SCHEDULER_ENABLED: "false"
+      RATE_LIMIT_ENABLED: "false"
+      RATE_LIMIT_STORAGE: memory
+      INTEGRATION_CONFIG_SECRET: test-integration-config-secret-32-chars
+      API_URL: http://localhost:8000
+      FRONTEND_URL: http://localhost:3000
+      CRIPTENV_RUN_DB_INTEGRATION: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - name: Install web dependencies
+        working-directory: apps/web
+        run: npm ci
+      - name: Install API dependencies
+        run: make api-install
+      - name: Start E2E database
+        run: docker compose -f docker-compose.e2e.yml up -d postgres-e2e
+      - name: Run backend database integration tests
+        working-directory: apps/api
+        run: .venv/bin/python -m pytest tests/test_backend_integration_db.py -q
+      - name: Run Cypress E2E
+        run: make web-test-e2e
+      - name: Upload Cypress screenshots
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: cypress-screenshots
+          path: apps/web/cypress/screenshots
+          if-no-files-found: ignore
+      - name: Stop E2E database
+        if: always()
+        run: docker compose -f docker-compose.e2e.yml down -v

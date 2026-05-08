@@ -1,0 +1,30 @@
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /apps/web
+    schedule:
+      interval: weekly
+    groups:
+      web-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: npm
+    directory: /packages/github-action
+    schedule:
+      interval: weekly
+    groups:
+      github-action-dependencies:
+        patterns:
+          - "*"
+  - package-ecosystem: pip
+    directory: /apps/api
+    schedule:
+      interval: weekly
+  - package-ecosystem: pip
+    directory: /apps/cli
+    schedule:
+      interval: weekly
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly

@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Blocking CI, Security, E2E, and Build Gates (2026-05-08)
+
+- **GitHub Actions**: Added CI, E2E, Security, Docker Build, and Dependabot configuration.
+- **Frontend stability**: Fixed stale GET cache after mutations, cleaned web lint debt, made Vinext compatibility scan reach 100%, and hardened Cypress project creation against stale project lists.
+- **Backend coverage**: Added route-manifest regression coverage for duplicate `/api/v1/api/v1` routes and opt-in PostgreSQL integration tests for signup/project/default-environment flows.
+- **Scheduler safety**: Background expiration checks now open a fresh DB session per scheduled execution.
+- **CLI coverage**: Added integration command coverage and a `ci deploy` no-session regression test; Railway connect now reports the backend provider gap clearly.
+- **GitHub Action package**: Refactored action code for testability, added Jest/ESLint coverage, and versioned the generated `dist/` bundle.
+
+#### Frontend Test Suite With Local E2E Database (2026-05-07)
+
+- **Jest + React Testing Library**: Added runnable unit and interaction test infrastructure for `apps/web`.
+- **Cypress E2E**: Added browser tests for signup, protected-route redirects, project creation, vault unlock, and secret lifecycle flows.
+- **Isolated test database**: Added Docker Compose PostgreSQL test service, safe env templates, and guarded API reset/run scripts for local E2E.
+- **Automation**: Added web test npm scripts and Make targets for unit and E2E execution.
+
 #### Integration Config Encryption (TASK-068) (2026-05-06)
 
 - **At-rest encryption**: Added AES-256-GCM envelope encryption for `integrations.config`, with HKDF-SHA256 key derivation from dedicated `INTEGRATION_CONFIG_SECRET`.

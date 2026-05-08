@@ -98,6 +98,8 @@
 | Account | `/account` | ✅ |
 | Integrations | `/integrations` | ⚠️ Functional for Vercel, placeholder UI |
 
+**Web Tests**: 41 Jest/React Testing Library tests passing; 4 Cypress E2E tests passing against local Vinext + FastAPI + PostgreSQL test stack.
+
 ---
 
 ## Phase 3 Milestones Status
@@ -148,5 +150,5 @@
 ---
 
 **Document Version**: 1.4
-**Last Updated**: 2026-05-06
+**Last Updated**: 2026-05-07
 **Status**: Active Development — Phase 3 (92% complete, VPS backend and app flows validated)
