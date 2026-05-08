@@ -38,7 +38,7 @@ class Contribution(Base):
     
     # Provider info
     provider = Column(String(50), nullable=False, default="mercadopago")
-    provider_payment_id = Column(String(100), nullable=True, index=True)
+    provider_payment_id = Column(String(100), nullable=True)
     
     # Financial details
     amount = Column(Numeric(12, 2), nullable=False)

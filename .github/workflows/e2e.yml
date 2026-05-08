@@ -53,7 +53,7 @@ jobs:
       - name: Install API dependencies
         run: make api-install
       - name: Start E2E database
-        run: docker compose -f docker-compose.e2e.yml up -d postgres-e2e
+        run: docker compose -f docker-compose.e2e.yml up -d --wait postgres-e2e
       - name: Run backend database integration tests
         working-directory: apps/api
         run: .venv/bin/python -m pytest tests/test_backend_integration_db.py -q
