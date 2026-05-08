@@ -45,7 +45,7 @@ class MercadoPagoClient:
         self,
         access_token: Optional[str] = None,
         base_url: Optional[str] = None,
-        timeout: float = 30.0
+        timeout: float = 10.0
     ):
         self.access_token = access_token or settings.MERCADO_PAGO_ACCESS_TOKEN
         self.base_url = (base_url or settings.MERCADO_PAGO_BASE_URL).rstrip("/")

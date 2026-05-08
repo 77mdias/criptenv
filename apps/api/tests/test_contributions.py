@@ -343,6 +343,44 @@ class TestContributionRouter:
                     assert Decimal(data["amount"]) == Decimal("50.00")
                     assert data["pix_copy_paste"] == "000201010212..."
                     assert data["pix_qr_code_base64"] == "iVBORw0KGgo..."
+
+    @pytest.mark.asyncio
+    async def test_create_pix_contribution_allows_anonymous_visitors(self, transport):
+        """Public contribution page should create Pix payments without a session."""
+        contrib_id = uuid4()
+
+        mock_contribution = MagicMock()
+        mock_contribution.id = contrib_id
+        mock_contribution.status = ContributionStatus.PENDING
+        mock_contribution.amount = Decimal("25.00")
+        mock_contribution.pix_copy_paste = "000201010212..."
+        mock_contribution.pix_qr_code_base64 = "iVBORw0KGgo..."
+        mock_contribution.expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        with patch("app.routers.contributions.settings.PAYMENTS_ENABLED", True):
+            with patch.object(
+                ContributionService, "create_contribution", new_callable=AsyncMock
+            ) as mock_create:
+                mock_create.return_value = mock_contribution
+
+                async with AsyncClient(transport=transport, base_url="http://test") as client:
+                    response = await client.post(
+                        "/api/v1/contributions/pix",
+                        json={
+                            "amount": "25.00",
+                            "payer_name": "",
+                            "payer_email": "",
+                        }
+                    )
+
+                assert response.status_code == 201
+                data = response.json()
+                assert data["contribution_id"] == str(contrib_id)
+                mock_create.assert_awaited_once_with(
+                    amount=Decimal("25.00"),
+                    payer_email=None,
+                    payer_name=None,
+                )
     
     @pytest.mark.asyncio
     async def test_get_contribution_status_success(self, transport):

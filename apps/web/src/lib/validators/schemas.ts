@@ -57,9 +57,31 @@ export const inviteMemberSchema = z.object({
   role: z.enum(["developer", "viewer", "admin"]),
 })
 
+const emptyStringToUndefined = (value: unknown) => {
+  if (typeof value !== "string") return value
+  const trimmed = value.trim()
+  return trimmed === "" ? undefined : trimmed
+}
+
+export const contributionSchema = z.object({
+  amount: z
+    .number({ error: "Informe um valor válido" })
+    .min(5, { error: "Valor mínimo de R$ 5,00" })
+    .max(100000, { error: "Valor máximo de R$ 100.000,00" }),
+  payer_name: z.preprocess(
+    emptyStringToUndefined,
+    z.string().max(255, { error: "Nome deve ter no máximo 255 caracteres" }).optional()
+  ),
+  payer_email: z.preprocess(
+    emptyStringToUndefined,
+    z.string().email("Email inválido").max(255, { error: "Email deve ter no máximo 255 caracteres" }).optional()
+  ),
+})
+
 export type LoginInput = z.infer<typeof loginSchema>
 export type SignupInput = z.infer<typeof signupSchema>
 export type CreateProjectInput = z.infer<typeof createProjectSchema>
 export type CreateSecretInput = z.infer<typeof createSecretSchema>
 export type CreateEnvironmentInput = z.infer<typeof createEnvironmentSchema>
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>
+export type ContributionInput = z.infer<typeof contributionSchema>

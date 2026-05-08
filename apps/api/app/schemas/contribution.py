@@ -59,6 +59,24 @@ class ContributionPixCreate(BaseModel):
                 raise ValueError("Invalid email format")
         return v
 
+    @field_validator('payer_name', mode='before')
+    @classmethod
+    def normalize_name_if_provided(cls, v: Optional[str]) -> Optional[str]:
+        """Treat blank optional payer names as omitted."""
+        if isinstance(v, str):
+            stripped = v.strip()
+            return stripped or None
+        return v
+
+    @field_validator('payer_email', mode='before')
+    @classmethod
+    def normalize_email_if_provided(cls, v: Optional[str]) -> Optional[str]:
+        """Treat blank optional payer emails as omitted."""
+        if isinstance(v, str):
+            stripped = v.strip()
+            return stripped or None
+        return v
+
 
 class ContributionPixResponse(BaseModel):
     """Schema for Pix contribution creation response."""

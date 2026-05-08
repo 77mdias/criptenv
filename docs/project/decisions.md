@@ -531,6 +531,34 @@ CriptEnv had strong local API/CLI test suites and a new frontend E2E stack, but 
 
 ---
 
+## DEC-020 — Public Pix Contributions With Light Status Sync
+
+**Date:** 2026-05-08
+**Status:** ✅ Accepted
+**Context:**
+CriptEnv needs a low-friction contribution flow from the marketing site. Requiring dashboard login would add unnecessary friction for open-source supporters, while Mercado Pago webhooks can be delayed or unavailable in local/sandbox environments.
+
+**Decision:**
+- Make `/contribute` public and allow anonymous `POST /api/v1/contributions/pix` creation.
+- Keep Mercado Pago Pix as the only payment method for this contribution flow.
+- Treat Mercado Pago webhook verification as the primary source of payment truth.
+- Let the frontend poll local contribution status every 5 seconds and perform light provider sync after 10 seconds, then at most every 30 seconds.
+- Store only minimal payer metadata; no vault data, secrets, or zero-knowledge material participate in this flow.
+
+**Rationale:**
+- Public Pix keeps support friction low for visitors arriving from the landing pricing CTA.
+- Webhooks remain authoritative, but light sync improves feedback when webhooks are delayed.
+- The contribution flow is operationally separate from encrypted secret management and does not weaken the zero-knowledge boundary.
+
+**Consequences:**
+- ✅ Visitors can contribute without creating an account.
+- ✅ The UI can recover from delayed webhook delivery without aggressive Mercado Pago polling.
+- ✅ Payment status is visible in the browser through QR, pending, paid, expired, and error states.
+- ❌ Anonymous payment creation must remain protected by amount validation and rate limiting.
+- ⚠️ Provider availability can still surface as a visible Pix creation error.
+
+---
+
 ## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation

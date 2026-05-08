@@ -2,34 +2,34 @@
 
 ## Status atual
 
-**Blocking CI/Test/Security Gates — implementação local concluída, aguardando verificação final.**
+**Mercado Pago Pix Contribution Flow — implementação local concluída, em verificação final.**
 
 ---
 
 ## Tarefa em foco
 
-Fechar lacunas de testes do frontend, backend e CLI; estabilizar lint/E2E; e criar workflows GitHub Actions para CI, E2E, segurança e build.
+Finalizar a integração pública de contribuições via Mercado Pago Pix na rota `/contribute`.
 
 ---
 
 ## O que foi implementado nesta sessão
 
-### CI/Test/Security Gates ✅
-- Corrigido lint do web e compatibilidade `vinext check`.
-- Corrigido cache stale do client API após mutations.
-- Corrigido Cypress project creation para usar o response do POST.
-- Corrigida duplicação de rotas `/api/v1/api/v1`.
-- Scheduler de expiração agora usa sessão DB por execução.
-- Adicionados testes para signup/proxy no frontend, manifesto de rotas/API scheduler, CLI integrations/CI deploy e GitHub Action.
-- Criados workflows: CI, E2E, Security, Docker Build e Dependabot.
+### Mercado Pago Pix Contribution Flow ✅
+- Criada rota pública `/contribute` com formulário React Hook Form + Zod.
+- Valor do input numérico é convertido para `number` via `valueAsNumber` antes da validação.
+- Nome/email opcionais são trimados e omitidos quando vazios.
+- Página integra criação de Pix, QR code, Pix copia-e-cola, pending, paid, expired e error states.
+- Status usa webhook como fonte primária e polling/sync leve como fallback de UX.
+- Backend permite criação anônima de contribuição e mantém validação de valor/metadados.
+- Testes adicionados para schema, página de contribuição e criação anônima no backend.
 
 ---
 
 ## Documentação atualizada
 
-- [x] `docs/project/decisions.md` — DEC-019
-- [x] `docs/development/CHANGELOG.md` — seção Blocking CI/Test/Security Gates
-- [x] `docs/tasks/task-history.md` — registro dos gates
+- [x] `docs/project/decisions.md` — DEC-020
+- [x] `docs/development/CHANGELOG.md` — seção Mercado Pago Pix Contribution Flow
+- [x] `docs/tasks/task-history.md` — registro do fluxo de contribuição
 - [x] `docs/tasks/current-task.md` — este arquivo
 
 ---
@@ -37,11 +37,11 @@ Fechar lacunas de testes do frontend, backend e CLI; estabilizar lint/E2E; e cri
 ## Próximos passos recomendados
 
 1. Rodar a verificação completa local e corrigir qualquer falha residual.
-2. Monitorar primeiros PRs para ruído de `npm audit`, `pip-audit`, Gitleaks e Trivy.
-3. Expandir Cypress para Web Alert UI quando essa tela for implementada.
+2. Validar o fluxo manualmente com credenciais sandbox do Mercado Pago.
+3. Confirmar webhook público em produção após deploy.
 
 ---
 
-**Document Version**: 1.8
+**Document Version**: 1.9
 **Last Updated**: 2026-05-08
-**Status**: CI/Test/Security gates implemented locally
+**Status**: Mercado Pago contribution flow implemented locally

@@ -13,7 +13,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_optional_user
 from app.models.user import User
 from app.schemas.contribution import (
     ContributionPixCreate,
@@ -35,7 +35,7 @@ router = APIRouter(prefix="/api/v1/contributions", tags=["Contributions"])
 async def create_pix_contribution(
     request: Request,
     payload: ContributionPixCreate,
-    current_user: Optional[User] = Depends(get_current_user),
+    current_user: Optional[User] = Depends(get_optional_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Create a new Pix contribution.
@@ -187,6 +187,5 @@ async def sync_contribution_status(
         cancelled_at=contribution.cancelled_at,
         expires_at=contribution.expires_at,
     )
-
 
 

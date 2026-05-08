@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Mercado Pago Pix Contribution Flow (2026-05-08)
+
+- **Public contribution page**: Added `/contribute` with a Pix amount form, optional payer name/email fields, QR code display, copy-paste Pix code, and status states for pending, paid, expired, and error outcomes.
+- **Payment integration**: Wired the page to `POST /api/v1/contributions/pix`, `GET /api/v1/contributions/{id}/status`, and light `POST /api/v1/contributions/{id}/sync` polling.
+- **Public API creation**: Anonymous visitors can create contribution payments while the backend still validates amount and normalizes blank optional payer metadata.
+- **Validation coverage**: Added React Hook Form/Zod conversion coverage for numeric amount input and page tests for create, paid, expired, and error states.
+- **Decision record**: Added DEC-020 documenting public Pix contributions with webhook-first status and light frontend sync.
+
 #### Blocking CI, Security, E2E, and Build Gates (2026-05-08)
 
 - **GitHub Actions**: Added CI, E2E, Security, Docker Build, and Dependabot configuration.

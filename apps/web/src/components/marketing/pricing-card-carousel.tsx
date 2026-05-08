@@ -43,6 +43,7 @@ export interface PricingPlan {
   features: string[];
   cta: string;
   featured?: boolean;
+  href?: string;
 }
 
 interface PricingCardCarouselProps {
@@ -455,7 +456,7 @@ export function PricingCardCarousel({
                 </ul>
 
                 {/* CTA */}
-                <Link href="/signup" className="mt-auto block">
+                <Link href={card.href || "/signup"} className="mt-auto block">
                   <Button
                     variant={card.featured ? "primary" : "secondary"}
                     fullWidth

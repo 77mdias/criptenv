@@ -2,6 +2,7 @@ import {
   createEnvironmentSchema,
   createProjectSchema,
   createSecretSchema,
+  contributionSchema,
   loginSchema,
   signupSchema,
 } from "../schemas"
@@ -57,5 +58,19 @@ describe("validators", () => {
 
     expect(createEnvironmentSchema.safeParse({ name: "preview-1", display_name: "Preview" }).success).toBe(true)
     expect(createEnvironmentSchema.safeParse({ name: "Preview", display_name: "Preview" }).success).toBe(false)
+  })
+
+  it("validates contribution amount as a number and normalizes optional payer fields", () => {
+    expect(contributionSchema.safeParse({ amount: 25 }).success).toBe(true)
+    expect(contributionSchema.safeParse({ amount: "25" }).success).toBe(false)
+    expect(contributionSchema.safeParse({ amount: 4.99 }).success).toBe(false)
+
+    const parsed = contributionSchema.parse({
+      amount: 50,
+      payer_name: "  ",
+      payer_email: "",
+    })
+
+    expect(parsed).toEqual({ amount: 50 })
   })
 })

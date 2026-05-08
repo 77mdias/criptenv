@@ -115,17 +115,18 @@ const scatteredSecrets = [
 
 const plans = [
   {
-    name: "Protocol",
-    description: "Para MVPs & Startups",
-    price: "Free",
+    name: "Contribua",
+    description: "Apoie o projeto open source",
+    price: "R$ 5+",
     features: [
-      "Unlimited secrets",
-      "3 environments",
-      "5 team members",
-      "30-day audit log",
+      "100% open source",
+      "Zero taxas de intermediário",
+      "Pix instantâneo",
+      "Ajude a manter o projeto vivo",
     ],
-    cta: "Get Started",
+    cta: "Contribuir Agora",
     featured: false,
+    href: "/contribute",
   },
   {
     name: "Construct",

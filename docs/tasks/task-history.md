@@ -6,6 +6,31 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-08 — Mercado Pago Pix Contribution Flow
+
+**Resumo:**
+Implementada a página pública `/contribute` para contribuições via Pix/Mercado Pago, com formulário React Hook Form + Zod, QR code, código copia-e-cola e acompanhamento de status.
+
+**Arquivos criados:**
+- `apps/web/src/app/(marketing)/contribute/page.tsx`
+- `apps/web/src/app/(marketing)/contribute/__tests__/page.test.tsx`
+
+**Arquivos alterados:**
+- `apps/api/app/routers/contributions.py` — criação de contribuição passa a aceitar visitante anônimo.
+- `apps/api/app/schemas/contribution.py` — normaliza nome/email opcionais em branco.
+- `apps/api/tests/test_contributions.py` — cobertura para criação anônima.
+- `apps/web/src/lib/validators/schemas.ts` — schema Zod 4-safe para valor numérico e opcionais trimados.
+- `apps/web/src/lib/validators/__tests__/schemas.test.ts` — cobertura de conversão/normalização de contribuição.
+- `docs/project/decisions.md` — DEC-020.
+- `docs/development/CHANGELOG.md`, `docs/tasks/current-task.md`, `docs/tasks/task-history.md`.
+
+**Observações:**
+- Webhook do Mercado Pago continua sendo a fonte primária de verdade.
+- Frontend usa polling local leve e sync periódico para cobrir atraso de webhook.
+- O fluxo de pagamento não envolve vaults, secrets ou material zero-knowledge.
+
+---
+
 ## 2026-05-08 — Blocking CI/Test/Security Gates
 
 **Resumo:**
