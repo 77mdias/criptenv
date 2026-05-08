@@ -4,7 +4,7 @@
   "description": "GitHub Action to pull secrets from CriptEnv",
   "main": "dist/index.js",
   "scripts": {
-    "build": "ncc build src/index.ts --license licenses.txt",
+    "build": "ncc build src/index.ts --license licenses.txt && rm -f dist/*.map",
     "test": "jest",
     "lint": "eslint src/**/*.ts"
   },

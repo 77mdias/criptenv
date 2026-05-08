@@ -25,4 +25,7 @@ def mock_config_dir(temp_dir, monkeypatch):
     # Also patch the local bindings in database.py
     monkeypatch.setattr("criptenv.vault.database.CONFIG_DIR", temp_dir)
     monkeypatch.setattr("criptenv.vault.database.DB_FILE", temp_dir / "vault.db")
+    # Also patch the local bindings in doctor.py (imports at module level)
+    monkeypatch.setattr("criptenv.commands.doctor.CONFIG_DIR", temp_dir)
+    monkeypatch.setattr("criptenv.commands.doctor.DB_FILE", temp_dir / "vault.db")
     return temp_dir
