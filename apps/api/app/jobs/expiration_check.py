@@ -207,6 +207,37 @@ def create_scheduler_job(checker: ExpirationChecker):
     return run_check
 
 
+def create_session_scoped_scheduler_job(
+    session_factory,
+    checker_cls=ExpirationChecker,
+):
+    """Create a scheduler job that opens a fresh DB session per execution.
+
+    FastAPI lifespan runs once, while APScheduler jobs run later. Capturing a
+    request-style dependency generator or a long-lived session at startup can
+    leave the background job with invalid DB state, so the job owns its session
+    scope every time it runs.
+    """
+    async def run_check():
+        async with session_factory() as db:
+            checker = checker_cls(db)
+            results = await checker.check_expirations()
+            success_count = sum(1 for r in results if r.success)
+            total_count = len(results)
+
+            logger.info(
+                f"Expiration check complete: {success_count}/{total_count} notifications sent"
+            )
+
+            for i, result in enumerate(results):
+                if not result.success:
+                    logger.warning(
+                        f"Notification {i+1} failed: {result.error}"
+                    )
+
+    return run_check
+
+
 def create_hourly_scheduler(db: AsyncSession) -> tuple:
     """Create expiration checker and scheduler job for hourly execution.
     

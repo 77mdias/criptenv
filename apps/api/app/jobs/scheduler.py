@@ -48,6 +48,10 @@ class SchedulerManager:
         from app.jobs.expiration_check import create_scheduler_job
         
         job_func = create_scheduler_job(checker)
+        self.add_expiration_job_func(job_func, interval_hours=interval_hours)
+
+    def add_expiration_job_func(self, job_func, interval_hours: int = 1):
+        """Add an already constructed expiration check job to scheduler."""
         self.scheduler.add_job(
             job_func,
             trigger=IntervalTrigger(hours=interval_hours),
@@ -126,6 +130,13 @@ def init_scheduler(checker, interval_hours: int = 1) -> SchedulerManager:
     """
     manager = get_scheduler()
     manager.add_expiration_job(checker, interval_hours=interval_hours)
+    return manager
+
+
+def init_scheduler_job(job_func, interval_hours: int = 1) -> SchedulerManager:
+    """Initialize the global scheduler with a prebuilt expiration job."""
+    manager = get_scheduler()
+    manager.add_expiration_job_func(job_func, interval_hours=interval_hours)
     return manager
 
 

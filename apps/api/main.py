@@ -55,14 +55,13 @@ async def lifespan(app: FastAPI):
     scheduler_manager = None
     if getattr(settings, 'SCHEDULER_ENABLED', True):
         try:
-            from app.jobs.scheduler import init_scheduler
-            from app.jobs.expiration_check import ExpirationChecker
-            from app.database import get_db
+            from app.jobs.scheduler import init_scheduler_job
+            from app.jobs.expiration_check import create_session_scoped_scheduler_job
+            from app.database import async_session_factory
             
-            db = get_db()
-            checker = ExpirationChecker(db)
-            scheduler_manager = init_scheduler(
-                checker,
+            job_func = create_session_scoped_scheduler_job(async_session_factory)
+            scheduler_manager = init_scheduler_job(
+                job_func,
                 interval_hours=getattr(settings, 'SCHEDULER_INTERVAL_HOURS', 1)
             )
             scheduler_manager.start()

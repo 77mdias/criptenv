@@ -4,22 +4,9 @@ Implements /api/v1/ prefix for all endpoints as per M3.4 specification.
 All endpoints are versioned for backwards compatibility.
 """
 
-from fastapi import APIRouter, Request, Response
-from uuid import UUID
+from fastapi import APIRouter, Request
 
-# Import existing routers to wrap with v1 prefix
-from app.routers.auth import router as auth_router
-from app.routers.projects import router as projects_router
-from app.routers.environments import router as environments_router
-from app.routers.vault import router as vault_router
-from app.routers.members import router as members_router
-from app.routers.invites import router as invites_router
-from app.routers.audit import router as audit_router
-from app.routers.tokens import router as tokens_router
-from app.routers.ci import router as ci_router
-from app.routers.integrations import router as integrations_router
 from app.routers.api_keys import router as api_keys_router  # M3.4
-from app.routers.rotation import router as rotation_router, expiring_router  # M3.5
 
 API_VERSION = "1.0"
 API_PREFIX = "/api/v1"
@@ -54,21 +41,7 @@ async def v1_readiness_check(request: Request):
         }
 
 
-# Note: auth_router has prefix="/api/auth", so including it adds /api/v1/api/auth/*
-# For clean v1 auth at /api/v1/auth/* we would need separate route definitions
-# Current setup uses legacy auth at /api/auth with v1 proxy at /api/v1/api/auth
-
-# Include all existing routers under v1 prefix
-# Auth becomes /api/v1/api/auth/* - not ideal but functional for v1
-v1_router.include_router(projects_router)
-v1_router.include_router(environments_router)
-v1_router.include_router(vault_router)
-v1_router.include_router(members_router)
-v1_router.include_router(invites_router)
-v1_router.include_router(audit_router)
-v1_router.include_router(tokens_router)
-v1_router.include_router(ci_router)
-v1_router.include_router(integrations_router)
+# Most routers already include the /api/v1 prefix and are mounted directly in
+# main.py for backwards compatibility. Only routers with relative prefixes
+# should be included here.
 v1_router.include_router(api_keys_router)  # M3.4: API Keys CRUD
-v1_router.include_router(rotation_router)  # M3.5: Secret Rotation
-v1_router.include_router(expiring_router)  # M3.5: Expiring Secrets List

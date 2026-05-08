@@ -127,3 +127,16 @@ async def test_v1_ready_endpoint(transport):
     assert response.status_code in (200, 503)
     data = response.json()
     assert "status" in data
+
+
+def test_route_manifest_has_no_nested_v1_prefixes():
+    """Versioned routers must not be re-mounted under /api/v1/api/v1."""
+    paths = [
+        getattr(route, "path", "")
+        for route in app.routes
+        if getattr(route, "path", "").startswith("/api/")
+    ]
+
+    assert not any(path.startswith("/api/v1/api/v1") for path in paths)
+    assert "/api/v1/projects" in paths
+    assert "/api/v1/projects/{project_id}/api-keys" in paths

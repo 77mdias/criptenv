@@ -347,6 +347,50 @@ class TestCreateSchedulerJob:
         
         mock_rotation_service.list_pending_rotations.assert_called_once()
 
+    @pytest.mark.asyncio
+    async def test_session_scoped_scheduler_job_opens_fresh_db_session(self):
+        """Scheduler job should create a fresh DB session for each execution."""
+        from app.jobs.expiration_check import create_session_scoped_scheduler_job
+
+        sessions = [AsyncMock(), AsyncMock()]
+        contexts = []
+        checker_sessions = []
+
+        class SessionContext:
+            def __init__(self, session):
+                self.session = session
+                self.entered = 0
+                self.exited = 0
+
+            async def __aenter__(self):
+                self.entered += 1
+                return self.session
+
+            async def __aexit__(self, exc_type, exc, tb):
+                self.exited += 1
+                return False
+
+        class FakeChecker:
+            def __init__(self, db):
+                checker_sessions.append(db)
+
+            async def check_expirations(self):
+                return []
+
+        def session_factory():
+            context = SessionContext(sessions[len(contexts)])
+            contexts.append(context)
+            return context
+
+        job = create_session_scoped_scheduler_job(session_factory, checker_cls=FakeChecker)
+
+        await job()
+        await job()
+
+        assert checker_sessions == sessions
+        assert [context.entered for context in contexts] == [1, 1]
+        assert [context.exited for context in contexts] == [1, 1]
+
 
 class TestExpirationCheckerEdgeCases:
     """Edge case tests for ExpirationChecker."""

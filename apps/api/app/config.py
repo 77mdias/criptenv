@@ -21,6 +21,8 @@ class Settings(BaseSettings):
     RATE_LIMIT_STORAGE: str = "memory"
     REDIS_URL: str = ""
     INTEGRATION_CONFIG_SECRET: str = ""
+    SCHEDULER_ENABLED: bool = True
+    SCHEDULER_INTERVAL_HOURS: int = 24
     
     # API URL for OAuth callbacks
     API_URL: str = "http://localhost:8000"
