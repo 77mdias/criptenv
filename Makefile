@@ -24,7 +24,8 @@ DOCKER_COMPOSE_PROD := docker compose -f docker-compose.yml
 	cli-install cli-test \
 	docker-dev docker-dev-down docker-dev-logs docker-dev-build \
 	docker-build docker-push docker-build-push docker-clean \
-	docker-build-api docker-build-web docker-push-api docker-push-web
+	docker-build-api docker-build-web docker-push-api docker-push-web \
+	api-test-contributions api-test-webhook api-test-flow
 
 help: ## Show available commands
 	@awk 'BEGIN {FS = ":.*## "}; /^[a-zA-Z0-9_.-]+:.*## / {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}' $(MAKEFILE_LIST)
@@ -84,6 +85,17 @@ api-dev: api-install ## Start the FastAPI development server
 
 api-test: api-install ## Run the API test suite
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python -m pytest tests -q
+
+api-test-contributions: api-install ## Run contribution tests only
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python -m pytest tests/test_contributions.py tests/test_webhook_security.py -v
+
+api-test-webhook: api-install ## Test webhook endpoint with valid signature
+	@echo "Testing webhook endpoint..."
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python scripts/test_webhook.py --payment-id 123456789
+
+api-test-flow: api-install ## Run complete contribution flow end-to-end
+	@echo "Running complete contribution flow..."
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python scripts/test_contribution_flow.py
 
 db-upgrade: api-install ## Apply Alembic migrations to the configured API database
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/alembic -c alembic.ini upgrade head
