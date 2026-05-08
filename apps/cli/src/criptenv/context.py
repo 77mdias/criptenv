@@ -3,7 +3,7 @@
 import asyncio
 import getpass
 import os
-from contextlib import contextmanager
+from contextlib import asynccontextmanager, contextmanager
 from typing import Optional
 
 import click
@@ -114,6 +114,34 @@ def cli_context(require_auth: bool = False):
             yield db, master_key, None
     finally:
         run_async(close_db(db))
+
+
+@asynccontextmanager
+async def async_cli_context(require_auth: bool = False):
+    """Async variant of cli_context for Click commands already inside a coroutine."""
+    db = await get_db()
+    await init_schema(db)
+
+    try:
+        if require_auth:
+            master_key = await _load_master_key(db)
+            manager = SessionManager(master_key, db)
+            client = await manager.get_authenticated_client()
+            if not client:
+                raise click.ClickException(
+                    "Not logged in or session expired. Run 'criptenv login' first."
+                )
+            yield db, master_key, client
+        else:
+            salt_hex = await queries.get_config(db, "master_salt")
+            if salt_hex:
+                password = _get_master_password()
+                master_key = derive_master_key(password, bytes.fromhex(salt_hex))
+            else:
+                master_key = None
+            yield db, master_key, None
+    finally:
+        await close_db(db)
 
 
 @contextmanager

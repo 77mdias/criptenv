@@ -81,6 +81,14 @@ def integrations_connect(provider: str, name: Optional[str], token: Optional[str
         criptenv integrations connect vercel --token tok_xxx --project-id prj_xxx
         criptenv integrations connect render --token tok_xxx --project-id srv_xxx
     """
+    if provider == "railway":
+        click.echo(
+            "Error: Railway provider is not implemented yet. "
+            "Use Vercel or Render until the backend RailwayProvider is available.",
+            err=True,
+        )
+        return
+
     async def _do_connect():
         with cli_context(require_auth=True) as (db, master_key, client):
             project_id = _get_current_project(client)

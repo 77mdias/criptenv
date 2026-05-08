@@ -17,7 +17,7 @@ from typing import Optional
 import click
 
 from criptenv.api.client import CriptEnvClient
-from criptenv.context import cli_context, _resolve_env_id
+from criptenv.context import async_cli_context, cli_context, _resolve_env_id
 from criptenv.crypto import (
     decrypt,
     derive_env_key,
@@ -255,7 +255,7 @@ def ci_deploy(environment: str, provider: Optional[str], dry_run: bool):
         criptenv ci deploy --env production --provider vercel
     """
     async def _do_deploy():
-        with cli_context() as (db, master_key, _):
+        async with async_cli_context() as (db, master_key, _):
             manager = CISessionManager(master_key, db)
             session = await manager.get_active_session()
 
