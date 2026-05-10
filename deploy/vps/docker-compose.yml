@@ -117,51 +117,8 @@ services:
       - criptenv
 
   # -------------------------------------------
-  # Nginx Proxy Manager - Reverse Proxy + SSL
+  # Cloudflare Tunnel
   # -------------------------------------------
-  nginx-proxy-manager:
-    image: jc21/nginx-proxy-manager:latest
-    restart: always
-    ports:
-      - "80:80"
-      - "443:443"
-      - "${NPM_ADMIN_BIND:-127.0.0.1}:81:81"
-    volumes:
-      - npm-data:/data
-      - npm-letsencrypt:/etc/letsencrypt
-    depends_on:
-      api:
-        condition: service_healthy
-    networks:
-      - criptenv
-
-  # -------------------------------------------
-  # DuckDNS - Dynamic DNS Updater
-  # -------------------------------------------
-  duckdns-updater:
-    image: alpine:3.20
-    restart: always
-    environment:
-      DUCKDNS_SUBDOMAIN: "${DUCKDNS_SUBDOMAIN}"
-      DUCKDNS_TOKEN: "${DUCKDNS_TOKEN}"
-      DUCKDNS_FORCE_IP: "${DUCKDNS_FORCE_IP:-}"
-      DUCKDNS_UPDATE_SECONDS: "${DUCKDNS_UPDATE_SECONDS:-300}"
-    command: >
-      sh -c 'while true; do
-        PUBLIC_IP="$${DUCKDNS_FORCE_IP:-$$(wget -qO- https://api4.ipify.org 2>/dev/null || true)}";
-        if [ -z "$${PUBLIC_IP}" ]; then
-          echo "DuckDNS update skipped: could not determine public IPv4";
-        else
-          echo "Updating $${DUCKDNS_SUBDOMAIN}.duckdns.org -> $${PUBLIC_IP}";
-          wget -qO- "https://www.duckdns.org/update?domains=$${DUCKDNS_SUBDOMAIN}&token=$${DUCKDNS_TOKEN}&ip=$${PUBLIC_IP}";
-          echo;
-        fi;
-        sleep $${DUCKDNS_UPDATE_SECONDS:-300};
-      done'
-    networks:
-      - criptenv
-
-  #
   cloudflare-tunnel:
     image: cloudflare/cloudflared:latest
     container_name: vps-cloudflare-tunnel
