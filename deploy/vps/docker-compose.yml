@@ -161,6 +161,17 @@ services:
     networks:
       - criptenv
 
+  #
+  cloudflare-tunnel:
+    image: cloudflare/cloudflared:latest
+    container_name: vps-cloudflare-tunnel
+    restart: unless-stopped
+    environment:
+      - TUNNEL_TOKEN=${TUNNEL_TOKEN}
+    command: tunnel run
+    networks:
+      - criptenv
+
 networks:
   criptenv:
 
