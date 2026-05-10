@@ -108,7 +108,7 @@ aiosqlite>=0.20.0
 |---------|----------|---------|
 | **Database** | PostgreSQL (Free Tier) | Primary store |
 | **Backend** | VPS Docker + Gunicorn/Uvicorn | FastAPI server |
-| **Reverse Proxy** | Nginx Proxy Manager | DuckDNS hostname + Let's Encrypt TLS |
+| **API Tunnel** | Cloudflare Tunnel | `criptenv-api.77mdevseven.tech` -> `http://api:8000` |
 | **Rate Limit Store** | Redis | Shared counters across API workers |
 | **Frontend** | Cloudflare Pages + Workers | Vinext deployment + `/api/*` proxy |
 | **CLI Distribution** | PyPI (future) | Package distribution |
@@ -169,7 +169,7 @@ SCHEDULER_INTERVAL_HOURS=24
 ```bash
 # API
 NEXT_PUBLIC_API_URL=
-API_URL=https://criptenv.duckdns.org
+API_URL=https://criptenv-api.77mdevseven.tech
 
 # Auth
 NEXT_PUBLIC_COOKIE_NAME=criptenv_session

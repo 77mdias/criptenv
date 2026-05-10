@@ -2,47 +2,50 @@
 
 ## Status atual
 
-**VPS DuckDNS Drift Recovery — configuração e runbook documentados.**
+**Custom production domains — frontend/backend configuration updated.**
 
 ---
 
 ## Tarefa em foco
 
-Reduzir quedas públicas do backend causadas por drift do A record do DuckDNS e documentar o diagnóstico para quando API/Nginx internos estão saudáveis, mas `https://criptenv.duckdns.org` não conecta publicamente.
+Atualizar CORS, URLs públicas, OAuth redirects, webhooks e documentação para os domínios de produção:
+
+- Frontend: `https://criptenv.77mdevseven.tech`
+- Backend: `https://criptenv-api.77mdevseven.tech`
 
 ---
 
 ## O que foi implementado nesta sessão
 
-### VPS DuckDNS Drift Recovery ✅
-- Confirmado que a API e o Nginx Proxy Manager estavam saudáveis na VPS.
-- Identificado drift entre o IPv4 público da VPS e `dig +short criptenv.duckdns.org`.
-- `duckdns-updater` passa a detectar o IPv4 público via `api4.ipify.org` e enviar esse IP explicitamente ao DuckDNS.
-- Adicionado `DUCKDNS_FORCE_IP` para override opcional em VPS com IPv4 fixo.
-- Documentado runbook para comparação IP/DNS, teste local com `--resolve` e update manual.
+### Custom Production Domains ✅
+- Backend env templates passam a usar `API_URL=https://criptenv-api.77mdevseven.tech`.
+- Backend `FRONTEND_URL` e `CORS_ORIGINS` passam a usar `https://criptenv.77mdevseven.tech`.
+- Frontend env template mantém `NEXT_PUBLIC_API_URL=` vazio e usa runtime `API_URL=https://criptenv-api.77mdevseven.tech`.
+- Testes OAuth e scripts de webhook apontam para os novos domínios.
+- Documentação de deploy foi alinhada ao stack atual com Cloudflare Tunnel.
 
 ---
 
 ## Documentação atualizada
 
-- [x] `deploy/vps/README.md` — runbook de DuckDNS drift.
-- [x] `docs/technical/deployment-guide.md` — recuperação, env vars e checklist.
-- [x] `docs/project/current-state.md` — estado/riscos de VPS atualizados.
-- [x] `docs/project/decisions.md` — DEC-021.
-- [x] `docs/development/CHANGELOG.md` — seção VPS DuckDNS Drift Recovery.
-- [x] `docs/tasks/task-history.md` — registro da correção operacional.
-- [x] `docs/tasks/current-task.md` — este arquivo.
+- [x] `deploy/vps/README.md` — domínios e tunnel.
+- [x] `docs/technical/deployment-guide.md` — guia completo atualizado.
+- [x] `docs/technical/deployment.md` — stack resumido atualizado.
+- [x] `docs/project/decisions.md` — DEC-022.
+- [x] `docs/project/current-state.md` — estado atual com custom domains.
+- [x] `docs/project/architecture.md` e `docs/project/tech-stack.md`.
+- [x] `docs/development/CHANGELOG.md` e `docs/tasks/task-history.md`.
 
 ---
 
 ## Próximos passos recomendados
 
-1. Aplicar a alteração na VPS com `docker compose -f deploy/vps/docker-compose.yml up -d duckdns-updater`.
-2. Verificar logs do updater e confirmar que ele publica o IPv4 esperado.
-3. Procurar por outro updater DuckDNS concorrente se o registro voltar a apontar para outro IP.
+1. Atualizar variáveis reais na VPS e no Cloudflare Pages/Workers.
+2. Confirmar o public hostname do Cloudflare Tunnel: `criptenv-api.77mdevseven.tech -> http://api:8000`.
+3. Rodar smoke tests públicos de health, login/OAuth e vault pull/push.
 
 ---
 
-**Document Version**: 1.11
+**Document Version**: 1.12
 **Last Updated**: 2026-05-10
-**Status**: VPS DuckDNS drift recovery documented and configured
+**Status**: Custom production domains configured in repo

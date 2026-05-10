@@ -76,7 +76,7 @@ export default function AuditPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl "https://api.criptenv.dev/api/v1/projects/{pid}/audit?page=1&per_page=20&action=secret.create" \\
+          code={`curl "https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/audit?page=1&per_page=20&action=secret.create" \\
   -H "Authorization: Bearer {token}"`}
         />
 

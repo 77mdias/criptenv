@@ -6,6 +6,26 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-10 — Custom Production Domains
+
+**Resumo:**
+Atualizados frontend, backend, CORS, OAuth redirects, scripts de webhook e documentação para os domínios customizados `77mdevseven.tech`, com API exposta via Cloudflare Tunnel.
+
+**Arquivos alterados:**
+- `apps/api/.env.example`, `deploy/vps/.env.example`, `apps/web/.env.example` — URLs de produção atualizadas.
+- `apps/api/render.yaml`, `apps/api/railway.toml` — rollback configs usam o frontend customizado em CORS/redirect.
+- `apps/api/tests/test_oauth.py` — expectativas de redirect/callback atualizadas.
+- `apps/api/scripts/test_webhook.py`, `apps/api/scripts/test_webhook_production.py` — webhook production URL atualizado.
+- `scripts/production-checklist.sh` — smoke target atualizado.
+- `deploy/vps/README.md`, `docs/technical/deployment-guide.md`, `docs/technical/deployment.md` — docs de deploy com Cloudflare Tunnel e domínios customizados.
+- `docs/project/decisions.md` — DEC-022.
+
+**Observações:**
+- `NEXT_PUBLIC_API_URL` permanece vazio em produção para manter requests do browser em `/api/*`.
+- `API_URL` do Worker deve ser `https://criptenv-api.77mdevseven.tech`.
+
+---
+
 ## 2026-05-10 — VPS DuckDNS Drift Recovery
 
 **Resumo:**
@@ -155,7 +175,7 @@ Criptografia at-rest para `integrations.config`, protegendo tokens de Vercel/Ren
 ## 2026-05-06 — VPS Backend Migration Validated
 
 **Resumo:**
-Migração do backend de Render Free Tier para VPS Docker validada com DuckDNS, Nginx Proxy Manager, Redis rate limiting, Supabase externo e Cloudflare Workers proxy `/api/*`.
+Migração do backend de Render Free Tier para VPS Docker validada inicialmente com DuckDNS, Nginx Proxy Manager, Redis rate limiting, Supabase externo e Cloudflare Workers proxy `/api/*`.
 
 **Arquivos criados:**
 - `.dockerignore`
@@ -181,13 +201,13 @@ Migração do backend de Render Free Tier para VPS Docker validada com DuckDNS, 
 - Web build: passed ✅
 - Docker Compose config: valid ✅
 - Production smoke:
-  - `https://criptenv.duckdns.org/health` ✅
-  - `https://criptenv.duckdns.org/api/health` ✅
-  - `https://criptenv.jean-carlos3.workers.dev/api/health` ✅
+  - `https://criptenv-api.77mdevseven.tech/health` ✅
+  - `https://criptenv-api.77mdevseven.tech/api/health` ✅
+  - `https://criptenv.77mdevseven.tech/api/health` ✅
 
 **Observações:**
-- Nginx Proxy Manager admin permanece privado em `127.0.0.1:81`; acesso recomendado via `ssh -L 8181:127.0.0.1:81 root@<VPS_IP>`.
-- `NEXT_PUBLIC_API_URL` deve ficar vazio em produção; o Worker usa `API_URL=https://criptenv.duckdns.org`.
+- Nginx Proxy Manager foi usado na primeira versão do deploy VPS; o stack atual usa Cloudflare Tunnel.
+- `NEXT_PUBLIC_API_URL` deve ficar vazio em produção; o Worker usa `API_URL=https://criptenv-api.77mdevseven.tech`.
 - Ainda falta validar fluxos de app completos: login/signup, OAuth, projetos e vault push/pull.
 
 ---

@@ -5,7 +5,7 @@ This script verifies your production webhook configuration by sending
 a test notification to your live endpoint with a valid signature.
 
 Usage:
-    python scripts/test_webhook_production.py --url https://criptenv.duckdns.org/webhooks/mercadopago --secret YOUR_SECRET --payment-id 123456789
+    python scripts/test_webhook_production.py --url https://criptenv-api.77mdevseven.tech/webhooks/mercadopago --secret YOUR_SECRET --payment-id 123456789
 """
 
 import argparse
@@ -103,7 +103,7 @@ def main():
         epilog="""
 Examples:
   # Test production endpoint
-  python scripts/test_webhook_production.py --url https://criptenv.duckdns.org/webhooks/mercadopago --secret your-secret --payment-id 123456789
+  python scripts/test_webhook_production.py --url https://criptenv-api.77mdevseven.tech/webhooks/mercadopago --secret your-secret --payment-id 123456789
 
   # With custom payment ID
   python scripts/test_webhook_production.py --secret my-webhook-secret --payment-id 987654321
@@ -112,7 +112,7 @@ Examples:
     
     parser.add_argument(
         "--url",
-        default="https://criptenv.duckdns.org/webhooks/mercadopago",
+        default="https://criptenv-api.77mdevseven.tech/webhooks/mercadopago",
         help="Production webhook URL",
     )
     parser.add_argument(

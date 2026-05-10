@@ -11,7 +11,7 @@ FastAPI backend providing REST API for the CriptEnv platform. All protected endp
 | Environment | URL |
 |-------------|-----|
 | Development | `http://localhost:8000` |
-| Production | `https://api.criptenv.com` (example) |
+| Production | `https://criptenv-api.77mdevseven.tech` (example) |
 
 ---
 

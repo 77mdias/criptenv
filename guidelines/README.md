@@ -188,7 +188,7 @@ RESET="\033[0m"
 ### REST Conventions
 
 ```
-Base URL: https://api.criptenv.com/api/v1
+Base URL: https://criptenv-api.77mdevseven.tech/api/v1
 
 Endpoints:
 GET     /projects              List projects

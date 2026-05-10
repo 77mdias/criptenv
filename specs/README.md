@@ -193,7 +193,7 @@ SUPABASE_SERVICE_ROLE_KEY=eyJ...
 
 # BetterAuth
 BETTER_AUTH_SECRET=your-secret-here
-BETTER_AUTH_URL=https://api.criptenv.com
+BETTER_AUTH_URL=https://criptenv-api.77mdevseven.tech
 
 # Encryption
 MASTER_KEY_SALT=salt_for_pbkdf2
@@ -203,7 +203,7 @@ RATE_LIMIT_REQUESTS=100
 RATE_LIMIT_WINDOW_MS=60000
 
 # CORS
-CORS_ORIGINS=https://criptenv.com,https://www.criptenv.com
+CORS_ORIGINS=https://criptenv.77mdevseven.tech,https://criptenv.77mdevseven.tech
 ```
 
 ---

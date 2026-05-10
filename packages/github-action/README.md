@@ -23,7 +23,7 @@ jobs:
 | `token`          | Yes      | —                          | CI token from CriptEnv (starts with `ci_`)       |
 | `project`        | Yes      | —                          | Project ID from CriptEnv dashboard               |
 | `environment`    | No       | `production`               | Environment name (e.g., `production`, `staging`) |
-| `api-url`        | No       | `https://api.criptenv.com/api/v1` | CriptEnv API URL, including the API version prefix |
+| `api-url`        | No       | `https://criptenv-api.77mdevseven.tech/api/v1` | CriptEnv API URL, including the API version prefix |
 | `prefix`         | No       | `SECRET_`                  | Prefix for environment variables                 |
 | `version-output` | No       | `version`                  | Output name for secrets version                  |
 

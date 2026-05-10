@@ -1,5 +1,5 @@
 # Legacy rollback reference only. Current production API target is the VPS Docker
-# stack in deploy/vps with DuckDNS, Nginx Proxy Manager, and Redis rate limits.
+# stack in deploy/vps with Cloudflare Tunnel and Redis rate limits.
 services:
   - type: web
     name: criptenv-api
@@ -16,13 +16,13 @@ services:
       - key: DEBUG
         value: "false"
       - key: CORS_ORIGINS
-        value: "https://criptenv.com,https://www.criptenv.com,https://*.pages.dev"
+        value: "https://criptenv.77mdevseven.tech"
       - key: SCHEDULER_ENABLED
         value: "true"
       - key: SCHEDULER_INTERVAL_HOURS
         value: "24"
       - key: FRONTEND_URL
-        value: "https://criptenv.com"
+        value: "https://criptenv.77mdevseven.tech"
       # Set DATABASE_URL to your Supabase connection string
       # Format: postgresql://postgres.[project]:[password]@aws-0-[region].pooler.supabase.com:6543/postgres
       - key: DATABASE_URL

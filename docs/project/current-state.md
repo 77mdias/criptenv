@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, DuckDNS (`criptenv.duckdns.org`), Nginx Proxy Manager e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
 
 ---
 
@@ -75,7 +75,7 @@
 | `api-keys` | API key CRUD | ✅ |
 | `ci` | CI login, CI secrets | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
-| `vps deploy` | Docker Compose API + Redis + Nginx Proxy Manager + DuckDNS with explicit IPv4 updater | ✅ Live smoke validated |
+| `vps deploy` | Docker Compose API + Redis + Cloudflare Tunnel + custom domains | ✅ Live smoke validated |
 | `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
 
 **API Tests**: 292 tests passing
@@ -134,8 +134,8 @@
 | Railway provider missing | 🟡 Medium | P1 — can be added following Render pattern |
 | Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap |
 | APScheduler duplication with multiple workers | 🟡 Medium | Public API workers disable scheduler; dedicated one-worker scheduler service owns jobs |
-| Nginx Proxy Manager admin exposure | 🟡 Medium | Bind port 81 to localhost by default and restrict firewall access |
-| VPS operational ownership | 🟡 Medium | Add basic backups, patching routine, container log rotation, uptime checks, and DuckDNS drift monitoring |
+| Cloudflare Tunnel availability | 🟡 Medium | Monitor tunnel health and keep rollback API guidance current |
+| VPS operational ownership | 🟡 Medium | Add basic backups, patching routine, container log rotation, uptime checks, and tunnel monitoring |
 | App-level production validation | ✅ Closed | Signup/signin/OAuth/projects/vault flows validated through Workers frontend |
 
 ---
@@ -143,12 +143,12 @@
 ## Next Recommended Steps
 
 1. **Apply TASK-068 in production**: Configure `INTEGRATION_CONFIG_SECRET`, rebuild API/scheduler, and run `alembic upgrade head`.
-2. **VPS operations baseline**: Backups for NPM volumes, firewall review, OS patching routine, uptime/health monitoring, and alerting when DuckDNS A record differs from the VPS IPv4.
+2. **VPS operations baseline**: Backups, firewall review, OS patching routine, uptime/health monitoring, and Cloudflare Tunnel alerts.
 3. **Railway Provider**: Implement following the RenderProvider pattern.
 4. **Web Alert Configuration UI**: Complete M3.5 web gap.
 
 ---
 
-**Document Version**: 1.5
+**Document Version**: 1.6
 **Last Updated**: 2026-05-10
 **Status**: Active Development — Phase 3 (92% complete, VPS backend and app flows validated)

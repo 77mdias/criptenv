@@ -26,9 +26,9 @@
 ### TASK-070 — Executar migração VPS Backend ✅
 
 **Status:** Completed 2026-05-06
-**Resolution:** API migrada para VPS Docker com DuckDNS (`criptenv.duckdns.org`), Nginx Proxy Manager, Redis rate limiting, scheduler dedicado e frontend Cloudflare Workers usando proxy `/api/*`.
+**Resolution:** API migrada para VPS Docker com Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), Redis rate limiting, scheduler dedicado e frontend Cloudflare Workers usando proxy `/api/*`.
 **Files modified:** `deploy/vps/docker-compose.yml`, `apps/api/Dockerfile`, `apps/api/app/middleware/rate_limit.py`, `apps/api/main.py`, deployment docs
-**Tests:** API/CLI/Web build locais passaram; smoke tests públicos `https://criptenv.duckdns.org/health`, `https://criptenv.duckdns.org/api/health` e `https://criptenv.jean-carlos3.workers.dev/api/health` validados manualmente.
+**Tests:** API/CLI/Web build locais passaram; smoke tests públicos `https://criptenv-api.77mdevseven.tech/health`, `https://criptenv-api.77mdevseven.tech/api/health` e `https://criptenv.77mdevseven.tech/api/health` validados manualmente.
 
 ### TASK-068 — Criptografar Integration Config At-Rest ✅
 

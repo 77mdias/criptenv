@@ -19,7 +19,7 @@ inputs:
   api-url:
     description: "CriptEnv API URL"
     required: false
-    default: "https://api.criptenv.com/api/v1"
+    default: "https://criptenv-api.77mdevseven.tech/api/v1"
   prefix:
     description: "Prefix for environment variables (default: SECRET_)"
     required: false

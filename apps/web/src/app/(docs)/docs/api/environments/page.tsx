@@ -31,7 +31,7 @@ export default function ApiEnvironmentsPage() {
       </p>
 
       <CodeBlock language="text">
-        {`https://api.criptenv.dev/v1/projects/{project_id}/environments`}
+        {`https://criptenv-api.77mdevseven.tech/v1/projects/{project_id}/environments`}
       </CodeBlock>
 
       {/* ─── POST ─── */}
@@ -58,7 +58,7 @@ export default function ApiEnvironmentsPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Criar ambiente">
-        {`curl -X POST "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/environments" \\
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -119,7 +119,7 @@ export default function ApiEnvironmentsPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Listar ambientes">
-        {`curl -X GET "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/environments" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 
@@ -176,7 +176,7 @@ export default function ApiEnvironmentsPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Obter ambiente">
-        {`curl -X GET "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/environments/env_a1b2c3" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments/env_a1b2c3" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 
@@ -239,7 +239,7 @@ export default function ApiEnvironmentsPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Atualizar ambiente">
-        {`curl -X PATCH "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/environments/env_d4e5f6" \\
+        {`curl -X PATCH "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments/env_d4e5f6" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -286,7 +286,7 @@ export default function ApiEnvironmentsPage() {
       </Callout>
 
       <CodeBlock language="bash" title="Exemplo — Deletar ambiente">
-        {`curl -X DELETE "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/environments/env_d4e5f6" \\
+        {`curl -X DELETE "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments/env_d4e5f6" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 

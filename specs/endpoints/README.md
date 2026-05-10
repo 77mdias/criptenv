@@ -2,7 +2,7 @@
 
 ## API Reference v1
 
-Base URL: `https://api.criptenv.com/api/v1`
+Base URL: `https://criptenv-api.77mdevseven.tech/api/v1`
 
 ---
 

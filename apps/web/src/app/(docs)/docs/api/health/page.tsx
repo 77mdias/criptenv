@@ -42,7 +42,7 @@ export default function HealthPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/health`}
+          code={`curl https://criptenv-api.77mdevseven.tech/health`}
         />
 
         <ResponseBlock
@@ -67,7 +67,7 @@ export default function HealthPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/health/ready`}
+          code={`curl https://criptenv-api.77mdevseven.tech/health/ready`}
         />
 
         <ResponseBlock

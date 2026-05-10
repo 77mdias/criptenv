@@ -64,7 +64,7 @@ export default function InvitesPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/invites \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -97,7 +97,7 @@ export default function InvitesPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/api/v1/projects/{pid}/invites \\
+          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -129,7 +129,7 @@ export default function InvitesPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/invites/inv_abc123/accept \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/inv_abc123/accept \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -153,7 +153,7 @@ export default function InvitesPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/invites/inv_abc123/revoke \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/inv_abc123/revoke \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -176,7 +176,7 @@ export default function InvitesPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X DELETE https://api.criptenv.dev/api/v1/projects/{pid}/invites/inv_abc123 \\
+          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/inv_abc123 \\
   -H "Authorization: Bearer {token}"`}
         />
 

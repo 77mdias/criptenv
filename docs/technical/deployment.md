@@ -6,8 +6,8 @@
 |-----------|----------|---------|
 | **Frontend** | Cloudflare Pages + Workers | Vinext + Worker proxy |
 | **Backend API** | VPS Docker | FastAPI + Gunicorn/Uvicorn |
-| **Reverse Proxy** | VPS Docker | Nginx Proxy Manager + Let's Encrypt |
-| **DNS** | DuckDNS | Free API hostname |
+| **API Tunnel** | Cloudflare Tunnel | `criptenv-api.77mdevseven.tech` -> `http://api:8000` |
+| **DNS** | Cloudflare | Custom frontend/API hostnames |
 | **Rate Limit Store** | VPS Docker | Redis |
 | **Database** | Supabase PostgreSQL | External managed Postgres |
 
@@ -28,13 +28,13 @@ docker compose ps
 curl http://localhost:8000/health
 ```
 
-Nginx Proxy Manager should route:
+Cloudflare Tunnel should route:
 
 ```text
-https://criptenv.duckdns.org -> http://api:8000
+https://criptenv-api.77mdevseven.tech -> http://api:8000
 ```
 
-Enable a Let's Encrypt certificate and Force SSL in Nginx Proxy Manager. Keep admin port `81` bound to localhost or restricted by firewall; access it with `ssh -L 8181:127.0.0.1:81 root@<VPS_IP>` and open `http://127.0.0.1:8181`.
+Cloudflare owns the public TLS certificate and forwards traffic through the outbound tunnel container.
 
 The public API service runs multiple workers with `SCHEDULER_ENABLED=false`; the internal `scheduler` service runs one worker with `SCHEDULER_ENABLED=true`.
 
@@ -46,9 +46,9 @@ Cloudflare Pages remains the frontend host. Production should use the same-origi
 
 ```bash
 NEXT_PUBLIC_API_URL=
-API_URL=https://criptenv.duckdns.org
+API_URL=https://criptenv-api.77mdevseven.tech
 NEXT_PUBLIC_COOKIE_NAME=criptenv_session
-NEXT_PUBLIC_APP_URL=https://criptenv.jean-carlos3.workers.dev
+NEXT_PUBLIC_APP_URL=https://criptenv.77mdevseven.tech
 ```
 
 Deploy:
@@ -97,9 +97,9 @@ If the VPS migration fails, redeploy the previous Render API using `apps/api/ren
 ```bash
 curl http://localhost:8000/health
 curl http://localhost:8000/health/ready
-curl https://criptenv.duckdns.org/health
-curl https://criptenv.duckdns.org/api/health
-curl https://criptenv.jean-carlos3.workers.dev/api/health
+curl https://criptenv-api.77mdevseven.tech/health
+curl https://criptenv-api.77mdevseven.tech/api/health
+curl https://criptenv.77mdevseven.tech/api/health
 ```
 
 Then manually verify signup/signin, OAuth callback, project list, and a vault pull/push flow.
@@ -108,9 +108,9 @@ Then manually verify signup/signin, OAuth callback, project list, and a vault pu
 
 - Confirm Supabase production migrations with `alembic upgrade head`.
 - Validate login/signup, OAuth callback, project list, and vault push/pull through the Workers frontend.
-- Add VPS operations baseline: firewall review, OS patch cadence, NPM volume backup, log rotation, and uptime monitoring.
+- Add VPS operations baseline: firewall review, OS patch cadence, tunnel monitoring, log rotation, and uptime monitoring.
 
 ---
 
-**Document Version**: 2.1
-**Last Updated**: 2026-05-06
+**Document Version**: 3.0
+**Last Updated**: 2026-05-10

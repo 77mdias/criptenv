@@ -1,5 +1,5 @@
 # Legacy rollback reference only. Current production API target is the VPS Docker
-# stack in deploy/vps with DuckDNS, Nginx Proxy Manager, and Redis rate limits.
+# stack in deploy/vps with Cloudflare Tunnel and Redis rate limits.
 [build]
 builder = "nixpacks"
 
@@ -13,7 +13,7 @@ restartPolicyMaxRetries = 3
 [deploy.envs]
 PYTHON_VERSION = "3.11"
 DEBUG = "false"
-CORS_ORIGINS = "https://criptenv.com,https://www.criptenv.com,https://*.pages.dev"
+CORS_ORIGINS = "https://criptenv.77mdevseven.tech"
 SCHEDULER_ENABLED = "true"
 SCHEDULER_INTERVAL_HOURS = "24"
-FRONTEND_URL = "https://criptenv.com"
+FRONTEND_URL = "https://criptenv.77mdevseven.tech"

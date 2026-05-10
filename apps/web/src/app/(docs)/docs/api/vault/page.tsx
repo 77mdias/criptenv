@@ -56,7 +56,7 @@ export default function ApiVaultPage() {
       </Callout>
 
       <CodeBlock language="text">
-        {`https://api.criptenv.dev/v1/vault`}
+        {`https://criptenv-api.77mdevseven.tech/v1/vault`}
       </CodeBlock>
 
       {/* ─── POST /vault/push ─── */}
@@ -89,7 +89,7 @@ export default function ApiVaultPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Push de segredos">
-        {`curl -X POST "https://api.criptenv.dev/v1/vault/push" \\
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/vault/push" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -181,7 +181,7 @@ export default function ApiVaultPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Pull de segredos">
-        {`curl -X GET "https://api.criptenv.dev/v1/vault/pull?environment_id=env_a1b2c3" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 
@@ -213,7 +213,7 @@ export default function ApiVaultPage() {
       </ResponseBlock>
 
       <CodeBlock language="bash" title="Pull com names_only (para diff)">
-        {`curl -X GET "https://api.criptenv.dev/v1/vault/pull?environment_id=env_a1b2c3&names_only=true" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3&names_only=true" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 
@@ -256,7 +256,7 @@ export default function ApiVaultPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Verificar versão">
-        {`curl -X GET "https://api.criptenv.dev/v1/vault/version?environment_id=env_a1b2c3" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/version?environment_id=env_a1b2c3" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 
@@ -282,11 +282,11 @@ export default function ApiVaultPage() {
 
       <CodeBlock language="bash" title="Fluxo completo: verificar → pull → decrypt → deploy">
         {`# 1. Verificar versão atual (evita pull desnecessário)
-VERSION=$(curl -s "https://api.criptenv.dev/v1/vault/version?environment_id=env_a1b2c3" \\
+VERSION=$(curl -s "https://criptenv-api.77mdevseven.tech/v1/vault/version?environment_id=env_a1b2c3" \\
   -H "Authorization: Bearer $CI_TOKEN" | jq -r '.data.version')
 
 # 2. Pull dos segredos criptografados
-curl -s "https://api.criptenv.dev/v1/vault/pull?environment_id=env_a1b2c3" \\
+curl -s "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3" \\
   -H "Authorization: Bearer $CI_TOKEN" \\
   -o encrypted-secrets.json
 

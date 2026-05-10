@@ -263,7 +263,7 @@ def create_ci_session(project_id: UUID, permissions: list[str]) -> tuple[str, da
 import * as core from "@actions/core";
 import * as httpClient from "@actions/http-client";
 
-const API_URL = core.getInput("api-url") || "https://api.criptenv.com";
+const API_URL = core.getInput("api-url") || "https://criptenv-api.77mdevseven.tech";
 
 async function run() {
   const token = core.getInput("token", { required: true });

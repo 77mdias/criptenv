@@ -165,7 +165,7 @@ def test_oauth_callback_sets_session_cookie_and_redirects(monkeypatch):
         return make_user(), make_session()
 
     monkeypatch.setattr(OAuthService, "authenticate_with_oauth", fake_authenticate_with_oauth)
-    monkeypatch.setattr(settings, "FRONTEND_URL", "https://criptenv.jean-carlos3.workers.dev")
+    monkeypatch.setattr(settings, "FRONTEND_URL", "https://criptenv.77mdevseven.tech")
     monkeypatch.setattr(settings, "DEBUG", False)
 
     encoded_state = OAuthService.encode_state("github", "expected_state")
@@ -179,7 +179,7 @@ def test_oauth_callback_sets_session_cookie_and_redirects(monkeypatch):
         )
 
     assert response.status_code == 307
-    assert response.headers["location"] == "https://criptenv.jean-carlos3.workers.dev/oauth/callback"
+    assert response.headers["location"] == "https://criptenv.77mdevseven.tech/oauth/callback"
     assert "session_token=super-secret-session-token" in response.headers["set-cookie"]
 
 
@@ -192,7 +192,7 @@ def test_oauth_init_uses_forwarded_host_for_callback(monkeypatch):
         response = client.get(
             "/api/auth/oauth/github",
             headers={
-                "x-forwarded-host": "criptenv.jean-carlos3.workers.dev",
+                "x-forwarded-host": "criptenv.77mdevseven.tech",
                 "x-forwarded-proto": "https",
             },
             follow_redirects=False,
@@ -200,6 +200,6 @@ def test_oauth_init_uses_forwarded_host_for_callback(monkeypatch):
 
     assert response.status_code == 307
     assert (
-        "redirect_uri=https://criptenv.jean-carlos3.workers.dev/api/auth/oauth/github/callback"
+        "redirect_uri=https://criptenv.77mdevseven.tech/api/auth/oauth/github/callback"
         in response.headers["location"]
     )

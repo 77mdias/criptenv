@@ -390,7 +390,7 @@ criptenv set API_KEY=sk-abc123 -e production -p meu-projeto
 # Referência da API
 
 ## Base URL
-https://api.criptenv.dev/v1
+https://criptenv-api.77mdevseven.tech/v1
 
 <Callout type="info">
 O ambiente (desenvolvimento/produção) é determinado pelo tipo de token,

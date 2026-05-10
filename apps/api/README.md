@@ -27,7 +27,7 @@ uvicorn main:app --reload
 
 ## Production Deploy
 
-Current production target is the VPS Docker stack in `../../deploy/vps`, with DuckDNS, Nginx Proxy Manager, Redis-backed rate limiting, and Supabase PostgreSQL. `render.yaml`, `railway.toml`, and `Procfile` are retained only as legacy rollback references for hosted platforms.
+Current production target is the VPS Docker stack in `../../deploy/vps`, with Cloudflare Tunnel, Redis-backed rate limiting, and Supabase PostgreSQL. `render.yaml`, `railway.toml`, and `Procfile` are retained only as legacy rollback references for hosted platforms.
 
 ## Endpoints
 

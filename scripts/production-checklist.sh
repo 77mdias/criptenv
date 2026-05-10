@@ -4,7 +4,7 @@
 
 set -e
 
-API_URL="${API_URL:-https://criptenv.duckdns.org}"
+API_URL="${API_URL:-https://criptenv-api.77mdevseven.tech}"
 WEBHOOK_URL="${API_URL}/webhooks/mercadopago"
 HEALTH_URL="${API_URL}/api/health"
 

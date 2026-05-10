@@ -72,7 +72,7 @@ export default function IntegrationsPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/integrations \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -106,7 +106,7 @@ export default function IntegrationsPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/api/v1/projects/{pid}/integrations \\
+          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -136,7 +136,7 @@ export default function IntegrationsPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/api/v1/projects/{pid}/integrations/int_xyz789 \\
+          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789 \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -164,7 +164,7 @@ export default function IntegrationsPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X DELETE https://api.criptenv.dev/api/v1/projects/{pid}/integrations/int_xyz789 \\
+          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789 \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -197,7 +197,7 @@ export default function IntegrationsPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/integrations/int_xyz789/sync \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789/sync \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{"direction": "push"}'`}
@@ -225,7 +225,7 @@ export default function IntegrationsPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/integrations/int_xyz789/validate \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789/validate \\
   -H "Authorization: Bearer {token}"`}
         />
 

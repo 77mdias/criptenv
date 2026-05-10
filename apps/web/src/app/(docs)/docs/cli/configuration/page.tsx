@@ -122,7 +122,7 @@ criptenv logout`}
           { name: 'CRIPTENV_SESSION_TIMEOUT', type: 'number', required: false, description: 'Timeout de sessão em segundos (padrão: 900)' },
           { name: 'CRIPTENV_DEFAULT_ENV', type: 'string', required: false, description: 'Ambiente padrão (padrão: development)' },
           { name: 'CRIPTENV_DEFAULT_PROJECT', type: 'string', required: false, description: 'Projeto padrão' },
-          { name: 'CRIPTENV_API_URL', type: 'string', required: false, description: 'URL da API (padrão: https://api.criptenv.com)' },
+          { name: 'CRIPTENV_API_URL', type: 'string', required: false, description: 'URL da API (padrão: https://criptenv-api.77mdevseven.tech)' },
           { name: 'CRIPTENV_NO_COLOR', type: 'boolean', required: false, description: 'Desabilita cores no output' },
           { name: 'CRIPTENV_LOG_LEVEL', type: 'string', required: false, description: 'Nível de log: debug, info, warn, error' },
           { name: 'CRIPTENV_CI', type: 'boolean', required: false, description: 'Habilita modo CI/CD (desabilita interações)' },
@@ -176,7 +176,7 @@ algorithm = "AES-256-GCM"
 
 [cloud]
 # URL da API do CriptEnv
-api_url = "https://api.criptenv.com"
+api_url = "https://criptenv-api.77mdevseven.tech"
 # Timeout de requisições em segundos
 request_timeout = 30
 
@@ -216,7 +216,7 @@ retention_days = 30`}
       <ParamTable
         title="[cloud]"
         rows={[
-          { name: 'api_url', type: 'string', required: false, description: 'URL da API (https://api.criptenv.com)' },
+          { name: 'api_url', type: 'string', required: false, description: 'URL da API (https://criptenv-api.77mdevseven.tech)' },
           { name: 'request_timeout', type: 'number', required: false, description: 'Timeout de requisições em segundos (30)' },
         ]}
       />

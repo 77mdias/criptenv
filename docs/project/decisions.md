@@ -421,7 +421,7 @@ The landing page floating-bar did not expose the documentation route, and the `/
 ## DEC-016 — VPS Docker Backend Deployment
 
 **Date:** 2026-05-06
-**Status:** ✅ Accepted
+**Status:** ✅ Superseded by DEC-022
 **Context:**
 The API was prepared for Render Free Tier hosting, but the project now has an available 8GB VPS. Render cold starts and single-process assumptions are no longer the preferred production path, while the frontend remains on Cloudflare Pages and the database remains Supabase.
 
@@ -562,7 +562,7 @@ CriptEnv needs a low-friction contribution flow from the marketing site. Requiri
 ## DEC-021 — Explicit DuckDNS IPv4 Updates
 
 **Date:** 2026-05-10
-**Status:** ✅ Accepted
+**Status:** ✅ Superseded by DEC-022
 **Context:**
 The VPS API, Nginx Proxy Manager, and local container health checks were healthy, but public requests to `https://criptenv.duckdns.org` timed out because the DuckDNS A record drifted away from the VPS public IPv4. A manual DuckDNS update from the VPS restored the connection. The previous updater sent `ip=` empty, relying on DuckDNS to infer the address from the request source, which is fragile when NAT, tunnels, proxies, or a second updater are involved.
 
@@ -586,6 +586,34 @@ The VPS API, Nginx Proxy Manager, and local container health checks were healthy
 
 ---
 
+## DEC-022 — Custom Production Domains Through Cloudflare Tunnel
+
+**Date:** 2026-05-10
+**Status:** ✅ Accepted
+**Context:**
+DuckDNS became unstable for the production API because the shared account token could not be rotated and another updater appeared to overwrite the `criptenv` record. CriptEnv now has the `77mdevseven.tech` domain available in Cloudflare, which can provide both custom frontend DNS and an outbound tunnel to the VPS API without exposing VPS ports directly.
+
+**Decision:**
+- Use `https://criptenv.77mdevseven.tech` as the production frontend domain.
+- Use `https://criptenv-api.77mdevseven.tech` as the production backend API domain.
+- Route the backend through Cloudflare Tunnel to the internal Docker service `http://api:8000`.
+- Keep frontend browser requests same-origin through `/api/*`; set Cloudflare Pages runtime `API_URL=https://criptenv-api.77mdevseven.tech` and keep `NEXT_PUBLIC_API_URL` empty.
+- Configure backend `FRONTEND_URL` and `CORS_ORIGINS` to `https://criptenv.77mdevseven.tech`.
+
+**Rationale:**
+- Cloudflare-managed DNS and tunnel remove DuckDNS token drift from the production path.
+- The VPS no longer needs public inbound `80/443` for the API.
+- Custom domains make OAuth redirects, webhooks, and CLI configuration stable and brand-aligned.
+
+**Consequences:**
+- ✅ Production no longer depends on DuckDNS for API availability.
+- ✅ Backend CORS and OAuth redirects point at the custom frontend origin.
+- ✅ The API can remain private behind an outbound tunnel.
+- ❌ Cloudflare Tunnel availability becomes part of production availability.
+- ⚠️ Cloudflare tunnel token must be protected and rotated if exposed.
+
+---
+
 ## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation
@@ -602,5 +630,5 @@ Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI
 
 ---
 
-**Document Version**: 1.3
+**Document Version**: 1.4
 **Last Updated**: 2026-05-10

@@ -9,7 +9,7 @@ Usage:
     python scripts/test_webhook.py --url http://localhost:8000/webhooks/mercadopago --payment-id 123456789
 
     # Production testing (with your real secret)
-    python scripts/test_webhook.py --url https://criptenv.duckdns.org/webhooks/mercadopago --payment-id 123456789 --secret your-real-secret
+    python scripts/test_webhook.py --url https://criptenv-api.77mdevseven.tech/webhooks/mercadopago --payment-id 123456789 --secret your-real-secret
 
     # Custom action (e.g., payment.created)
     python scripts/test_webhook.py --url http://localhost:8000/webhooks/mercadopago --payment-id 123456789 --action payment.created

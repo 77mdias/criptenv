@@ -84,7 +84,7 @@ export default function ApiAuthenticationPage() {
 
       <CodeBlock language="bash" title="Login via API">
         {`# Fazer login e receber cookie de sessão
-curl -X POST "https://api.criptenv.dev/v1/auth/login" \\
+curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/login" \\
   -H "Content-Type: application/json" \\
   -c cookies.txt \\
   -d '{
@@ -95,7 +95,7 @@ curl -X POST "https://api.criptenv.dev/v1/auth/login" \\
 
       <CodeBlock language="bash" title="Usar sessão em requisições subsequentes">
         {`# Usar o cookie salvo em requisições seguintes
-curl -X GET "https://api.criptenv.dev/v1/projects" \\
+curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects" \\
   -b cookies.txt`}
       </CodeBlock>
 
@@ -170,7 +170,7 @@ curl -X GET "https://api.criptenv.dev/v1/projects" \\
       <h3 className="text-lg font-semibold mt-6 mb-3">Criar uma API Key</h3>
 
       <CodeBlock language="bash" title="Criar API Key via painel ou API">
-        {`curl -X POST "https://api.criptenv.dev/v1/auth/api-keys" \\
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/api-keys" \\
   -H "Authorization: Bearer sessao_token" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -204,13 +204,13 @@ curl -X GET "https://api.criptenv.dev/v1/projects" \\
       <Tabs>
         <Tab label="Header Authorization">
           <CodeBlock language="bash" title="Bearer token no header">
-            {`curl -X GET "https://api.criptenv.dev/v1/projects" \\
+            {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"`}
           </CodeBlock>
         </Tab>
         <Tab label="Header X-API-Key">
           <CodeBlock language="bash" title="Header dedicado">
-            {`curl -X GET "https://api.criptenv.dev/v1/projects" \\
+            {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects" \\
   -H "X-API-Key: cek_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"`}
           </CodeBlock>
         </Tab>
@@ -227,7 +227,7 @@ curl -X GET "https://api.criptenv.dev/v1/projects" \\
       <h3 className="text-lg font-semibold mt-6 mb-3">Gerar um CI Token</h3>
 
       <CodeBlock language="bash" title="Gerar CI Token temporário">
-        {`curl -X POST "https://api.criptenv.dev/v1/auth/ci-tokens" \\
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/ci-tokens" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -265,7 +265,7 @@ jobs:
       - name: Generate CI Token
         id: ci-token
         run: |
-          TOKEN=\$(curl -s -X POST "https://api.criptenv.dev/v1/auth/ci-tokens" \\
+          TOKEN=\$(curl -s -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/ci-tokens" \\
             -H "Authorization: Bearer \${{ secrets.CRIPTENV_API_KEY }}" \\
             -H "Content-Type: application/json" \\
             -d '{
@@ -277,7 +277,7 @@ jobs:
 
       - name: Pull secrets
         run: |
-          curl -s "https://api.criptenv.dev/v1/vault/pull" \\
+          curl -s "https://criptenv-api.77mdevseven.tech/v1/vault/pull" \\
             -H "Authorization: Bearer \${{ steps.ci-token.outputs.token }}" \\
             -o .env`}
       </CodeBlock>
@@ -313,13 +313,13 @@ jobs:
 
       <CodeBlock language="bash" title="1. Iniciar fluxo OAuth — redirecionar o usuário">
         {`# Redirecionar o usuário para:
-https://api.criptenv.dev/v1/auth/oauth/github/authorize
+https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/authorize
   ?redirect_uri=https://app.criptenv.dev/callback
   &state=random_csrf_token`}
       </CodeBlock>
 
       <CodeBlock language="bash" title="2. Trocar o código por sessão (callback)">
-        {`curl -X POST "https://api.criptenv.dev/v1/auth/oauth/github/callback" \\
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/callback" \\
   -H "Content-Type: application/json" \\
   -c cookies.txt \\
   -d '{

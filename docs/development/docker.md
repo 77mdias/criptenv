@@ -280,7 +280,7 @@ sudo chown -R $(id -u):$(id -g) apps/api apps/web
 
 ## Não Modificar
 
-O arquivo `deploy/vps/docker-compose.yml` é o compose de produção para VPS com nginx-proxy-manager, Redis e DuckDNS. **Não deve ser alterado** neste contexto.
+O arquivo `deploy/vps/docker-compose.yml` é o compose de produção para VPS com API, Redis, scheduler e Cloudflare Tunnel. **Não deve ser alterado** neste contexto.
 
 ---
 

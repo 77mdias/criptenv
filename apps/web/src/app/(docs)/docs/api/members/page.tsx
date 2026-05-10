@@ -64,7 +64,7 @@ export default function ApiMembersPage() {
       </div>
 
       <CodeBlock language="text">
-        {`https://api.criptenv.dev/v1/projects/{project_id}/members`}
+        {`https://criptenv-api.77mdevseven.tech/v1/projects/{project_id}/members`}
       </CodeBlock>
 
       {/* ─── POST ─── */}
@@ -91,7 +91,7 @@ export default function ApiMembersPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Convidar membro">
-        {`curl -X POST "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/members" \\
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/members" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -162,7 +162,7 @@ export default function ApiMembersPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Listar membros">
-        {`curl -X GET "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/members" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/members" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 
@@ -226,7 +226,7 @@ export default function ApiMembersPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Promover membro para admin">
-        {`curl -X PATCH "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/members/mbr_r3s5t7u9" \\
+        {`curl -X PATCH "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/members/mbr_r3s5t7u9" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -282,7 +282,7 @@ export default function ApiMembersPage() {
       />
 
       <CodeBlock language="bash" title="Exemplo — Remover membro">
-        {`curl -X DELETE "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/members/mbr_r3s5t7u9" \\
+        {`curl -X DELETE "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/members/mbr_r3s5t7u9" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 
@@ -304,7 +304,7 @@ export default function ApiMembersPage() {
 
       <CodeBlock language="bash" title="1. Convidar → 2. Aceitar → 3. Compartilhar chave">
         {`# 1. Admin convida o novo membro
-curl -X POST "https://api.criptenv.dev/v1/projects/proj_k8j2m4n6/members" \\
+curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/members" \\
   -H "Authorization: Bearer cek_admin_key" \\
   -H "Content-Type: application/json" \\
   -d '{"email": "dev@exemplo.com", "role": "developer"}'

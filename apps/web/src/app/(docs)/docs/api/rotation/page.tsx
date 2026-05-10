@@ -57,7 +57,7 @@ export default function RotationPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/secrets/sec_abc123/rotate \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/rotate \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{"value": "new-secret-value-here"}'`}
@@ -101,7 +101,7 @@ export default function RotationPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/secrets/sec_abc123/expiration \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/expiration \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -131,7 +131,7 @@ export default function RotationPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/api/v1/projects/{pid}/secrets/sec_abc123/rotation/status \\
+          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/rotation/status \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -158,7 +158,7 @@ export default function RotationPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/api/v1/projects/{pid}/secrets/sec_abc123/rotation/history \\
+          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/rotation/history \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -193,7 +193,7 @@ export default function RotationPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X DELETE https://api.criptenv.dev/api/v1/projects/{pid}/secrets/sec_abc123/expiration \\
+          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/expiration \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -222,7 +222,7 @@ export default function RotationPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl "https://api.criptenv.dev/api/v1/projects/{pid}/secrets/expiring?days=30" \\
+          code={`curl "https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/expiring?days=30" \\
   -H "Authorization: Bearer {token}"`}
         />
 

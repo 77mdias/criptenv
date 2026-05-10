@@ -70,7 +70,7 @@ export default function CITokensPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/ci-tokens \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/ci-tokens \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{
@@ -104,7 +104,7 @@ export default function CITokensPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl https://api.criptenv.dev/api/v1/projects/{pid}/ci-tokens \\
+          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/ci-tokens \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -135,7 +135,7 @@ export default function CITokensPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://api.criptenv.dev/api/v1/projects/{pid}/ci-tokens/cit_abc123/revoke \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/ci-tokens/cit_abc123/revoke \\
   -H "Authorization: Bearer {token}"`}
         />
 
@@ -159,7 +159,7 @@ export default function CITokensPage() {
 
         <CodeBlock
           language="bash"
-          code={`curl -X DELETE https://api.criptenv.dev/api/v1/projects/{pid}/ci-tokens/cit_abc123 \\
+          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/ci-tokens/cit_abc123 \\
   -H "Authorization: Bearer {token}"`}
         />
 

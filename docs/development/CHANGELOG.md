@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Custom Production Domains (2026-05-10)
+
+- **Frontend domain**: Production frontend references now use `https://criptenv.77mdevseven.tech`.
+- **Backend domain**: Production API references now use `https://criptenv-api.77mdevseven.tech`.
+- **Backend CORS/OAuth**: API env templates, rollback configs, and OAuth tests now use the custom frontend origin for `CORS_ORIGINS` and `FRONTEND_URL`.
+- **Cloudflare Tunnel docs**: Deployment docs now describe the current tunnel-based API routing instead of DuckDNS/Nginx Proxy Manager.
+- **Decision record**: Added DEC-022 for custom production domains through Cloudflare Tunnel.
+
 #### VPS DuckDNS Drift Recovery (2026-05-10)
 
 - **Explicit DuckDNS updates**: The VPS DuckDNS updater now detects the public IPv4 with `api4.ipify.org` and sends it explicitly to DuckDNS instead of relying on inferred request source IP.
@@ -60,7 +68,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Redis rate limits**: Added Redis-backed rate-limit storage for multi-worker API deployments while keeping in-memory storage as the local default.
 - **Scheduler isolation**: Documented and configured a dedicated one-worker scheduler service so APScheduler does not duplicate jobs across public API workers.
 - **Deployment docs**: Updated production guidance from Render Free Tier to VPS Docker + DuckDNS + Let's Encrypt, with Render retained as rollback/legacy hosting.
-- **Production validation**: Smoke tested `https://criptenv.duckdns.org/health`, `https://criptenv.duckdns.org/api/health`, and `https://criptenv.jean-carlos3.workers.dev/api/health`.
+- **Production validation**: Smoke tested `https://criptenv-api.77mdevseven.tech/health`, `https://criptenv-api.77mdevseven.tech/api/health`, and `https://criptenv.77mdevseven.tech/api/health`.
 - **Worker health aliases**: Added `/api/health` and `/api/health/ready` backend aliases so the Cloudflare Worker `/api/*` proxy can expose health checks without path rewriting.
 
 #### Floating Bar Docs Link (2026-05-05)

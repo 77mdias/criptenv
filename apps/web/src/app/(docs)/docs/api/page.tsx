@@ -35,7 +35,7 @@ export default function ApiOverviewPage() {
       </p>
 
       <CodeBlock language="text">
-        {`https://api.criptenv.dev/v1`}
+        {`https://criptenv-api.77mdevseven.tech/v1`}
       </CodeBlock>
 
       <p className="text-muted-foreground mb-4">
@@ -241,7 +241,7 @@ X-RateLimit-Reset: 1705312800`}
       </div>
 
       <CodeBlock language="bash" title="Exemplo de paginação">
-        {`curl -X GET "https://api.criptenv.dev/v1/projects?page=2&per_page=10" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects?page=2&per_page=10" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 

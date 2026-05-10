@@ -31103,7 +31103,7 @@ function getInputs() {
         token: core.getInput("token", { required: true }),
         project: core.getInput("project", { required: true }),
         environment: core.getInput("environment") || "production",
-        apiUrl: (core.getInput("api-url") || "https://api.criptenv.com/api/v1").replace(/\/$/, ""),
+        apiUrl: (core.getInput("api-url") || "https://criptenv-api.77mdevseven.tech/api/v1").replace(/\/$/, ""),
         prefix: core.getInput("prefix") || "SECRET_",
         versionOutput: core.getInput("version-output") || "version",
     };
