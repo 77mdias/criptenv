@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### VPS DuckDNS Drift Recovery (2026-05-10)
+
+- **Explicit DuckDNS updates**: The VPS DuckDNS updater now detects the public IPv4 with `api4.ipify.org` and sends it explicitly to DuckDNS instead of relying on inferred request source IP.
+- **Static IP override**: Added optional `DUCKDNS_FORCE_IP` for VPS providers with fixed public IPv4 addresses.
+- **Operational runbook**: Documented DNS drift diagnosis and recovery commands for cases where local API/Nginx health is green but `criptenv.duckdns.org` times out publicly.
+- **Decision record**: Added DEC-021 for explicit DuckDNS IPv4 updates.
+
 #### Landing Pricing Redesign (2026-05-08)
 
 - **Pricing cards**: Reworked the landing pricing carousel around honest project states: `Contribute`, `Open Source`, and `Maybe Later`.

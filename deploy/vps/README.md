@@ -52,3 +52,41 @@ curl https://criptenv.duckdns.org/health
 curl https://criptenv.duckdns.org/api/health
 curl https://criptenv.jean-carlos3.workers.dev/api/health
 ```
+
+## DuckDNS Drift Runbook
+
+If the API is healthy inside the VPS but `https://criptenv.duckdns.org` times
+out publicly, first compare the VPS public IPv4 with the DuckDNS A record:
+
+```bash
+curl -4 https://api.ipify.org
+dig +short criptenv.duckdns.org
+```
+
+Those values must match. A mismatch means traffic is going to the wrong host,
+even if Docker, Nginx Proxy Manager, and FastAPI are all healthy.
+
+Confirm local service health on the VPS:
+
+```bash
+curl http://127.0.0.1:8000/health
+curl -vk --resolve criptenv.duckdns.org:443:127.0.0.1 \
+  https://criptenv.duckdns.org/health
+```
+
+Force a DuckDNS update from the updater container:
+
+```bash
+docker exec vps-duckdns-updater-1 sh -c '
+IP=$(wget -qO- https://api4.ipify.org)
+wget -qO- "https://www.duckdns.org/update?domains=$DUCKDNS_SUBDOMAIN&token=$DUCKDNS_TOKEN&ip=$IP&verbose=true"
+'
+```
+
+The compose updater sends the detected IPv4 explicitly to DuckDNS. If the VPS
+has a fixed public IP, set `DUCKDNS_FORCE_IP` in `deploy/vps/.env` to avoid
+runtime IP detection entirely.
+
+If the record flips back to another IP, search for another DuckDNS updater using
+the same subdomain/token. Two updaters competing for `criptenv` will make the
+domain unstable.

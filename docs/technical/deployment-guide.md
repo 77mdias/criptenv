@@ -151,6 +151,34 @@ curl https://criptenv.jean-carlos3.workers.dev/api/health
 
 The compose stack runs API workers with `SCHEDULER_ENABLED=false` and a separate internal `scheduler` service with one worker and `SCHEDULER_ENABLED=true`, preventing duplicate APScheduler jobs.
 
+### DuckDNS Drift Recovery
+
+The DuckDNS record must match the VPS public IPv4. If `curl http://127.0.0.1:8000/health` works on the VPS, but public requests to `https://criptenv.duckdns.org` time out, compare both values from the VPS:
+
+```bash
+curl -4 https://api.ipify.org
+dig +short criptenv.duckdns.org
+```
+
+If they differ, the domain is pointing to the wrong IP. Force an update from the updater container:
+
+```bash
+docker exec vps-duckdns-updater-1 sh -c '
+IP=$(wget -qO- https://api4.ipify.org)
+wget -qO- "https://www.duckdns.org/update?domains=$DUCKDNS_SUBDOMAIN&token=$DUCKDNS_TOKEN&ip=$IP&verbose=true"
+'
+```
+
+Then re-check:
+
+```bash
+dig +short @1.1.1.1 criptenv.duckdns.org
+curl -4vk https://criptenv.duckdns.org/health
+curl -4vk https://criptenv.duckdns.org/api/health
+```
+
+The VPS compose updater sends the detected IPv4 explicitly to DuckDNS instead of relying on DuckDNS to infer the IP from the request source. If the VPS has a fixed public IP, set `DUCKDNS_FORCE_IP` in `deploy/vps/.env`. If the record flips back to another address, look for a second DuckDNS updater using the same subdomain/token.
+
 ---
 
 ## 4. Render Rollback
@@ -178,6 +206,10 @@ Do not remove `RenderProvider`; it is unrelated to where CriptEnv itself is host
 | `REDIS_URL` | Yes when Redis enabled | `redis://redis:6379/0` |
 | `WEB_CONCURRENCY` | VPS compose | API worker count |
 | `SCHEDULER_ENABLED` | Compose-controlled | Disabled in `api`, enabled in `scheduler` |
+| `DUCKDNS_SUBDOMAIN` | VPS compose | DuckDNS subdomain without `.duckdns.org` |
+| `DUCKDNS_TOKEN` | VPS compose | DuckDNS update token |
+| `DUCKDNS_FORCE_IP` | No | Optional static public IPv4 override for DuckDNS updates |
+| `DUCKDNS_UPDATE_SECONDS` | VPS compose | DuckDNS update interval |
 
 ### Web
 
@@ -198,6 +230,7 @@ Do not remove `RenderProvider`; it is unrelated to where CriptEnv itself is host
 - [x] `curl http://localhost:8000/health` returns `ok` from the container/host path.
 - [x] Nginx Proxy Manager proxy host forwards to `api:8000`.
 - [x] Let's Encrypt certificate is issued and Force SSL is enabled.
+- [x] `curl -4 https://api.ipify.org` matches `dig +short criptenv.duckdns.org`.
 - [x] `curl https://criptenv.duckdns.org/health` returns `ok`.
 - [x] Cloudflare Pages/Workers has `API_URL=https://criptenv.duckdns.org`.
 - [x] Cloudflare Pages/Workers leaves `NEXT_PUBLIC_API_URL` empty.
@@ -207,5 +240,5 @@ Do not remove `RenderProvider`; it is unrelated to where CriptEnv itself is host
 
 ---
 
-**Document Version**: 2.1
-**Last Updated**: 2026-05-06
+**Document Version**: 2.2
+**Last Updated**: 2026-05-10

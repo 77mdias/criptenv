@@ -75,7 +75,7 @@
 | `api-keys` | API key CRUD | ✅ |
 | `ci` | CI login, CI secrets | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
-| `vps deploy` | Docker Compose API + Redis + Nginx Proxy Manager + DuckDNS | ✅ Live smoke validated |
+| `vps deploy` | Docker Compose API + Redis + Nginx Proxy Manager + DuckDNS with explicit IPv4 updater | ✅ Live smoke validated |
 | `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
 
 **API Tests**: 292 tests passing
@@ -135,7 +135,7 @@
 | Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap |
 | APScheduler duplication with multiple workers | 🟡 Medium | Public API workers disable scheduler; dedicated one-worker scheduler service owns jobs |
 | Nginx Proxy Manager admin exposure | 🟡 Medium | Bind port 81 to localhost by default and restrict firewall access |
-| VPS operational ownership | 🟡 Medium | Add basic backups, patching routine, container log rotation, and uptime checks |
+| VPS operational ownership | 🟡 Medium | Add basic backups, patching routine, container log rotation, uptime checks, and DuckDNS drift monitoring |
 | App-level production validation | ✅ Closed | Signup/signin/OAuth/projects/vault flows validated through Workers frontend |
 
 ---
@@ -143,12 +143,12 @@
 ## Next Recommended Steps
 
 1. **Apply TASK-068 in production**: Configure `INTEGRATION_CONFIG_SECRET`, rebuild API/scheduler, and run `alembic upgrade head`.
-2. **VPS operations baseline**: Backups for NPM volumes, firewall review, OS patching routine, and uptime/health monitoring.
+2. **VPS operations baseline**: Backups for NPM volumes, firewall review, OS patching routine, uptime/health monitoring, and alerting when DuckDNS A record differs from the VPS IPv4.
 3. **Railway Provider**: Implement following the RenderProvider pattern.
 4. **Web Alert Configuration UI**: Complete M3.5 web gap.
 
 ---
 
-**Document Version**: 1.4
-**Last Updated**: 2026-05-07
+**Document Version**: 1.5
+**Last Updated**: 2026-05-10
 **Status**: Active Development — Phase 3 (92% complete, VPS backend and app flows validated)

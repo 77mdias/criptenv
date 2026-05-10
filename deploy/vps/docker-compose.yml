@@ -144,11 +144,18 @@ services:
     environment:
       DUCKDNS_SUBDOMAIN: "${DUCKDNS_SUBDOMAIN}"
       DUCKDNS_TOKEN: "${DUCKDNS_TOKEN}"
+      DUCKDNS_FORCE_IP: "${DUCKDNS_FORCE_IP:-}"
       DUCKDNS_UPDATE_SECONDS: "${DUCKDNS_UPDATE_SECONDS:-300}"
     command: >
       sh -c 'while true; do
-        wget -qO- "https://www.duckdns.org/update?domains=$${DUCKDNS_SUBDOMAIN}&token=$${DUCKDNS_TOKEN}&ip=";
-        echo;
+        PUBLIC_IP="$${DUCKDNS_FORCE_IP:-$$(wget -qO- https://api4.ipify.org 2>/dev/null || true)}";
+        if [ -z "$${PUBLIC_IP}" ]; then
+          echo "DuckDNS update skipped: could not determine public IPv4";
+        else
+          echo "Updating $${DUCKDNS_SUBDOMAIN}.duckdns.org -> $${PUBLIC_IP}";
+          wget -qO- "https://www.duckdns.org/update?domains=$${DUCKDNS_SUBDOMAIN}&token=$${DUCKDNS_TOKEN}&ip=$${PUBLIC_IP}";
+          echo;
+        fi;
         sleep $${DUCKDNS_UPDATE_SECONDS:-300};
       done'
     networks:

@@ -559,6 +559,33 @@ CriptEnv needs a low-friction contribution flow from the marketing site. Requiri
 
 ---
 
+## DEC-021 — Explicit DuckDNS IPv4 Updates
+
+**Date:** 2026-05-10
+**Status:** ✅ Accepted
+**Context:**
+The VPS API, Nginx Proxy Manager, and local container health checks were healthy, but public requests to `https://criptenv.duckdns.org` timed out because the DuckDNS A record drifted away from the VPS public IPv4. A manual DuckDNS update from the VPS restored the connection. The previous updater sent `ip=` empty, relying on DuckDNS to infer the address from the request source, which is fragile when NAT, tunnels, proxies, or a second updater are involved.
+
+**Decision:**
+- Make the VPS DuckDNS updater detect the VPS public IPv4 with `https://api4.ipify.org`.
+- Send the detected IPv4 explicitly in the DuckDNS `ip=` parameter.
+- Add `DUCKDNS_FORCE_IP` as an optional static override for VPSes with fixed public IPv4 addresses.
+- Document a drift runbook that compares `curl -4 https://api.ipify.org` with `dig +short criptenv.duckdns.org`.
+
+**Rationale:**
+- Explicit updates remove ambiguity about which source address DuckDNS should store.
+- A static override supports providers with stable public IPs and avoids runtime detection dependencies.
+- The runbook distinguishes application health from public DNS/network drift quickly.
+
+**Consequences:**
+- ✅ DuckDNS updates should converge on the actual VPS IPv4 instead of an inferred source IP.
+- ✅ Future outages can be diagnosed by comparing the VPS public IPv4 and DuckDNS A record first.
+- ✅ Competing updaters become easier to detect because the record will flip away from the expected VPS IP.
+- ⚠️ If the VPS public IP changes and `DUCKDNS_FORCE_IP` is set, the override must be updated manually.
+- ⚠️ If `api4.ipify.org` is unreachable and no override is set, the updater will skip that cycle instead of publishing an unknown address.
+
+---
+
 ## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation
@@ -575,5 +602,5 @@ Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: 2026-05-08
+**Document Version**: 1.3
+**Last Updated**: 2026-05-10

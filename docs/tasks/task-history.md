@@ -6,6 +6,26 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-10 — VPS DuckDNS Drift Recovery
+
+**Resumo:**
+Diagnosticada instabilidade pública em `criptenv.duckdns.org`: API, Nginx Proxy Manager e health checks internos estavam saudáveis, mas o A record do DuckDNS apontava para um IPv4 diferente do IPv4 público da VPS. O update manual do DuckDNS restaurou o acesso.
+
+**Arquivos alterados:**
+- `deploy/vps/docker-compose.yml` — updater passa a detectar o IPv4 público via `api4.ipify.org` e enviá-lo explicitamente ao DuckDNS.
+- `deploy/vps/.env.example` — adiciona `DUCKDNS_FORCE_IP` como override opcional.
+- `deploy/vps/README.md` — adiciona runbook de drift DuckDNS.
+- `docs/technical/deployment-guide.md` — adiciona recuperação de drift e checklist de comparação IP/DNS.
+- `docs/project/current-state.md` — registra updater DuckDNS com IPv4 explícito e risco operacional atualizado.
+- `docs/project/decisions.md` — DEC-021.
+- `docs/development/CHANGELOG.md`, `docs/tasks/current-task.md`, `docs/tasks/task-history.md`.
+
+**Observações:**
+- A causa provável é dependência anterior de `ip=` vazio no update DuckDNS, deixando o serviço inferir o IP pela origem da requisição.
+- Se o registro voltar a apontar para outro IP, investigar updater DuckDNS concorrente usando o mesmo subdomínio/token.
+
+---
+
 ## 2026-05-08 — Landing Pricing Redesign
 
 **Resumo:**
