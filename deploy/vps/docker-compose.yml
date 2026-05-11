@@ -131,7 +131,3 @@ services:
 
 networks:
   criptenv:
-
-volumes:
-  npm-data:
-  npm-letsencrypt:
