@@ -6,6 +6,49 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-11 — Problem to Vault Vault Ceremony
+
+**Resumo:**
+Redesenhada a dobra “Problem to Vault” da landing como uma cerimônia visual de selagem, dando protagonismo ao vault criptografado e aos sinais técnicos de zero plaintext.
+
+**Arquivos criados:**
+- `apps/web/src/components/marketing/problem-to-vault-section.tsx`
+- `apps/web/src/components/marketing/__tests__/problem-to-vault-section.test.tsx`
+
+**Arquivos alterados:**
+- `apps/web/src/app/(marketing)/page.tsx` — substitui o bloco inline pelo novo componente.
+- `docs/project/decisions.md` — DEC-024.
+- `docs/development/CHANGELOG.md`, `docs/tasks/task-history.md`.
+
+**Observações:**
+- A animação usa GSAP localmente, sem novas dependências e sem React Three Fiber nesta dobra.
+- Reduced motion renderiza a cena estática e totalmente visível.
+- A dobra enfatiza `plain env -> AES-GCM local seal -> encrypted vault`.
+
+---
+
+## 2026-05-11 — Landing Security Scrollytelling
+
+**Resumo:**
+Redesenhada a seção Security da landing como narrativa scrollytelling desktop, com pin/snap por tópico e fallback mobile empilhado sem travamento de rolagem.
+
+**Arquivos criados:**
+- `apps/web/src/components/marketing/security-scrollytelling.tsx`
+- `apps/web/src/components/marketing/security-vault-scene.tsx`
+
+**Arquivos alterados:**
+- `apps/web/src/app/(marketing)/page.tsx` — substitui o bloco Security estático pelo novo componente.
+- `apps/web/src/app/globals.css` — adiciona estados visuais do rail de tópicos.
+- `docs/project/decisions.md` — DEC-023.
+- `docs/development/CHANGELOG.md`, `docs/tasks/task-history.md`.
+
+**Observações:**
+- Desktop usa GSAP ScrollTrigger com pin e snap em quatro tópicos: AES-GCM, Zero-knowledge, Client-side only e 100% open source e auditável.
+- Mobile e reduced motion não carregam canvas nem criam scroll trap.
+- QA visual foi feito em produção local via Vinext start com Playwright.
+
+---
+
 ## 2026-05-10 — Custom Production Domains
 
 **Resumo:**
@@ -479,5 +522,5 @@ Ver CHANGELOG.md para detalhes completos.
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2026-05-03
+**Document Version**: 1.2
+**Last Updated**: 2026-05-11

@@ -614,6 +614,59 @@ DuckDNS became unstable for the production API because the shared account token 
 
 ---
 
+## DEC-023 — Landing Security Scrollytelling
+
+**Date:** 2026-05-11
+**Status:** ✅ Accepted
+**Context:**
+The marketing landing security section was a static image-and-list block. It did not explain the core security model in enough detail for visitors evaluating a zero-knowledge secrets product, and it did not use the existing GSAP/Three.js frontend capabilities already present in the web app.
+
+**Decision:**
+- Replace the static Security section with a desktop scrollytelling sequence covering AES-GCM, zero-knowledge, client-side-only crypto, and open-source auditability.
+- Use GSAP ScrollTrigger for desktop pinning, progress, and snap points.
+- Use a lightweight dynamically loaded React Three Fiber scene only on desktop when reduced motion is not requested.
+- Render a static stacked mobile narrative with the same content and images, without scroll locking or canvas loading.
+
+**Rationale:**
+- Security-sensitive claims need a guided explanation instead of short marketing bullets.
+- Pinning and snapping make the section feel intentional while keeping the rest of the landing scroll normal after the final topic.
+- Mobile and reduced-motion users should retain normal page control and readable content.
+
+**Consequences:**
+- ✅ The landing now explains security claims in a more detailed and inspectable flow.
+- ✅ Desktop gets a cinematic interaction without introducing new dependencies.
+- ✅ Mobile and reduced-motion modes avoid scroll traps and WebGL cost.
+- ⚠️ The section now depends on GSAP ScrollTrigger behavior and needs visual QA when layout changes nearby.
+
+---
+
+## DEC-024 — Problem to Vault Vault Ceremony
+
+**Date:** 2026-05-11
+**Status:** ✅ Accepted
+**Context:**
+The “Problem to Vault” landing fold showed the transformation from scattered secrets to a vault, but the vault was visually secondary and the encryption boundary was not explicit enough. The page already uses GSAP and React Three Fiber elsewhere, so this fold needed a lighter, more editorial interaction that reinforces the zero-knowledge promise without adding another WebGL scene.
+
+**Decision:**
+- Replace the inline “Problem to Vault” block with a dedicated `ProblemToVaultSection` component.
+- Make the encrypted vault the dominant visual endpoint, with scattered `.env` fragments feeding a three-step path: `plain env`, `AES-GCM local seal`, and `encrypted vault`.
+- Use GSAP ScrollTrigger only for local entrance choreography: fragments appear, the seal path lights up, the vault closes, and proof badges enter.
+- Keep React Three Fiber out of this fold and rely on static HTML/CSS for reduced-motion users.
+- Surface concise proof points in the fold: `server sees: ciphertext`, `plaintext: never`, and `audit hash: chained`.
+
+**Rationale:**
+- The visual hierarchy now matches the product promise: plaintext is temporary, the encrypted vault is the durable source of truth.
+- GSAP provides enough motion to explain the transformation without increasing WebGL cost on a landing page that already has 3D sections.
+- Explicit proof points make the zero-knowledge boundary easier to understand at a glance.
+
+**Consequences:**
+- ✅ The fold feels more professional and vault-centered.
+- ✅ Visitors see the local encryption path before the later deeper security scrollytelling section.
+- ✅ No new frontend dependencies are introduced.
+- ⚠️ The section now has component-local GSAP behavior that should be checked when nearby landing layout changes.
+
+---
+
 ## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation
@@ -630,5 +683,5 @@ Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI
 
 ---
 
-**Document Version**: 1.4
-**Last Updated**: 2026-05-10
+**Document Version**: 1.5
+**Last Updated**: 2026-05-11

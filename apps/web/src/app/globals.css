@@ -218,3 +218,13 @@ html.dark {
   z-index: 1;
   border-radius: inherit;
 }
+
+.security-nav-dot.is-active span:first-child {
+  background: var(--accent);
+  border-color: var(--accent);
+  box-shadow: 0 0 22px var(--glow-strong);
+}
+
+.security-nav-dot.is-active span:last-child {
+  color: var(--text-primary);
+}
