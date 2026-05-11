@@ -8,18 +8,15 @@ import {
   ArrowRight,
   CircleDot,
   Code2,
-  Eye,
-  Fingerprint,
   GitBranch,
-  KeyRound,
   Lock,
-  Server,
   Shield,
   Terminal,
   Users,
-  Zap,
 } from "lucide-react"
 import { Footer } from "@/components/layout/footer"
+import { ProblemToVaultSection } from "@/components/marketing/problem-to-vault-section"
+import { SecurityScrollytelling } from "@/components/marketing/security-scrollytelling"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -96,21 +93,6 @@ const steps = [
     title: "Equipe decripta local",
     desc: "Cada membro decripta com sua própria chave. Zero-knowledge garantido.",
   },
-]
-
-const securityPoints = [
-  { icon: KeyRound, text: "AES-GCM 256-bit encryption" },
-  { icon: Eye, text: "Zero-knowledge architecture" },
-  { icon: Fingerprint, text: "Client-side only: dados nunca expostos" },
-  { icon: Server, text: "100% open source e auditável" },
-]
-
-const scatteredSecrets = [
-  ".env.local",
-  "DATABASE_URL",
-  "SUPABASE_KEY",
-  "STRIPE_SECRET",
-  "CI_TOKEN",
 ]
 
 const plans = [
@@ -295,66 +277,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section className={`relative overflow-hidden bg-[var(--background-subtle)] ${marketingSectionClass}`}>
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[0.95fr_1.05fr]">
-          <div data-motion="reveal">
-            <SectionHeading
-              label="Problem to Vault"
-              title={
-                <>
-                  Secrets espalhados viram um{" "}
-                  <span className="text-[var(--accent)]">vault criptografado</span>
-                </>
-              }
-            />
-            <p className="-mt-8 max-w-xl leading-relaxed text-[var(--text-tertiary)]">
-              O fluxo transforma variáveis soltas, tokens de CI e credenciais de
-              produção em um grafo audível e auditável: criptografa localmente,
-              sincroniza seguro, decripta só onde deve.
-            </p>
-          </div>
-
-          <div data-motion="reveal" className="relative min-h-[430px]">
-            <div className="absolute inset-0 rounded-[var(--radius-xl)] border border-[var(--border)] bg-[var(--surface)]/60" />
-            <div className="absolute left-5 top-6 grid gap-3 sm:left-8">
-              {scatteredSecrets.map((secret, index) => (
-                <div
-                  key={secret}
-                  className="rounded-lg border border-[var(--border)] bg-[var(--background)] px-3 py-2 font-mono text-xs text-[var(--text-secondary)] shadow-sm"
-                  style={{ marginLeft: `${index % 2 === 0 ? 0 : 34}px` }}
-                >
-                  {secret}
-                </div>
-              ))}
-            </div>
-            <div className="absolute left-8 right-8 top-1/2 h-px bg-[var(--border)]">
-              <div data-motion="line" className="h-px bg-[var(--accent)]/70" />
-            </div>
-            <div className="absolute bottom-8 right-6 w-[58%] min-w-[220px] rounded-xl border border-[var(--border)] bg-[var(--background)] p-5 shadow-xl sm:right-8">
-              <div className="mb-4 flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <KeyRound className="h-4 w-4 text-[var(--accent)]" />
-                  <span className="font-mono text-xs text-[var(--text-muted)]">
-                    vault.local
-                  </span>
-                </div>
-                <Badge variant="success">sealed</Badge>
-              </div>
-              <div className="space-y-2">
-                {["ciphertext", "team keyring", "audit hash"].map((item) => (
-                  <div
-                    key={item}
-                    className="flex items-center justify-between rounded-md bg-[var(--background-subtle)] px-3 py-2 font-mono text-xs"
-                  >
-                    <span className="text-[var(--text-tertiary)]">{item}</span>
-                    <span className="text-[var(--text-primary)]">••••••</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
-        </div>
-      </section>
+      <ProblemToVaultSection />
 
       <section id="features" className={`${marketingSectionClass} bg-[var(--background)]`}>
         <div className="mx-auto w-full max-w-6xl">
@@ -440,60 +363,7 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="security" className={`${marketingSectionClass} bg-[var(--background)]`}>
-        <div className="mx-auto grid w-full max-w-6xl items-center gap-16 lg:grid-cols-2">
-          <div data-motion="reveal" className="relative order-2 lg:order-1">
-            <div className="relative mx-auto aspect-[4/5] max-w-md overflow-hidden rounded-xl border border-[var(--border)]">
-              <Image
-                src="/images/secrets-make-you-sick.jpg"
-                alt="Segurança e privacidade"
-                fill
-                className="object-cover grayscale transition-all duration-700 hover:grayscale-0"
-                loading="lazy"
-              />
-              <div className="absolute inset-0 bg-gradient-to-t from-[var(--background)] via-transparent to-transparent opacity-70" />
-              <div className="absolute bottom-5 left-5 right-5 rounded-xl border border-white/10 bg-black/45 p-4 font-mono text-xs text-white/80 backdrop-blur-md">
-                <div className="mb-3 flex items-center gap-2 text-green-400">
-                  <Zap className="h-4 w-4" />
-                  local encryption path
-                </div>
-                <div className="h-px bg-white/15">
-                  <div data-motion="line" className="h-px bg-green-400" />
-                </div>
-              </div>
-            </div>
-          </div>
-
-          <div data-motion="reveal" className="order-1 lg:order-2">
-            <SectionHeading
-              label="Security"
-              title={
-                <>
-                  Segurança que você pode{" "}
-                  <span className="text-[var(--accent)]">confiar</span>
-                </>
-              }
-            />
-            <p className="-mt-10 mb-10 leading-relaxed text-[var(--text-tertiary)]">
-              Arquitetura zero-knowledge de verdade. Seus dados são criptografados
-              no seu dispositivo e o servidor nunca tem acesso às chaves ou ao
-              conteúdo em plain-text.
-            </p>
-            <div className="space-y-5">
-              {securityPoints.map((point) => (
-                <div key={point.text} className="group flex items-center gap-4">
-                  <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg border border-[var(--accent)]/20 bg-[var(--accent)]/10 transition-colors group-hover:bg-[var(--accent)]/20">
-                    <point.icon className="h-5 w-5 text-[var(--accent)]" />
-                  </div>
-                  <span className="text-sm font-medium text-[var(--text-secondary)]">
-                    {point.text}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-        </div>
-      </section>
+      <SecurityScrollytelling />
 
       <section
         id="pricing"

@@ -9,6 +9,22 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Problem to Vault Vault Ceremony (2026-05-11)
+
+- **Landing fold redesign**: Replaced the inline “Problem to Vault” diagram with a dedicated `ProblemToVaultSection` component focused on the encrypted vault as the main visual.
+- **Vault ceremony motion**: Added GSAP-driven entrance choreography for scattered secret fragments, the AES-GCM local seal path, vault closing, and technical proof badges.
+- **Technical proof points**: Surfaced `server sees: ciphertext`, `plaintext: never`, and `audit hash: chained` directly in the fold.
+- **Reduced-motion fallback**: The section renders fully visible and static for users who prefer reduced motion.
+- **Decision record**: Added DEC-024 for the Problem to Vault vault ceremony direction.
+
+#### Landing Security Scrollytelling (2026-05-11)
+
+- **Security narrative**: Replaced the static landing Security block with a pinned desktop scrollytelling sequence for AES-GCM, zero-knowledge, client-side-only crypto, and open-source auditability.
+- **Motion system**: Added GSAP ScrollTrigger pinning, snapping, and progress state for the desktop section.
+- **3D layer**: Added a lightweight dynamically loaded React Three Fiber vault scene for desktop users without reduced-motion preference.
+- **Mobile fallback**: Added a stacked mobile narrative with the same topics and images, without scroll locking or WebGL canvas loading.
+- **Decision record**: Added DEC-023 for the landing security scrollytelling direction.
+
 #### Custom Production Domains (2026-05-10)
 
 - **Frontend domain**: Production frontend references now use `https://criptenv.77mdevseven.tech`.

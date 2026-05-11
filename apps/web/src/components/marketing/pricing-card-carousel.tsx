@@ -1,11 +1,17 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react"
-import gsap from "gsap"
-import { Check, ChevronLeft, ChevronRight } from "lucide-react"
-import Link from "next/link"
-import { cn } from "@/lib/utils"
-import { Button } from "@/components/ui/button"
+import {
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from "react";
+import gsap from "gsap";
+import { Check, ChevronLeft, ChevronRight } from "lucide-react";
+import Link from "next/link";
+import { cn } from "@/lib/utils";
+import { Button } from "@/components/ui/button";
 
 /* ------------------------------------------------------------------ */
 /*  Theme — reads .dark class from <html> directly                     */
@@ -15,20 +21,20 @@ import { Button } from "@/components/ui/button"
 /* ------------------------------------------------------------------ */
 
 function subscribe(callback: () => void) {
-  const observer = new MutationObserver(callback)
+  const observer = new MutationObserver(callback);
   observer.observe(document.documentElement, {
     attributes: true,
     attributeFilter: ["class"],
-  })
-  return () => observer.disconnect()
+  });
+  return () => observer.disconnect();
 }
 
 function getSnapshot() {
-  return document.documentElement.classList.contains("dark")
+  return document.documentElement.classList.contains("dark");
 }
 
 function getServerSnapshot() {
-  return false // SSR always renders light; inline script fixes it before paint
+  return false; // SSR always renders light; inline script fixes it before paint
 }
 
 /* ------------------------------------------------------------------ */
@@ -120,9 +126,13 @@ export function PricingCardCarousel({
   autoPlayInterval = 4000,
   className,
 }: PricingCardCarouselProps) {
-  const len = cards.length
-  const [activeIndex, setActiveIndex] = useState(0)
-  const isDark = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot)
+  const len = cards.length;
+  const [activeIndex, setActiveIndex] = useState(0);
+  const isDark = useSyncExternalStore(
+    subscribe,
+    getSnapshot,
+    getServerSnapshot,
+  );
 
   const containerRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -163,7 +173,8 @@ export function PricingCardCarousel({
   const transitionTo = useCallback(
     (nextActive: number) => {
       const normalizedNext = ((nextActive % len) + len) % len;
-      if (isAnimating.current || normalizedNext === activeIndexRef.current) return;
+      if (isAnimating.current || normalizedNext === activeIndexRef.current)
+        return;
       isAnimating.current = true;
 
       const [frontIdx, midIdx, backIdx] = orderedIndices(normalizedNext, len);
@@ -241,7 +252,8 @@ export function PricingCardCarousel({
   }, []);
 
   const startAutoPlay = useCallback(() => {
-    if (prefersReducedMotion.current || len < 2 || autoPlayInterval <= 0) return;
+    if (prefersReducedMotion.current || len < 2 || autoPlayInterval <= 0)
+      return;
     stopAutoPlay();
     autoPlayTimer.current = setInterval(() => {
       transitionTo(activeIndexRef.current + 1);
@@ -327,13 +339,13 @@ export function PricingCardCarousel({
       {/* ---- Ambient glow ---- */}
       <div
         aria-hidden
-        className="pointer-events-none absolute left-1/2 top-1/2 h-[420px] w-[520px] -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.12] blur-[100px]"
+        className="pointer-events-none absolute left-1/2 top-1/2 h-105 w-130 -translate-x-1/2 -translate-y-1/2 rounded-full opacity-[0.12] blur-[100px]"
         style={{ background: "var(--accent)" }}
       />
 
       {/* ---- 3-D card stage ---- */}
       <div
-        className="relative mx-auto h-[440px] w-full max-w-[calc(100vw-2rem)] sm:max-w-sm sm:h-[460px]"
+        className="relative mx-auto h-110 w-full max-w-[calc(100vw-2rem)] sm:max-w-sm sm:h-115"
         style={{ perspective: "1000px", perspectiveOrigin: "50% 45%" }}
       >
         {cards.map((card, index) => {
@@ -374,19 +386,19 @@ export function PricingCardCarousel({
               {/* Card body */}
               <div
                 className={cn(
-                  "group relative flex min-h-[376px] flex-col rounded-xl border p-6 backdrop-blur-md transition-shadow duration-300",
+                  "group relative flex min-h-94 flex-col rounded-xl border p-6 backdrop-blur-md transition-shadow duration-300",
                   card.featured
                     ? isDark
-                      ? "border-[var(--accent)]/50 bg-[#161618] shadow-lg shadow-[var(--glow-soft)]"
-                      : "border-[var(--accent)]/35 bg-white shadow-xl shadow-black/10"
+                      ? "border-(--accent)/50 bg-[#161618] shadow-lg shadow-[var(--glow-soft)]"
+                      : "border-(--accent)/35 bg-white shadow-xl shadow-black/10"
                     : isDark
                       ? "border-white/10 bg-[#111113]"
-                      : "border-[var(--border)] bg-white shadow-lg shadow-black/5",
+                      : "border-(--border) bg-white shadow-lg shadow-black/5",
                 )}
               >
                 {/* Featured badge */}
                 {card.featured && (
-                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-[var(--accent)] px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-[var(--accent-foreground)]">
+                  <div className="absolute -top-3 left-1/2 -translate-x-1/2 whitespace-nowrap rounded-full bg-(--accent) px-3 py-0.5 text-[10px] font-bold uppercase tracking-widest text-(--accent-foreground)">
                     {card.badge || "Featured"}
                   </div>
                 )}
@@ -394,10 +406,10 @@ export function PricingCardCarousel({
                 {/* Header */}
                 <div className="flex items-start justify-between">
                   <div>
-                    <h3 className="text-lg font-semibold text-[var(--text-primary)]">
+                    <h3 className="text-lg font-semibold text-(--text-primary)">
                       {card.name}
                     </h3>
-                    <p className="mt-1 text-sm text-[var(--text-tertiary)]">
+                    <p className="mt-1 text-sm text-(--text-tertiary)">
                       {card.description}
                     </p>
                   </div>
@@ -416,11 +428,11 @@ export function PricingCardCarousel({
 
                 {/* Price */}
                 <div className="mb-6 mt-6">
-                  <span className="text-4xl font-semibold tracking-tight text-[var(--text-primary)]">
+                  <span className="text-4xl font-semibold tracking-tight text-(--text-primary)">
                     {card.price}
                   </span>
                   {card.suffix && (
-                    <span className="text-sm text-[var(--text-muted)]">
+                    <span className="text-sm text-(--text-muted)">
                       {card.suffix}
                     </span>
                   )}
@@ -431,7 +443,7 @@ export function PricingCardCarousel({
                   {card.features.map((feature) => (
                     <li
                       key={feature}
-                      className="flex items-center gap-2 text-sm text-[var(--text-secondary)]"
+                      className="flex items-center gap-2 text-sm text-(--text-secondary)"
                     >
                       <Check className="h-4 w-4 shrink-0 text-green-500" />
                       {feature}
@@ -446,8 +458,8 @@ export function PricingCardCarousel({
                     fullWidth
                     className={
                       card.featured
-                        ? "bg-[var(--accent)] font-bold text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)]"
-                        : "border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)]"
+                        ? "bg-(--accent) font-bold text-(--accent-foreground) hover:bg-(--accent-hover)"
+                        : "border-(--border) text-(--text-primary) hover:bg-(--background-subtle)"
                     }
                   >
                     {card.cta}
@@ -470,8 +482,8 @@ export function PricingCardCarousel({
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-full border transition-colors",
             isDark
-              ? "border-[var(--border)] bg-[#141416] text-[var(--text-secondary)] hover:bg-[#1a1a1c] hover:text-[var(--text-primary)]"
-              : "border-[var(--border)] bg-white text-[var(--text-secondary)] shadow-sm hover:bg-gray-50 hover:text-[var(--text-primary)]",
+              ? "border-(--border) bg-[#141416] text-(--text-secondary) hover:bg-[#1a1a1c] hover:text-(--text-primary)"
+              : "border-(--border) bg-white text-(--text-secondary) shadow-sm hover:bg-gray-50 hover:text-(--text-primary)",
           )}
           aria-label="Previous plan"
         >
@@ -491,8 +503,8 @@ export function PricingCardCarousel({
               className={cn(
                 "h-2 rounded-full transition-all duration-300",
                 i === activeIndex
-                  ? "w-6 bg-[var(--text-primary)]"
-                  : "w-2 bg-[var(--text-muted)]/40 hover:bg-[var(--text-muted)]/70",
+                  ? "w-6 bg-(--text-primary)"
+                  : "w-2 bg-(--text-muted)/40 hover:bg-(--text-muted)/70",
               )}
               aria-label={`Go to ${card.name}`}
               aria-current={i === activeIndex ? "true" : undefined}
@@ -509,8 +521,8 @@ export function PricingCardCarousel({
           className={cn(
             "flex h-10 w-10 items-center justify-center rounded-full border transition-colors",
             isDark
-              ? "border-[var(--border)] bg-[#141416] text-[var(--text-secondary)] hover:bg-[#1a1a1c] hover:text-[var(--text-primary)]"
-              : "border-[var(--border)] bg-white text-[var(--text-secondary)] shadow-sm hover:bg-gray-50 hover:text-[var(--text-primary)]",
+              ? "border-(--border) bg-[#141416] text-(--text-secondary) hover:bg-[#1a1a1c] hover:text-(--text-primary)"
+              : "border-(--border) bg-white text-(--text-secondary) shadow-sm hover:bg-gray-50 hover:text-(--text-primary)",
           )}
           aria-label="Next plan"
         >
