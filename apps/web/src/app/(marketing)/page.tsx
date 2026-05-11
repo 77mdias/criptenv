@@ -15,8 +15,15 @@ import {
   Users,
 } from "lucide-react"
 import { Footer } from "@/components/layout/footer"
-import { ProblemToVaultSection } from "@/components/marketing/problem-to-vault-section"
-import { SecurityScrollytelling } from "@/components/marketing/security-scrollytelling"
+const ProblemToVaultSection = dynamic(
+  () => import("@/components/marketing/problem-to-vault-section").then((mod) => mod.ProblemToVaultSection),
+  { ssr: false },
+)
+
+const SecurityScrollytelling = dynamic(
+  () => import("@/components/marketing/security-scrollytelling").then((mod) => mod.SecurityScrollytelling),
+  { ssr: false },
+)
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
