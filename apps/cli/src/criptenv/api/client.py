@@ -95,6 +95,34 @@ class CriptEnvClient:
         resp = await self._request("GET", "/api/auth/session")
         return resp.json()
 
+    # ─── CLI Auth ───────────────────────────────────────────────────────────────
+
+    async def cli_initiate(self, callback_url: str) -> dict[str, Any]:
+        """POST /api/auth/cli/initiate"""
+        resp = await self._request(
+            "POST", "/api/auth/cli/initiate", json={"callback_url": callback_url}
+        )
+        return resp.json()
+
+    async def cli_token(self, auth_code: str) -> dict[str, Any]:
+        """POST /api/auth/cli/token"""
+        resp = await self._request(
+            "POST", "/api/auth/cli/token", json={"auth_code": auth_code}
+        )
+        return resp.json()
+
+    async def device_code(self) -> dict[str, Any]:
+        """POST /api/auth/cli/device/code"""
+        resp = await self._request("POST", "/api/auth/cli/device/code", json={})
+        return resp.json()
+
+    async def device_poll(self, device_code: str) -> dict[str, Any]:
+        """POST /api/auth/cli/device/poll"""
+        resp = await self._request(
+            "POST", "/api/auth/cli/device/poll", json={"device_code": device_code}
+        )
+        return resp.json()
+
     # ─── Projects ─────────────────────────────────────────────────────────────
 
     async def list_projects(self) -> dict[str, Any]:
@@ -270,6 +298,34 @@ class CriptEnvClient:
         )
         data = resp.json()
         return data.get("items", [])
+
+    async def create_integration(
+        self, project_id: str, provider: str, name: str, config: dict[str, Any]
+    ) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/integrations"""
+        resp = await self._request(
+            "POST",
+            f"/api/v1/projects/{project_id}/integrations",
+            json={"provider": provider, "name": name, "config": config},
+        )
+        return resp.json()
+
+    async def delete_integration(self, project_id: str, integration_id: str) -> None:
+        """DELETE /api/v1/projects/{id}/integrations/{iid}"""
+        await self._request(
+            "DELETE",
+            f"/api/v1/projects/{project_id}/integrations/{integration_id}"
+        )
+
+    async def validate_integration(
+        self, project_id: str, integration_id: str
+    ) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/integrations/{iid}/validate"""
+        resp = await self._request(
+            "POST",
+            f"/api/v1/projects/{project_id}/integrations/{integration_id}/validate"
+        )
+        return resp.json()
 
     async def sync_integration(
         self, project_id: str, integration_id: str, direction: str = "push"

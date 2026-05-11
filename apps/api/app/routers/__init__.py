@@ -11,6 +11,7 @@ from app.routers.ci import router as ci_router
 from app.routers.integrations import router as integrations_router
 from app.routers.contributions import router as contributions_router
 from app.routers.webhooks import router as webhooks_router
+from app.routers.cli_auth import router as cli_auth_router
 
 __all__ = [
     "auth_router",
@@ -25,5 +26,6 @@ __all__ = [
     "ci_router",
     "integrations_router",
     "contributions_router",
-    "webhooks_router"
+    "webhooks_router",
+    "cli_auth_router"
 ]

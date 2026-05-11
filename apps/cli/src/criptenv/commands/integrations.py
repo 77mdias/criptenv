@@ -74,12 +74,19 @@ def integrations_list():
 @click.option("--name", help="Integration name")
 @click.option("--token", help="API token for the provider")
 @click.option("--project-id", "project_id_opt", help="Provider project/service ID")
-def integrations_connect(provider: str, name: Optional[str], token: Optional[str], project_id_opt: Optional[str]):
+@click.option("--project", "project_id_arg", help="CriptEnv project ID")
+def integrations_connect(
+    provider: str,
+    name: Optional[str],
+    token: Optional[str],
+    project_id_opt: Optional[str],
+    project_id_arg: Optional[str],
+):
     """Connect a new cloud provider integration.
 
     Example:
-        criptenv integrations connect vercel --token tok_xxx --project-id prj_xxx
-        criptenv integrations connect render --token tok_xxx --project-id srv_xxx
+        criptenv integrations connect vercel --token tok_xxx --project-id prj_xxx --project prj_xxx
+        criptenv integrations connect render --token tok_xxx --project-id srv_xxx --project prj_xxx
     """
     if provider == "railway":
         click.echo(
@@ -91,9 +98,9 @@ def integrations_connect(provider: str, name: Optional[str], token: Optional[str
 
     async def _do_connect():
         with cli_context(require_auth=True) as (db, master_key, client):
-            project_id = _get_current_project(client)
+            project_id = project_id_arg or _get_current_project(client)
             if not project_id:
-                click.echo("Error: No project selected. Run 'criptenv login' first.", err=True)
+                click.echo("Error: No project selected. Use --project or run 'criptenv login' first.", err=True)
                 return
 
             if not token:
@@ -111,12 +118,16 @@ def integrations_connect(provider: str, name: Optional[str], token: Optional[str
             }
 
             try:
-                # Validate connection first
-                click.echo(f"Validating {provider} connection...")
-                # Note: Client doesn't have create_integration yet, this is a stub
-                # In full implementation, this would call the API
+                click.echo(f"Connecting to {provider}...")
+                result = await client.create_integration(
+                    project_id=project_id,
+                    provider=provider,
+                    name=integration_name,
+                    config=config,
+                )
                 click.echo(f"✓ Connected to {provider}: {integration_name}")
-                click.echo(f"  Project ID: {project_id_opt}")
+                click.echo(f"  Integration ID: {result.get('id', 'unknown')}")
+                click.echo(f"  Status: {result.get('status', 'active')}")
 
             except Exception as e:
                 click.echo(f"Error connecting to {provider}: {e}", err=True)
@@ -126,22 +137,28 @@ def integrations_connect(provider: str, name: Optional[str], token: Optional[str
 
 @integrations.command("disconnect")
 @click.argument("integration_id")
+@click.option("--project", "project_id_arg", help="CriptEnv project ID")
 @click.option("--force", is_flag=True, help="Skip confirmation")
-def integrations_disconnect(integration_id: str, force: bool):
+def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], force: bool):
     """Disconnect a cloud provider integration.
 
     Example:
-        criptenv integrations disconnect 550e8400-e29b-41d4-a716-446655440000
+        criptenv integrations disconnect 550e8400-e29b-41d4-a716-446655440000 --project prj_xxx
     """
     async def _do_disconnect():
         with cli_context(require_auth=True) as (db, master_key, client):
+            project_id = project_id_arg or _get_current_project(client)
+            if not project_id:
+                click.echo("Error: No project selected. Use --project or run 'criptenv login' first.", err=True)
+                return
+
             if not force:
                 if not click.confirm(f"Disconnect integration {integration_id}?"):
                     click.echo("Aborted.")
                     return
 
             try:
-                # Note: Client doesn't have delete_integration yet
+                await client.delete_integration(project_id, integration_id)
                 click.echo(f"✓ Integration {integration_id} disconnected.")
             except Exception as e:
                 click.echo(f"Error disconnecting: {e}", err=True)

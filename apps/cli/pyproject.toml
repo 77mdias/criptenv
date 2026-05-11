@@ -2,7 +2,27 @@
 name = "criptenv"
 version = "0.1.0"
 description = "Zero-Knowledge secret management CLI"
+readme = "README.md"
+license = {file = "LICENSE"}
+authors = [
+    {name = "Jean Carlos Moreira Dias", email = "jean.77mdiasdev@gmail.com"}
+]
 requires-python = ">=3.10"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Security :: Cryptography",
+    "Topic :: Utilities",
+]
+keywords = ["secrets", "env", "cli", "encryption", "zero-knowledge", "environment-variables"]
 dependencies = [
     "click>=8.1.0",
     "cryptography>=42.0.0",
@@ -16,6 +36,12 @@ dev = [
     "pytest>=8.0.0",
     "pytest-asyncio>=0.23.0",
 ]
+
+[project.urls]
+Homepage = "https://github.com/77mdias/criptenv"
+Repository = "https://github.com/77mdias/criptenv"
+Issues = "https://github.com/77mdias/criptenv/issues"
+Documentation = "https://github.com/77mdias/criptenv#readme"
 
 [project.scripts]
 criptenv = "criptenv.cli:main"

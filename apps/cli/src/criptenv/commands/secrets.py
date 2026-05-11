@@ -280,21 +280,38 @@ def expire_command(key: str, days: int, policy: str, env_name: str | None, proje
         criptenv secrets expire DB_PASSWORD --days 30 --policy auto
         criptenv secrets expire API_KEY --days 90 -e staging
     """
+    from criptenv.context import async_cli_context
+    import asyncio
+
     expires_at = datetime.now(timezone.utc) + timedelta(days=days)
+    expires_at_iso = expires_at.isoformat()
     expires_at_str = expires_at.strftime("%Y-%m-%d")
-    
-    with cli_context() as (db, master_key, session):
-        if master_key is None:
-            click.echo("Error: Run 'criptenv login' first", err=True)
-            raise SystemExit(1)
-        
-        env_id = run_async(_resolve_env_id(db, env_name))
-        
-        # For now, store in local vault as metadata
-        # TODO: integrate with API when backend supports per-secret expiration
-        click.echo(f"✓ Set expiration for '{key}'")
-        click.echo(f"  Expires: {expires_at_str} ({days} days)")
-        click.echo(f"  Policy: {policy}")
+
+    async def _do_expire():
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
+            if master_key is None:
+                raise click.ClickException("Run 'criptenv init' first")
+
+            env_id = await _resolve_env_id(db, env_name)
+
+            # Require project for API call
+            if not project:
+                raise click.ClickException("--project is required for cloud secret expiration")
+
+            await client.set_expiration(
+                project_id=project,
+                env_id=env_id,
+                key=key,
+                expires_at=expires_at_iso,
+                rotation_policy=policy,
+                notify_days_before=7,
+            )
+
+            click.echo(f"✓ Set expiration for '{key}'")
+            click.echo(f"  Expires: {expires_at_str} ({days} days)")
+            click.echo(f"  Policy: {policy}")
+
+    asyncio.run(_do_expire())
 
 
 @click.command("alert")
@@ -310,12 +327,34 @@ def alert_command(key: str, days: int, env_name: str | None, project: str | None
         criptenv secrets alert API_KEY --days 30
         criptenv secrets alert DB_PASSWORD --days 14 -e staging
     """
-    with cli_context() as (db, master_key, session):
-        if master_key is None:
-            click.echo("Error: Run 'criptenv login' first", err=True)
-            raise SystemExit(1)
-        
-        click.echo(f"✓ Set alert for '{key}' to {days} days before expiration")
+    from criptenv.context import async_cli_context
+    import asyncio
+
+    async def _do_alert():
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
+            if master_key is None:
+                raise click.ClickException("Run 'criptenv init' first")
+
+            env_id = await _resolve_env_id(db, env_name)
+
+            if not project:
+                raise click.ClickException("--project is required for cloud secret alerts")
+
+            # Set a default 90-day expiration with the requested alert timing
+            expires_at = (datetime.now(timezone.utc) + timedelta(days=90)).isoformat()
+
+            await client.set_expiration(
+                project_id=project,
+                env_id=env_id,
+                key=key,
+                expires_at=expires_at,
+                rotation_policy="notify",
+                notify_days_before=days,
+            )
+
+            click.echo(f"✓ Set alert for '{key}' to {days} days before expiration")
+
+    asyncio.run(_do_alert())
 
 
 # ─── Secrets Group ─────────────────────────────────────────────────────────────
@@ -343,7 +382,7 @@ def rotation_group():
 
 @rotation_group.command("list")
 @click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
-@click.option("--project", "-p", default=None, help="Project name or ID")
+@click.option("--project", "-p", required=True, help="Project name or ID")
 @click.option("--days", "-d", default=30, type=int, help="Days ahead to check")
 def rotation_list_command(env_name: str | None, project: str | None, days: int):
     """List secrets pending rotation.
@@ -354,10 +393,32 @@ def rotation_list_command(env_name: str | None, project: str | None, days: int):
         criptenv rotation list --days 7
         criptenv rotation list -e staging
     """
-    with cli_context() as (db, master_key, session):
-        # Show placeholder for now
-        click.echo(f"Secrets expiring within {days} days:")
-        click.echo("")
-        click.echo("  (No secrets expiring — integrate with API for live data)")
-        click.echo("")
-        click.echo(f"Total: 0 secret(s) expiring")
+    from criptenv.context import async_cli_context
+    import asyncio
+
+    async def _do_list():
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
+            if master_key is None:
+                raise click.ClickException("Run 'criptenv init' first")
+
+            result = await client.list_expiring(project_id=project, days=days)
+            items = result.get("items", [])
+
+            click.echo(f"Secrets expiring within {days} days:")
+            click.echo("")
+
+            if not items:
+                click.echo("  (No secrets expiring)")
+            else:
+                for item in items:
+                    key = item.get("secret_key", "unknown")
+                    expires = item.get("expires_at", "unknown")
+                    policy = item.get("rotation_policy", "notify")
+                    click.echo(f"  • {key}")
+                    click.echo(f"    Expires: {expires}")
+                    click.echo(f"    Policy: {policy}")
+                    click.echo("")
+
+            click.echo(f"Total: {len(items)} secret(s) expiring")
+
+    asyncio.run(_do_list())

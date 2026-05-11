@@ -45,8 +45,20 @@ class SessionManager:
         response = await self.client.signin(email, password)
         token = response["token"]
         user = response["user"]
-        session_data = response["session"]
 
+        return await self._store_session(token, user)
+
+    async def login_with_token(self, token: str, user: dict) -> dict:
+        """
+        Store an externally-obtained token (e.g., from OAuth or device flow).
+
+        Returns:
+            User info dict
+        """
+        return await self._store_session(token, user)
+
+    async def _store_session(self, token: str, user: dict) -> dict:
+        """Encrypt and store a session token in the local vault."""
         # Encrypt token with master key
         token_encrypted = self._encrypt_token(token)
 
@@ -54,7 +66,7 @@ class SessionManager:
         session = Session(
             id=str(uuid.uuid4()),
             user_id=user["id"],
-            email=email,
+            email=user.get("email", ""),
             token_encrypted=token_encrypted,
             created_at=int(time.time()),
             expires_at=int(time.time()) + 30 * 24 * 60 * 60,  # 30 days
