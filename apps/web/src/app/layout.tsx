@@ -1,5 +1,8 @@
 import type { Metadata } from "next";
 import "./globals.css";
+import { suppressThreeWarnings } from "@/lib/three-warning-suppress";
+
+suppressThreeWarnings();
 
 export const metadata: Metadata = {
   title: "CriptEnv — Secret Management for Developers",
@@ -15,7 +18,7 @@ export default function RootLayout({
   return (
     <html lang="pt-BR" suppressHydrationWarning>
       <head />
-      <body className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased">
+      <body className="min-h-screen bg-[var(--background)] text-[var(--text-primary)] antialiased" suppressHydrationWarning>
         <script
           dangerouslySetInnerHTML={{
             __html: `(function(){

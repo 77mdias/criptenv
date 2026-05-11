@@ -228,6 +228,22 @@ npm run build         # ncc build src/index.ts -> dist/index.js
 - **Theme**: Dark mode default; `criptenv-theme` key in localStorage
 - Path alias: `@/*` maps to `./src/*`
 
+### Cloudflare Workers SSR Constraints (CRITICAL)
+The frontend runs on Cloudflare Workers, which prohibits asynchronous I/O, timers, and random value generation in the **global scope** during SSR. This includes `setTimeout`, `fetch`, `Math.random`, and any library that uses them at module initialization.
+
+**Rules:**
+1. **GSAP and animation libraries** — NEVER import directly in a page/component that renders during SSR. Always use `next/dynamic` with `ssr: false`:
+   ```tsx
+   const MyAnimation = dynamic(
+     () => import("@/components/marketing/my-animation").then((mod) => mod.MyAnimation),
+     { ssr: false }
+   )
+   ```
+2. **Any library that calls `setTimeout`/`setInterval` at import time** — Same treatment as GSAP. Use dynamic import with `ssr: false`.
+3. **Client-only code** — Wrap browser-only APIs inside `useEffect` or `typeof window !== 'undefined'` checks. Never call them at module top-level.
+4. **Canvas, WebGL, Three.js** — Always `ssr: false`. These depend on `document`/`window` which don't exist in the Worker.
+5. **If a page throws `Disallowed operation called within global scope`** — The offending import is being evaluated during SSR. Find it and convert to dynamic import with `ssr: false`.
+
 ### Database Conventions
 - **Tables**: `snake_case`, plural (`users`, `projects`, `vault_blobs`)
 - **Columns**: `snake_case` (`created_at`, `user_id`)
@@ -383,5 +399,5 @@ There is no containerization (no Dockerfiles or docker-compose.yml).
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-02
+**Document Version**: 1.1  
+**Last Updated**: 2026-05-11

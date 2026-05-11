@@ -66,25 +66,6 @@ function ProblemToVaultSection() {
   const scope = useRef<HTMLElement>(null)
   const reducedMotion = usePrefersReducedMotion()
 
-  useEffect(() => {
-    const timer = window.setTimeout(() => {
-      const targets = scope.current?.querySelectorAll<HTMLElement>(
-        "[data-vault-motion]",
-      )
-
-      targets?.forEach((target) => {
-        const opacity = Number.parseFloat(window.getComputedStyle(target).opacity)
-        if (opacity < 0.5) {
-          target.style.opacity = "1"
-          target.style.transform = "none"
-          target.style.filter = "none"
-        }
-      })
-    }, 1000)
-
-    return () => window.clearTimeout(timer)
-  }, [])
-
   useGSAP(
     () => {
       const root = scope.current
@@ -120,55 +101,97 @@ function ProblemToVaultSection() {
         return
       }
 
-      const timeline = gsap.timeline({
-        defaults: { ease: "power3.out" },
+      // Fragments — slide in from left
+      gsap.from(fragments, {
+        opacity: 0,
+        x: -40,
+        y: 24,
+        duration: 0.9,
+        stagger: 0.12,
+        ease: "power3.out",
         scrollTrigger: {
-          trigger: root,
-          start: "top 72%",
+          trigger: root.querySelector("[data-vault-motion='fragment']")?.parentElement,
+          start: "top 82%",
           once: true,
         },
       })
 
-      timeline
-        .from(fragments, {
+      // Pipeline steps — fade up
+      gsap.from(steps, {
+        opacity: 0,
+        y: 28,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: root.querySelector("[data-vault-motion='step']")?.parentElement,
+          start: "top 80%",
+          once: true,
+        },
+      })
+
+      // Line fill — grow
+      if (lineFill) {
+        gsap.fromTo(
+          lineFill,
+          { scaleX: 0, transformOrigin: "left center" },
+          {
+            scaleX: 1,
+            duration: 1.0,
+            ease: "power2.inOut",
+            scrollTrigger: {
+              trigger: lineFill.parentElement,
+              start: "top 78%",
+              once: true,
+            },
+          },
+        )
+      }
+
+      // Vault card — slide in from right
+      if (vault) {
+        gsap.from(vault, {
           opacity: 0,
-          x: -34,
-          y: 18,
-          duration: 0.6,
-          stagger: 0.08,
+          x: 50,
+          scale: 0.94,
+          duration: 1.0,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: vault,
+            start: "top 80%",
+            once: true,
+          },
         })
-        .from(steps, {
+      }
+
+      // Vault door — pop in with elastic feel
+      if (vaultDoor) {
+        gsap.from(vaultDoor, {
           opacity: 0,
-          y: 16,
-          duration: 0.45,
-          stagger: 0.08,
-        }, "-=0.24")
-        .fromTo(lineFill, {
-          scaleX: 0,
-          transformOrigin: "left center",
-        }, {
-          scaleX: 1,
-          duration: 0.86,
-          ease: "power2.inOut",
-        }, "-=0.22")
-        .from(vault, {
-          opacity: 0,
-          x: 44,
-          scale: 0.96,
+          scale: 0.85,
           duration: 0.7,
-        }, "-=0.5")
-        .from(vaultDoor, {
-          opacity: 0,
-          scale: 1.12,
-          duration: 0.52,
-          ease: "back.out(1.3)",
-        }, "-=0.18")
-        .from(proofItems, {
-          opacity: 0,
-          y: 12,
-          duration: 0.42,
-          stagger: 0.08,
-        }, "-=0.16")
+          ease: "back.out(1.6)",
+          scrollTrigger: {
+            trigger: vaultDoor,
+            start: "top 76%",
+            once: true,
+          },
+        })
+      }
+
+      // Proof items — subtle fade up
+      gsap.from(proofItems, {
+        opacity: 0,
+        y: 20,
+        duration: 0.8,
+        stagger: 0.12,
+        ease: "power3.out",
+        scrollTrigger: {
+          trigger: root.querySelector("[data-vault-motion='proof']")?.parentElement,
+          start: "top 84%",
+          once: true,
+        },
+      })
     },
     { scope, dependencies: [reducedMotion], revertOnUpdate: true },
   )
@@ -261,31 +284,33 @@ function ProblemToVaultSection() {
 
             <div
               data-vault-motion="vault"
-              className="relative z-10 overflow-hidden rounded-[24px] border border-black/10 bg-[#070707] p-5 shadow-2xl shadow-black/25 dark:border-white/10"
+              className="relative z-10 overflow-hidden rounded-[24px] border border-[var(--border)] bg-[var(--surface)] p-5 shadow-xl shadow-black/5 dark:border-white/10 dark:bg-[#050505] dark:shadow-black/40"
             >
-              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(156,255,74,0.16),transparent_36%),linear-gradient(180deg,rgba(255,255,255,0.06),transparent_42%)]" />
+              {/* Subtle accent glow — visible in both themes */}
+              <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_50%_18%,rgba(156,255,74,0.10),transparent_40%)] dark:bg-[radial-gradient(circle_at_50%_18%,rgba(156,255,74,0.18),transparent_38%)]" />
 
               <div className="relative z-10 mb-6 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <KeyRound className="h-4 w-4 text-lime-200" />
-                  <span className="font-mono text-xs text-white/58">
+                  <KeyRound className="h-4 w-4 text-[var(--accent)] dark:text-lime-200" />
+                  <span className="font-mono text-xs text-[var(--text-secondary)] dark:text-white/70">
                     vault.local
                   </span>
                 </div>
-                <Badge className="border-lime-200/30 bg-lime-200 text-black">
+                <Badge className="border-[var(--accent)]/30 bg-[var(--accent)] text-[var(--accent-foreground)] dark:border-lime-200/30 dark:bg-lime-200 dark:text-black">
                   sealed
                 </Badge>
               </div>
 
               <div className="relative mx-auto mb-6 flex aspect-square max-w-[230px] items-center justify-center">
-                <div className="absolute inset-6 rounded-full border border-white/12 bg-white/[0.03]" />
-                <div className="absolute inset-10 rounded-full border border-lime-200/20" />
+                {/* Decorative rings — subtle in light, visible in dark */}
+                <div className="absolute inset-6 rounded-full border border-[var(--border)] bg-[var(--background-subtle)]/50 dark:border-white/12 dark:bg-white/[0.03]" />
+                <div className="absolute inset-10 rounded-full border border-[var(--accent)]/15 dark:border-lime-200/20" />
                 <div
                   data-vault-motion="vault-door"
-                  className="relative flex h-36 w-36 items-center justify-center rounded-[32px] border border-lime-200/22 bg-black shadow-[0_0_42px_rgba(156,255,74,0.16)]"
+                  className="relative flex h-36 w-36 items-center justify-center rounded-[32px] border border-[var(--accent)]/20 bg-[var(--background)] shadow-[0_0_32px_rgba(156,255,74,0.10)] dark:border-lime-200/22 dark:bg-black dark:shadow-[0_0_42px_rgba(156,255,74,0.16)]"
                 >
-                  <div className="absolute inset-4 rounded-[24px] border border-white/10" />
-                  <ShieldCheck className="h-12 w-12 text-lime-200" />
+                  <div className="absolute inset-4 rounded-[24px] border border-[var(--border)] dark:border-white/10" />
+                  <ShieldCheck className="h-12 w-12 text-[var(--accent)] dark:text-lime-200" />
                 </div>
               </div>
 
@@ -293,20 +318,20 @@ function ProblemToVaultSection() {
                 {vaultRows.map((row) => (
                   <div
                     key={row.label}
-                    className="flex items-center justify-between rounded-lg border border-white/8 bg-white/[0.045] px-3 py-2 font-mono text-[11px]"
+                    className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]/70 px-3 py-2 font-mono text-[11px] dark:border-white/8 dark:bg-white/[0.045]"
                   >
-                    <span className="text-white/48">{row.label}</span>
-                    <span className="text-white/78">{row.value}</span>
+                    <span className="text-[var(--text-muted)] dark:text-white/60">{row.label}</span>
+                    <span className="text-[var(--text-secondary)] dark:text-white/85">{row.value}</span>
                   </div>
                 ))}
               </div>
 
-              <div className="relative z-10 mt-5 flex items-center justify-between rounded-xl border border-sky-200/12 bg-sky-200/[0.06] px-3 py-2 font-mono text-[11px] text-sky-100/78">
+              <div className="relative z-10 mt-5 flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background-subtle)]/60 px-3 py-2 font-mono text-[11px] text-[var(--text-secondary)] dark:border-sky-200/12 dark:bg-sky-200/[0.06] dark:text-sky-100/78">
                 <div className="flex items-center gap-2">
                   <Server className="h-3.5 w-3.5" />
                   <span>cloud sync</span>
                 </div>
-                <div className="flex items-center gap-2 text-lime-100">
+                <div className="flex items-center gap-2 text-[var(--accent)] dark:text-lime-100">
                   <ArrowRight className="h-3.5 w-3.5" />
                   <span>ciphertext only</span>
                 </div>
