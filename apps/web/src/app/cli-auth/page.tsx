@@ -1,31 +1,45 @@
 "use client"
 
-import { useEffect, useState, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useState, Suspense, useCallback, useMemo } from "react"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Loader2, Terminal, CheckCircle, AlertCircle, ArrowRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { OAuthButtonGroup } from "@/components/ui/oauth-button"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
-import { authApi } from "@/lib/api/auth"
 import { useAuth } from "@/hooks/use-auth"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { loginSchema, type LoginInput } from "@/lib/validators/schemas"
 
+type Step = "checking" | "login" | "confirm" | "authorizing" | "success" | "error"
+
 function CLIAuthContent() {
   const searchParams = useSearchParams()
-  const router = useRouter()
   const { user, login, isLoading: authLoading } = useAuth()
 
   const state = searchParams.get("state")
   const callback = searchParams.get("callback")
   const deviceCode = searchParams.get("device_code")
 
-  const [step, setStep] = useState<"checking" | "login" | "confirm" | "authorizing" | "success" | "error">("checking")
-  const [error, setError] = useState<string | null>(null)
+  const hasValidParams = Boolean(state || deviceCode)
+
+  // Explicit mutable steps override the derived state
+  const [explicitStep, setExplicitStep] = useState<Step | null>(null)
+  const [errorMsg, setErrorMsg] = useState<string | null>(
+    hasValidParams ? null : "Parâmetros inválidos. Inicie o login a partir da CLI."
+  )
   const [loginError, setLoginError] = useState<string | null>(null)
+
+  // Derive the current step from props and explicit overrides
+  const step = useMemo<Step>(() => {
+    if (explicitStep) return explicitStep
+    if (!hasValidParams) return "error"
+    if (authLoading) return "checking"
+    if (user) return "confirm"
+    return "login"
+  }, [explicitStep, hasValidParams, authLoading, user])
 
   const {
     register,
@@ -35,37 +49,22 @@ function CLIAuthContent() {
     resolver: zodResolver(loginSchema),
   })
 
-  useEffect(() => {
-    // Validate params
-    if (!state && !deviceCode) {
-      setError("Parâmetros inválidos. Inicie o login a partir da CLI.")
-      setStep("error")
-      return
-    }
-
-    // Check if already authenticated
-    if (!authLoading) {
-      if (user) {
-        setStep("confirm")
-      } else {
-        setStep("login")
+  const onLoginSubmit = useCallback(
+    async (data: LoginInput) => {
+      setLoginError(null)
+      try {
+        await login(data.email, data.password)
+        setExplicitStep("confirm")
+      } catch (err: unknown) {
+        const message = err instanceof Error ? err.message : "Email ou senha inválidos"
+        setLoginError(message)
       }
-    }
-  }, [user, authLoading, state, deviceCode])
+    },
+    [login]
+  )
 
-  const onLoginSubmit = async (data: LoginInput) => {
-    setLoginError(null)
-    try {
-      await login(data.email, data.password)
-      setStep("confirm")
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Email ou senha inválidos"
-      setLoginError(message)
-    }
-  }
-
-  const handleAuthorize = async () => {
-    setStep("authorizing")
+  const handleAuthorize = useCallback(async () => {
+    setExplicitStep("authorizing")
     try {
       if (state) {
         // Browser redirect flow
@@ -90,7 +89,7 @@ function CLIAuthContent() {
           callbackUrl.searchParams.set("code", authCode)
           window.location.href = callbackUrl.toString()
         } else {
-          setStep("success")
+          setExplicitStep("success")
         }
       } else if (deviceCode) {
         // Device flow
@@ -106,14 +105,14 @@ function CLIAuthContent() {
           throw new Error(data.detail || "Falha ao autorizar dispositivo")
         }
 
-        setStep("success")
+        setExplicitStep("success")
       }
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : "Erro desconhecido"
-      setError(message)
-      setStep("error")
+      setErrorMsg(message)
+      setExplicitStep("error")
     }
-  }
+  }, [state, callback, deviceCode])
 
   if (step === "checking") {
     return (
@@ -131,7 +130,7 @@ function CLIAuthContent() {
           <AlertCircle className="h-6 w-6" />
         </div>
         <h2 className="text-xl font-semibold text-[var(--text-primary)]">Erro na autorização</h2>
-        <p className="text-sm text-[var(--text-tertiary)] text-center">{error}</p>
+        <p className="text-sm text-[var(--text-tertiary)] text-center">{errorMsg}</p>
         <Link href="/login">
           <Button variant="outline">Voltar para login</Button>
         </Link>
