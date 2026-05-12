@@ -78,3 +78,80 @@ def projects_list():
 
     click.echo("")
     click.echo(f"Total: {len(projects)} project(s)")
+
+
+@projects_group.command("info")
+@click.argument("project_id")
+def projects_info(project_id: str):
+    """Show detailed information about a project.
+
+    \b
+    Examples:
+        criptenv projects info <project-id>
+    """
+    with cli_context(require_auth=True) as (_db, _mk, client):
+        try:
+            project = run_async(client.get_project(project_id))
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1)
+
+    click.echo(f"Name:        {project.get('name', 'unknown')}")
+    click.echo(f"ID:          {project.get('id', 'unknown')}")
+    click.echo(f"Slug:        {project.get('slug', 'N/A')}")
+    click.echo(f"Description: {project.get('description', 'N/A')}")
+    click.echo(f"Owner ID:    {project.get('owner_id', 'unknown')}")
+    click.echo(f"Created:     {project.get('created_at', 'unknown')}")
+    click.echo(f"Updated:     {project.get('updated_at', 'unknown')}")
+
+
+@projects_group.command("update")
+@click.argument("project_id")
+@click.option("--name", "-n", default=None, help="New project name")
+@click.option("--description", "-d", default=None, help="New description")
+def projects_update(project_id: str, name: str | None, description: str | None):
+    """Update a project's name or description.
+
+    \b
+    Examples:
+        criptenv projects update <project-id> --name "New Name"
+        criptenv projects update <project-id> -d "Updated description"
+    """
+    if not name and not description:
+        click.echo("Error: Provide at least one of --name or --description", err=True)
+        raise SystemExit(1)
+
+    with cli_context(require_auth=True) as (_db, _mk, client):
+        try:
+            project = run_async(client.update_project(project_id, name=name, description=description))
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1)
+
+    click.echo(f"✓ Updated project {project.get('name', project_id)}")
+
+
+@projects_group.command("delete")
+@click.argument("project_id")
+@click.option("--force", "-f", is_flag=True, help="Skip confirmation")
+def projects_delete(project_id: str, force: bool):
+    """Delete a project permanently.
+
+    \b
+    Examples:
+        criptenv projects delete <project-id>
+        criptenv projects delete <project-id> --force
+    """
+    if not force:
+        if not click.confirm(f"Delete project {project_id}? This cannot be undone."):
+            click.echo("Aborted.")
+            return
+
+    with cli_context(require_auth=True) as (_db, _mk, client):
+        try:
+            run_async(client.delete_project(project_id))
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1)
+
+    click.echo(f"✓ Deleted project {project_id}")

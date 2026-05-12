@@ -9,8 +9,7 @@ from typing import Optional
 
 import click
 
-from criptenv.context import cli_context
-from criptenv.api.client import CriptEnvClient
+from criptenv.context import cli_context, resolve_project_id
 
 
 @click.group()
@@ -23,7 +22,8 @@ def integrations():
 
 
 @integrations.command("list")
-def integrations_list():
+@click.option("--project", "-p", "project_id", default=None, help="Project ID")
+def integrations_list(project_id: str | None):
     """List connected integrations for the current project.
 
     Example:
@@ -31,14 +31,14 @@ def integrations_list():
     """
     async def _do_list():
         with cli_context(require_auth=True) as (db, master_key, client):
-            # Get current project from session
-            project_id = _get_current_project(client)
-            if not project_id:
-                click.echo("Error: No project selected. Run 'criptenv login' first.", err=True)
+            try:
+                resolved_project_id = resolve_project_id(db, project_id)
+            except click.ClickException as e:
+                click.echo(f"Error: {e.message}", err=True)
                 return
 
             try:
-                result = await client.list_integrations(project_id)
+                result = await client.list_integrations(resolved_project_id)
                 items = result if isinstance(result, list) else result.get("items", [])
 
                 if not items:
@@ -74,7 +74,7 @@ def integrations_list():
 @click.option("--name", help="Integration name")
 @click.option("--token", help="API token for the provider")
 @click.option("--project-id", "project_id_opt", help="Provider project/service ID")
-@click.option("--project", "project_id_arg", help="CriptEnv project ID")
+@click.option("--project", "project_id_arg", default=None, help="CriptEnv project ID")
 def integrations_connect(
     provider: str,
     name: Optional[str],
@@ -98,9 +98,10 @@ def integrations_connect(
 
     async def _do_connect():
         with cli_context(require_auth=True) as (db, master_key, client):
-            project_id = project_id_arg or _get_current_project(client)
-            if not project_id:
-                click.echo("Error: No project selected. Use --project or run 'criptenv login' first.", err=True)
+            try:
+                resolved_project_id = resolve_project_id(db, project_id_arg)
+            except click.ClickException as e:
+                click.echo(f"Error: {e.message}", err=True)
                 return
 
             if not token:
@@ -120,7 +121,7 @@ def integrations_connect(
             try:
                 click.echo(f"Connecting to {provider}...")
                 result = await client.create_integration(
-                    project_id=project_id,
+                    project_id=resolved_project_id,
                     provider=provider,
                     name=integration_name,
                     config=config,
@@ -137,7 +138,7 @@ def integrations_connect(
 
 @integrations.command("disconnect")
 @click.argument("integration_id")
-@click.option("--project", "project_id_arg", help="CriptEnv project ID")
+@click.option("--project", "project_id_arg", default=None, help="CriptEnv project ID")
 @click.option("--force", is_flag=True, help="Skip confirmation")
 def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], force: bool):
     """Disconnect a cloud provider integration.
@@ -147,9 +148,10 @@ def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], 
     """
     async def _do_disconnect():
         with cli_context(require_auth=True) as (db, master_key, client):
-            project_id = project_id_arg or _get_current_project(client)
-            if not project_id:
-                click.echo("Error: No project selected. Use --project or run 'criptenv login' first.", err=True)
+            try:
+                resolved_project_id = resolve_project_id(db, project_id_arg)
+            except click.ClickException as e:
+                click.echo(f"Error: {e.message}", err=True)
                 return
 
             if not force:
@@ -158,7 +160,7 @@ def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], 
                     return
 
             try:
-                await client.delete_integration(project_id, integration_id)
+                await client.delete_integration(resolved_project_id, integration_id)
                 click.echo(f"✓ Integration {integration_id} disconnected.")
             except Exception as e:
                 click.echo(f"Error disconnecting: {e}", err=True)
@@ -170,7 +172,8 @@ def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], 
 @click.option("--provider", required=True, type=click.Choice(["vercel", "railway", "render"]), help="Provider to sync")
 @click.option("--env", "environment", default="production", help="Environment to sync")
 @click.option("--direction", type=click.Choice(["push", "pull"]), default="push", help="Sync direction")
-def integrations_sync(provider: str, environment: str, direction: str):
+@click.option("--project", "project_id_arg", default=None, help="Project ID")
+def integrations_sync(provider: str, environment: str, direction: str, project_id_arg: Optional[str]):
     """Sync secrets with a connected provider.
 
     Example:
@@ -179,14 +182,15 @@ def integrations_sync(provider: str, environment: str, direction: str):
     """
     async def _do_sync():
         with cli_context(require_auth=True) as (db, master_key, client):
-            project_id = _get_current_project(client)
-            if not project_id:
-                click.echo("Error: No project selected. Run 'criptenv login' first.", err=True)
+            try:
+                resolved_project_id = resolve_project_id(db, project_id_arg)
+            except click.ClickException as e:
+                click.echo(f"Error: {e.message}", err=True)
                 return
 
             try:
                 # Find integration for provider
-                integrations_list = await client.list_integrations(project_id)
+                integrations_list = await client.list_integrations(resolved_project_id)
                 items = integrations_list if isinstance(integrations_list, list) else integrations_list.get("items", [])
 
                 provider_integration = None
@@ -204,24 +208,13 @@ def integrations_sync(provider: str, environment: str, direction: str):
                     return
 
                 click.echo(f"Syncing secrets {direction} to {provider} ({environment})...")
-                await client.sync_integration(project_id, provider_integration["id"], direction=direction)
+                await client.sync_integration(resolved_project_id, provider_integration["id"], direction=direction)
                 click.echo(f"✓ Sync complete")
 
             except Exception as e:
                 click.echo(f"Error syncing: {e}", err=True)
 
     asyncio.run(_do_sync())
-
-
-def _get_current_project(client: CriptEnvClient) -> Optional[str]:
-    """Get current project ID from client/session.
-    
-    This is a simplified helper — in production this would read
-    from local config or session state.
-    """
-    # Placeholder: the CLI doesn't currently track a "current project"
-    # This would need to be enhanced with a `config get current_project` mechanism
-    return None
 
 
 # Export for registration

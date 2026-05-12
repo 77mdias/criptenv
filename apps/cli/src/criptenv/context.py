@@ -82,6 +82,62 @@ async def _resolve_env_id(
     )
 
 
+def get_project_id_from_env() -> Optional[str]:
+    """Get project ID from CRIPTENV_PROJECT environment variable."""
+    return os.getenv("CRIPTENV_PROJECT")
+
+
+async def get_current_project_id(db: aiosqlite.Connection) -> Optional[str]:
+    """Get the currently selected project ID from local config."""
+    return await queries.get_config(db, "current_project_id")
+
+
+async def set_current_project_id(db: aiosqlite.Connection, project_id: str):
+    """Set the currently selected project ID in local config."""
+    await queries.set_config(db, "current_project_id", project_id)
+
+
+async def clear_current_project_id(db: aiosqlite.Connection):
+    """Clear the currently selected project ID from local config."""
+    await db.execute("DELETE FROM config WHERE key = ?", ("current_project_id",))
+    await db.commit()
+
+
+def resolve_project_id(
+    db: aiosqlite.Connection,
+    explicit_project_id: Optional[str] = None,
+) -> str:
+    """Resolve project ID from explicit flag, env var, or saved config.
+
+    Priority:
+        1. Explicit --project flag
+        2. CRIPTENV_PROJECT environment variable
+        3. Saved current_project_id in local config
+
+    Raises ClickException if no project ID can be resolved.
+    """
+    # 1. Explicit flag
+    if explicit_project_id:
+        return explicit_project_id
+
+    # 2. Environment variable
+    env_project = get_project_id_from_env()
+    if env_project:
+        return env_project
+
+    # 3. Saved config
+    saved = run_async(get_current_project_id(db))
+    if saved:
+        return saved
+
+    raise click.ClickException(
+        "No project selected. Use one of:\n"
+        "  --project <id>                  (per-command flag)\n"
+        "  CRIPTENV_PROJECT=<id>           (environment variable)\n"
+        "  criptenv use <id>               (set default project)"
+    )
+
+
 @contextmanager
 def cli_context(require_auth: bool = False):
     """

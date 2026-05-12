@@ -424,3 +424,175 @@ class CriptEnvClient:
             params={"days": days}
         )
         return resp.json()
+
+    # ─── Members ──────────────────────────────────────────────────────────────
+
+    async def list_members(self, project_id: str) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}/members"""
+        resp = await self._request("GET", f"/api/v1/projects/{project_id}/members")
+        return resp.json()
+
+    async def add_member(self, project_id: str, user_id: str, role: str) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/members"""
+        resp = await self._request(
+            "POST",
+            f"/api/v1/projects/{project_id}/members",
+            json={"user_id": user_id, "role": role},
+        )
+        return resp.json()
+
+    async def update_member(self, project_id: str, member_id: str, role: str) -> dict[str, Any]:
+        """PATCH /api/v1/projects/{id}/members/{mid}"""
+        resp = await self._request(
+            "PATCH",
+            f"/api/v1/projects/{project_id}/members/{member_id}",
+            json={"role": role},
+        )
+        return resp.json()
+
+    async def remove_member(self, project_id: str, member_id: str) -> None:
+        """DELETE /api/v1/projects/{id}/members/{mid}"""
+        await self._request("DELETE", f"/api/v1/projects/{project_id}/members/{member_id}")
+
+    # ─── Invites ──────────────────────────────────────────────────────────────
+
+    async def list_invites(self, project_id: str) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}/invites"""
+        resp = await self._request("GET", f"/api/v1/projects/{project_id}/invites")
+        return resp.json()
+
+    async def create_invite(self, project_id: str, email: str, role: str) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/invites"""
+        resp = await self._request(
+            "POST",
+            f"/api/v1/projects/{project_id}/invites",
+            json={"email": email, "role": role},
+        )
+        return resp.json()
+
+    async def revoke_invite(self, project_id: str, invite_id: str) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/invites/{iid}/revoke"""
+        resp = await self._request(
+            "POST",
+            f"/api/v1/projects/{project_id}/invites/{invite_id}/revoke"
+        )
+        return resp.json()
+
+    async def delete_invite(self, project_id: str, invite_id: str) -> None:
+        """DELETE /api/v1/projects/{id}/invites/{iid}"""
+        await self._request("DELETE", f"/api/v1/projects/{project_id}/invites/{invite_id}")
+
+    # ─── Audit ────────────────────────────────────────────────────────────────
+
+    async def list_audit(
+        self,
+        project_id: str,
+        action: str | None = None,
+        resource_type: str | None = None,
+        page: int = 1,
+        per_page: int = 50,
+    ) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}/audit"""
+        params: dict[str, Any] = {"page": page, "per_page": per_page}
+        if action:
+            params["action"] = action
+        if resource_type:
+            params["resource_type"] = resource_type
+        resp = await self._request(
+            "GET",
+            f"/api/v1/projects/{project_id}/audit",
+            params=params,
+        )
+        return resp.json()
+
+    # ─── Projects ─────────────────────────────────────────────────────────────
+
+    async def update_project(
+        self,
+        project_id: str,
+        name: str | None = None,
+        description: str | None = None,
+    ) -> dict[str, Any]:
+        """PATCH /api/v1/projects/{id}"""
+        payload: dict[str, Any] = {}
+        if name:
+            payload["name"] = name
+        if description:
+            payload["description"] = description
+        resp = await self._request(
+            "PATCH",
+            f"/api/v1/projects/{project_id}",
+            json=payload,
+        )
+        return resp.json()
+
+    async def delete_project(self, project_id: str) -> None:
+        """DELETE /api/v1/projects/{id}"""
+        await self._request("DELETE", f"/api/v1/projects/{project_id}")
+
+    # ─── API Keys ─────────────────────────────────────────────────────────────
+
+    async def list_api_keys(self, project_id: str) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}/api-keys"""
+        resp = await self._request("GET", f"/api/v1/projects/{project_id}/api-keys")
+        return resp.json()
+
+    async def create_api_key(
+        self,
+        project_id: str,
+        name: str,
+        scopes: list[str] | None = None,
+        environment_scope: str | None = None,
+        expires_in_days: int | None = None,
+    ) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/api-keys"""
+        payload: dict[str, Any] = {"name": name}
+        if scopes:
+            payload["scopes"] = scopes
+        if environment_scope:
+            payload["environment_scope"] = environment_scope
+        if expires_in_days:
+            payload["expires_in_days"] = expires_in_days
+        resp = await self._request(
+            "POST",
+            f"/api/v1/projects/{project_id}/api-keys",
+            json=payload,
+        )
+        return resp.json()
+
+    async def revoke_api_key(self, project_id: str, key_id: str) -> dict[str, Any]:
+        """DELETE /api/v1/projects/{id}/api-keys/{kid}"""
+        resp = await self._request(
+            "DELETE",
+            f"/api/v1/projects/{project_id}/api-keys/{key_id}"
+        )
+        return resp.json()
+
+    # ─── Environments ─────────────────────────────────────────────────────────
+
+    async def update_environment(
+        self,
+        project_id: str,
+        env_id: str,
+        name: str | None = None,
+        display_name: str | None = None,
+    ) -> dict[str, Any]:
+        """PATCH /api/v1/projects/{id}/environments/{eid}"""
+        payload: dict[str, Any] = {}
+        if name:
+            payload["name"] = name
+        if display_name:
+            payload["display_name"] = display_name
+        resp = await self._request(
+            "PATCH",
+            f"/api/v1/projects/{project_id}/environments/{env_id}",
+            json=payload,
+        )
+        return resp.json()
+
+    async def delete_environment(self, project_id: str, env_id: str) -> None:
+        """DELETE /api/v1/projects/{id}/environments/{eid}"""
+        await self._request(
+            "DELETE",
+            f"/api/v1/projects/{project_id}/environments/{env_id}"
+        )

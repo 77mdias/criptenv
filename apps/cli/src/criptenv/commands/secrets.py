@@ -8,7 +8,7 @@ import hashlib
 import base64
 from datetime import datetime, timezone, timedelta
 
-from criptenv.context import cli_context, run_async, _resolve_env_id
+from criptenv.context import cli_context, run_async, _resolve_env_id, resolve_project_id
 from criptenv.crypto import derive_env_key, encrypt, decrypt
 from criptenv.crypto.utils import generate_id
 from criptenv.vault import queries
@@ -293,13 +293,10 @@ def expire_command(key: str, days: int, policy: str, env_name: str | None, proje
                 raise click.ClickException("Run 'criptenv init' first")
 
             env_id = await _resolve_env_id(db, env_name)
-
-            # Require project for API call
-            if not project:
-                raise click.ClickException("--project is required for cloud secret expiration")
+            resolved_project_id = resolve_project_id(db, project_id)
 
             await client.set_expiration(
-                project_id=project,
+                project_id=resolved_project_id,
                 env_id=env_id,
                 key=key,
                 expires_at=expires_at_iso,
@@ -336,15 +333,13 @@ def alert_command(key: str, days: int, env_name: str | None, project: str | None
                 raise click.ClickException("Run 'criptenv init' first")
 
             env_id = await _resolve_env_id(db, env_name)
-
-            if not project:
-                raise click.ClickException("--project is required for cloud secret alerts")
+            resolved_project_id = resolve_project_id(db, project_id)
 
             # Set a default 90-day expiration with the requested alert timing
             expires_at = (datetime.now(timezone.utc) + timedelta(days=90)).isoformat()
 
             await client.set_expiration(
-                project_id=project,
+                project_id=resolved_project_id,
                 env_id=env_id,
                 key=key,
                 expires_at=expires_at,
@@ -382,9 +377,9 @@ def rotation_group():
 
 @rotation_group.command("list")
 @click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
-@click.option("--project", "-p", required=True, help="Project name or ID")
+@click.option("--project", "-p", "project_id", default=None, help="Project name or ID")
 @click.option("--days", "-d", default=30, type=int, help="Days ahead to check")
-def rotation_list_command(env_name: str | None, project: str | None, days: int):
+def rotation_list_command(env_name: str | None, project_id: str | None, days: int):
     """List secrets pending rotation.
     
     \b
@@ -401,7 +396,8 @@ def rotation_list_command(env_name: str | None, project: str | None, days: int):
             if master_key is None:
                 raise click.ClickException("Run 'criptenv init' first")
 
-            result = await client.list_expiring(project_id=project, days=days)
+            resolved_project_id = resolve_project_id(db, project_id)
+            result = await client.list_expiring(project_id=resolved_project_idresolved_project_id, days=days)
             items = result.get("items", [])
 
             click.echo(f"Secrets expiring within {days} days:")

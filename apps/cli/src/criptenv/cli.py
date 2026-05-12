@@ -16,6 +16,13 @@ from criptenv.commands.doctor import doctor_command
 from criptenv.commands.import_export import import_command, export_command
 from criptenv.commands.ci import ci_group, ci_login_command, ci_logout_command, ci_secrets_command, ci_deploy_command, ci_tokens_group, ci_tokens_list_command, ci_tokens_create_command, ci_tokens_revoke_command
 from criptenv.commands.integrations import integrations_group
+from criptenv.commands.members import members_group
+from criptenv.commands.invites import invites_group
+from criptenv.commands.audit import audit_group
+from criptenv.commands.api_keys import api_keys_group
+from criptenv.commands.use import use_command
+from criptenv.commands.status import status_command
+from criptenv.commands.completion import completion_command
 
 
 @click.group()
@@ -50,6 +57,13 @@ main.add_command(ci_tokens_group)
 main.add_command(rotation_group)  # M3.5: Rotation group
 main.add_command(secrets_group)  # M3.5: Extended secrets commands
 main.add_command(integrations_group)  # M3.2: Cloud integrations
+main.add_command(members_group)  # Team management
+main.add_command(invites_group)  # Invite management
+main.add_command(audit_group)  # Audit logs
+main.add_command(api_keys_group)  # API keys
+main.add_command(use_command)  # Project context
+main.add_command(status_command)  # CLI status
+main.add_command(completion_command)  # Shell completion
 
 
 if __name__ == "__main__":
