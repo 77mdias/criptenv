@@ -17,6 +17,7 @@ Corrigido o erro `Invalid or expired state` no `criptenv login` em produção. A
 **Arquivos alterados:**
 - `apps/api/app/routers/cli_auth.py` — adiciona Redis como store compartilhado para `state`, auth code e device code, com fallback em memória.
 - `apps/api/tests/test_cli_auth.py` — adiciona cobertura para chaves Redis e TTL.
+- `apps/cli/src/criptenv/api/client.py` — aumenta timeout HTTP e transforma timeouts vazios do `httpx` em mensagem clara.
 - `apps/cli/src/criptenv/config.py` — default da API passa para `https://criptenv-api.77mdevseven.tech`.
 - `apps/cli/src/criptenv/commands/completion.py` — corrige geração de completion scripts com versões atuais do Click.
 - `docs/project/decisions.md` — DEC-025.
@@ -25,6 +26,7 @@ Corrigido o erro `Invalid or expired state` no `criptenv login` em produção. A
 **Observações:**
 - Produção usa `REDIS_URL=redis://redis:6379/0`, então workers públicos compartilham o estado temporário do login CLI.
 - Desenvolvimento local continua podendo usar `CRIPTENV_API_URL=http://localhost:8000`.
+- Chamadas via Cloudflare Tunnel podem exceder o timeout padrão de 5s do `httpx`; o cliente agora usa timeout explícito de conexão/leitura.
 - `make test` também validou o ajuste de shell completion, que apareceu durante a verificação completa.
 
 ---

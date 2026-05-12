@@ -5,6 +5,8 @@ from typing import Optional, Any
 
 from criptenv.config import API_BASE_URL
 
+REQUEST_TIMEOUT = httpx.Timeout(timeout=30.0, connect=15.0)
+
 
 class CriptEnvAPIError(Exception):
     """API request error."""
@@ -48,9 +50,26 @@ class CriptEnvClient:
         """Make HTTP request and raise on error."""
         url = f"{self.base_url}{path}"
         async with httpx.AsyncClient() as client:
-            response = await client.request(
-                method, url, headers=self.headers, **kwargs
-            )
+            try:
+                response = await client.request(
+                    method,
+                    url,
+                    headers=self.headers,
+                    timeout=kwargs.pop("timeout", REQUEST_TIMEOUT),
+                    **kwargs,
+                )
+            except httpx.TimeoutException as exc:
+                raise CriptEnvAPIError(
+                    0,
+                    f"Timed out connecting to {self.base_url}. "
+                    "Check your network and try again.",
+                ) from exc
+            except httpx.RequestError as exc:
+                detail = str(exc) or exc.__class__.__name__
+                raise CriptEnvAPIError(
+                    0,
+                    f"Could not reach {self.base_url}: {detail}",
+                ) from exc
         if response.status_code >= 400:
             try:
                 detail = response.json().get("detail", response.text)

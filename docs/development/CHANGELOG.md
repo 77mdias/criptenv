@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Multi-worker fix**: Production Gunicorn workers can now process `/api/auth/cli/initiate`, `/authorize`, `/token`, and device flow requests without losing state across worker boundaries.
 - **Local fallback**: Development and tests keep the in-memory TTL store when Redis is not configured.
 - **CLI production default**: The CLI now defaults to `https://criptenv-api.77mdevseven.tech`, while `CRIPTENV_API_URL=http://localhost:8000` remains the local development override.
+- **CLI network timeout**: Increased API client timeout for Cloudflare Tunnel/public API calls and turned blank `httpx` timeout failures into actionable CLI errors.
 - **Shell completion compatibility**: Fixed completion script generation for current Click versions by using the shell-specific completion class.
 - **Decision record**: Added DEC-025 for Redis-backed CLI auth state.
 
