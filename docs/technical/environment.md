@@ -63,7 +63,7 @@ NEXT_PUBLIC_COOKIE_DOMAIN=localhost
 
 ### CLI
 
-CLI uses a local vault at `~/.criptenv/vault.db`. No `.env` file needed — configuration is stored in the vault database.
+CLI uses a local vault at `~/.criptenv/vault.db`. No `.env` file needed — configuration is stored in the vault database. By default, the CLI talks to the production API at `https://criptenv-api.77mdevseven.tech`.
 
 **Environment variables for development:**
 

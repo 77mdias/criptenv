@@ -18,8 +18,12 @@ def completion_command(shell: str):
     Fish:
         criptenv completion fish > ~/.config/fish/completions/criptenv.fish
     """
-    from click.shell_completion import ShellComplete
+    from click.shell_completion import get_completion_class
     from criptenv.cli import main
 
-    comp = ShellComplete(main, {}, shell, "criptenv")
+    completion_class = get_completion_class(shell)
+    if completion_class is None:
+        raise click.ClickException(f"Unsupported shell: {shell}")
+
+    comp = completion_class(main, {}, "criptenv", "_CRIPTENV_COMPLETE")
     click.echo(comp.source())

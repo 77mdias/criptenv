@@ -6,6 +6,29 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-12 — Redis-Backed CLI Auth State
+
+**Resumo:**
+Corrigido o erro `Invalid or expired state` no `criptenv login` em produção. A causa era o armazenamento em memória do fluxo CLI auth em uma API Gunicorn com múltiplos workers.
+
+**Arquivos criados:**
+- `apps/cli/tests/test_config.py`
+
+**Arquivos alterados:**
+- `apps/api/app/routers/cli_auth.py` — adiciona Redis como store compartilhado para `state`, auth code e device code, com fallback em memória.
+- `apps/api/tests/test_cli_auth.py` — adiciona cobertura para chaves Redis e TTL.
+- `apps/cli/src/criptenv/config.py` — default da API passa para `https://criptenv-api.77mdevseven.tech`.
+- `apps/cli/src/criptenv/commands/completion.py` — corrige geração de completion scripts com versões atuais do Click.
+- `docs/project/decisions.md` — DEC-025.
+- `docs/development/CHANGELOG.md`, `docs/tasks/task-history.md`, `docs/tasks/current-task.md`, `docs/technical/environment.md`.
+
+**Observações:**
+- Produção usa `REDIS_URL=redis://redis:6379/0`, então workers públicos compartilham o estado temporário do login CLI.
+- Desenvolvimento local continua podendo usar `CRIPTENV_API_URL=http://localhost:8000`.
+- `make test` também validou o ajuste de shell completion, que apareceu durante a verificação completa.
+
+---
+
 ## 2026-05-11 — Problem to Vault Vault Ceremony
 
 **Resumo:**

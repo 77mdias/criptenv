@@ -9,7 +9,7 @@ CONFIG_FILE = CONFIG_DIR / "config.toml"
 DB_FILE = CONFIG_DIR / "vault.db"
 
 # API configuration
-API_BASE_URL = os.getenv("CRIPTENV_API_URL", "http://localhost:8000")
+API_BASE_URL = os.getenv("CRIPTENV_API_URL", "https://criptenv-api.77mdevseven.tech")
 
 # Crypto defaults
 PBKDF2_ITERATIONS = 100_000

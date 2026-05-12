@@ -667,6 +667,32 @@ The “Problem to Vault” landing fold showed the transformation from scattered
 
 ---
 
+## DEC-025 — Redis-Backed CLI Auth State
+
+**Date:** 2026-05-12
+**Status:** ✅ Accepted
+**Context:**
+Browser-based CLI login creates a short-lived `state` during `/api/auth/cli/initiate` and consumes it during `/api/auth/cli/authorize`. Production runs Gunicorn with multiple Uvicorn workers, so in-memory state can be created in one worker and consumed by another, causing intermittent `Invalid or expired state` errors.
+
+**Decision:**
+- Store CLI auth state, auth codes, and device flow codes in Redis when `REDIS_URL` is configured.
+- Keep the in-memory store as the local development fallback when Redis is unavailable or unset.
+- Use explicit TTL keys: `cli_auth:state:{state}` and `cli_auth:code:{auth_code}` for 300 seconds, and `cli_auth:device:{device_code}` for 600 seconds.
+- Default the CLI API URL to `https://criptenv-api.77mdevseven.tech`, with `CRIPTENV_API_URL` retained as the development override.
+
+**Rationale:**
+- Redis is already part of the production VPS stack for shared operational state.
+- A shared TTL store lets public API workers scale without breaking browser-based CLI login.
+- The CLI should work against production by default for end users while preserving local development ergonomics.
+
+**Consequences:**
+- ✅ `criptenv login` works consistently with multiple API workers.
+- ✅ Device flow authorization also survives worker hops.
+- ✅ Local development remains simple without requiring Redis.
+- ⚠️ Production CLI auth now depends on Redis availability, matching existing rate-limit infrastructure.
+
+---
+
 ## Pending Decisions
 
 ### DEC-011 — API Key vs CI Token Separation
@@ -683,5 +709,5 @@ Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI
 
 ---
 
-**Document Version**: 1.5
-**Last Updated**: 2026-05-11
+**Document Version**: 1.6
+**Last Updated**: 2026-05-12

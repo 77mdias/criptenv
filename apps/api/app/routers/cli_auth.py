@@ -5,6 +5,7 @@ plus a device authorization grant fallback for headless environments.
 """
 
 import asyncio
+import json
 import secrets
 import time
 from datetime import datetime, timezone, timedelta
@@ -24,41 +25,110 @@ from app.models.user import User
 router = APIRouter(prefix="/api/auth/cli", tags=["CLI Authentication"])
 
 
-# ─── In-Memory Store with TTL ────────────────────────────────────────────────
-# For single-process deployments this is sufficient.
-# For multi-worker production, replace with Redis.
+# ─── Shared Store with TTL ───────────────────────────────────────────────────
+# Production uses Redis so Gunicorn workers share pending CLI auth state.
+# Local development falls back to in-memory storage when REDIS_URL is unset.
+
+_redis_client: object | None = None
+
+
+def _get_redis_client() -> object | None:
+    global _redis_client
+    if not settings.REDIS_URL:
+        return None
+    if _redis_client is None:
+        from redis.asyncio import Redis
+
+        _redis_client = Redis.from_url(settings.REDIS_URL, decode_responses=True)
+    return _redis_client
+
+
+def _json_dumps(data: dict) -> str:
+    return json.dumps(data, separators=(",", ":"))
+
+
+def _json_loads(data: str | bytes | None) -> Optional[dict]:
+    if data is None:
+        return None
+    if isinstance(data, bytes):
+        data = data.decode("utf-8")
+    return json.loads(data)
+
 
 class _CLIAuthStore:
-    """Thread-safe in-memory store for pending CLI auth requests."""
+    """TTL store for pending CLI auth requests."""
 
-    def __init__(self, default_ttl_seconds: int = 300):
+    def __init__(
+        self,
+        default_ttl_seconds: int = 300,
+        redis_client: object | None = None,
+    ):
         self._data: dict[str, dict] = {}
         self._lock = asyncio.Lock()
         self._ttl = default_ttl_seconds
+        self._redis = redis_client if redis_client is not None else _get_redis_client()
+
+    def _state_key(self, state: str) -> str:
+        return f"cli_auth:state:{state}"
+
+    def _code_key(self, auth_code: str) -> str:
+        return f"cli_auth:code:{auth_code}"
 
     async def create(self, state: str, callback_url: str) -> str:
         """Create a new pending auth request. Returns auth_code."""
         auth_code = secrets.token_urlsafe(32)
+        state_entry = {
+            "auth_code": auth_code,
+            "callback_url": callback_url,
+            "created_at": time.time(),
+            "user_id": None,
+            "authorized": False,
+        }
+        code_entry = {
+            "state": state,
+            "created_at": time.time(),
+            "user_id": None,
+            "authorized": False,
+        }
+        if self._redis is not None:
+            await self._redis.setex(
+                self._state_key(state), self._ttl, _json_dumps(state_entry)
+            )
+            await self._redis.setex(
+                self._code_key(auth_code), self._ttl, _json_dumps(code_entry)
+            )
+            return auth_code
+
         async with self._lock:
             self._cleanup()
-            self._data[state] = {
-                "auth_code": auth_code,
-                "callback_url": callback_url,
-                "created_at": time.time(),
-                "user_id": None,
-                "authorized": False,
-            }
+            self._data[state] = state_entry
             # Also index by auth_code for token exchange
-            self._data[auth_code] = {
-                "state": state,
-                "created_at": time.time(),
-                "user_id": None,
-                "authorized": False,
-            }
+            self._data[auth_code] = code_entry
         return auth_code
 
     async def authorize(self, state: str, user_id: str) -> Optional[str]:
         """Mark a state as authorized by a user. Returns auth_code."""
+        if self._redis is not None:
+            entry = _json_loads(await self._redis.get(self._state_key(state)))
+            if not entry:
+                return None
+            auth_code = entry["auth_code"]
+            entry["user_id"] = user_id
+            entry["authorized"] = True
+            code_entry = _json_loads(await self._redis.get(self._code_key(auth_code))) or {
+                "state": state,
+                "created_at": entry["created_at"],
+            }
+            code_entry["user_id"] = user_id
+            code_entry["authorized"] = True
+            await self._redis.setex(
+                self._state_key(state), self._ttl, _json_dumps(entry)
+            )
+            await self._redis.setex(
+                self._code_key(auth_code), self._ttl, _json_dumps(code_entry)
+            )
+            return auth_code
+
         async with self._lock:
             self._cleanup()
             entry = self._data.get(state)
@@ -75,6 +145,9 @@ class _CLIAuthStore:
 
     async def get_by_code(self, auth_code: str) -> Optional[dict]:
         """Get auth entry by auth_code. Returns None if expired/invalid."""
+        if self._redis is not None:
+            return _json_loads(await self._redis.get(self._code_key(auth_code)))
+
         async with self._lock:
             self._cleanup()
             entry = self._data.get(auth_code)
@@ -84,6 +157,22 @@ class _CLIAuthStore:
 
     async def delete(self, key: str):
         """Remove an entry by state or auth_code."""
+        if self._redis is not None:
+            entry = _json_loads(await self._redis.get(self._code_key(key)))
+            if entry and "state" in entry:
+                await self._redis.delete(
+                    self._code_key(key), self._state_key(entry["state"])
+                )
+                return
+            entry = _json_loads(await self._redis.get(self._state_key(key)))
+            if entry and "auth_code" in entry:
+                await self._redis.delete(
+                    self._state_key(key), self._code_key(entry["auth_code"])
+                )
+                return
+            await self._redis.delete(self._code_key(key), self._state_key(key))
+            return
+
         async with self._lock:
             entry = self._data.pop(key, None)
             if entry:
@@ -106,32 +195,58 @@ _cli_auth_store = _CLIAuthStore(default_ttl_seconds=300)
 # ─── Device Flow Store ───────────────────────────────────────────────────────
 
 class _DeviceFlowStore:
-    """In-memory store for device authorization grant."""
+    """TTL store for device authorization grant."""
 
-    def __init__(self, default_ttl_seconds: int = 600):
+    def __init__(
+        self,
+        default_ttl_seconds: int = 600,
+        redis_client: object | None = None,
+    ):
         self._data: dict[str, dict] = {}
         self._lock = asyncio.Lock()
         self._ttl = default_ttl_seconds
+        self._redis = redis_client if redis_client is not None else _get_redis_client()
+
+    def _device_key(self, device_code: str) -> str:
+        return f"cli_auth:device:{device_code}"
 
     async def create(self) -> tuple[str, str, str]:
         """Create device flow request. Returns (device_code, user_code, verification_uri)."""
         device_code = secrets.token_urlsafe(32)
         user_code = "-".join([secrets.token_hex(2).upper() for _ in range(3)])
         verification_uri = f"{settings.FRONTEND_URL.rstrip('/')}/cli-auth?device_code={device_code}"
+        entry = {
+            "user_code": user_code,
+            "created_at": time.time(),
+            "user_id": None,
+            "authorized": False,
+            "interval": 5,
+        }
+
+        if self._redis is not None:
+            await self._redis.setex(
+                self._device_key(device_code), self._ttl, _json_dumps(entry)
+            )
+            return device_code, user_code, verification_uri
 
         async with self._lock:
             self._cleanup()
-            self._data[device_code] = {
-                "user_code": user_code,
-                "created_at": time.time(),
-                "user_id": None,
-                "authorized": False,
-                "interval": 5,
-            }
+            self._data[device_code] = entry
         return device_code, user_code, verification_uri
 
     async def authorize(self, device_code: str, user_id: str) -> bool:
         """Mark a device code as authorized."""
+        if self._redis is not None:
+            entry = _json_loads(await self._redis.get(self._device_key(device_code)))
+            if not entry:
+                return False
+            entry["user_id"] = user_id
+            entry["authorized"] = True
+            await self._redis.setex(
+                self._device_key(device_code), self._ttl, _json_dumps(entry)
+            )
+            return True
+
         async with self._lock:
             self._cleanup()
             entry = self._data.get(device_code)
@@ -143,6 +258,9 @@ class _DeviceFlowStore:
 
     async def poll(self, device_code: str) -> Optional[dict]:
         """Poll for device authorization. Returns entry or None."""
+        if self._redis is not None:
+            return _json_loads(await self._redis.get(self._device_key(device_code)))
+
         async with self._lock:
             self._cleanup()
             entry = self._data.get(device_code)

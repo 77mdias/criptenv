@@ -20,9 +20,9 @@ All completed features organized by phase.
 ## `login` / `logout` Commands
 
 **Status:** ✅ Implemented  
-**Description:** Authenticate with backend, store encrypted session (extracts token from `Set-Cookie`)  
-**Files:** `apps/cli/src/criptenv/commands/login.py`  
-**Tests:** Part of `test_commands.py`
+**Description:** Authenticate with backend, store encrypted session (extracts token from `Set-Cookie`). Browser-based CLI auth uses Redis-backed server state in production so multiple API workers can share pending `state` and device flow records.  
+**Files:** `apps/cli/src/criptenv/commands/login.py`, `apps/api/app/routers/cli_auth.py`  
+**Tests:** `apps/api/tests/test_cli_auth.py`, `apps/cli/tests/test_commands.py`, `apps/cli/tests/test_config.py`
 
 ## `secrets` Commands (set, get, list, delete)
 

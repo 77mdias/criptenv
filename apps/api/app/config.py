@@ -28,7 +28,7 @@ class Settings(BaseSettings):
     API_URL: str = "http://localhost:8000"
     
     # Frontend URL for OAuth redirect after callback
-    FRONTEND_URL: str = "http://localhost:3000"
+    FRONTEND_URL: str = "https://criptenv.77mdevseven.tech"
     
     # ===========================================
     # MERCADO PAGO (CONTRIBUTIONS / PAYMENTS)

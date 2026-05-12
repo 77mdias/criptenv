@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Redis-Backed CLI Auth State (2026-05-12)
+
+- **Shared CLI auth state**: Browser CLI login now stores pending `state`, auth code, and device code records in Redis when `REDIS_URL` is configured.
+- **Multi-worker fix**: Production Gunicorn workers can now process `/api/auth/cli/initiate`, `/authorize`, `/token`, and device flow requests without losing state across worker boundaries.
+- **Local fallback**: Development and tests keep the in-memory TTL store when Redis is not configured.
+- **CLI production default**: The CLI now defaults to `https://criptenv-api.77mdevseven.tech`, while `CRIPTENV_API_URL=http://localhost:8000` remains the local development override.
+- **Shell completion compatibility**: Fixed completion script generation for current Click versions by using the shell-specific completion class.
+- **Decision record**: Added DEC-025 for Redis-backed CLI auth state.
+
 #### Problem to Vault Vault Ceremony (2026-05-11)
 
 - **Landing fold redesign**: Replaced the inline “Problem to Vault” diagram with a dedicated `ProblemToVaultSection` component focused on the encrypted vault as the main visual.

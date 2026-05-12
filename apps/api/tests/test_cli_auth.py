@@ -1,5 +1,6 @@
 """Tests for CLI authentication endpoints."""
 
+import asyncio
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from uuid import uuid4
@@ -9,6 +10,7 @@ from fastapi.testclient import TestClient
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
+from app.routers.cli_auth import _CLIAuthStore, _DeviceFlowStore
 from app.routers.cli_auth import router as cli_auth_router
 from app.services.auth_service import AuthService
 
@@ -47,6 +49,75 @@ def make_auth_app(user=None):
     app.dependency_overrides[get_current_user] = lambda: (user or make_user())
     return app
 
+
+class FakeRedis:
+    def __init__(self):
+        self.values = {}
+        self.ttls = {}
+        self.deleted = []
+
+    async def get(self, key):
+        return self.values.get(key)
+
+    async def setex(self, key, ttl, value):
+        self.values[key] = value
+        self.ttls[key] = ttl
+
+    async def delete(self, *keys):
+        self.deleted.extend(keys)
+        for key in keys:
+            self.values.pop(key, None)
+            self.ttls.pop(key, None)
+
+
+class TestCLIAuthRedisStore:
+    def test_cli_auth_store_uses_redis_keys_and_ttl(self):
+        async def run_test():
+            redis = FakeRedis()
+            store = _CLIAuthStore(default_ttl_seconds=300, redis_client=redis)
+
+            auth_code = await store.create(
+                "state-123", "http://127.0.0.1:57341/callback"
+            )
+
+            assert "cli_auth:state:state-123" in redis.values
+            assert f"cli_auth:code:{auth_code}" in redis.values
+            assert redis.ttls["cli_auth:state:state-123"] == 300
+            assert redis.ttls[f"cli_auth:code:{auth_code}"] == 300
+
+            authorized_code = await store.authorize("state-123", "usr_123")
+            entry = await store.get_by_code(auth_code)
+
+            assert authorized_code == auth_code
+            assert entry["authorized"] is True
+            assert entry["user_id"] == "usr_123"
+
+            await store.delete(auth_code)
+
+            assert "cli_auth:state:state-123" in redis.deleted
+            assert f"cli_auth:code:{auth_code}" in redis.deleted
+
+        asyncio.run(run_test())
+
+    def test_device_flow_store_uses_redis_key_and_ttl(self):
+        async def run_test():
+            redis = FakeRedis()
+            store = _DeviceFlowStore(default_ttl_seconds=600, redis_client=redis)
+
+            device_code, user_code, verification_uri = await store.create()
+
+            assert user_code
+            assert verification_uri.endswith(f"/cli-auth?device_code={device_code}")
+            assert f"cli_auth:device:{device_code}" in redis.values
+            assert redis.ttls[f"cli_auth:device:{device_code}"] == 600
+
+            assert await store.authorize(device_code, "usr_123") is True
+            entry = await store.poll(device_code)
+
+            assert entry["authorized"] is True
+            assert entry["user_id"] == "usr_123"
+
+        asyncio.run(run_test())
 
 # ─── Browser Redirect Flow ───────────────────────────────────────────────────
 
