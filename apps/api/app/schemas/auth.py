@@ -94,3 +94,18 @@ class TwoFactorVerifyRequest(BaseModel):
 
 class TwoFactorDisableRequest(BaseModel):
     password: str = Field(..., min_length=1)
+
+
+class VerifyEmailRequest(BaseModel):
+    token: str = Field(..., min_length=1)
+
+
+class SendVerificationResponse(BaseModel):
+    message: str
+    dev_token: Optional[str] = None
+    dev_warning: Optional[str] = None
+
+
+class VerifyEmailResponse(BaseModel):
+    message: str
+    email_verified: bool

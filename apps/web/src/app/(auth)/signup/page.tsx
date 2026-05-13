@@ -30,7 +30,7 @@ export default function SignupPage() {
     setError(null)
     try {
       await signup(data.email, data.password, data.name)
-      router.push("/dashboard")
+      router.push("/verify-email/sent")
     } catch (err: unknown) {
       const message =
         err instanceof Error ? err.message : "Erro ao criar conta"

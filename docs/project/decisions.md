@@ -849,5 +849,29 @@ CI reported API collection failures with `NameError: name 'ProjectInvite' is not
 
 ---
 
-**Document Version**: 2.1
+## DEC-032 — Email Verification Required for Dashboard Access
+
+**Status:** Approved
+**Date:** 2026-05-13
+**Context:**
+User accounts could be created and immediately used without confirming ownership of the email address. This creates risks: password-reset emails could be sent to unowned addresses, invite flows assume valid emails, and audit logs benefit from verified identities.
+
+**Decision:**
+- Require email verification before any authenticated session is created or any protected resource is accessed.
+- Reuse the existing `email_verified` boolean on `User` and follow the same token pattern as `PasswordResetToken` (`EmailVerificationToken`, 24-hour expiry, single-use).
+- On signup: create the user but do NOT create a session or set cookies. Send the verification email immediately.
+- On signin: if `email_verified` is `False`, return `403 Forbidden` and automatically resend the verification email.
+- In middleware (`get_current_user`): reject requests from users with `email_verified = False` with `403 Forbidden`.
+- OAuth users remain exempt because providers already verify emails; they are created with `email_verified = True`.
+- Frontend: add `/verify-email` (token handler) and `/verify-email/sent` (confirmation + resend form) inside the shared auth layout. Update login to detect `403` and offer a resend button. Update account page to show a resend button when unverified.
+
+**Consequences:**
+- ✅ Only verified email owners can access secrets, projects, and audit data.
+- ✅ Password-reset and invite flows become more trustworthy.
+- ✅ Existing unverified users with active sessions will be blocked on their next request; this is acceptable for a pre-release product.
+- ⚠️ Future work may add rate-limiting on `/send-verification` to prevent abuse.
+
+---
+
+**Document Version**: 2.2
 **Last Updated**: 2026-05-13

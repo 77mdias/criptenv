@@ -10,9 +10,11 @@ from app.schemas.auth import (
     UserSignup, UserSignin, AuthResponse, UserResponse, SessionResponse, MessageResponse,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordRequest, ChangePasswordRequest,
     UpdateProfileRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest, TwoFactorDisableRequest,
+    VerifyEmailRequest, SendVerificationResponse, VerifyEmailResponse,
 )
 from app.middleware.auth import get_current_user
 from app.models.user import User
+from app.services.audit_service import AuditService
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -43,17 +45,17 @@ def _session_to_response(session) -> SessionResponse:
     )
 
 
-@router.post("/signup", response_model=AuthResponse, status_code=status.HTTP_201_CREATED)
+@router.post("/signup", response_model=MessageResponse, status_code=status.HTTP_201_CREATED)
 async def signup(
     request: Request,
-    response: Response,
     data: UserSignup,
     db: AsyncSession = Depends(get_db)
 ):
     auth_service = AuthService(db)
+    email_service = EmailService()
 
     try:
-        user, session = await auth_service.create_user(
+        user, _session = await auth_service.create_user(
             email=data.email,
             password=data.password,
             name=data.name,
@@ -66,18 +68,15 @@ async def signup(
             detail=str(e)
         )
 
-    response.set_cookie(
-        key="session_token",
-        value=session.token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=30 * 24 * 60 * 60
-    )
+    # Send verification email
+    verification = await auth_service.create_email_verification(data.email)
+    if verification:
+        frontend_url = settings.FRONTEND_URL.rstrip("/")
+        verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+        email_service.send_email_verification(data.email, verification_url)
 
-    return AuthResponse(
-        user=_user_to_response(user),
-        session=_session_to_response(session)
+    return MessageResponse(
+        message="Account created successfully. Please check your email to verify your account."
     )
 
 
@@ -89,6 +88,7 @@ async def signin(
     db: AsyncSession = Depends(get_db)
 ):
     auth_service = AuthService(db)
+    email_service = EmailService()
 
     try:
         user, session = await auth_service.authenticate_user(
@@ -101,6 +101,20 @@ async def signin(
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)
+        )
+
+    # Check if email is verified
+    if not user.email_verified:
+        # Resend verification email for convenience
+        verification = await auth_service.create_email_verification(data.email)
+        if verification:
+            frontend_url = settings.FRONTEND_URL.rstrip("/")
+            verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+            email_service.send_email_verification(data.email, verification_url)
+
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Email not verified. A new verification email has been sent. Please check your inbox."
         )
 
     response.set_cookie(
@@ -199,6 +213,52 @@ async def reset_password(
             detail="Invalid or expired token"
         )
     return MessageResponse(message="Password reset successfully. Please sign in with your new password.")
+
+
+# ─── Email Verification ─────────────────────────────────────────────────────
+
+@router.post("/send-verification", response_model=SendVerificationResponse)
+async def send_verification(
+    request: Request,
+    data: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Send or resend an email verification link."""
+    auth_service = AuthService(db)
+    email_service = EmailService()
+
+    verification = await auth_service.create_email_verification(data.email)
+    if verification:
+        frontend_url = settings.FRONTEND_URL.rstrip("/")
+        verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+        email_service.send_email_verification(data.email, verification_url)
+
+        # Dev fallback: expose token when email service is not configured
+        if not email_service.enabled:
+            return SendVerificationResponse(
+                message="If the account exists and is unverified, a verification link has been sent.",
+                dev_token=verification.token,
+                dev_warning="Email service is not configured (RESEND_API_KEY is missing). This token is exposed for local development only.",
+            )
+
+    # Always return success to prevent email enumeration
+    return SendVerificationResponse(message="If the account exists and is unverified, a verification link has been sent.")
+
+
+@router.post("/verify-email", response_model=VerifyEmailResponse)
+async def verify_email(
+    data: VerifyEmailRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    """Verify an email address using a token."""
+    auth_service = AuthService(db)
+    user = await auth_service.verify_email(data.token)
+    if not user:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired verification token"
+        )
+    return VerifyEmailResponse(message="Email verified successfully. You can now sign in.", email_verified=True)
 
 
 @router.post("/change-password", response_model=MessageResponse)

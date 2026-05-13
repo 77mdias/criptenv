@@ -7,6 +7,25 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Email Verification System (2026-05-13)
+
+- **Backend**: New `EmailVerificationToken` model with 24-hour expiry, similar to `PasswordResetToken`.
+- **API endpoints**:
+  - `POST /api/auth/send-verification` — sends or resends verification email (with dev token fallback when Resend is not configured).
+  - `POST /api/auth/verify-email` — validates token and marks `email_verified = True`.
+- **Signup flow**: `POST /api/auth/signup` no longer creates a session or sets cookies. It only creates the user and sends a verification email. The user must verify before signing in.
+- **Signin enforcement**: `POST /api/auth/signin` returns `403 Forbidden` if the email is not verified, and automatically resends the verification email for convenience.
+- **Middleware protection**: `get_current_user` now rejects requests from users with unverified emails with `403 Forbidden`.
+- **Email template**: Added `send_email_verification()` to `EmailService` with a branded HTML/text template.
+- **Frontend pages**:
+  - `/verify-email` — handles the verification token from the email link and calls the API.
+  - `/verify-email/sent` — confirmation screen after signup with a form to resend the verification email.
+- **Login page**: Now detects `403` responses for unverified emails and displays a dedicated warning with a "Resend verification email" button.
+- **Account page**: Added a "Reenviar" button next to the "Email não verificado" badge.
+- **Tests**: Updated auth route tests, integration tests, and frontend unit tests to cover the new verification flow.
+
 ### Changed
 
 #### Auth Screens Professional Redesign (2026-05-13)

@@ -11,7 +11,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 
 from app.models.member import ProjectInvite
-from app.models.user import User, Session, PasswordResetToken
+from app.models.user import User, Session, PasswordResetToken, EmailVerificationToken
 from app.config import settings
 
 
@@ -325,6 +325,8 @@ class AuthService:
         await self.db.execute(delete(Session).where(Session.user_id == user.id))
         # Delete all password reset tokens
         await self.db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
+        # Delete all email verification tokens
+        await self.db.execute(delete(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id))
         # The user model has cascade deletes for OAuth accounts and memberships
         # Projects where user is owner: we delete them (cascade from User.projects)
         await self.db.delete(user)
@@ -373,3 +375,63 @@ class AuthService:
         user.two_factor_secret = None
         await self.db.flush()
         return True
+
+    # ─── Email Verification ──────────────────────────────────────────────────
+
+    async def create_email_verification(self, email: str) -> Optional[EmailVerificationToken]:
+        """Create an email verification token for the given email."""
+        result = await self.db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+
+        # If already verified, no need to create token
+        if user.email_verified:
+            return None
+
+        # Invalidate any existing unused tokens for this user
+        await self.db.execute(
+            update(EmailVerificationToken)
+            .where(EmailVerificationToken.user_id == user.id)
+            .where(EmailVerificationToken.used_at.is_(None))
+            .where(EmailVerificationToken.expires_at > datetime.now(timezone.utc))
+            .values(used_at=datetime.now(timezone.utc))
+        )
+
+        token = secrets.token_urlsafe(48)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=24)
+
+        verification = EmailVerificationToken(
+            id=uuid4(),
+            user_id=user.id,
+            token=token,
+            expires_at=expires_at,
+        )
+        self.db.add(verification)
+        await self.db.flush()
+        return verification
+
+    async def verify_email(self, token: str) -> Optional[User]:
+        """Verify an email using a valid token and return the associated user."""
+        result = await self.db.execute(
+            select(EmailVerificationToken)
+            .where(EmailVerificationToken.token == token)
+            .where(EmailVerificationToken.expires_at > datetime.now(timezone.utc))
+            .where(EmailVerificationToken.used_at.is_(None))
+        )
+        verification = result.scalar_one_or_none()
+        if not verification:
+            return None
+
+        # Mark token as used
+        verification.used_at = datetime.now(timezone.utc)
+
+        # Mark user as verified
+        user_result = await self.db.execute(
+            select(User).where(User.id == verification.user_id)
+        )
+        user = user_result.scalar_one_or_none()
+        if user:
+            user.email_verified = True
+            await self.db.flush()
+        return user

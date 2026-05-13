@@ -12,11 +12,15 @@ import { OAuthButtonGroup } from "@/components/ui/oauth-button"
 import { Mail, Lock, AlertCircle } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/validators/schemas"
 import { useAuth } from "@/hooks/use-auth"
+import { authApi, ApiError } from "@/lib/api"
 
 export default function LoginPage() {
   const router = useRouter()
   const { login } = useAuth()
   const [error, setError] = useState<string | null>(null)
+  const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
+  const [resending, setResending] = useState(false)
+  const [resent, setResent] = useState(false)
 
   const {
     register,
@@ -28,13 +32,33 @@ export default function LoginPage() {
 
   const onSubmit = async (data: LoginInput) => {
     setError(null)
+    setUnverifiedEmail(null)
+    setResent(false)
     try {
       await login(data.email, data.password)
       router.push("/dashboard")
     } catch (err: unknown) {
+      if (err instanceof ApiError && err.status === 403) {
+        setUnverifiedEmail(data.email)
+        setError(err.message)
+        return
+      }
       const message =
         err instanceof Error ? err.message : "Email ou senha inválidos"
       setError(message)
+    }
+  }
+
+  const handleResend = async () => {
+    if (!unverifiedEmail) return
+    try {
+      setResending(true)
+      await authApi.sendVerification({ email: unverifiedEmail })
+      setResent(true)
+    } catch {
+      // ignore
+    } finally {
+      setResending(false)
     }
   }
 
@@ -51,6 +75,27 @@ export default function LoginPage() {
         <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
+        </div>
+      )}
+
+      {unverifiedEmail && (
+        <div className="rounded-lg border border-amber-500/30 bg-amber-500/10 p-3 text-sm">
+          <p className="text-amber-200 mb-2">
+            Sua conta ainda não foi verificada. Verifique sua caixa de entrada ou reenvie o email.
+          </p>
+          {resent ? (
+            <p className="text-emerald-300 text-xs">Email de verificação reenviado!</p>
+          ) : (
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-amber-300 hover:text-amber-200 hover:bg-amber-500/10 h-auto py-1 px-2 text-xs"
+              onClick={handleResend}
+              loading={resending}
+            >
+              Reenviar email de verificação
+            </Button>
+          )}
         </div>
       )}
 

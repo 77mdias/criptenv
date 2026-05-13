@@ -81,3 +81,28 @@ class EmailService:
         """
         text = "Account Deleted\n\nYour CriptEnv account has been permanently deleted.\nAll associated data has been removed from our systems."
         return self._send(to, "Your CriptEnv account has been deleted", html, text)
+
+    def send_email_verification(self, to: str, verification_url: str, expires_hours: int = 24) -> Optional[dict]:
+        """Send email verification link."""
+        html = f"""
+        <div style="font-family: sans-serif; max-width: 480px; margin: 0 auto;">
+            <h2>Verify your email address</h2>
+            <p>Welcome to CriptEnv! Please verify your email address to complete your registration.</p>
+            <p>Click the link below to verify your email. This link expires in {expires_hours} hours.</p>
+            <p style="margin: 24px 0;">
+                <a href="{verification_url}"
+                   style="background: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;">
+                    Verify Email
+                </a>
+            </p>
+            <p style="color: #6b7280; font-size: 14px;">
+                If you didn't create an account, you can safely ignore this email.
+            </p>
+            <hr style="border: none; border-top: 1px solid #e5e7eb; margin: 24px 0;">
+            <p style="color: #9ca3af; font-size: 12px;">
+                CriptEnv — Zero-Knowledge Secret Management
+            </p>
+        </div>
+        """
+        text = f"""Verify your email address\n\nWelcome to CriptEnv! Please verify your email address to complete your registration.\n\nClick the link below to verify your email (expires in {expires_hours} hours):\n{verification_url}\n\nIf you didn't create an account, you can safely ignore this email."""
+        return self._send(to, "Verify your CriptEnv email address", html, text)

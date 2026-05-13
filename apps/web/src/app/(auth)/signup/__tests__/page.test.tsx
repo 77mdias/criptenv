@@ -26,8 +26,8 @@ describe("SignupPage", () => {
     expect(screen.getByText("Mínimo 8 caracteres")).toBeInTheDocument()
   })
 
-  it("signs up and redirects to dashboard", async () => {
-    const signup = jest.fn().mockResolvedValue({ id: "usr_1" })
+  it("signs up and redirects to verification sent page", async () => {
+    const signup = jest.fn().mockResolvedValue(null)
     const push = jest.fn()
     mockedUseAuth.mockReturnValue({ signup } as unknown as ReturnType<typeof useAuth>)
     mockedUseRouter.mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>)
@@ -40,7 +40,7 @@ describe("SignupPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Criar Conta" }))
 
     await waitFor(() => expect(signup).toHaveBeenCalledWith("dev@example.com", "Passw0rd!", "Dev User"))
-    expect(push).toHaveBeenCalledWith("/dashboard")
+    expect(push).toHaveBeenCalledWith("/verify-email/sent")
   })
 
   it("shows signup errors from the auth hook", async () => {

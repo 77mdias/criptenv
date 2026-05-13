@@ -77,11 +77,11 @@ export function useAuth() {
 
   const signup = useCallback(
     async (email: string, password: string, name: string) => {
-      const res = await authApi.signup({ email, password, name });
-      setUser(res.user);
-      return res.user;
+      await authApi.signup({ email, password, name });
+      // User is not authenticated until email is verified
+      return null;
     },
-    [setUser],
+    [],
   );
 
   const logout = useCallback(async () => {

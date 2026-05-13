@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { User, Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, QrCode, Link2, Unlink } from "lucide-react"
+import { User, Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, QrCode, Link2, Unlink, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -222,6 +222,16 @@ export default function AccountPage() {
     }
   }
 
+  const handleResendVerification = async () => {
+    if (!currentUser?.email) return
+    try {
+      await authApi.sendVerification({ email: currentUser.email })
+      showMessage("Email de verificação reenviado. Verifique sua caixa de entrada.")
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : "Erro ao reenviar verificação", true)
+    }
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -319,11 +329,21 @@ export default function AccountPage() {
                     <Edit2 className="h-4 w-4 mr-1" /> Editar
                   </Button>
                 </div>
-                <div className="flex gap-2 pt-2">
+                <div className="flex flex-wrap gap-2 pt-2">
                   {currentUser?.email_verified ? (
                     <Badge variant="success">Email verificado</Badge>
                   ) : (
-                    <Badge variant="warning">Email não verificado</Badge>
+                    <>
+                      <Badge variant="warning">Email não verificado</Badge>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-6 px-2 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                        onClick={handleResendVerification}
+                      >
+                        <Mail className="h-3 w-3 mr-1" /> Reenviar
+                      </Button>
+                    </>
                   )}
                   {currentUser?.two_factor_enabled && <Badge>2FA ativo</Badge>}
                 </div>

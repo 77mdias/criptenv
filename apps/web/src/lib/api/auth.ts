@@ -61,4 +61,12 @@ export const authApi = {
   unlinkOAuthAccount(provider: string): Promise<MessageResponse> {
     return request('DELETE', `/api/auth/oauth/${provider}`);
   },
+
+  sendVerification(body: { email: string }): Promise<MessageResponse & { dev_token?: string; dev_warning?: string }> {
+    return request('POST', '/api/auth/send-verification', body);
+  },
+
+  verifyEmail(body: { token: string }): Promise<{ message: string; email_verified: boolean }> {
+    return request('POST', '/api/auth/verify-email', body);
+  },
 };

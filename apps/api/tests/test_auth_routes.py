@@ -53,11 +53,16 @@ def make_app() -> FastAPI:
     return app
 
 
-def test_signup_sets_cookie_without_returning_session_token(monkeypatch):
+def test_signup_returns_message_and_sends_verification(monkeypatch):
     async def fake_create_user(self, **kwargs):
         return make_user(), make_session()
 
+    async def fake_create_email_verification(self, email):
+        return SimpleNamespace(token="dev-verification-token-123")
+
     monkeypatch.setattr(AuthService, "create_user", fake_create_user)
+    monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
 
     with TestClient(make_app()) as client:
         response = client.post(
@@ -66,10 +71,10 @@ def test_signup_sets_cookie_without_returning_session_token(monkeypatch):
         )
 
     assert response.status_code == 201
-    assert "session_token=" in response.headers["set-cookie"]
+    assert "set-cookie" not in response.headers
     payload = response.json()
-    assert "session_token" not in payload
-    assert "token" not in payload["session"]
+    assert "message" in payload
+    assert "verify" in payload["message"].lower() or "check your email" in payload["message"].lower()
 
 
 def test_signin_sets_cookie_without_returning_session_token(monkeypatch):
@@ -89,6 +94,31 @@ def test_signin_sets_cookie_without_returning_session_token(monkeypatch):
     payload = response.json()
     assert "session_token" not in payload
     assert "token" not in payload["session"]
+
+
+def test_signin_rejects_unverified_email(monkeypatch):
+    unverified_user = make_user()
+    unverified_user.email_verified = False
+
+    async def fake_authenticate_user(self, **kwargs):
+        return unverified_user, make_session()
+
+    async def fake_create_email_verification(self, email):
+        return SimpleNamespace(token="dev-verification-token-456")
+
+    monkeypatch.setattr(AuthService, "authenticate_user", fake_authenticate_user)
+    monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/signin",
+            json={"email": "dev@example.com", "password": "password123"},
+        )
+
+    assert response.status_code == 403
+    payload = response.json()
+    assert "not verified" in payload["detail"].lower() or "verif" in payload["detail"].lower()
 
 
 def test_get_sessions_hides_session_tokens(monkeypatch):
@@ -182,3 +212,89 @@ def test_forgot_password_returns_generic_message_when_user_not_found(monkeypatch
     payload = response.json()
     assert payload["message"] == "If an account exists with this email, a reset link has been sent."
     assert "dev_token" not in payload or payload["dev_token"] is None
+
+
+# ─── Email Verification Tests ───────────────────────────────────────────────
+
+
+def test_send_verification_exposes_dev_token_when_email_disabled(monkeypatch):
+    """When RESEND_API_KEY is not set, the verification token is exposed for local development."""
+    verification_record = SimpleNamespace(token="dev-verification-token-789")
+
+    async def fake_create_email_verification(self, email):
+        return verification_record
+
+    monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/send-verification",
+            json={"email": "dev@example.com"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["dev_token"] == "dev-verification-token-789"
+    assert "dev_warning" in payload
+    assert "RESEND_API_KEY is missing" in payload["dev_warning"]
+
+
+def test_send_verification_hides_token_when_email_enabled(monkeypatch):
+    """When RESEND_API_KEY is set, the verification token is never exposed."""
+    verification_record = SimpleNamespace(token="prod-verification-token-abc")
+
+    async def fake_create_email_verification(self, email):
+        return verification_record
+
+    monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", True))
+    monkeypatch.setattr(EmailService, "send_email_verification", lambda self, to, url: {"id": "sent"})
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/send-verification",
+            json={"email": "dev@example.com"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "dev_token" not in payload or payload["dev_token"] is None
+    assert "dev_warning" not in payload or payload["dev_warning"] is None
+
+
+def test_verify_email_with_valid_token(monkeypatch):
+    async def fake_verify_email(self, token):
+        user = make_user()
+        user.email_verified = True
+        return user
+
+    monkeypatch.setattr(AuthService, "verify_email", fake_verify_email)
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/verify-email",
+            json={"token": "valid-token-123"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["email_verified"] is True
+    assert "verified" in payload["message"].lower()
+
+
+def test_verify_email_with_invalid_token(monkeypatch):
+    async def fake_verify_email(self, token):
+        return None
+
+    monkeypatch.setattr(AuthService, "verify_email", fake_verify_email)
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/verify-email",
+            json={"token": "invalid-token"},
+        )
+
+    assert response.status_code == 400
+    payload = response.json()
+    assert "Invalid" in payload["detail"] or "expired" in payload["detail"].lower()

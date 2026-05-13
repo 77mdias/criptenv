@@ -28,6 +28,7 @@ async def reset_database():
         AuditLog,
         CIToken,
         CISession,
+        EmailVerificationToken,
         Environment,
         Project,
         ProjectInvite,
@@ -86,7 +87,26 @@ async def test_signup_create_project_and_default_environments_against_postgres()
             },
         )
         assert signup.status_code == 201
-        assert "session_token" in signup.cookies
+        # No session cookie after signup — email must be verified first
+        assert "session_token" not in signup.cookies
+
+        # Verify email
+        verify = await client.post(
+            "/api/auth/verify-email",
+            json={"token": signup.json()["dev_token"]},
+        )
+        assert verify.status_code == 200
+
+        # Sign in to get session
+        signin = await client.post(
+            "/api/auth/signin",
+            json={
+                "email": "db@example.com",
+                "password": "Passw0rd!",
+            },
+        )
+        assert signin.status_code == 200
+        assert "session_token" in signin.cookies
 
         project = await client.post("/api/v1/projects", json=vault_payload())
         assert project.status_code == 201
@@ -109,7 +129,7 @@ async def test_project_create_requires_vault_proof_against_postgres():
         transport=ASGITransport(app=app),
         base_url="https://test",
     ) as client:
-        await client.post(
+        signup = await client.post(
             "/api/auth/signup",
             json={
                 "email": "proof@example.com",
@@ -117,6 +137,19 @@ async def test_project_create_requires_vault_proof_against_postgres():
                 "name": "Proof User",
             },
         )
+        # Verify email and signin to get session
+        await client.post(
+            "/api/auth/verify-email",
+            json={"token": signup.json()["dev_token"]},
+        )
+        await client.post(
+            "/api/auth/signin",
+            json={
+                "email": "proof@example.com",
+                "password": "Passw0rd!",
+            },
+        )
+
         payload = vault_payload("missing-proof")
         payload.pop("vault_proof")
 
