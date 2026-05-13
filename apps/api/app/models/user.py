@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, LargeBinary, ForeignKey, func
+from sqlalchemy import Column, String, Boolean, DateTime, LargeBinary, ForeignKey, func, Index
 from sqlalchemy.dialects.postgresql import UUID, CITEXT
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -42,3 +42,18 @@ class Session(Base):
     user_agent = Column(String(512))
 
     user = relationship("User", back_populates="sessions", foreign_keys=[user_id])
+
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token = Column(String(255), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    used_at = Column(DateTime(timezone=True))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    __table_args__ = (
+        Index("idx_reset_tokens_user_id_created_at", "user_id", "created_at"),
+    )

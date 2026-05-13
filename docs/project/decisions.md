@@ -709,5 +709,106 @@ Phase 3 has two types of tokens: API keys (for public API) and CI tokens (for CI
 
 ---
 
-**Document Version**: 1.6
-**Last Updated**: 2026-05-12
+## DEC-026 — Wave 1 Alignment Fixes: Rotation Router Registration & CLI Rekey
+
+**Status:** Approved
+**Date:** 2026-05-13
+**Context:**
+Gap analysis between API, WEB, and CLI revealed two critical P0 issues:
+1. The `rotation.py` router (M3.5 Secret Rotation & Alerts) existed in the codebase but was never imported or registered in `main.py`, making all rotation/expiring endpoints return 404.
+2. The CLI `projects rekey` command called `client.rekey_project()` with an empty body, while the API expected `ProjectVaultRekeyRequest` (current_vault_proof, new_vault_config, new_vault_proof, environments), causing 422 Unprocessable Entity.
+
+**Decision:**
+- Register `rotation_router` and `expiring_router` in `main.py` and `app/routers/__init__.py`.
+- Rewrite the CLI `projects rekey` command to perform the full client-side re-encryption flow: prompt for current and new vault passwords, verify the current password, pull all environment vaults, decrypt each blob with the old key, re-encrypt with the new key, compute web-compatible checksums, and send the complete payload to the API.
+
+**Consequences:**
+- ✅ M3.5 Secret Rotation endpoints are now accessible.
+- ✅ CLI `projects rekey` now works correctly and is consistent with the WEB implementation.
+- ⚠️ The CLI rekey command now requires interactive password prompts and performs client-side crypto for all environments (slower but zero-knowledge).
+- ✅ Test suite updated to cover the new rekey flow.
+
+---
+
+## DEC-027 — Wave 2: User Account Management (Auth, Profile, 2FA, Email)
+
+**Status:** Approved
+**Date:** 2026-05-13
+**Context:**
+Gap analysis identified that the API had no endpoints for forgot/reset password, change password, update profile, delete account, or 2FA management. The WEB had a forgot-password page with no API connection, and the account page was read-only. The CLI had no commands for any of these features.
+
+**Decision:**
+- **Email Provider**: Use Resend (resend.com) for transactional emails. From address: `admin@77mdevseven.tech`.
+- **Forgot/Reset Password**: API generates cryptographically secure tokens (secrets.token_urlsafe) stored in a new `password_reset_tokens` table with 1-hour expiration. Email sent via Resend with a frontend reset URL.
+- **Change Password**: API verifies current password with bcrypt, hashes new password, invalidates all sessions.
+- **Update Profile**: API allows updating name and email (with uniqueness check). Email verification reset on email change.
+- **Delete Account**: API hard-deletes user and cascades related data (sessions, reset tokens, OAuth accounts, memberships, owned projects).
+- **2FA/TOTP**: Uses `pyotp` library. Setup generates a TOTP secret URI for QR code display. Verification requires one valid code. Disabling requires password confirmation.
+- **WEB**: Forgot-password page now calls API. New reset-password page handles token validation. Account page now supports profile editing, password change, 2FA setup/verify/disable, and account deletion with confirmation.
+- **CLI**: New `auth`, `profile`, and `2fa` command groups mirror all API capabilities.
+
+**Consequences:**
+- ✅ Full user account lifecycle now supported across API, WEB, and CLI.
+- ✅ Zero-knowledge architecture maintained (password changes invalidate sessions, no plaintext storage).
+- ✅ Resend integration is optional — if `RESEND_API_KEY` is not set, emails return mock responses for local development.
+- ⚠️ 2FA backup codes are generated but not stored server-side (displayed once during setup). Users must save them.
+- ⚠️ Delete account cascades and deletes owned projects. This is intentional for GDPR-style right-to-erasure.
+
+---
+
+## DEC-028 — Wave 3 Alignment: API Keys, Rotation UI, Invites, OAuth Accounts
+
+**Status:** Approved
+**Date:** 2026-05-13
+**Context:**
+Gap analysis revealed that several API endpoints existed but had no corresponding WEB UI:
+1. API Keys (M3.4) — API and CLI existed, WEB had nothing.
+2. Secret Rotation — API endpoints were registered in Wave 1, but WEB only displayed expiration badges without allowing configuration.
+3. Accept Invite — API endpoint existed but WEB had no page to accept invites via email token.
+4. OAuth Accounts — API endpoints for listing/unlinking existed but WEB account page didn't show them.
+
+**Decision:**
+- **API Keys UI**: Created `ApiKeysPanel` component (mirroring `CITokensPanel`) with create (scopes selection, env restriction, expiration), list, and revoke. Added to project settings page.
+- **Secret Rotation UI**: Expanded `rotationApi` with `rotateSecret`, `setExpiration`, `deleteExpiration`, `getRotationHistory`. Added rotation and expiration buttons to `SecretRow`. Created `ExpirationModal` for configuring expiration (days, policy, notify days). Updated `SecretsTable` to pass new callbacks. Added `handleRotateSecret` in secrets page that generates a new random value and calls the rotation API.
+- **Accept Invite**: Created new API endpoints `GET /api/auth/invites/lookup` and `POST /api/auth/invites/accept` that work with invite tokens (not just invite IDs). Created WEB page `/invites/accept?token=xxx` that shows invite info and allows acceptance.
+- **OAuth Accounts**: Added `listOAuthAccounts` and `unlinkOAuthAccount` to WEB auth API. Added "Connected Accounts" section to `/account` page with unlink capability.
+- **Types**: Added `APIKey`, `RotationResponse`, `RotationHistoryResponse`, `ExpirationResponse` to `client.ts`.
+
+**Consequences:**
+- ✅ WEB now covers all major API features for API Keys and Secret Rotation.
+- ✅ Invite acceptance flow works end-to-end via email token links.
+- ✅ OAuth account management is visible and actionable in the WEB UI.
+- ⚠️ `SecretRow` test file has pre-existing TypeScript issues (unrelated to changes).
+
+---
+
+## DEC-029 — Waves 4 & 5: CLI Completeness, Railway Stub, Audit Export, Docs Polish
+
+**Status:** Approved
+**Date:** 2026-05-13
+**Context:**
+Remaining gaps from the alignment analysis were lower priority but needed for full coherence:
+1. CLI client was missing 8 methods that the API already exposed.
+2. Railway provider was a stub in both CLI and API.
+3. WEB audit page only exported JSON, not CSV.
+4. AGENTS.md referenced a non-existent `project.ts` store.
+5. API Keys router registration was indirect via v1_router (intentional, but documented).
+
+**Decision:**
+- **CLI Client (GAP-12)**: Added all 8 missing methods: `list_ci_secrets_keys`, `delete_ci_token`, `get_integration`, `delete_expiration`, `get_api_key`, `update_api_key`, `list_oauth_accounts`, `unlink_oauth_account`.
+- **Railway Stub (GAP-13)**: Removed `railway` from CLI `Click.Choice` options for `integrations connect` and `integrations sync`. Updated test to assert that `railway` is rejected as an invalid choice (exit code 2). Railway remains in the API registry but without an implemented provider — this is documented and acceptable until the provider API becomes available.
+- **Audit Export CSV (GAP-14)**: Added `exportCsv()` function to the WEB audit page that generates RFC-4180 compliant CSV with proper escaping. Added "Export CSV" button alongside existing "Export JSON".
+- **AGENTS.md (GAP-15)**: Removed reference to non-existent `src/stores/project.ts`.
+- **Router Registration (GAP-16)**: After testing, reverted the move of `api_keys_router` from `v1.py` back to `v1.py` because the router uses a relative prefix (`/projects/...`) and depends on the `/api/v1` prefix from `v1_router`. The indirect registration is intentional and correct.
+
+**Consequences:**
+- ✅ CLI client now covers all API endpoints comprehensively.
+- ✅ Railway no longer appears as a valid option in CLI until implemented.
+- ✅ Audit export supports both JSON and CSV formats.
+- ✅ Documentation is accurate regarding existing files.
+- ✅ All test suites pass (API: 365 passed, CLI: 173 passed).
+
+---
+
+**Document Version**: 2.0
+**Last Updated**: 2026-05-13

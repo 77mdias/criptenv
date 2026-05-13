@@ -4,6 +4,7 @@ import { useState } from "react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
+import { authApi } from "@/lib/api"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -18,8 +19,7 @@ export default function ForgotPasswordPage() {
     try {
       setLoading(true)
       setError(null)
-      // TODO: Implement API call when backend endpoint exists
-      // await authApi.forgotPassword({ email })
+      await authApi.forgotPassword({ email })
       setSent(true)
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao enviar email")

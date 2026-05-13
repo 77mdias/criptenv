@@ -5,6 +5,8 @@ export interface AuthUser {
   email: string;
   name: string;
   kdf_salt: string;
+  email_verified?: boolean;
+  two_factor_enabled?: boolean;
 }
 
 interface AuthState {

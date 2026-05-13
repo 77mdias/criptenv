@@ -7,7 +7,40 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### Wave 1: Critical API/WEB/CLI Alignment Fixes (2026-05-13)
+
+- **GAP-01 — Registered Secret Rotation router**: `app/routers/rotation.py` was present but never imported into `main.py`. Both `rotation_router` and `expiring_router` are now registered, making M3.5 endpoints (`rotate`, `expiration`, `history`, `expiring`) accessible.
+- **GAP-02 — Fixed CLI `projects rekey`**: The command previously sent an empty body to `POST /api/v1/projects/{id}/vault/rekey`, causing 422 errors. It now implements the full zero-knowledge rekey flow: prompts for current/new vault passwords, verifies the current password, pulls each environment vault, decrypts all blobs client-side, re-encrypts with the new key, computes web-compatible checksums, and sends the complete `ProjectVaultRekeyRequest` payload.
+- **Test coverage**: Updated `test_projects_rekey` to mock the new multi-step flow (password prompts, project fetch, environment list, vault pull, and full payload verification).
+
 ### Added
+
+#### Wave 2: User Account Management (2026-05-13)
+
+- **Forgot/Reset Password**: New `POST /api/auth/forgot-password` and `POST /api/auth/reset-password` endpoints. Tokens are stored in `password_reset_tokens` table with 1-hour expiration. Emails sent via Resend (`admin@77mdevseven.tech`). WEB forgot-password page now calls the API. New `/reset-password` page handles token validation. CLI adds `auth forgot-password` and `auth reset-password` commands.
+- **Change Password**: New `POST /api/auth/change-password` endpoint verifies current password with bcrypt, updates hash, and invalidates all sessions. WEB account page adds change password form. CLI adds `auth change-password` command.
+- **Update Profile**: New `PATCH /api/auth/me` endpoint supports updating name and email (with uniqueness check). WEB account page adds inline profile editing. CLI adds `profile update` command.
+- **Delete Account**: New `DELETE /api/auth/me` endpoint hard-deletes user with cascade (sessions, tokens, OAuth accounts, memberships, owned projects). WEB account page adds danger zone with `DELETAR` confirmation. CLI adds `profile delete` command.
+- **Two-Factor Authentication (2FA/TOTP)**: New `POST /api/auth/2fa/setup`, `POST /api/auth/2fa/verify`, and `POST /api/auth/2fa/disable` endpoints using `pyotp`. WEB account page adds 2FA setup flow with QR code display and backup codes. CLI adds `2fa setup`, `2fa verify`, and `2fa disable` commands.
+- **Resend integration**: New `app/services/email_service.py` sends transactional emails. Falls back to mock responses in development when `RESEND_API_KEY` is not configured.
+- **Dependencies**: Added `resend>=2.0.0` and `pyotp>=2.9.0` to API requirements.
+
+#### Wave 3: WEB Coverage of Existing API (2026-05-13)
+
+- **API Keys UI (GAP-08)**: New `ApiKeysPanel` component in project settings. Supports creating API keys with scope selection, environment restriction, and expiration; listing active keys; and revoking. Added `apiKeysApi` client and `APIKey` types to WEB.
+- **Secret Rotation UI (GAP-09)**: Expanded `rotationApi` with `rotateSecret`, `setExpiration`, `deleteExpiration`, and `getRotationHistory`. Added rotation (🔁) and expiration (⏰) action buttons to `SecretRow`. Created `ExpirationModal` for configuring expiration policy (manual/notify/auto), days until expiration, and notification days. Secrets page now supports full client-side rotation with random value generation.
+- **Accept Invite (GAP-10)**: New API endpoints `GET /api/auth/invites/lookup` and `POST /api/auth/invites/accept` for token-based invite acceptance. New WEB page `/invites/accept?token=xxx` displays invite details and allows one-click acceptance.
+- **OAuth Accounts (GAP-11)**: Added `listOAuthAccounts` and `unlinkOAuthAccount` to WEB auth API. New "Connected Accounts" section in `/account` page displays linked GitHub/Google/Discord accounts with unlink buttons.
+
+#### Wave 4 & 5: CLI Completeness and Polish (2026-05-13)
+
+- **CLI Client Completeness (GAP-12)**: Added 8 missing methods to `CriptEnvClient`: `list_ci_secrets_keys`, `delete_ci_token`, `get_integration`, `delete_expiration`, `get_api_key`, `update_api_key`, `list_oauth_accounts`, `unlink_oauth_account`. CLI now covers 100% of API endpoints.
+- **Railway Provider (GAP-13)**: Removed `railway` from valid CLI choices (`integrations connect`, `integrations sync`). Railway provider remains unimplemented in both API and CLI. Test updated to assert invalid choice rejection.
+- **Audit Export CSV (GAP-14)**: WEB audit page now supports CSV export alongside JSON. Proper RFC-4180 escaping implemented.
+- **AGENTS.md Fix (GAP-15)**: Removed stale reference to non-existent `src/stores/project.ts`.
+- **Router Registration (GAP-16)**: Verified that `api_keys_router` indirect registration via `v1_router` is intentional (router uses relative prefix). No change needed.
 
 #### Redis-Backed CLI Auth State (2026-05-12)
 

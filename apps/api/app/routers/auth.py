@@ -4,7 +4,13 @@ from sqlalchemy.orm.attributes import flag_modified
 
 from app.database import get_db
 from app.services.auth_service import AuthService
-from app.schemas.auth import UserSignup, UserSignin, AuthResponse, UserResponse, SessionResponse, MessageResponse
+from app.services.email_service import EmailService
+from app.config import settings
+from app.schemas.auth import (
+    UserSignup, UserSignin, AuthResponse, UserResponse, SessionResponse, MessageResponse,
+    ForgotPasswordRequest, ResetPasswordRequest, ChangePasswordRequest,
+    UpdateProfileRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest, TwoFactorDisableRequest,
+)
 from app.middleware.auth import get_current_user
 from app.models.user import User
 
@@ -148,3 +154,202 @@ async def get_sessions(
     auth_service = AuthService(db)
     sessions = await auth_service.get_user_sessions(current_user.id)
     return [_session_to_response(s) for s in sessions]
+
+
+# ─── Password Reset ─────────────────────────────────────────────────────────
+
+@router.post("/forgot-password", response_model=MessageResponse)
+async def forgot_password(
+    request: Request,
+    data: ForgotPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    email_service = EmailService()
+
+    reset = await auth_service.create_password_reset(data.email)
+    if reset:
+        # Build reset URL
+        frontend_url = settings.FRONTEND_URL.rstrip("/")
+        reset_url = f"{frontend_url}/reset-password?token={reset.token}"
+        email_service.send_password_reset(data.email, reset_url)
+
+    # Always return success to prevent email enumeration
+    return MessageResponse(message="If an account exists with this email, a reset link has been sent.")
+
+
+@router.post("/reset-password", response_model=MessageResponse)
+async def reset_password(
+    data: ResetPasswordRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    success = await auth_service.reset_password(data.token, data.new_password)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid or expired token"
+        )
+    return MessageResponse(message="Password reset successfully. Please sign in with your new password.")
+
+
+@router.post("/change-password", response_model=MessageResponse)
+async def change_password(
+    data: ChangePasswordRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    success = await auth_service.change_password(current_user, data.current_password, data.new_password)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Current password is incorrect"
+        )
+    return MessageResponse(message="Password changed successfully. Please sign in again.")
+
+
+# ─── Profile Management ─────────────────────────────────────────────────────
+
+@router.patch("/me", response_model=UserResponse)
+async def update_profile(
+    data: UpdateProfileRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    try:
+        user = await auth_service.update_profile(
+            current_user,
+            name=data.name,
+            email=data.email
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail=str(e)
+        )
+    return _user_to_response(user)
+
+
+@router.delete("/me", response_model=MessageResponse)
+async def delete_account(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+
+    auth_service = AuthService(db)
+    email_service = EmailService()
+
+    # Send notification before deletion
+    email_service.send_account_deleted(str(current_user.email))
+
+    await auth_service.delete_account(current_user)
+    return MessageResponse(message="Account deleted successfully.")
+
+
+# ─── Two-Factor Authentication ──────────────────────────────────────────────
+
+@router.post("/2fa/setup", response_model=TwoFactorSetupResponse)
+async def setup_2fa(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    secret_uri = await auth_service.setup_2fa(current_user)
+
+    # Generate 8 backup codes
+    import secrets
+    backup_codes = [secrets.token_hex(4).upper() for _ in range(8)]
+
+    return TwoFactorSetupResponse(secret_uri=secret_uri, backup_codes=backup_codes)
+
+
+@router.post("/2fa/verify", response_model=MessageResponse)
+async def verify_2fa(
+    data: TwoFactorVerifyRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    email_service = EmailService()
+
+    success = await auth_service.verify_and_enable_2fa(current_user, data.code)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid verification code"
+        )
+
+    email_service.send_2fa_enabled(str(current_user.email))
+    return MessageResponse(message="Two-factor authentication enabled successfully.")
+
+
+@router.get("/invites/lookup", response_model=dict)
+async def lookup_invite_by_token(
+    token: str,
+    db: AsyncSession = Depends(get_db)
+):
+    """Lookup an invite by token to show project info before accepting."""
+    auth_service = AuthService(db)
+    invite = await auth_service.get_invite_by_token(token)
+    if not invite:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invite not found or expired"
+        )
+    return {
+        "project_id": str(invite.project_id),
+        "email": invite.email,
+        "role": invite.role,
+        "expires_at": invite.expires_at.isoformat() if invite.expires_at else None,
+    }
+
+
+@router.post("/invites/accept", response_model=MessageResponse)
+async def accept_invite_by_token(
+    request: Request,
+    token: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Accept a project invite using a token from an email link."""
+    auth_service = AuthService(db)
+    audit_service = AuditService(db)
+
+    invite = await auth_service.accept_invite_by_token(token, current_user)
+    if not invite:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid, expired, or already accepted invite"
+        )
+
+    await audit_service.log(
+        action="invite.accepted",
+        resource_type="invite",
+        resource_id=invite.id,
+        user_id=current_user.id,
+        project_id=invite.project_id,
+        metadata={"token": token},
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+
+    return MessageResponse(message="Invite accepted successfully.")
+
+
+@router.post("/2fa/disable", response_model=MessageResponse)
+async def disable_2fa(
+    data: TwoFactorDisableRequest,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    success = await auth_service.disable_2fa(current_user, data.password)
+    if not success:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Password is incorrect"
+        )
+    return MessageResponse(message="Two-factor authentication disabled successfully.")

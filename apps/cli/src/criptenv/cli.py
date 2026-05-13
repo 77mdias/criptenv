@@ -22,7 +22,9 @@ from criptenv.commands.audit import audit_group
 from criptenv.commands.api_keys import api_keys_group
 from criptenv.commands.use import use_command
 from criptenv.commands.status import status_command
+from criptenv.commands.sessions import sessions_command
 from criptenv.commands.completion import completion_command
+from criptenv.commands.auth import auth_group, profile_group, two_fa_group
 
 
 @click.group()
@@ -63,7 +65,11 @@ main.add_command(audit_group)  # Audit logs
 main.add_command(api_keys_group)  # API keys
 main.add_command(use_command)  # Project context
 main.add_command(status_command)  # CLI status
+main.add_command(sessions_command)  # Session management
 main.add_command(completion_command)  # Shell completion
+main.add_command(auth_group)  # Auth management
+main.add_command(profile_group)  # Profile management
+main.add_command(two_fa_group)  # 2FA management
 
 
 if __name__ == "__main__":

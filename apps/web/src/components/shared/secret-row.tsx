@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2 } from "lucide-react"
+import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2, RotateCcw, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { formatRelativeTime } from "@/lib/utils"
@@ -23,6 +23,8 @@ interface SecretRowProps {
   onCopy: (secret: DecryptedSecret) => void
   onEdit: (secret: DecryptedSecret) => void
   onDelete: (secret: DecryptedSecret) => void
+  onRotate?: (secret: DecryptedSecret) => void
+  onSetExpiration?: (secret: DecryptedSecret) => void
 }
 
 export function SecretRow({
@@ -32,6 +34,8 @@ export function SecretRow({
   onCopy,
   onEdit,
   onDelete,
+  onRotate,
+  onSetExpiration,
 }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
   const masked = "••••••••••••••••"
@@ -100,6 +104,28 @@ export function SecretRow({
         >
           <Pencil className="h-3.5 w-3.5" />
         </Button>
+        {onRotate && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Rotacionar secret"
+            onClick={() => onRotate(secret)}
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {onSetExpiration && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Configurar expiração"
+            onClick={() => onSetExpiration(secret)}
+          >
+            <Clock className="h-3.5 w-3.5" />
+          </Button>
+        )}
         <Button
           variant="ghost"
           size="icon"

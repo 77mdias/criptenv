@@ -122,3 +122,29 @@ def env_delete(env_id: str, project_id: str | None, force: bool):
             raise SystemExit(1)
 
     click.echo(f"✓ Deleted environment {env_id}")
+
+
+@env_group.command("get")
+@click.argument("env_id")
+@click.option("--project", "-p", "project_id", default=None, help="Project ID")
+def env_get(env_id: str, project_id: str | None):
+    """Show details for a specific environment.
+
+    \b
+    Examples:
+        criptenv env get <env-id> -p <project-id>
+    """
+    with cli_context(require_auth=True) as (db, master_key, client):
+        try:
+            resolved_project_id = resolve_project_id(db, project_id)
+            result = run_async(client.get_environment(resolved_project_id, env_id))
+        except Exception as e:
+            click.echo(f"Error: {e}", err=True)
+            raise SystemExit(1)
+
+    click.echo(f"Name:         {result.get('name', 'unknown')}")
+    click.echo(f"ID:           {result.get('id', 'unknown')}")
+    click.echo(f"Display Name: {result.get('display_name', 'N/A')}")
+    click.echo(f"Is Default:   {'Yes' if result.get('is_default') else 'No'}")
+    click.echo(f"Created:      {result.get('created_at', 'unknown')}")
+    click.echo(f"Updated:      {result.get('updated_at', 'unknown')}")

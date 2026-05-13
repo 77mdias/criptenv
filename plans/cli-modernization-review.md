@@ -2,7 +2,7 @@
 
 > **Date**: 2026-05-11
 > **Scope**: Complete CLI audit, OAuth login integration, and missing feature backlog
-> **Status**: Proposed — awaiting approval
+> **Status**: In Progress — Phases A–F implemented, tests pending
 
 ---
 
@@ -192,73 +192,74 @@ Requires backend endpoints:
 ### Phase A — OAuth Login (P0 — Critical)
 
 **Backend Changes:**
-- [ ] `POST /api/auth/cli/initiate` — generate auth nonce, store in Redis/cache with TTL (5 min)
-- [ ] `POST /api/auth/cli/authorize` — web calls this after OAuth to create short-lived auth code linked to nonce
-- [ ] `POST /api/auth/cli/token` — CLI exchanges auth code for session token
-- [ ] `POST /api/auth/device/code` — device flow: generate `user_code`, `device_code`, `verification_uri`
-- [ ] `POST /api/auth/device/poll` — device flow: poll for token
-- [ ] Update `AuthService` to support CLI session creation
+- [x] `POST /api/auth/cli/initiate` — generate auth nonce, store in Redis/cache with TTL (5 min)
+- [x] `POST /api/auth/cli/authorize` — web calls this after OAuth to create short-lived auth code linked to nonce
+- [x] `POST /api/auth/cli/token` — CLI exchanges auth code for session token
+- [x] `POST /api/auth/device/code` — device flow: generate `user_code`, `device_code`, `verification_uri`
+- [x] `POST /api/auth/device/poll` — device flow: poll for token
+- [x] Update `AuthService` to support CLI session creation
 
 **Web Changes:**
-- [ ] New page: `/cli-auth` — shows "Authorize CLI" with OAuth buttons
-- [ ] After OAuth, calls `/api/auth/cli/authorize` with nonce
-- [ ] Shows success/failure message with auto-redirect back to localhost
+- [x] New page: `/cli-auth` — shows "Authorize CLI" with OAuth buttons
+- [x] After OAuth, calls `/api/auth/cli/authorize` with nonce
+- [x] Shows success/failure message with auto-redirect back to localhost
 
 **CLI Changes:**
-- [ ] `criptenv login` — opens browser, starts localhost server, exchanges code
-- [ ] `criptenv login --device` — device code flow
-- [ ] `criptenv login --api-key <key>` — API key authentication
-- [ ] `criptenv logout` — enhanced to clear all auth types
-- [ ] `criptenv sessions` — list active sessions (new command)
+- [x] `criptenv login` — opens browser, starts localhost server, exchanges code
+- [x] `criptenv login --device` — device code flow
+- [x] `criptenv login --api-key <key>` — API key authentication
+- [x] `criptenv logout` — enhanced to clear all auth types
+- [x] `criptenv sessions` — list active sessions (new command)
 
 ### Phase B — Fix Stub Commands (P0 — Critical)
 
-- [ ] `secrets expire` — wire to `POST /api/v1/projects/{pid}/environments/{eid}/secrets/{key}/expiration`
-- [ ] `secrets alert` — wire to API or remove if not supported
-- [ ] `rotation list` — wire to `GET /api/v1/projects/{pid}/secrets/expiring`
-- [ ] `integrations connect <provider>` — wire to `POST /api/v1/projects/{id}/integrations`
-- [ ] `integrations disconnect <id>` — wire to `DELETE /api/v1/projects/{id}/integrations/{iid}`
+- [x] `secrets expire` — wire to `POST /api/v1/projects/{pid}/environments/{eid}/secrets/{key}/expiration`
+- [x] `secrets alert` — wire to API or remove if not supported
+- [x] `rotation list` — wire to `GET /api/v1/projects/{pid}/secrets/expiring`
+- [x] `integrations connect <provider>` — wire to `POST /api/v1/projects/{id}/integrations`
+- [x] `integrations disconnect <id>` — wire to `DELETE /api/v1/projects/{id}/integrations/{iid}`
 - [ ] Add tests for all fixed commands
 
 ### Phase C — Team Management (P1 — High)
 
-- [ ] `members list --project <id>`
-- [ ] `members add <email> --role <role> --project <id>`
-- [ ] `members update <id> --role <role> --project <id>`
-- [ ] `members remove <id> --project <id>`
-- [ ] `invites list --project <id>`
-- [ ] `invites create <email> --role <role> --project <id>`
-- [ ] `invites revoke <id> --project <id>`
-- [ ] `invites accept <token>`
+- [x] `members list --project <id>`
+- [x] `members add <email> --role <role> --project <id>`
+- [x] `members update <id> --role <role> --project <id>`
+- [x] `members remove <id> --project <id>`
+- [x] `invites list --project <id>`
+- [x] `invites create <email> --role <role> --project <id>`
+- [x] `invites revoke <id> --project <id>`
+- [x] `invites accept <token>`
 
 ### Phase D — Audit & Project Settings (P1 — High)
 
-- [ ] `audit list --project <id> [--action] [--resource] [--limit]`
-- [ ] `audit export --project <id> --format json > audit.json`
-- [ ] `project info <id>` — show project details
-- [ ] `project update <id> --name <name> --description <desc>`
-- [ ] `project delete <id>` — with confirmation
-- [ ] `project rekey <id>` — rotate vault encryption key
+- [x] `audit list --project <id> [--action] [--resource] [--limit]`
+- [x] `audit export --project <id> --format json > audit.json`
+- [x] `project info <id>` — show project details
+- [x] `project update <id> --name <name> --description <desc>`
+- [x] `project delete <id>` — with confirmation
+- [x] `project rekey <id>` — rotate vault encryption key
 
 ### Phase E — API Keys & Advanced Features (P2 — Medium)
 
-- [ ] `api-keys list --project <id>`
-- [ ] `api-keys create --project <id> --name <name> --scope <scope>`
-- [ ] `api-keys revoke <id> --project <id>`
-- [ ] `env update <id> --name <name> --project <id>`
-- [ ] `env delete <id> --project <id>`
-- [ ] `rotation history <key> --project <id> --env <env>`
-- [ ] `integrations validate <id> --project <id>`
+- [x] `api-keys list --project <id>`
+- [x] `api-keys create --project <id> --name <name> --scope <scope>`
+- [x] `api-keys revoke <id> --project <id>`
+- [x] `env update <id> --name <name> --project <id>`
+- [x] `env delete <id> --project <id>`
+- [x] `env get <id> --project <id>` — show environment details
+- [x] `rotation history <key> --project <id> --env <env>`
+- [x] `integrations validate <id> --project <id>`
 
 ### Phase F — UX Improvements (P2 — Medium)
 
-- [ ] **Current project tracking** — store `current_project_id` in local config
-- [ ] `criptenv use <project>` — set current project (like `kubectl config use-context`)
-- [ ] All commands default to current project when `--project` is omitted
-- [ ] `criptenv status` — show logged-in user, current project, API URL
-- [ ] Better error messages with actionable suggestions
-- [ ] Progress bars for `push`/`pull` with many secrets
-- [ ] Tab completion (Click shell completion)
+- [x] **Current project tracking** — store `current_project_id` in local config
+- [x] `criptenv use <project>` — set current project (like `kubectl config use-context`)
+- [x] All commands default to current project when `--project` is omitted
+- [x] `criptenv status` — show logged-in user, current project, API URL
+- [x] Better error messages with actionable suggestions
+- [x] Progress bars for `push`/`pull` with many secrets
+- [x] Tab completion (Click shell completion)
 
 ---
 

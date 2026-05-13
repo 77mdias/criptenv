@@ -12,6 +12,8 @@ interface SecretsTableProps {
   onEdit: (secret: DecryptedSecret) => void
   onDelete: (secret: DecryptedSecret) => void
   onCreate: () => void
+  onRotate?: (secret: DecryptedSecret) => void
+  onSetExpiration?: (secret: DecryptedSecret) => void
 }
 
 export function SecretsTable({
@@ -22,6 +24,8 @@ export function SecretsTable({
   onEdit,
   onDelete,
   onCreate,
+  onRotate,
+  onSetExpiration,
 }: SecretsTableProps) {
   if (secrets.length === 0) {
     return (
@@ -49,6 +53,8 @@ export function SecretsTable({
           onCopy={onCopy}
           onEdit={onEdit}
           onDelete={onDelete}
+          onRotate={onRotate}
+          onSetExpiration={onSetExpiration}
         />
       ))}
     </div>

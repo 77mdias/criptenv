@@ -71,6 +71,27 @@ def invites_create(email: str, role: str, project_id: str | None):
     asyncio.run(_do_create())
 
 
+@invites_group.command("accept")
+@click.argument("invite_id")
+@click.option("--project", "-p", "project_id", default=None, help="Project ID")
+def invites_accept(invite_id: str, project_id: str | None):
+    """Accept a project invite.
+
+    \b
+    Examples:
+        criptenv invites accept <invite-id> -p <project-id>
+    """
+    async def _do_accept():
+        with cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = resolve_project_id(db, project_id)
+            result = await client.accept_invite(resolved_project_id, invite_id)
+            click.echo(f"✓ Accepted invite {invite_id}")
+            click.echo(f"  Project: {result.get('project_name', 'unknown')}")
+            click.echo(f"  Role: {result.get('role', 'unknown')}")
+
+    asyncio.run(_do_accept())
+
+
 @invites_group.command("revoke")
 @click.argument("invite_id")
 @click.option("--project", "-p", "project_id", default=None, help="Project ID")

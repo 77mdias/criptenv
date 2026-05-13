@@ -2,27 +2,47 @@
 
 ## Status atual
 
-**CLI auth production worker state — fixed.**
+**API/WEB/CLI Alignment — 16 gaps em 5 waves, 100% CONCLUÍDO.**
 
 ---
 
 ## Tarefa em foco
 
-Corrigir `criptenv login` em produção após a migração para múltiplos workers Gunicorn:
-
-- Frontend: `https://criptenv.77mdevseven.tech`
-- Backend: `https://criptenv-api.77mdevseven.tech`
-- Redis: `redis://redis:6379/0`
+Alinhamento completo entre API, WEB e CLI — cobrir todos os endpoints disponíveis na API com suporte correspondente no WEB e CLI.
 
 ---
 
 ## O que foi implementado nesta sessão
 
-### Redis-Backed CLI Auth State ✅
-- `apps/api/app/routers/cli_auth.py` passa a usar Redis para `state`, auth code e device code quando `REDIS_URL` estiver configurado.
-- Fallback em memória permanece para desenvolvimento local sem Redis.
-- `apps/cli/src/criptenv/config.py` passa a usar `https://criptenv-api.77mdevseven.tech` como default.
-- `CRIPTENV_API_URL=http://localhost:8000` continua sendo o override para desenvolvimento local.
+### Wave 1: P0 Critical (GAP-01, GAP-02) ✅
+- **GAP-01:** Registro de `rotation_router` e `expiring_router` em `main.py` e `__init__.py`
+- **GAP-02:** Reescrita completa do CLI `projects rekey` com fluxo zero-knowledge (pull → decrypt → re-encrypt → push)
+
+### Wave 2: P1 Auth (GAP-03 a GAP-07) ✅
+- **Forgot/Reset Password:** API endpoints, WEB pages, CLI commands
+- **Change Password:** API + WEB + CLI
+- **Update Profile / Delete Account:** API + WEB + CLI
+- **2FA/TOTP:** Setup com QR code, verify, disable — API + WEB + CLI
+- **EmailService:** Integração com Resend para emails de produção
+
+### Wave 3: P2 WEB Coverage (GAP-08 a GAP-11) ✅
+- **GAP-08:** API Keys UI panel (`api-keys-panel.tsx` + `api-keys.ts`)
+- **GAP-09:** Secret Rotation UI (`expiration-modal.tsx`, rotate/expire buttons)
+- **GAP-10:** Accept Invite flow (`/invites/accept?token=` page)
+- **GAP-11:** OAuth accounts section in `/account` with unlink
+
+### Wave 4: P3 CLI Completeness (GAP-12 a GAP-14) ✅
+- **GAP-12:** 8 métodos faltantes adicionados ao CLI client
+- **GAP-13:** Removido `railway` das choices do CLI (não implementado na API)
+- **GAP-14:** Export CSV de audit na WEB
+
+### Wave 5: Polish (GAP-15, GAP-16) ✅
+- **GAP-15:** `AGENTS.md` atualizado (removida referência a `project.ts` inexistente)
+- **GAP-16:** Verificação de registro de routers (intencional via `v1_router`)
+
+### Testes
+- API: **365 passed, 2 skipped**
+- CLI: **173 passed**
 
 ---
 

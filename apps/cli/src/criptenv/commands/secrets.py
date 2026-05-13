@@ -397,7 +397,7 @@ def rotation_list_command(env_name: str | None, project_id: str | None, days: in
                 raise click.ClickException("Run 'criptenv init' first")
 
             resolved_project_id = resolve_project_id(db, project_id)
-            result = await client.list_expiring(project_id=resolved_project_idresolved_project_id, days=days)
+            result = await client.list_expiring(project_id=resolved_project_id, days=days)
             items = result.get("items", [])
 
             click.echo(f"Secrets expiring within {days} days:")
@@ -418,3 +418,53 @@ def rotation_list_command(env_name: str | None, project_id: str | None, days: in
             click.echo(f"Total: {len(items)} secret(s) expiring")
 
     asyncio.run(_do_list())
+
+
+@rotation_group.command("history")
+@click.argument("secret_key")
+@click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
+@click.option("--project", "-p", "project_id", default=None, help="Project name or ID")
+def rotation_history_command(secret_key: str, env_name: str | None, project_id: str | None):
+    """Show rotation history for a secret.
+
+    \b
+    Examples:
+        criptenv rotation history <secret-key>
+        criptenv rotation history <secret-key> -e staging
+    """
+    from criptenv.context import async_cli_context, _resolve_env_id
+    import asyncio
+
+    async def _do_history():
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
+            if master_key is None:
+                raise click.ClickException("Run 'criptenv init' first")
+
+            resolved_project_id = resolve_project_id(db, project_id)
+            env_id = await _resolve_env_id(db, env_name)
+
+            result = await client.get_rotation_history(
+                project_id=resolved_project_id,
+                env_id=env_id,
+                secret_key=secret_key,
+            )
+            items = result.get("items", [])
+
+            if not items:
+                click.echo(f"No rotation history for '{secret_key}'.")
+                return
+
+            click.echo(f"Rotation history for '{secret_key}':")
+            click.echo("")
+            for item in items:
+                rotated_at = item.get("rotated_at", "unknown")
+                reason = item.get("reason", "manual")
+                rotated_by = item.get("rotated_by", "unknown")
+                click.echo(f"  • {rotated_at}")
+                click.echo(f"    By: {rotated_by}")
+                click.echo(f"    Reason: {reason}")
+                click.echo("")
+
+            click.echo(f"Total: {len(items)} rotation(s)")
+
+    asyncio.run(_do_history())

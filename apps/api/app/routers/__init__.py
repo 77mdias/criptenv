@@ -12,6 +12,7 @@ from app.routers.integrations import router as integrations_router
 from app.routers.contributions import router as contributions_router
 from app.routers.webhooks import router as webhooks_router
 from app.routers.cli_auth import router as cli_auth_router
+from app.routers.rotation import router as rotation_router, expiring_router
 
 __all__ = [
     "auth_router",
@@ -27,5 +28,7 @@ __all__ = [
     "integrations_router",
     "contributions_router",
     "webhooks_router",
-    "cli_auth_router"
+    "cli_auth_router",
+    "rotation_router",
+    "expiring_router"
 ]

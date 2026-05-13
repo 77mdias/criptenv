@@ -70,7 +70,7 @@ def integrations_list(project_id: str | None):
 
 
 @integrations.command("connect")
-@click.argument("provider", type=click.Choice(["vercel", "railway", "render"]))
+@click.argument("provider", type=click.Choice(["vercel", "render"]))
 @click.option("--name", help="Integration name")
 @click.option("--token", help="API token for the provider")
 @click.option("--project-id", "project_id_opt", help="Provider project/service ID")
@@ -88,14 +88,6 @@ def integrations_connect(
         criptenv integrations connect vercel --token tok_xxx --project-id prj_xxx --project prj_xxx
         criptenv integrations connect render --token tok_xxx --project-id srv_xxx --project prj_xxx
     """
-    if provider == "railway":
-        click.echo(
-            "Error: Railway provider is not implemented yet. "
-            "Use Vercel or Render until the backend RailwayProvider is available.",
-            err=True,
-        )
-        return
-
     async def _do_connect():
         with cli_context(require_auth=True) as (db, master_key, client):
             try:
@@ -168,8 +160,39 @@ def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], 
     asyncio.run(_do_disconnect())
 
 
+@integrations.command("validate")
+@click.argument("integration_id")
+@click.option("--project", "project_id_arg", default=None, help="CriptEnv project ID")
+def integrations_validate(integration_id: str, project_id_arg: Optional[str]):
+    """Validate a connected integration.
+
+    Example:
+        criptenv integrations validate <integration-id> --project prj_xxx
+    """
+    async def _do_validate():
+        with cli_context(require_auth=True) as (db, master_key, client):
+            try:
+                resolved_project_id = resolve_project_id(db, project_id_arg)
+            except click.ClickException as e:
+                click.echo(f"Error: {e.message}", err=True)
+                return
+
+            try:
+                result = await client.validate_integration(resolved_project_id, integration_id)
+                status = result.get("status", "unknown")
+                message = result.get("message", "")
+                if status == "valid":
+                    click.echo(f"✓ Integration {integration_id} is valid")
+                else:
+                    click.echo(f"✗ Integration {integration_id} is invalid: {message}", err=True)
+            except Exception as e:
+                click.echo(f"Error validating integration: {e}", err=True)
+
+    asyncio.run(_do_validate())
+
+
 @integrations.command("sync")
-@click.option("--provider", required=True, type=click.Choice(["vercel", "railway", "render"]), help="Provider to sync")
+@click.option("--provider", required=True, type=click.Choice(["vercel", "render"]), help="Provider to sync")
 @click.option("--env", "environment", default="production", help="Environment to sync")
 @click.option("--direction", type=click.Choice(["push", "pull"]), default="push", help="Sync direction")
 @click.option("--project", "project_id_arg", default=None, help="Project ID")

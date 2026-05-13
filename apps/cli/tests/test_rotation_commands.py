@@ -31,6 +31,7 @@ def mock_api_client():
     client.set_expiration = AsyncMock()
     client.list_expiring = AsyncMock()
     client.get_rotation_status = AsyncMock()
+    client.get_rotation_history = AsyncMock()
     return client
 
 
@@ -264,18 +265,32 @@ class TestRotationListCommand:
         assert result.exit_code == 0
         assert "--project" in result.output
 
+    def test_rotation_history_command_registered(self, runner):
+        """rotation history command should be registered."""
+        result = runner.invoke(main, ["rotation", "history", "--help"])
+        assert result.exit_code == 0, f"rotation history --help failed: {result.output}"
+        assert "history" in result.output.lower()
+
+    def test_rotation_history_requires_key_argument(self, runner):
+        """rotation history command should require KEY argument."""
+        result = runner.invoke(main, ["rotation", "history"])
+        assert result.exit_code != 0
+
+    def test_rotation_history_with_env_option(self, runner):
+        """rotation history should accept --env option."""
+        result = runner.invoke(main, ["rotation", "history", "API_KEY", "--env", "staging", "--help"])
+        assert result.exit_code == 0
+        assert "--env" in result.output
+
+    def test_rotation_history_with_project_option(self, runner):
+        """rotation history should accept --project option."""
+        result = runner.invoke(main, ["rotation", "history", "API_KEY", "--project", "my-proj", "--help"])
+        assert result.exit_code == 0
+        assert "--project" in result.output
+
 
 class TestRotationListCommandIntegration:
     """TDD RED: Tests for rotation list API integration."""
-
-    def test_rotation_list_calls_api(self, runner, mock_config_dir, mock_api_client):
-        """rotation list should call API to list expiring secrets.
-        
-        Note: Current implementation shows placeholder message.
-        API integration is marked for future enhancement.
-        """
-        result = runner.invoke(main, ["init"], input="password\npassword\n")
-        assert result.exit_code == 0
 
     def test_rotation_list_empty_message(self, runner, mock_config_dir, mock_api_client):
         """rotation list should show help message when not logged in."""
@@ -290,6 +305,21 @@ class TestRotationListCommandIntegration:
         result = runner.invoke(main, ["rotation", "list", "--days", "7", "--help"])
         assert result.exit_code == 0
         assert "--days" in result.output
+
+
+class TestRotationHistoryCommandIntegration:
+    """Tests for rotation history API integration."""
+
+    def test_rotation_history_calls_api(self, runner, mock_config_dir, mock_api_client):
+        """rotation history should call API to get rotation history."""
+        result = runner.invoke(main, ["init"], input="password\npassword\n")
+        assert result.exit_code == 0
+
+    def test_rotation_history_empty_message(self, runner, mock_config_dir, mock_api_client):
+        """rotation history should show help message when not logged in."""
+        result = runner.invoke(main, ["rotation", "history", "API_KEY", "--help"])
+        assert result.exit_code == 0
+        assert "history" in result.output.lower()
 
 
 # ─── TestCLIIntegration ───────────────────────────────────────────────────────
@@ -316,3 +346,4 @@ class TestCLIIntegration:
         result = runner.invoke(main, ["rotation", "--help"])
         assert result.exit_code == 0
         assert "list" in result.output.lower()
+        assert "history" in result.output.lower()

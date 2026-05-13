@@ -12,6 +12,7 @@ import { ExportModal } from "@/components/shared/export-modal"
 import { ImportModal } from "@/components/shared/import-modal"
 import { SecretForm, type SecretFormValue } from "@/components/shared/secret-form"
 import { SecretsTable } from "@/components/shared/secrets-table"
+import { ExpirationModal } from "@/components/shared/expiration-modal"
 import {
   applySecretCountMetadata,
   setEnvironmentSecretMetadata,
@@ -112,6 +113,8 @@ export default function SecretsPage() {
   const [importOpen, setImportOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
+  const [expirationModalOpen, setExpirationModalOpen] = useState(false)
+  const [expirationSecret, setExpirationSecret] = useState<DecryptedSecret | null>(null)
 
   useEffect(() => {
     let cancelled = false
@@ -390,6 +393,61 @@ export default function SecretsPage() {
     }, 30000)
   }
 
+  const handleRotateSecret = async (secret: DecryptedSecret) => {
+    if (!activeEnv || !keyMaterial || !vaultProof) return
+    if (!window.confirm(`Rotacionar ${secret.key}? Isso gerará um novo valor aleatório.`)) return
+
+    setSaving(true)
+    setError(null)
+    try {
+      const newValue = crypto.randomUUID().replace(/-/g, "")
+      const envKey = await deriveProjectEnvironmentKey(keyMaterial, activeEnv.id)
+      const encrypted = await encrypt(newValue, envKey)
+      await rotationApi.rotateSecret(projectId, activeEnv.id, secret.key, {
+        new_value: newValue,
+        iv: encrypted.iv,
+        auth_tag: encrypted.authTag,
+        reason: "Manual rotation via web dashboard",
+      })
+      // Update local secret value
+      const nextSecrets = secrets.map((s) =>
+        s.key === secret.key ? { ...s, value: newValue } : s
+      )
+      await pushSecrets(nextSecrets)
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Erro ao rotacionar secret")
+    } finally {
+      setSaving(false)
+    }
+  }
+
+  const handleSetExpiration = (secret: DecryptedSecret) => {
+    setExpirationSecret(secret)
+    setExpirationModalOpen(true)
+  }
+
+  const handleSaveExpiration = async (days: number, policy: string, notifyDays: number) => {
+    if (!activeEnv || !expirationSecret) return
+    const expiresAt = new Date()
+    expiresAt.setDate(expiresAt.getDate() + days)
+    await rotationApi.setExpiration(projectId, activeEnv.id, expirationSecret.key, {
+      secret_key: expirationSecret.key,
+      expires_at: expiresAt.toISOString(),
+      rotation_policy: policy,
+      notify_days_before: notifyDays,
+    })
+    // Refresh expirations
+    const data = await rotationApi.listExpiring(projectId, { days: 365, includeExpired: true })
+    setExpirations(data.items)
+  }
+
+  const handleDeleteExpiration = async () => {
+    if (!activeEnv || !expirationSecret) return
+    await rotationApi.deleteExpiration(projectId, activeEnv.id, expirationSecret.key)
+    const data = await rotationApi.listExpiring(projectId, { days: 365, includeExpired: true })
+    setExpirations(data.items)
+  }
+
   if (loading) {
     return (
       <div className="space-y-6">
@@ -521,6 +579,8 @@ export default function SecretsPage() {
                 setEditingSecret(null)
                 setFormOpen(true)
               }}
+              onRotate={handleRotateSecret}
+              onSetExpiration={handleSetExpiration}
             />
           )}
         </Card>
@@ -537,6 +597,18 @@ export default function SecretsPage() {
         }}
         onSubmit={handleSaveSecret}
       />
+      {expirationModalOpen && expirationSecret && (
+        <ExpirationModal
+          secretKey={expirationSecret.key}
+          hasExpiration={Boolean(expirationSecret.expiresAt)}
+          onClose={() => {
+            setExpirationModalOpen(false)
+            setExpirationSecret(null)
+          }}
+          onSave={handleSaveExpiration}
+          onDelete={handleDeleteExpiration}
+        />
+      )}
       <ImportModal open={importOpen} onOpenChange={setImportOpen} onImport={handleImport} />
       <ExportModal open={exportOpen} onOpenChange={setExportOpen} secrets={secrets} />
     </div>

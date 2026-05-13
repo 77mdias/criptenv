@@ -116,6 +116,21 @@ class TestInvitesCommands:
         assert "charlie@example.com" in result.output
 
     @patch("criptenv.commands.invites.cli_context")
+    def test_invites_accept(self, mock_ctx, runner):
+        mock_client = AsyncMock()
+        mock_client.accept_invite = AsyncMock(return_value={
+            "id": "inv_1", "project_name": "My Project", "role": "developer"
+        })
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(main, ["invites", "accept", "inv_1", "--project", "prj_123"])
+        assert result.exit_code == 0
+        assert "Accepted invite" in result.output
+        assert "My Project" in result.output
+        assert "developer" in result.output
+
+    @patch("criptenv.commands.invites.cli_context")
     def test_invites_revoke(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.revoke_invite = AsyncMock(return_value={"id": "inv_1", "email": "alice@example.com"})
@@ -258,8 +273,50 @@ class TestProjectExtraCommands:
         assert result.exit_code == 0
         assert "Deleted project" in result.output
 
+    @patch("criptenv.commands.projects.getpass.getpass")
+    @patch("criptenv.commands.projects.cli_context")
+    def test_projects_rekey(self, mock_ctx, mock_getpass, runner):
+        from criptenv.crypto import build_project_vault_config
 
-# ─── Environments (update/delete) ────────────────────────────────────────────
+        # Setup passwords
+        current_pwd = "current_password_123"
+        new_pwd = "new_password_1234"
+        mock_getpass.side_effect = [current_pwd, new_pwd, new_pwd]
+
+        # Build a real vault config for the current password so verification passes
+        vault_config, vault_proof = build_project_vault_config(current_pwd)
+
+        mock_client = AsyncMock()
+        mock_client.get_project = AsyncMock(return_value={
+            "id": "prj_123",
+            "name": "Test Project",
+            "vault_config": vault_config,
+        })
+        mock_client.list_environments = AsyncMock(return_value={
+            "environments": [{"id": "env_123", "name": "production"}]
+        })
+        mock_client.pull_vault = AsyncMock(return_value={
+            "blobs": [],
+            "version": 1,
+        })
+        mock_client.rekey_project = AsyncMock(return_value={"vault_config": {}})
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(main, ["projects", "rekey", "prj_123", "--force"])
+        assert result.exit_code == 0
+        assert "Rekeyed project" in result.output
+        # Verify rekey_project was called with the full payload
+        mock_client.rekey_project.assert_called_once()
+        call_kwargs = mock_client.rekey_project.call_args.kwargs
+        assert call_kwargs["project_id"] == "prj_123"
+        assert "current_vault_proof" in call_kwargs
+        assert "new_vault_config" in call_kwargs
+        assert "new_vault_proof" in call_kwargs
+        assert "environments" in call_kwargs
+
+
+# ─── Environments (update/delete/get) ────────────────────────────────────────────
 
 class TestUseCommand:
     @patch("criptenv.commands.use.queries.set_config", new_callable=AsyncMock)
@@ -297,6 +354,37 @@ class TestUseCommand:
         result = runner.invoke(main, ["use", "--clear"])
         assert result.exit_code == 0
         assert "Cleared current project" in result.output
+
+
+class TestSessionsCommand:
+    @patch("criptenv.commands.sessions.cli_context")
+    def test_sessions_list(self, mock_ctx, runner):
+        mock_client = AsyncMock()
+        mock_client.get_sessions = AsyncMock(return_value={
+            "sessions": [
+                {"device_info": "Chrome on macOS", "ip_address": "192.168.1.1", "created_at": "2026-05-01T10:00:00Z", "is_current": True},
+                {"device_info": "Firefox on Linux", "ip_address": "192.168.1.2", "created_at": "2026-05-02T12:00:00Z", "is_current": False},
+            ],
+        })
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(main, ["sessions"])
+        assert result.exit_code == 0
+        assert "Chrome on macOS" in result.output
+        assert "192.168.1.1" in result.output
+        assert "2 session(s)" in result.output
+
+    @patch("criptenv.commands.sessions.cli_context")
+    def test_sessions_empty(self, mock_ctx, runner):
+        mock_client = AsyncMock()
+        mock_client.get_sessions = AsyncMock(return_value={"sessions": []})
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(main, ["sessions"])
+        assert result.exit_code == 0
+        assert "No active sessions found" in result.output
 
 
 class TestStatusCommand:
@@ -353,3 +441,19 @@ class TestEnvironmentExtraCommands:
         result = runner.invoke(main, ["env", "delete", "env_1", "--project", "prj_123", "--force"])
         assert result.exit_code == 0
         assert "Deleted environment" in result.output
+
+    @patch("criptenv.commands.environments.cli_context")
+    def test_env_get(self, mock_ctx, runner):
+        mock_client = AsyncMock()
+        mock_client.get_environment = AsyncMock(return_value={
+            "id": "env_1", "name": "staging", "display_name": "Staging Environment",
+            "is_default": False, "created_at": "2026-01-01", "updated_at": "2026-05-01",
+        })
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(main, ["env", "get", "env_1", "--project", "prj_123"])
+        assert result.exit_code == 0
+        assert "staging" in result.output
+        assert "Staging Environment" in result.output
+        assert "No" in result.output

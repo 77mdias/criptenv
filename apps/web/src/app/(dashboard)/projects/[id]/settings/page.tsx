@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { environmentsApi, peekCached, projectsApi, vaultApi } from "@/lib/api";
 import { CITokensPanel } from "@/components/shared/ci-tokens-panel";
+import { ApiKeysPanel } from "@/components/shared/api-keys-panel";
 import {
   buildProjectVaultConfig,
   checksum,
@@ -245,6 +246,9 @@ export default function SettingsPage() {
 
       {/* CI Tokens */}
       <CITokensPanel projectId={projectId} />
+
+      {/* API Keys */}
+      <ApiKeysPanel projectId={projectId} />
 
       {error && (
         <Card className="p-4 border-red-500/50">

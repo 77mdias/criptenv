@@ -6,11 +6,11 @@ import inspect
 import os
 import secrets
 
-from sqlalchemy import select, update
+from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 
-from app.models.user import User, Session
+from app.models.user import User, Session, PasswordResetToken
 from app.config import settings
 
 
@@ -170,6 +170,41 @@ class AuthService:
         )
         return result.scalar_one_or_none()
 
+    async def get_invite_by_token(self, token: str) -> Optional[ProjectInvite]:
+        """Lookup a pending invite by its token."""
+        from app.models.member import ProjectInvite
+        result = await self.db.execute(
+            select(ProjectInvite).where(
+                ProjectInvite.token == token,
+                ProjectInvite.accepted_at.is_(None),
+                ProjectInvite.revoked_at.is_(None),
+                ProjectInvite.expires_at > datetime.now(timezone.utc)
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def accept_invite_by_token(self, token: str, user: User) -> Optional[ProjectInvite]:
+        """Accept an invite using its token."""
+        from app.models.member import ProjectInvite
+        from app.strategies.invite_transitions import AcceptInviteStrategy
+        from app.strategies.exceptions import DomainError
+
+        invite = await self.get_invite_by_token(token)
+        if not invite:
+            return None
+
+        try:
+            invite = await AcceptInviteStrategy().execute(
+                db=self.db,
+                invite=invite,
+                project_id=invite.project_id,
+                current_user=user
+            )
+        except DomainError:
+            return None
+
+        return invite
+
     async def get_user_sessions(self, user_id: UUID) -> list[Session]:
         result = await self.db.execute(
             select(Session)
@@ -178,3 +213,164 @@ class AuthService:
             .order_by(Session.created_at.desc())
         )
         return list(result.scalars().all())
+
+    # ─── Password Reset ──────────────────────────────────────────────────────
+
+    async def create_password_reset(self, email: str) -> Optional[PasswordResetToken]:
+        """Create a password reset token for the given email."""
+        result = await self.db.execute(select(User).where(User.email == email))
+        user = result.scalar_one_or_none()
+        if not user:
+            return None
+
+        # Invalidate any existing unused tokens for this user
+        await self.db.execute(
+            update(PasswordResetToken)
+            .where(PasswordResetToken.user_id == user.id)
+            .where(PasswordResetToken.used_at.is_(None))
+            .where(PasswordResetToken.expires_at > datetime.now(timezone.utc))
+            .values(used_at=datetime.now(timezone.utc))
+        )
+
+        token = secrets.token_urlsafe(48)
+        expires_at = datetime.now(timezone.utc) + timedelta(hours=1)
+
+        reset = PasswordResetToken(
+            id=uuid4(),
+            user_id=user.id,
+            token=token,
+            expires_at=expires_at,
+        )
+        self.db.add(reset)
+        await self.db.flush()
+        return reset
+
+    async def validate_reset_token(self, token: str) -> Optional[User]:
+        """Validate a password reset token and return the associated user."""
+        result = await self.db.execute(
+            select(PasswordResetToken)
+            .where(PasswordResetToken.token == token)
+            .where(PasswordResetToken.expires_at > datetime.now(timezone.utc))
+            .where(PasswordResetToken.used_at.is_(None))
+        )
+        reset = result.scalar_one_or_none()
+        if not reset:
+            return None
+
+        user_result = await self.db.execute(
+            select(User).where(User.id == reset.user_id)
+        )
+        return user_result.scalar_one_or_none()
+
+    async def reset_password(self, token: str, new_password: str) -> bool:
+        """Reset password using a valid token."""
+        user = await self.validate_reset_token(token)
+        if not user:
+            return False
+
+        # Update password
+        user.password_hash = self.hash_password(new_password)
+        await self.db.flush()
+
+        # Mark token as used
+        await self.db.execute(
+            update(PasswordResetToken)
+            .where(PasswordResetToken.token == token)
+            .values(used_at=datetime.now(timezone.utc))
+        )
+
+        # Invalidate all user sessions for security
+        await self.db.execute(
+            delete(Session).where(Session.user_id == user.id)
+        )
+        await self.db.flush()
+        return True
+
+    async def change_password(self, user: User, current_password: str, new_password: str) -> bool:
+        """Change password for an authenticated user."""
+        if not self.verify_password(current_password, user.password_hash):
+            return False
+
+        user.password_hash = self.hash_password(new_password)
+        await self.db.flush()
+
+        # Invalidate all other sessions (keep current if possible, but for simplicity invalidate all)
+        await self.db.execute(
+            delete(Session).where(Session.user_id == user.id)
+        )
+        await self.db.flush()
+        return True
+
+    # ─── Profile Management ──────────────────────────────────────────────────
+
+    async def update_profile(self, user: User, name: Optional[str] = None, email: Optional[str] = None) -> User:
+        """Update user profile fields."""
+        if name is not None:
+            user.name = name
+        if email is not None:
+            # Check email uniqueness
+            existing = await self.db.execute(
+                select(User).where(User.email == email).where(User.id != user.id)
+            )
+            if existing.scalar_one_or_none():
+                raise ValueError("Email already in use")
+            user.email = email
+            user.email_verified = False
+
+        await self.db.flush()
+        return user
+
+    async def delete_account(self, user: User) -> bool:
+        """Permanently delete user account and all associated data."""
+        # Delete all sessions
+        await self.db.execute(delete(Session).where(Session.user_id == user.id))
+        # Delete all password reset tokens
+        await self.db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
+        # The user model has cascade deletes for OAuth accounts and memberships
+        # Projects where user is owner: we delete them (cascade from User.projects)
+        await self.db.delete(user)
+        await self.db.flush()
+        return True
+
+    # ─── Two-Factor Authentication ───────────────────────────────────────────
+
+    async def setup_2fa(self, user: User) -> str:
+        """Generate and store a new 2FA secret for the user. Returns the secret URI for QR code."""
+        import pyotp
+
+        secret = pyotp.random_base32()
+        user.two_factor_secret = secret.encode("utf-8")
+        await self.db.flush()
+
+        # Build otpauth URI for QR code
+        uri = pyotp.totp.TOTP(secret).provisioning_uri(
+            name=user.email,
+            issuer_name="CriptEnv"
+        )
+        return uri
+
+    async def verify_and_enable_2fa(self, user: User, code: str) -> bool:
+        """Verify a TOTP code and enable 2FA."""
+        import pyotp
+
+        if not user.two_factor_secret:
+            return False
+
+        secret = user.two_factor_secret.decode("utf-8")
+        totp = pyotp.TOTP(secret)
+        if not totp.verify(code, valid_window=1):
+            return False
+
+        user.two_factor_enabled = True
+        await self.db.flush()
+        return True
+
+    async def disable_2fa(self, user: User, password: str) -> bool:
+        """Disable 2FA after verifying the user's password."""
+        if not self.verify_password(password, user.password_hash):
+            return False
+
+        user.two_factor_enabled = False
+        user.two_factor_secret = None
+        await self.db.flush()
+        return True

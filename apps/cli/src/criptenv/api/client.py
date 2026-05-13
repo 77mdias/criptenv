@@ -114,6 +114,61 @@ class CriptEnvClient:
         resp = await self._request("GET", "/api/auth/session")
         return resp.json()
 
+    async def get_sessions(self) -> dict[str, Any]:
+        """GET /api/auth/sessions"""
+        resp = await self._request("GET", "/api/auth/sessions")
+        return resp.json()
+
+    async def forgot_password(self, email: str) -> dict[str, Any]:
+        """POST /api/auth/forgot-password"""
+        resp = await self._request("POST", "/api/auth/forgot-password", json={"email": email})
+        return resp.json()
+
+    async def reset_password(self, token: str, new_password: str) -> dict[str, Any]:
+        """POST /api/auth/reset-password"""
+        resp = await self._request(
+            "POST", "/api/auth/reset-password", json={"token": token, "new_password": new_password}
+        )
+        return resp.json()
+
+    async def change_password(self, current_password: str, new_password: str) -> dict[str, Any]:
+        """POST /api/auth/change-password"""
+        resp = await self._request(
+            "POST", "/api/auth/change-password",
+            json={"current_password": current_password, "new_password": new_password}
+        )
+        return resp.json()
+
+    async def update_profile(self, name: str | None = None, email: str | None = None) -> dict[str, Any]:
+        """PATCH /api/auth/me"""
+        payload: dict[str, Any] = {}
+        if name is not None:
+            payload["name"] = name
+        if email is not None:
+            payload["email"] = email
+        resp = await self._request("PATCH", "/api/auth/me", json=payload)
+        return resp.json()
+
+    async def delete_account(self) -> dict[str, Any]:
+        """DELETE /api/auth/me"""
+        resp = await self._request("DELETE", "/api/auth/me")
+        return resp.json()
+
+    async def setup_2fa(self) -> dict[str, Any]:
+        """POST /api/auth/2fa/setup"""
+        resp = await self._request("POST", "/api/auth/2fa/setup")
+        return resp.json()
+
+    async def verify_2fa(self, code: str) -> dict[str, Any]:
+        """POST /api/auth/2fa/verify"""
+        resp = await self._request("POST", "/api/auth/2fa/verify", json={"code": code})
+        return resp.json()
+
+    async def disable_2fa(self, password: str) -> dict[str, Any]:
+        """POST /api/auth/2fa/disable"""
+        resp = await self._request("POST", "/api/auth/2fa/disable", json={"password": password})
+        return resp.json()
+
     # ─── CLI Auth ───────────────────────────────────────────────────────────────
 
     async def cli_initiate(self, callback_url: str) -> dict[str, Any]:
@@ -428,6 +483,19 @@ class CriptEnvClient:
         )
         return resp.json()
 
+    async def get_rotation_history(
+        self,
+        project_id: str,
+        env_id: str,
+        secret_key: str,
+    ) -> dict[str, Any]:
+        """GET /api/v1/projects/{pid}/environments/{eid}/secrets/{key}/rotation/history"""
+        resp = await self._request(
+            "GET",
+            f"/api/v1/projects/{project_id}/environments/{env_id}/secrets/{secret_key}/rotation/history",
+        )
+        return resp.json()
+
     async def list_expiring(
         self,
         project_id: str,
@@ -497,6 +565,13 @@ class CriptEnvClient:
         )
         return resp.json()
 
+    async def accept_invite(self, project_id: str, invite_id: str) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/invites/{iid}/accept"""
+        resp = await self._request(
+            "POST", f"/api/v1/projects/{project_id}/invites/{invite_id}/accept"
+        )
+        return resp.json()
+
     async def delete_invite(self, project_id: str, invite_id: str) -> None:
         """DELETE /api/v1/projects/{id}/invites/{iid}"""
         await self._request("DELETE", f"/api/v1/projects/{project_id}/invites/{invite_id}")
@@ -548,6 +623,26 @@ class CriptEnvClient:
     async def delete_project(self, project_id: str) -> None:
         """DELETE /api/v1/projects/{id}"""
         await self._request("DELETE", f"/api/v1/projects/{project_id}")
+
+    async def rekey_project(
+        self,
+        project_id: str,
+        current_vault_proof: str,
+        new_vault_config: dict[str, Any],
+        new_vault_proof: str,
+        environments: list[dict[str, Any]],
+    ) -> dict[str, Any]:
+        """POST /api/v1/projects/{id}/vault/rekey"""
+        payload = {
+            "current_vault_proof": current_vault_proof,
+            "new_vault_config": new_vault_config,
+            "new_vault_proof": new_vault_proof,
+            "environments": environments,
+        }
+        resp = await self._request(
+            "POST", f"/api/v1/projects/{project_id}/vault/rekey", json=payload
+        )
+        return resp.json()
 
     # ─── API Keys ─────────────────────────────────────────────────────────────
 
@@ -609,9 +704,91 @@ class CriptEnvClient:
         )
         return resp.json()
 
+    async def get_environment(self, project_id: str, env_id: str) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}/environments/{eid}"""
+        resp = await self._request(
+            "GET", f"/api/v1/projects/{project_id}/environments/{env_id}"
+        )
+        return resp.json()
+
     async def delete_environment(self, project_id: str, env_id: str) -> None:
         """DELETE /api/v1/projects/{id}/environments/{eid}"""
         await self._request(
             "DELETE",
             f"/api/v1/projects/{project_id}/environments/{env_id}"
         )
+
+    # ─── Missing Methods (Wave 4) ─────────────────────────────────────────────
+
+    async def list_ci_secrets_keys(self, project_id: str, environment: str) -> dict[str, Any]:
+        """GET /api/v1/ci/secrets/list"""
+        resp = await self._request(
+            "GET",
+            "/api/v1/ci/secrets/list",
+            params={"project_id": project_id, "environment": environment}
+        )
+        return resp.json()
+
+    async def delete_ci_token(self, project_id: str, token_id: str) -> None:
+        """DELETE /api/v1/projects/{id}/tokens/{tid}"""
+        await self._request(
+            "DELETE",
+            f"/api/v1/projects/{project_id}/tokens/{token_id}"
+        )
+
+    async def get_integration(self, project_id: str, integration_id: str) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}/integrations/{iid}"""
+        resp = await self._request(
+            "GET",
+            f"/api/v1/projects/{project_id}/integrations/{integration_id}"
+        )
+        return resp.json()
+
+    async def delete_expiration(self, project_id: str, env_id: str, secret_key: str) -> dict[str, Any]:
+        """DELETE /api/v1/projects/{id}/environments/{eid}/secrets/{key}/expiration"""
+        resp = await self._request(
+            "DELETE",
+            f"/api/v1/projects/{project_id}/environments/{env_id}/secrets/{secret_key}/expiration"
+        )
+        return resp.json()
+
+    async def get_api_key(self, project_id: str, key_id: str) -> dict[str, Any]:
+        """GET /api/v1/projects/{id}/api-keys/{kid}"""
+        resp = await self._request(
+            "GET",
+            f"/api/v1/projects/{project_id}/api-keys/{key_id}"
+        )
+        return resp.json()
+
+    async def update_api_key(
+        self,
+        project_id: str,
+        key_id: str,
+        name: str | None = None,
+        scopes: list[str] | None = None,
+        environment_scope: str | None = None,
+    ) -> dict[str, Any]:
+        """PATCH /api/v1/projects/{id}/api-keys/{kid}"""
+        payload: dict[str, Any] = {}
+        if name is not None:
+            payload["name"] = name
+        if scopes is not None:
+            payload["scopes"] = scopes
+        if environment_scope is not None:
+            payload["environment_scope"] = environment_scope
+        resp = await self._request(
+            "PATCH",
+            f"/api/v1/projects/{project_id}/api-keys/{key_id}",
+            json=payload,
+        )
+        return resp.json()
+
+    async def list_oauth_accounts(self) -> list[dict[str, Any]]:
+        """GET /api/auth/oauth/accounts"""
+        resp = await self._request("GET", "/api/auth/oauth/accounts")
+        return resp.json()
+
+    async def unlink_oauth_account(self, provider: str) -> dict[str, Any]:
+        """DELETE /api/auth/oauth/{provider}"""
+        resp = await self._request("DELETE", f"/api/auth/oauth/{provider}")
+        return resp.json()

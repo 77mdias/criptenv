@@ -30,6 +30,14 @@ export type {
   AuditQueryParams,
   SecretExpiration,
   SecretExpirationListResponse,
+  RotationResponse,
+  RotationHistoryResponse,
+  RotationHistoryItem,
+  ExpirationResponse,
+  APIKey,
+  APIKeyListResponse,
+  APIKeyCreateResponse,
+  CreateAPIKeyRequest,
   Integration,
   IntegrationListResponse,
   CreateIntegrationRequest,
@@ -43,4 +51,5 @@ export { membersApi } from "./members";
 export { auditApi } from "./audit";
 export { ciTokensApi } from "./ci-tokens";
 export { rotationApi } from "./rotation";
+export { apiKeysApi } from "./api-keys";
 export { integrationsApi } from "./integrations";

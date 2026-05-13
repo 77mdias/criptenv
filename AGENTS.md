@@ -192,7 +192,7 @@ npm run build         # ncc build src/index.ts -> dist/index.js
 - `src/components/layout/` — Shell, sidebar, nav, footer
 - `src/components/marketing/` — Hero, features, pricing carousel
 - `src/lib/api/` — API client facade and modules (auth, projects, env, vault, members, audit, ci-tokens)
-- `src/stores/` — Zustand stores: `auth.ts`, `crypto.ts`, `ui.ts`, `project.ts`
+- `src/stores/` — Zustand stores: `auth.ts`, `crypto.ts`, `ui.ts`
 - `src/hooks/` — Custom React hooks (`use-auth.ts`, `use-theme.ts`)
 - `worker/index.ts` — Cloudflare Worker entry point
 

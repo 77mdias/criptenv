@@ -47,6 +47,12 @@ class Settings(BaseSettings):
     GOOGLE_CLIENT_SECRET: str = ""
     DISCORD_CLIENT_ID: str = ""
     DISCORD_CLIENT_SECRET: str = ""
+    
+    # ===========================================
+    # EMAIL (RESEND)
+    # ===========================================
+    RESEND_API_KEY: str = ""
+    EMAIL_FROM: str = "admin@77mdevseven.tech"
 
     @field_validator("DEBUG", mode="before")
     @classmethod

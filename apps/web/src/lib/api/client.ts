@@ -272,6 +272,43 @@ export interface CreateCITokenRequest {
   expires_at?: string;
 }
 
+// ─── API Keys ───────────────────────────────────────────────────────────────
+
+export interface APIKey {
+  id: string;
+  name: string;
+  prefix: string;
+  scopes: string[];
+  environment_scope: string | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface APIKeyListResponse {
+  items: APIKey[];
+  total: number;
+}
+
+export interface APIKeyCreateResponse {
+  id: string;
+  name: string;
+  key: string;
+  prefix: string;
+  scopes: string[];
+  environment_scope: string | null;
+  expires_at: string | null;
+  created_at: string;
+}
+
+export interface CreateAPIKeyRequest {
+  name: string;
+  description?: string;
+  scopes: string[];
+  environment_scope?: string;
+  expires_in_days?: number;
+}
+
 // ─── Secret Expiration / Rotation ───────────────────────────────────────────
 
 export interface SecretExpiration {
@@ -295,6 +332,45 @@ export interface SecretExpirationListResponse {
   total: number;
   page: number;
   page_size: number;
+}
+
+export interface RotationResponse {
+  rotation_id: string;
+  secret_key: string;
+  rotated_at: string;
+  new_version: number;
+  previous_version: number;
+}
+
+export interface RotationHistoryItem {
+  id: string;
+  secret_key: string;
+  previous_version: number;
+  new_version: number;
+  rotated_by: string;
+  rotated_at: string;
+  reason: string | null;
+}
+
+export interface RotationHistoryResponse {
+  items: RotationHistoryItem[];
+  total: number;
+}
+
+export interface ExpirationResponse {
+  id: string;
+  secret_key: string;
+  expires_at: string;
+  rotation_policy: string;
+  notify_days_before: number;
+  last_notified_at: string | null;
+  rotated_at: string | null;
+  created_at: string;
+  updated_at: string;
+  project_id: string;
+  environment_id: string;
+  is_expired: boolean | null;
+  days_until_expiration: number | null;
 }
 
 // ─── Integrations ───────────────────────────────────────────────────────────

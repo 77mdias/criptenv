@@ -23,7 +23,9 @@ from app.routers import (
     integrations_router,
     contributions_router,
     webhooks_router,
-    cli_auth_router
+    cli_auth_router,
+    rotation_router,
+    expiring_router
 )
 from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
@@ -225,6 +227,8 @@ app.include_router(integrations_router)
 app.include_router(contributions_router)
 app.include_router(webhooks_router)
 app.include_router(cli_auth_router)
+app.include_router(rotation_router)
+app.include_router(expiring_router)
 
 
 # Custom OpenAPI schema with dual security schemes

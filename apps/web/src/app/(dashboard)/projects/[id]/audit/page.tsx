@@ -90,6 +90,26 @@ export default function AuditPage() {
     URL.revokeObjectURL(url)
   }
 
+  const exportCsv = () => {
+    const headers = ["timestamp", "action", "resource_type", "resource_id", "user_id", "metadata"]
+    const rows = logs.map((log) => [
+      log.created_at,
+      log.action,
+      log.resource_type,
+      log.resource_id,
+      log.user_id,
+      JSON.stringify(log.metadata),
+    ])
+    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n")
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
+    const url = URL.createObjectURL(blob)
+    const link = document.createElement("a")
+    link.href = url
+    link.download = `audit-${projectId}.csv`
+    link.click()
+    URL.revokeObjectURL(url)
+  }
+
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -99,9 +119,14 @@ export default function AuditPage() {
             {total} eventos registrados para este projeto
           </p>
         </div>
-        <Button variant="secondary" icon={Download} onClick={exportJson} disabled={logs.length === 0}>
-          Export JSON
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="secondary" size="sm" icon={Download} onClick={exportCsv} disabled={logs.length === 0}>
+            Export CSV
+          </Button>
+          <Button variant="secondary" size="sm" icon={Download} onClick={exportJson} disabled={logs.length === 0}>
+            Export JSON
+          </Button>
+        </div>
       </div>
 
       <Card className="p-4">
