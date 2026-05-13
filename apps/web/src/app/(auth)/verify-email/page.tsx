@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
-import { useSearchParams, useRouter } from "next/navigation"
+import { useSearchParams } from "next/navigation"
 import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { authApi } from "@/lib/api"
@@ -16,8 +16,10 @@ function VerifyEmailForm() {
 
   useEffect(() => {
     if (!token) {
-      setStatus("error")
-      setError("Token de verificação inválido ou ausente.")
+      window.setTimeout(() => {
+        setStatus("error")
+        setError("Token de verificação inválido ou ausente.")
+      }, 0)
       return
     }
 
@@ -26,11 +28,15 @@ function VerifyEmailForm() {
     async function verify() {
       try {
         await authApi.verifyEmail({ token })
-        if (!cancelled) setStatus("success")
+        if (!cancelled) {
+          window.setTimeout(() => setStatus("success"), 0)
+        }
       } catch (err) {
         if (!cancelled) {
-          setStatus("error")
-          setError(err instanceof Error ? err.message : "Token inválido ou expirado.")
+          window.setTimeout(() => {
+            setStatus("error")
+            setError(err instanceof Error ? err.message : "Token inválido ou expirado.")
+          }, 0)
         }
       }
     }

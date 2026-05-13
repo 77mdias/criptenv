@@ -5,7 +5,7 @@ import Link from "next/link"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { authApi } from "@/lib/api"
-import { CheckCircle2, Mail, AlertCircle, Loader2 } from "lucide-react"
+import { CheckCircle2, Mail, AlertCircle } from "lucide-react"
 
 export default function VerificationSentPage() {
   const [email, setEmail] = useState("")
