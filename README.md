@@ -99,7 +99,7 @@ criptenv login --email you@example.com
 ```bash
 # Add a secret (encrypted locally before sending)
 criptenv set DATABASE_URL=postgres://localhost/mydb
-criptenv set API_KEY=sk_live_123456789
+criptenv set API_KEY=your_api_key_here
 
 # List all secrets (names only — values are never exposed)
 criptenv list
