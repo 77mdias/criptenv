@@ -58,6 +58,12 @@ class MessageResponse(BaseModel):
     message: str
 
 
+class ForgotPasswordResponse(BaseModel):
+    message: str
+    dev_token: Optional[str] = None
+    dev_warning: Optional[str] = None
+
+
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
 

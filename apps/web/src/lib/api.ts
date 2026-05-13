@@ -11,6 +11,7 @@ export { auditApi } from './api/audit';
 export { ciTokensApi } from './api/ci-tokens';
 export { rotationApi } from './api/rotation';
 export { integrationsApi } from './api/integrations';
+export { apiKeysApi } from './api/api-keys';
 
 export type {
   User,
@@ -55,6 +56,7 @@ import { auditApi } from './api/audit';
 import { ciTokensApi } from './api/ci-tokens';
 import { rotationApi } from './api/rotation';
 import { integrationsApi } from './api/integrations';
+import { apiKeysApi } from './api/api-keys';
 
 export const api = {
   auth: authApi,
@@ -66,4 +68,5 @@ export const api = {
   ciTokens: ciTokensApi,
   rotation: rotationApi,
   integrations: integrationsApi,
+  apiKeys: apiKeysApi,
 };

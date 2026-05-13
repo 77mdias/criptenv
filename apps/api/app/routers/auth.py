@@ -8,7 +8,7 @@ from app.services.email_service import EmailService
 from app.config import settings
 from app.schemas.auth import (
     UserSignup, UserSignin, AuthResponse, UserResponse, SessionResponse, MessageResponse,
-    ForgotPasswordRequest, ResetPasswordRequest, ChangePasswordRequest,
+    ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordRequest, ChangePasswordRequest,
     UpdateProfileRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest, TwoFactorDisableRequest,
 )
 from app.middleware.auth import get_current_user
@@ -158,7 +158,7 @@ async def get_sessions(
 
 # ─── Password Reset ─────────────────────────────────────────────────────────
 
-@router.post("/forgot-password", response_model=MessageResponse)
+@router.post("/forgot-password", response_model=ForgotPasswordResponse)
 async def forgot_password(
     request: Request,
     data: ForgotPasswordRequest,
@@ -174,8 +174,16 @@ async def forgot_password(
         reset_url = f"{frontend_url}/reset-password?token={reset.token}"
         email_service.send_password_reset(data.email, reset_url)
 
+        # Dev fallback: expose token when email service is not configured
+        if not email_service.enabled:
+            return ForgotPasswordResponse(
+                message="If an account exists with this email, a reset link has been sent.",
+                dev_token=reset.token,
+                dev_warning="Email service is not configured (RESEND_API_KEY is missing). This token is exposed for local development only. In production, configure RESEND_API_KEY to hide this value.",
+            )
+
     # Always return success to prevent email enumeration
-    return MessageResponse(message="If an account exists with this email, a reset link has been sent.")
+    return ForgotPasswordResponse(message="If an account exists with this email, a reset link has been sent.")
 
 
 @router.post("/reset-password", response_model=MessageResponse)
