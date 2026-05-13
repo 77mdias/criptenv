@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+#### Auth Screens Professional Redesign (2026-05-13)
+
+- **Split auth layout**: Login, signup, and forgot-password now share a professional two-column auth surface with product/security context on desktop and a compact branded header on mobile.
+- **Compact OAuth providers**: OAuth actions now render as a responsive three-column provider row for GitHub, Google, and Discord, keeping the existing backend redirect flow.
+- **Forgot password consistency**: The forgot-password page now uses the shared auth surface for both request and sent states instead of rendering a nested full-screen card.
+- **Decision record**: Added DEC-030 for the shared auth layout and compact OAuth direction.
+
 ### Fixed
 
 #### Wave 1: Critical API/WEB/CLI Alignment Fixes (2026-05-13)

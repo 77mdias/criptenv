@@ -1,10 +1,11 @@
 "use client"
 
 import { useState } from "react"
+import Link from "next/link"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { authApi } from "@/lib/api"
+import { AlertCircle, CheckCircle2, Mail } from "lucide-react"
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("")
@@ -30,97 +31,77 @@ export default function ForgotPasswordPage() {
 
   if (sent) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-        <Card className="w-full max-w-md p-8">
-          <div className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center">
-              <svg
-                className="h-8 w-8 text-green-500"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M5 13l4 4L19 7"
-                />
-              </svg>
-            </div>
-            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
-              Email enviado
-            </h2>
-            <p className="text-[var(--text-tertiary)] font-mono text-sm">
-              Enviamos um link de recuperação para{" "}
-              <span className="text-[var(--text-primary)] font-semibold">{email}</span>
-            </p>
-            <p className="text-xs text-[var(--text-muted)] font-mono">
-              Verifique sua caixa de spam se não receber em alguns minutos.
-            </p>
-            <Button
-              variant="secondary"
-              className="w-full mt-4"
-              onClick={() => {
-                setSent(false)
-                setEmail("")
-              }}
-            >
-              Enviar novamente
-            </Button>
-          </div>
-        </Card>
+      <div className="space-y-7 text-center">
+        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-emerald-400/30 bg-emerald-400/10 text-emerald-300">
+          <CheckCircle2 className="h-7 w-7" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-3xl font-semibold tracking-tight">Email enviado</h1>
+          <p className="text-sm leading-6 text-[var(--text-tertiary)]">
+            Enviamos um link de recuperação para{" "}
+            <span className="font-semibold text-[var(--text-primary)]">{email}</span>.
+          </p>
+          <p className="text-xs leading-5 text-[var(--text-muted)]">
+            Verifique sua caixa de spam se não receber em alguns minutos.
+          </p>
+        </div>
+        <div className="space-y-3">
+          <Button
+            variant="secondary"
+            fullWidth
+            onClick={() => {
+              setSent(false)
+              setEmail("")
+            }}
+          >
+            Enviar novamente
+          </Button>
+          <Button asChild variant="ghost" fullWidth>
+            <Link href="/login">Voltar para login</Link>
+          </Button>
+        </div>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-      <Card className="w-full max-w-md p-8">
-        <div className="space-y-6">
-          <div className="text-center space-y-2">
-            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">
-              Esqueceu a senha?
-            </h2>
-            <p className="text-sm text-[var(--text-tertiary)] font-mono">
-              Digite seu email para receber um link de recuperação.
-            </p>
+    <div className="space-y-7">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">Recuperar acesso</h1>
+        <p className="text-sm leading-6 text-[var(--text-tertiary)]">
+          Informe o email da conta para receber um link de recuperação seguro.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="space-y-5">
+        <Input
+          label="Email"
+          type="email"
+          placeholder="voce@email.com"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+          icon={Mail}
+          required
+        />
+
+        {error && (
+          <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            {error}
           </div>
+        )}
 
-          <form onSubmit={handleSubmit} className="space-y-4">
-            <div className="space-y-1.5">
-              <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                Email
-              </label>
-              <Input
-                type="email"
-                placeholder="seu@email.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                className="font-mono"
-                required
-              />
-            </div>
+        <Button type="submit" loading={loading} fullWidth>
+          Enviar link de recuperação
+        </Button>
+      </form>
 
-            {error && (
-              <p className="text-red-500 text-sm font-mono">{error}</p>
-            )}
-
-            <Button type="submit" loading={loading} fullWidth>
-              Enviar link de recuperação
-            </Button>
-          </form>
-
-          <div className="text-center">
-            <a
-              href="/login"
-              className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] font-mono transition-colors"
-            >
-              Voltar para login
-            </a>
-          </div>
-        </div>
-      </Card>
+      <p className="text-center text-sm text-[var(--text-tertiary)]">
+        Lembrou sua senha?{" "}
+        <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
+          Voltar para login
+        </Link>
+      </p>
     </div>
   )
 }

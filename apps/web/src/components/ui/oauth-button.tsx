@@ -12,20 +12,17 @@ const OAUTH_PROVIDERS = {
   github: {
     name: "GitHub",
     icon: faGithubAlt,
-    color: "hover:bg-[#24292e] hover:border-[#24292e]",
-    bgColor: "bg-[#24292e]",
+    color: "hover:border-[#24292e] hover:bg-[#24292e] hover:text-white",
   },
   google: {
     name: "Google",
     icon: faGoogle,
-    color: "hover:bg-[#4285f4] hover:border-[#4285f4]",
-    bgColor: "bg-[#4285f4]",
+    color: "hover:border-[#4285f4] hover:bg-[#4285f4] hover:text-white",
   },
   discord: {
     name: "Discord",
     icon: faDiscord,
-    color: "hover:bg-[#5865F2] hover:border-[#5865F2]",
-    bgColor: "bg-[#5865F2]",
+    color: "hover:border-[#5865F2] hover:bg-[#5865F2] hover:text-white",
   },
 } as const
 
@@ -57,17 +54,18 @@ export function OAuthButton({
     <Button
       variant="secondary"
       className={cn(
-        "w-full gap-2 transition-all duration-200",
+        "h-11 min-w-0 gap-1.5 px-2 text-[11px] transition-all duration-200 sm:gap-2 sm:px-3 sm:text-sm",
         providerConfig.color,
         className
       )}
       onClick={handleClick}
       disabled={disabled || loading}
       loading={loading}
+      aria-label={`Continuar com ${providerConfig.name}`}
       {...props}
     >
-      <FontAwesomeIcon icon={providerConfig.icon} className="h-4 w-4" />
-      Entrar com {providerConfig.name}
+      <FontAwesomeIcon icon={providerConfig.icon} className="h-4 w-4 shrink-0" />
+      <span className="whitespace-nowrap max-[360px]:sr-only">{providerConfig.name}</span>
     </Button>
   )
 }
@@ -79,7 +77,7 @@ interface OAuthButtonGroupProps {
 
 export function OAuthButtonGroup({ className }: OAuthButtonGroupProps) {
   return (
-    <div className={cn("flex flex-col gap-3", className)}>
+    <div className={cn("grid grid-cols-3 gap-2 sm:gap-3", className)}>
       {(Object.keys(OAUTH_PROVIDERS) as OAuthProvider[]).map((provider) => (
         <OAuthButton key={provider} provider={provider} />
       ))}

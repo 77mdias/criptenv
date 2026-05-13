@@ -810,5 +810,25 @@ Remaining gaps from the alignment analysis were lower priority but needed for fu
 
 ---
 
+## DEC-030 — Professional Auth Screens Layout
+
+**Status:** Approved
+**Date:** 2026-05-13
+**Context:**
+The login, signup, and forgot-password screens were functional but visually generic. Login/signup used a narrow centered stack, OAuth providers appeared as heavy full-width buttons, and forgot-password rendered its own full-screen card inside the auth layout, creating an inconsistent composition.
+
+**Decision:**
+- Use a shared split auth layout: desktop shows a product/security panel plus a refined form surface; mobile shows a compact branded header and the same form surface.
+- Render OAuth providers as a compact three-column row for GitHub, Google, and Discord while preserving the existing `/api/auth/oauth/{provider}` redirect flow.
+- Keep field labels, submit button names, validation behavior, and the login forgot-password link accessible for current tests and user workflows.
+
+**Consequences:**
+- ✅ Auth screens feel more polished and better aligned with the zero-knowledge product promise.
+- ✅ The forgot-password request and sent states now match login/signup visually.
+- ✅ No API, schema, route, or dependency changes are required.
+- ⚠️ Future auth pages should reuse the shared auth layout instead of adding nested full-screen wrappers.
+
+---
+
 **Document Version**: 2.0
 **Last Updated**: 2026-05-13

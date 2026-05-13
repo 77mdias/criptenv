@@ -6,6 +6,27 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-13 — Professional Auth Screens Redesign
+
+**Resumo:**
+Redesign das telas `/login`, `/signup` e `/forgot-password` com layout split profissional, superfície de formulário compartilhada e OAuth providers compactos em linha.
+
+**Arquivos alterados:**
+- `apps/web/src/app/(auth)/layout.tsx`
+- `apps/web/src/app/(auth)/login/page.tsx`
+- `apps/web/src/app/(auth)/signup/page.tsx`
+- `apps/web/src/app/(auth)/forgot-password/page.tsx`
+- `apps/web/src/components/ui/oauth-button.tsx`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+- Preservados os fluxos existentes de auth, validação e redirects OAuth.
+- `DEC-030` foi usado porque `DEC-026` já existia no decision log.
+
+---
+
 ## 2026-05-12 — Redis-Backed CLI Auth State
 
 **Resumo:**

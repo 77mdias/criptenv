@@ -39,22 +39,32 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="text-center">
-        <h1 className="text-2xl font-semibold tracking-tight">Entrar</h1>
-        <p className="text-sm text-[var(--text-tertiary)] font-mono mt-1">
-          Acesse sua conta CriptEnv
+    <div className="space-y-7">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-semibold tracking-tight">Bem-vindo de volta</h1>
+        <p className="text-sm leading-6 text-[var(--text-tertiary)]">
+          Entre para acessar seus projetos, vaults e auditoria de secrets.
         </p>
       </div>
 
       {error && (
-        <div className="flex items-center gap-2 rounded-lg border border-red-200 bg-red-50 p-3 text-sm text-red-700">
+        <div className="flex items-center gap-2 rounded-lg border border-red-500/30 bg-red-500/10 p-3 text-sm text-red-200">
           <AlertCircle className="h-4 w-4 shrink-0" />
           {error}
         </div>
       )}
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
+      <div className="space-y-4">
+        <OAuthButtonGroup />
+        <div className="relative">
+          <Separator className="my-2" />
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--surface-elevated)] px-3 text-xs text-[var(--text-tertiary)]">
+            ou entre com email
+          </span>
+        </div>
+      </div>
+
+      <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <Input
           label="Email"
           type="email"
@@ -63,27 +73,28 @@ export default function LoginPage() {
           error={errors.email?.message}
           {...register("email")}
         />
-        <Input
-          label="Senha"
-          type="password"
-          placeholder="••••••••"
-          icon={Lock}
-          error={errors.password?.message}
-          {...register("password")}
-        />
+        <div className="space-y-1">
+          <Input
+            label="Senha"
+            type="password"
+            placeholder="••••••••"
+            icon={Lock}
+            error={errors.password?.message}
+            {...register("password")}
+          />
+          <div className="flex justify-end">
+            <Link
+              href="/forgot-password"
+              className="text-xs text-[var(--accent)] hover:underline font-medium"
+            >
+              Esqueci minha senha
+            </Link>
+          </div>
+        </div>
         <Button type="submit" fullWidth loading={isSubmitting}>
           Entrar
         </Button>
       </form>
-
-      <div className="relative">
-        <Separator className="my-4" />
-        <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--background)] px-2 text-xs text-[var(--text-tertiary)]">
-          ou continue com
-        </span>
-      </div>
-
-      <OAuthButtonGroup />
 
       <p className="text-center text-sm text-[var(--text-tertiary)]">
         Não tem conta?{" "}
