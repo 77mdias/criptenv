@@ -73,14 +73,14 @@ aiosqlite>=0.20.0
 **Dependencies** (`apps/web/package.json`):
 ```json
 {
-  "next": "^16.0.0",
-  "react": "^19.0.0",
-  "react-dom": "^19.0.0",
+  "next": "16.2.6",
+  "react": "^19.2.5",
+  "react-dom": "^19.2.5",
   "@radix-ui/react-*": "^1.0.0",
-  "react-hook-form": "^7.0.0",
-  "zod": "^3.0.0",
-  "zustand": "^4.0.0",
-  "@tanstack/react-query": "^5.0.0"
+  "react-hook-form": "^7.74.0",
+  "zod": "^4.3.6",
+  "zustand": "^5.0.12",
+  "@tanstack/react-query": "^5.100.6"
 }
 ```
 
@@ -133,7 +133,7 @@ aiosqlite>=0.20.0
 |------|---------|
 | **Package Manager** | npm (frontend), pip (backend) |
 | **Linter** | ESLint (frontend), pytest (backend) |
-| **Tests** | pytest (Python), vitest (frontend) |
+| **Tests** | pytest (Python), Jest + Cypress (frontend) |
 | **Make** | `Makefile` for common commands |
 
 ---
@@ -181,9 +181,9 @@ NEXT_PUBLIC_COOKIE_NAME=criptenv_session
 
 | Layer | Framework | Coverage |
 |-------|-----------|----------|
-| **CLI** | pytest | 93+ tests |
-| **API** | pytest | 40+ tests |
-| **Frontend** | vitest | (not in this scope) |
+| **CLI** | pytest | 173 tests |
+| **API** | pytest | 365 tests |
+| **Frontend** | Jest + Cypress | 41 unit + 4 E2E |
 
 ---
 
@@ -219,5 +219,5 @@ NEXT_PUBLIC_COOKIE_NAME=criptenv_session
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2026-05-06
+**Document Version**: 1.2
+**Last Updated**: 2026-05-13

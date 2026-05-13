@@ -22,7 +22,7 @@
 | **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | GitHub Action, secret rotation, cloud integrations |
 | **Phase 4 (Enterprise)** | 📋 PLANNED | SSO/SAML, SCIM, self-hosted |
 
-**Current Focus**: Phase 3 — CI/CD Integrations (M3.5 Secret Alerts & Rotation)
+**Current Focus**: Phase 3 — CI/CD Integrations (API/WEB/CLI alignment complete, Railway provider & Web Alert UI pending)
 
 ---
 
@@ -104,15 +104,17 @@
 
 | Metric | Value |
 |--------|-------|
-| CLI Tests | 93+ passing |
-| API Tests | 40+ (CI auth, tokens, rate limiting, etc.) |
-| CLI Commands | 14 (init, login, logout, set, get, list, delete, push, pull, env, projects, doctor, import, export) |
-| API Routers | 9 (auth, projects, environments, vault, members, invites, tokens, audit) |
-| Frontend Pages | 13 routes |
-| Phase Progress | Phase 1 ✅, Phase 2 ✅, Phase 3 🔄 |
+| CLI Tests | 173 passing |
+| API Tests | 365 passing, 2 skipped |
+| Web Unit Tests | 41 passing (Jest + React Testing Library) |
+| Web E2E Tests | 4 passing (Cypress) |
+| CLI Commands | 25+ (init, login, logout, set, get, list, delete, push, pull, env, projects, doctor, import, export, rotate, secrets expire, secrets alert, ci login, ci deploy, integrations, etc.) |
+| API Routers | 12+ (auth, oauth, projects, environments, vault, members, invites, tokens, audit, rotation, integrations, api-keys, ci) |
+| Frontend Pages | 15+ routes |
+| Phase Progress | Phase 1 ✅, Phase 2 ✅, Phase 3 ~92%, Phase 4 📋 |
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01  
+**Document Version**: 1.1  
+**Last Updated**: 2026-05-13  
 **Status**: Organized

@@ -54,13 +54,13 @@
 | `integrations disconnect` | Disconnect provider | ✅ |
 | `integrations sync` | Sync secrets with provider | ✅ |
 
-**CLI Tests**: 130 unit tests passing
+**CLI Tests**: 173 unit tests passing
 
 ### API Backend (apps/api)
 
 | Router | Endpoints | Status |
 |--------|-----------|--------|
-| `auth` | signup, signin, signout, session, sessions, oauth | ✅ |
+| `auth` | signup, signin, signout, session, sessions, oauth, forgot/reset password, change password, 2FA/TOTP | ✅ |
 | `auth/oauth` | github, google, discord | ✅ |
 | `projects` | CRUD + list/get with API key + vault rekey | ✅ |
 | `environments` | CRUD + list/get with API key | ✅ |
@@ -68,17 +68,18 @@
 | `members` | CRUD on team members | ✅ |
 | `invites` | create, list, accept, revoke | ✅ |
 | `tokens` | CI/CD tokens CRUD | ✅ |
-| `audit` | Paginated audit logs | ✅ |
+| `audit` | Paginated audit logs + CSV export | ✅ |
 | `rotation` | Secret rotation operations | ✅ |
 | `integrations` | Vercel + Render providers, sync, validate | ✅ |
 | `integration config encryption` | AES-256-GCM encrypted provider configs at rest | ✅ |
 | `api-keys` | API key CRUD | ✅ |
 | `ci` | CI login, CI secrets | ✅ |
+| `profile` | Update profile, delete account | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
 | `vps deploy` | Docker Compose API + Redis + Cloudflare Tunnel + custom domains | ✅ Live smoke validated |
 | `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
 
-**API Tests**: 292 tests passing
+**API Tests**: 365 tests passing, 2 skipped
 
 ### Web Frontend (apps/web)
 
@@ -95,7 +96,8 @@
 | Audit Log | `/projects/[id]/audit` | ✅ |
 | Team Settings | `/projects/[id]/members` | ✅ |
 | Project Settings | `/projects/[id]/settings` | ✅ Vault password rotation |
-| Account | `/account` | ✅ |
+| Account | `/account` | ✅ OAuth accounts + 2FA |
+| Invites Accept | `/invites/accept?token=` | ✅ |
 | Integrations | `/integrations` | ⚠️ Functional for Vercel, placeholder UI |
 
 **Web Tests**: 41 Jest/React Testing Library tests passing; 4 Cypress E2E tests passing against local Vinext + FastAPI + PostgreSQL test stack.
@@ -110,9 +112,10 @@
 | **M3.2**: Cloud integrations | 🟡 Mostly Complete | Vercel ✅, Render ✅, Railway ⚠️ pending, CLI commands ✅ |
 | **M3.3**: CI tokens | ✅ Complete | Backend + CLI 100%, ci deploy real implementation |
 | **M3.4**: Public API | ✅ Complete | Rate limiting ✅, API keys ✅, dual auth ✅, OpenAPI docs ✅ |
-| **M3.5**: Secret alerts | 🟡 Complete | API + CLI ✅, Web UI partial |
+| **M3.5**: Secret alerts | 🟡 Mostly Complete | API + CLI ✅, Web UI partial |
 | **M3.6**: APScheduler | ✅ Complete | Lifespan integration ✅ |
 | **M3.7**: OAuth | ✅ Complete | GitHub, Google, Discord ✅ |
+| **API/WEB/CLI Alignment** | ✅ Complete | 16 gaps resolved across 5 waves |
 
 ---
 
@@ -124,6 +127,7 @@
 | Integration tokens at-rest encryption | P1 | ✅ AES-256-GCM envelope in JSONB |
 | Web alert configuration UI | P1 | ⚠️ Not started |
 | Security review CR-01/CR-02 | P0 | ✅ Resolved (HTTP-only cookies) |
+| API/WEB/CLI Alignment | P0 | ✅ Complete (16 gaps closed) |
 
 ---
 
@@ -142,13 +146,12 @@
 
 ## Next Recommended Steps
 
-1. **Apply TASK-068 in production**: Configure `INTEGRATION_CONFIG_SECRET`, rebuild API/scheduler, and run `alembic upgrade head`.
-2. **VPS operations baseline**: Backups, firewall review, OS patching routine, uptime/health monitoring, and Cloudflare Tunnel alerts.
-3. **Railway Provider**: Implement following the RenderProvider pattern.
-4. **Web Alert Configuration UI**: Complete M3.5 web gap.
+1. **VPS operations baseline**: Backups, firewall review, OS patching routine, uptime/health monitoring, and Cloudflare Tunnel alerts.
+2. **Railway Provider**: Implement following the RenderProvider pattern.
+3. **Web Alert Configuration UI**: Complete M3.5 web gap.
 
 ---
 
-**Document Version**: 1.6
-**Last Updated**: 2026-05-10
-**Status**: Active Development — Phase 3 (92% complete, VPS backend and app flows validated)
+**Document Version**: 1.7
+**Last Updated**: 2026-05-13
+**Status**: Active Development — Phase 3 (~92% complete, API/WEB/CLI alignment done, VPS backend and app flows validated)
