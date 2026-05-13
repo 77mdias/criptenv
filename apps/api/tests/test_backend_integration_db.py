@@ -4,7 +4,7 @@ from urllib.parse import urlparse
 import pytest
 import pytest_asyncio
 from httpx import ASGITransport, AsyncClient
-from sqlalchemy import text
+from sqlalchemy import select, text
 
 pytestmark = pytest.mark.skipif(
     os.getenv("CRIPTENV_RUN_DB_INTEGRATION") != "1",
@@ -16,6 +16,26 @@ def _assert_safe_database_url() -> None:
     parsed = urlparse(os.environ["DATABASE_URL"])
     assert parsed.hostname in {"localhost", "127.0.0.1"}
     assert "test" in parsed.path.rsplit("/", 1)[-1]
+
+
+async def _get_verification_token_by_email(email: str) -> str:
+    """Fetch the latest unused verification token for an email directly from the DB."""
+    from app.database import engine
+    from app.models.user import EmailVerificationToken, User
+
+    async with engine.connect() as conn:
+        result = await conn.execute(
+            select(EmailVerificationToken.token)
+            .join(User, EmailVerificationToken.user_id == User.id)
+            .where(User.email == email)
+            .where(EmailVerificationToken.used_at.is_(None))
+            .order_by(EmailVerificationToken.created_at.desc())
+            .limit(1)
+        )
+        row = result.scalar()
+    if not row:
+        raise RuntimeError(f"No verification token found for {email}")
+    return row
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -90,10 +110,11 @@ async def test_signup_create_project_and_default_environments_against_postgres()
         # No session cookie after signup — email must be verified first
         assert "session_token" not in signup.cookies
 
-        # Verify email
+        # Verify email (fetch token directly from DB since signup no longer exposes it)
+        verification_token = await _get_verification_token_by_email("db@example.com")
         verify = await client.post(
             "/api/auth/verify-email",
-            json={"token": signup.json()["dev_token"]},
+            json={"token": verification_token},
         )
         assert verify.status_code == 200
 
@@ -138,9 +159,10 @@ async def test_project_create_requires_vault_proof_against_postgres():
             },
         )
         # Verify email and signin to get session
+        verification_token = await _get_verification_token_by_email("proof@example.com")
         await client.post(
             "/api/auth/verify-email",
-            json={"token": signup.json()["dev_token"]},
+            json={"token": verification_token},
         )
         await client.post(
             "/api/auth/signin",
