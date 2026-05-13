@@ -112,7 +112,7 @@ class SecretRotation(Base):
     previous_version = Column(Integer, nullable=True)
     new_version = Column(Integer, nullable=False)
     
-    rotated_by = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True)
+    rotated_by = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="SET NULL"), nullable=True)
     rotated_at = Column(DateTime(timezone=True), server_default=func.now())
     
     # Reason for rotation

@@ -24,8 +24,8 @@ class User(Base):
 
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan", foreign_keys="Session.user_id")
     projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
-    memberships = relationship("ProjectMember", back_populates="user", foreign_keys="ProjectMember.user_id", primaryjoin="User.id == ProjectMember.user_id")
-    api_keys = relationship("APIKey", back_populates="user", foreign_keys="APIKey.user_id")
+    memberships = relationship("ProjectMember", back_populates="user", cascade="all, delete-orphan", foreign_keys="ProjectMember.user_id", primaryjoin="User.id == ProjectMember.user_id")
+    api_keys = relationship("APIKey", back_populates="user", cascade="all, delete-orphan", foreign_keys="APIKey.user_id")
     oauth_accounts = relationship("OAuthAccount", back_populates="user", cascade="all, delete-orphan")
 
 
@@ -33,7 +33,7 @@ class Session(Base):
     __tablename__ = "sessions"
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
-    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False, index=True)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
     token = Column(String(512), unique=True, nullable=False, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())

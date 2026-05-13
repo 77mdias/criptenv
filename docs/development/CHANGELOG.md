@@ -26,6 +26,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Account page**: Added a "Reenviar" button next to the "Email não verificado" badge.
 - **Tests**: Updated auth route tests, integration tests, and frontend unit tests to cover the new verification flow.
 
+### Fixed
+- **Database**: Added `ON DELETE CASCADE` to `sessions.user_id` foreign key. Fixes error when deleting users from Supabase dashboard due to lingering session rows blocking deletion via FK constraint. Includes migration `004_add_ondelete_cascade_sessions_user_id.sql`.
+- **Database**: Comprehensive FK cleanup — added `ON DELETE` behaviors to all `users.id` foreign keys:
+  - `CASCADE`: `sessions`, `project_members`, `api_keys` (records deleted with user)
+  - `SET NULL`: `audit_logs`, `project_members.invited_by`, `project_invites.invited_by`, `api_keys.created_by`, `ci_tokens.created_by`, `secret_rotations.rotated_by` (records preserved, user reference nulled)
+  - `RESTRICT` (unchanged): `projects.owner_id` — forces ownership transfer before deletion
+  - Includes migration `005_add_ondelete_user_fks.sql`.
+
 ### Changed
 
 #### Auth Screens Professional Redesign (2026-05-13)
