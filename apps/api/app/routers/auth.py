@@ -252,12 +252,17 @@ async def verify_email(
 ):
     """Verify an email address using a token."""
     auth_service = AuthService(db)
+    email_service = EmailService()
     user = await auth_service.verify_email(data.token)
     if not user:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired verification token"
         )
+
+    # Send welcome email on first verification
+    email_service.send_welcome(to=str(user.email), name=user.name or "")
+
     return VerifyEmailResponse(message="Email verified successfully. You can now sign in.", email_verified=True)
 
 

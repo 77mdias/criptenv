@@ -7,6 +7,8 @@ import secrets
 from app.database import get_db
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
+from app.services.email_service import EmailService
+from app.config import settings
 from app.schemas.member import InviteCreate, InviteResponse, InviteListResponse
 from app.middleware.auth import get_current_user
 from app.models.user import User
@@ -102,6 +104,21 @@ async def create_invite(
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent")
     )
+
+    # Send invitation email
+    project = await project_service.get_project(project_uuid)
+    if project:
+        email_service = EmailService()
+        frontend_url = settings.FRONTEND_URL.rstrip("/")
+        invite_url = f"{frontend_url}/invites/accept?token={invite.token}"
+        email_service.send_project_invite(
+            to=payload.email,
+            invite_url=invite_url,
+            project_name=project.name,
+            role=payload.role,
+            invited_by_name=current_user.name or "",
+            expires_days=7
+        )
 
     return InviteResponse.model_validate(_force_load_invite(invite))
 
