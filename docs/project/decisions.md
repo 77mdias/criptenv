@@ -830,5 +830,24 @@ The login, signup, and forgot-password screens were functional but visually gene
 
 ---
 
-**Document Version**: 2.0
+## DEC-031 — Pipeline Compatibility for Invite Type Hints and React Effects
+
+**Status:** Approved
+**Date:** 2026-05-13
+**Context:**
+CI reported API collection failures with `NameError: name 'ProjectInvite' is not defined` and WEB lint failures from `react-hooks/set-state-in-effect`. Local Python 3.14 defers annotation evaluation, but the pipeline can run with Python versions that evaluate annotations eagerly during import.
+
+**Decision:**
+- Import `ProjectInvite` at module scope in `AuthService` instead of relying on function-local imports after annotations have already been evaluated.
+- Keep the WEB components' existing local state pattern, but schedule initial async fetch/invalid-token state transitions from `useEffect` via `window.setTimeout(..., 0)`, matching the existing `CITokensPanel` pattern.
+- Remove unused imports/types flagged by ESLint.
+
+**Consequences:**
+- ✅ API test collection is compatible with eager annotation evaluation.
+- ✅ WEB lint passes without replacing the current local state implementation.
+- ⚠️ Future React data-loading work should consider a shared query/cache pattern to avoid repeating effect scheduling logic.
+
+---
+
+**Document Version**: 2.1
 **Last Updated**: 2026-05-13

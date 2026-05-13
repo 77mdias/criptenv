@@ -18,6 +18,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Pipeline E2E and Web Lint Fixes (2026-05-13)
+
+- **API import compatibility**: `AuthService` now imports `ProjectInvite` at module scope so invite type annotations resolve during test collection on Python versions that evaluate annotations eagerly.
+- **Web lint compliance**: API keys panel and invite acceptance page now defer initial state updates from `useEffect` callbacks, satisfying `react-hooks/set-state-in-effect`.
+- **Cleanup**: Removed unused WEB imports/types surfaced by ESLint.
+
 #### Wave 1: Critical API/WEB/CLI Alignment Fixes (2026-05-13)
 
 - **GAP-01 — Registered Secret Rotation router**: `app/routers/rotation.py` was present but never imported into `main.py`. Both `rotation_router` and `expiring_router` are now registered, making M3.5 endpoints (`rotate`, `expiration`, `history`, `expiring`) accessible.

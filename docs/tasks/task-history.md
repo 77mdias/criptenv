@@ -513,6 +513,26 @@ Criação do setup Alembic async e aplicação da primeira revisão para `ci_ses
 
 ---
 
+## 2026-05-13 — Pipeline E2E and Web Lint Fixes
+
+**Resumo:**
+Correção de falhas de pipeline na coleta dos testes da API e no lint WEB.
+
+**Arquivos alterados:**
+- `apps/api/app/services/auth_service.py`
+- `apps/web/src/components/shared/api-keys-panel.tsx`
+- `apps/web/src/app/(auth)/invites/accept/page.tsx`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+- `ProjectInvite` agora é importado no escopo do módulo para compatibilidade com versões de Python que avaliam annotations durante import.
+- Os effects iniciais do WEB foram ajustados para não chamar setters de estado no corpo síncrono do `useEffect`.
+- Verificação executada: `make api-test`, `make web-lint`, `make web-build` e `tests/test_backend_integration_db.py` com variáveis E2E locais.
+
+---
+
 ## 2026-04-30 — Phase 2 Web UI Complete (inferred from CHANGELOG)
 
 **Resumo:**

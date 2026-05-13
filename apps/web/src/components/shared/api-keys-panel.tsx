@@ -16,7 +16,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { apiKeysApi } from "@/lib/api";
-import type { APIKey, APIKeyListResponse, APIKeyCreateResponse } from "@/lib/api/client";
+import type { APIKey, APIKeyCreateResponse } from "@/lib/api/client";
 
 const AVAILABLE_SCOPES = [
   { value: "read:secrets", label: "Read Secrets", description: "Read secrets from environments" },
@@ -57,7 +57,11 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
   }, [projectId]);
 
   useEffect(() => {
-    void fetchKeys();
+    const timeoutId = window.setTimeout(() => {
+      void fetchKeys();
+    }, 0);
+
+    return () => window.clearTimeout(timeoutId);
   }, [fetchKeys]);
 
   const handleCreate = async () => {

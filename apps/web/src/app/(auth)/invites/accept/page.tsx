@@ -5,7 +5,6 @@ import { useSearchParams, useRouter } from "next/navigation"
 import { Mail, Check, AlertTriangle, Loader2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { authApi } from "@/lib/api"
 
 function AcceptInviteForm() {
   const searchParams = useSearchParams()
@@ -19,26 +18,30 @@ function AcceptInviteForm() {
   const [accepted, setAccepted] = useState(false)
 
   useEffect(() => {
-    if (!token) {
-      setLoading(false)
-      setError("Link de convite inválido.")
-      return
-    }
-
-    async function lookup() {
-      try {
-        // We use request directly since this endpoint isn't in authApi yet
-        const { request } = await import("@/lib/api/client")
-        const data = await request("GET", `/api/auth/invites/lookup?token=${encodeURIComponent(token!)}`)
-        setInviteInfo(data)
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Convite inválido ou expirado.")
-      } finally {
+    const timeoutId = window.setTimeout(() => {
+      if (!token) {
         setLoading(false)
+        setError("Link de convite inválido.")
+        return
       }
-    }
 
-    void lookup()
+      async function lookup() {
+        try {
+          // We use request directly since this endpoint isn't in authApi yet
+          const { request } = await import("@/lib/api/client")
+          const data = await request("GET", `/api/auth/invites/lookup?token=${encodeURIComponent(token)}`)
+          setInviteInfo(data)
+        } catch (err) {
+          setError(err instanceof Error ? err.message : "Convite inválido ou expirado.")
+        } finally {
+          setLoading(false)
+        }
+      }
+
+      void lookup()
+    }, 0)
+
+    return () => window.clearTimeout(timeoutId)
   }, [token])
 
   const handleAccept = async () => {

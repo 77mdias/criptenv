@@ -10,6 +10,7 @@ from sqlalchemy import select, update, delete
 from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 
+from app.models.member import ProjectInvite
 from app.models.user import User, Session, PasswordResetToken
 from app.config import settings
 
@@ -172,7 +173,6 @@ class AuthService:
 
     async def get_invite_by_token(self, token: str) -> Optional[ProjectInvite]:
         """Lookup a pending invite by its token."""
-        from app.models.member import ProjectInvite
         result = await self.db.execute(
             select(ProjectInvite).where(
                 ProjectInvite.token == token,
@@ -185,7 +185,6 @@ class AuthService:
 
     async def accept_invite_by_token(self, token: str, user: User) -> Optional[ProjectInvite]:
         """Accept an invite using its token."""
-        from app.models.member import ProjectInvite
         from app.strategies.invite_transitions import AcceptInviteStrategy
         from app.strategies.exceptions import DomainError
 
