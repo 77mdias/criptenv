@@ -508,3 +508,56 @@ CriptEnv — Zero-Knowledge Secret Management
 Need help? Visit {settings.FRONTEND_URL}/support
 """
         return self._send(to, "Your CriptEnv email address has been updated", html, text)
+
+    # ─── Email: Email Changed Alert (to old address) ──────────────────────────
+
+    def send_email_changed_alert_to_old(self, to: str, new_email: str) -> Optional[dict]:
+        """Send a security alert to the old email address when email is changed."""
+        content = f"""
+        <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#f3f4f6;">Security Alert: Email Address Changed</h1>
+        <p style="margin:0 0 16px;font-size:15px;color:#d1d5db;line-height:1.6;">
+          The email address associated with your CriptEnv account has been changed.
+        </p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:16px 0;background-color:#1f2937;border-radius:8px;">
+          <tr>
+            <td style="padding:20px 24px;">
+              <p style="margin:0 0 8px;font-size:13px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">New Email Address</p>
+              <p style="margin:0;font-size:15px;color:#f3f4f6;font-weight:500;">{new_email}</p>
+            </td>
+          </tr>
+        </table>
+        <p style="margin:16px 0 0;font-size:15px;color:#d1d5db;line-height:1.6;">
+          If you made this change, no further action is needed. All future communications will be sent to the new address.
+        </p>
+        {self._security_box("If you did NOT make this change, your account security may be at risk. Please contact our support team immediately to secure your account. We strongly recommend reviewing your recent account activity and enabling Two-Factor Authentication if you haven't already.")}
+        <p style="margin:24px 0 0;font-size:14px;color:#9ca3af;line-height:1.6;border-top:1px solid #1f2937;padding-top:16px;">
+          <strong style="color:#d1d5db;">Why am I receiving this?</strong><br>
+          This is a standard security notification sent to your previous email address whenever your account email is updated. It ensures you are aware of critical changes to your account.
+        </p>
+        """
+
+        html = self._base_template(
+            title="Security Alert: Email Changed — CriptEnv",
+            content_html=content,
+            preheader="Your CriptEnv account email address has been changed."
+        )
+
+        text = f"""Security Alert: Email Address Changed — CriptEnv
+
+The email address associated with your CriptEnv account has been changed.
+
+New Email Address: {new_email}
+
+If you made this change, no further action is needed. All future communications will be sent to the new address.
+
+SECURITY NOTICE: If you did NOT make this change, your account security may be at risk. Please contact our support team immediately to secure your account. We strongly recommend reviewing your recent account activity and enabling Two-Factor Authentication if you haven't already.
+
+—
+Why am I receiving this?
+This is a standard security notification sent to your previous email address whenever your account email is updated. It ensures you are aware of critical changes to your account.
+
+—
+CriptEnv — Zero-Knowledge Secret Management
+Need help? Visit {settings.FRONTEND_URL}/support
+"""
+        return self._send(to, "Security Alert: Your CriptEnv email has been changed", html, text)

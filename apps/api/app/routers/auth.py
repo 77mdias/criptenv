@@ -291,6 +291,11 @@ async def update_profile(
     db: AsyncSession = Depends(get_db)
 ):
     auth_service = AuthService(db)
+    email_service = EmailService()
+
+    # Capture old email before potential change
+    old_email = str(current_user.email) if data.email and data.email != str(current_user.email) else None
+
     try:
         user = await auth_service.update_profile(
             current_user,
@@ -302,6 +307,12 @@ async def update_profile(
             status_code=status.HTTP_409_CONFLICT,
             detail=str(e)
         )
+
+    # Send email change notifications if email was updated
+    if old_email and data.email:
+        email_service.send_email_changed(to=data.email, old_email=old_email)
+        email_service.send_email_changed_alert_to_old(to=old_email, new_email=data.email)
+
     return _user_to_response(user)
 
 
