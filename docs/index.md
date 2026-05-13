@@ -86,8 +86,9 @@
 1. Read this `index.md` to understand the project
 2. Read [Overview](./project/overview.md) to understand the problem
 3. Read [Current State](./project/current-state.md) to know what's implemented
-4. Read [Development Workflow](./workflow/development-workflow.md) to set up your environment
-5. Check [Current Task](./tasks/current-task.md) to know what to work on
+4. Read [Local Development Guide](./development/local-setup.md) to set up your environment
+5. Read [Development Workflow](./workflow/development-workflow.md) for workflow rules
+6. Check [Current Task](./tasks/current-task.md) to know what to work on
 
 ### For AI Agents
 
