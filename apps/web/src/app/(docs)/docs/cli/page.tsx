@@ -80,12 +80,8 @@ export default function CliOverviewPage() {
 
       <CodeBlock
         language="bash"
-        code={`# Clone o repositório
-git clone https://github.com/77mdias/criptenv.git
-cd criptenv/apps/cli
-
-# Instale em modo desenvolvimento
-pip install -e ".[dev]"
+        code={`# Instalar via pip
+pip install criptenv
 
 # Inicializar o vault local
 criptenv init`}

@@ -6,6 +6,8 @@ import {
   Callout,
   Steps,
   Step,
+  Tabs,
+  Tab,
 } from '@/components/docs';
 
 export default function InstallationPage() {
@@ -21,48 +23,54 @@ export default function InstallationPage() {
 
       <h1 className="text-4xl font-bold mt-6 mb-2">Instalação</h1>
       <p className="text-lg text-muted-foreground mb-8">
-        O CriptEnv CLI é distribuído como um pacote Python. Instale a partir do
-        código-fonte enquanto o pacote PyPI não está publicado.
+        O CriptEnv CLI é distribuído via PyPI. Instale em qualquer sistema com
+        Python 3.10+.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         Requisito mínimo: Python 3.10 ou superior. O CLI é multiplataforma e
         funciona em macOS, Linux e Windows.
       </Callout>
 
       <h2 className="text-2xl font-bold mt-12 mb-4">
-        Instalação do Código-Fonte
+        Instalação via pip
       </h2>
       <p className="text-muted-foreground mb-6">
-        A maneira mais rápida de instalar o CriptEnv é clonar o repositório e
-        instalar em modo editável:
+        A maneira mais rápida de instalar o CriptEnv:
       </p>
 
-      <Steps>
-        <Step title="Clone o repositório">
-          <CodeBlock
-            language="bash"
-            code={`git clone https://github.com/77mdias/criptenv.git
-cd criptenv/apps/cli`}
-          />
-        </Step>
+      <Tabs defaultValue="pip">
+        <Tab value="pip" label="pip">
+          <div className="space-y-4">
+            <CodeBlock
+              language="bash"
+              code={`pip install criptenv`}
+            />
+            <Callout variant="tip">
+              Recomendamos usar{' '}
+              <code className="bg-muted px-1 rounded text-sm">pipx</code> para
+              instalar ferramentas de CLI globalmente, evitando conflitos de
+              dependências:
+              <CodeBlock language="bash" code="pipx install criptenv" />
+            </Callout>
+          </div>
+        </Tab>
 
-        <Step title="Crie um virtualenv (recomendado)">
-          <CodeBlock
-            language="bash"
-            code={`python -m venv .venv
-source .venv/bin/activate  # Linux/macOS
-# ou: .venv\\Scripts\\activate  # Windows`}
-          />
-        </Step>
-
-        <Step title="Instale o CLI">
-          <CodeBlock
-            language="bash"
-            code={`pip install -e ".[dev]"`}
-          />
-        </Step>
-      </Steps>
+        <Tab value="dev" label="Desenvolvimento">
+          <div className="space-y-4">
+            <p className="text-muted-foreground">
+              Para contribuir ou modificar o código, clone o repositório e
+              instale em modo editável:
+            </p>
+            <CodeBlock
+              language="bash"
+              code={`git clone https://github.com/77mdias/criptenv.git
+cd criptenv/apps/cli
+pip install -e ".[dev]"`}
+            />
+          </div>
+        </Tab>
+      </Tabs>
 
       <h2 className="text-2xl font-bold mt-12 mb-4">
         Verificação da Instalação
@@ -83,7 +91,7 @@ source .venv/bin/activate  # Linux/macOS
         />
       </div>
 
-      <Callout type="info" className="mt-4">
+      <Callout variant="info" className="mt-4">
         O comando{' '}
         <code className="bg-muted px-1 rounded text-sm">criptenv doctor</code>{' '}
         verifica a instalação, dependências, configuração e conectividade com a
@@ -101,7 +109,7 @@ source .venv/bin/activate  # Linux/macOS
 rm -rf ~/.criptenv`}
       />
 
-      <Callout type="warning" className="mt-4">
+      <Callout variant="warning" className="mt-4">
         A desinstalação do CLI não remove seus dados locais automaticamente.
         Para remover também o vault e dados locais, delete o diretório{' '}
         <code className="bg-muted px-1 rounded text-sm">~/.criptenv</code>.

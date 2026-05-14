@@ -52,9 +52,7 @@ export default function FirstProjectPage() {
 
         <Step title="Instale o CLI">
           <CodeBlock language="bash" title="Instalar CLI">
-{`git clone https://github.com/77mdias/criptenv.git
-cd criptenv/apps/cli
-pip install -e ".[dev]"`}
+{`pip install criptenv`}
           </CodeBlock>
         </Step>
 

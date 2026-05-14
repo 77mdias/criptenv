@@ -32,13 +32,11 @@ export default function QuickstartPage() {
       <Steps>
         <Step title="Instale o CLI">
           <p className="mb-4">
-            Clone o repositório e instale o CLI em modo editável:
+            Instale o CriptEnv via pip:
           </p>
           <CodeBlock
             language="bash"
-            code={`git clone https://github.com/77mdias/criptenv.git
-cd criptenv/apps/cli
-pip install -e ".[dev]"`}
+            code={`pip install criptenv`}
           />
         </Step>
 
