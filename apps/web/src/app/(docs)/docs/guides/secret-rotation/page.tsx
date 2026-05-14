@@ -6,8 +6,6 @@ import {
   Callout,
   Steps,
   Step,
-  Tabs,
-  Tab,
 } from '@/components/docs';
 
 export default function SecretRotationPage() {
@@ -65,25 +63,23 @@ export default function SecretRotationPage() {
           </p>
           <CodeBlock language="bash" title="Atualizar variável">
 {`# Atualizar uma variável específica
-criptenv set DATABASE_URL "nova-url-do-banco" --project meu-app
+criptenv rotate API_KEY -v "novo-valor-seguro" -p <project-id>
 
-# Atualizar interativamente
-criptenv set --interactive --project meu-app`}
+# Rotacionar com valor auto-gerado
+criptenv rotate API_KEY -p <project-id>`}
           </CodeBlock>
         </Step>
 
         <Step title="Sincronize com as integrações">
           <p className="text-muted-foreground">
-            Se você tem integrações configuradas (Vercel, Railway, etc.), a
-            sincronização automática propagará a mudança. Caso contrário,
-            sincronize manualmente:
+            Se você tem integrações configuradas (Vercel, Render), sincronize manualmente:
           </p>
           <CodeBlock language="bash" title="Sincronizar integrações">
-{`# Sincronizar todas as integrações
-criptenv sync --project meu-app
+{`# Sincronizar com Vercel
+criptenv integrations sync vercel -p <project-id>
 
-# Sincronizar uma integração específica
-criptenv sync --provider vercel --project meu-app`}
+# Sincronizar com Render
+criptenv integrations sync render -p <project-id>`}
           </CodeBlock>
         </Step>
 
@@ -99,8 +95,7 @@ criptenv sync --provider vercel --project meu-app`}
         Rotação Automatizada
       </h2>
       <p className="text-muted-foreground mb-4">
-        Configure a rotação automática usando o GitHub Actions ou seu sistema
-        de CI/CD preferido.
+        Configure a rotação automática usando o GitHub Actions:
       </p>
 
       <CodeBlock language="yaml" title="Rotação automática com GitHub Actions">
@@ -128,20 +123,19 @@ jobs:
         env:
           CRIPTENV_TOKEN: \${{ secrets.CRIPTENV_TOKEN }}
         run: |
-          npm install -g @criptenv/cli
-          criptenv set API_KEY "\${{ steps.generate.outputs.secret }}" \\
-            --project meu-app \\
-            --environment production
+          pip install criptenv
+          criptenv ci login --token $CRIPTENV_TOKEN
+          criptenv rotate API_KEY -v "\${{ steps.generate.outputs.secret }}" -p <project-id>
 
       - name: Sincronizar com Vercel
         run: |
-          criptenv sync --provider vercel --project meu-app
+          criptenv integrations sync vercel -p <project-id>
 
       - name: Notificar equipe
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
-            {"text": "✅ API Key rotacionada com sucesso no projeto meu-app"}
+            {"text": "✅ API Key rotacionada com sucesso no projeto"}
         env:
           SLACK_WEBHOOK_URL: \${{ secrets.SLACK_WEBHOOK }}`}
       </CodeBlock>
@@ -193,73 +187,22 @@ jobs:
       </div>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Rotação via SDK
+        Expiração e Alertas
       </h2>
-      <Tabs defaultValue="js">
-        <Tab value="js" label="JavaScript">
-          <CodeBlock language="typescript" title="rotate.ts">
-{`import { CriptEnv } from '@criptenv/sdk';
-import crypto from 'crypto';
+      <p className="text-muted-foreground mb-4">
+        Configure expiração automática e alertas para seus secrets:
+      </p>
 
-const criptenv = new CriptEnv({
-  token: process.env.CRIPTENV_TOKEN!,
-  projectId: 'seu-project-id',
-});
+      <CodeBlock language="bash" title="Configurar expiração e alertas">
+{`# Definir expiração de 90 dias com política notify
+criptenv secrets expire API_KEY --days 90 --policy notify -p <project-id>
 
-async function rotateSecret(keyName: string) {
-  // Gera um novo valor
-  const newValue = crypto.randomBytes(32).toString('hex');
+# Configurar alerta 14 dias antes da expiração
+criptenv secrets alert API_KEY --days 14 -p <project-id>
 
-  // Atualiza no CriptEnv
-  await criptenv.set(keyName, newValue);
-
-  console.log(\`Secret \${keyName} rotacionado com sucesso\`);
-  return newValue;
-}
-
-// Rotacionar múltiplos secrets
-async function rotateAll() {
-  const keys = ['API_KEY', 'JWT_SECRET', 'ENCRYPTION_KEY'];
-  for (const key of keys) {
-    await rotateSecret(key);
-  }
-  // Sincroniza com integrações
-  await criptenv.sync();
-}
-
-rotateAll();`}
-          </CodeBlock>
-        </Tab>
-        <Tab value="py" label="Python">
-          <CodeBlock language="python" title="rotate.py">
-{`import secrets
-from criptenv import CriptEnv
-
-env = CriptEnv(
-    token=os.environ["CRIPTENV_TOKEN"],
-    project_id="seu-project-id",
-)
-
-def rotate_secret(key_name: str) -> str:
-    """Gera e atualiza um secret no CriptEnv."""
-    new_value = secrets.token_hex(32)
-    env.set(key_name, new_value)
-    print(f"Secret {key_name} rotacionado com sucesso")
-    return new_value
-
-def rotate_all():
-    """Rotaciona todos os secrets definidos."""
-    keys = ["API_KEY", "JWT_SECRET", "ENCRYPTION_KEY"]
-    for key in keys:
-        rotate_secret(key)
-    # Sincroniza com integrações
-    env.sync()
-
-if __name__ == "__main__":
-    rotate_all()`}
-          </CodeBlock>
-        </Tab>
-      </Tabs>
+# Listar secrets próximos da expiração
+criptenv rotation list --days 30 -p <project-id>`}
+      </CodeBlock>
 
       <Callout type="warning">
         Ao rotacionar secrets em produção, certifique-se de que todos os

@@ -29,11 +29,11 @@ export default function CliOverviewPage() {
       <CardGrid>
         <DocCard
           title="Terminal-First"
-          description="Todas as operações acontecem no seu terminal. Sem painéis web obrigatórios, sem dependências visuais. Se você consegue abrir um shell, consegue usar o CriptEnv."
+          description="Todas as operações acontecem no seu terminal. Se você consegue abrir um shell, consegue usar o CriptEnv."
         />
         <DocCard
           title="Zero-Knowledge"
-          description="Seus segredos são criptografados localmente com AES-256-GCM antes de qualquer sincronização. O servidor nunca vê seus dados em texto claro — nem mesmo nós."
+          description="Seus segredos são criptografados localmente com AES-256-GCM antes de qualquer sincronização. O servidor nunca vê seus dados em texto claro."
         />
         <DocCard
           title="Offline-Ready"
@@ -61,12 +61,12 @@ export default function CliOverviewPage() {
         />
         <DocCard
           title="CI/CD"
-          description="Integre com pipelines de CI/CD. Faça login headless, injete segredos e faça deploy sem expor credenciais."
+          description="Integre com pipelines de CI/CD. Faça login headless, liste segredos e faça deploy sem expor credenciais."
           href="/docs/cli/commands#cicd"
         />
         <DocCard
           title="Integrações"
-          description="Conecte provedores de nuvem (AWS, GCP, Azure, Vercel, Netlify) e sincronize segredos automaticamente."
+          description="Conecte provedores de nuvem (Vercel, Render) e sincronize segredos automaticamente."
           href="/docs/cli/commands#integrations"
         />
         <DocCard
@@ -80,15 +80,21 @@ export default function CliOverviewPage() {
 
       <CodeBlock
         language="bash"
-        code={`# Instalar via npm
-npm install -g criptenv
+        code={`# Clone o repositório
+git clone https://github.com/77mdias/criptenv.git
+cd criptenv/apps/cli
 
-# Ou via Homebrew
-brew install criptenv
+# Instale em modo desenvolvimento
+pip install -e ".[dev]"
 
 # Inicializar o vault local
 criptenv init`}
       />
+
+      <Callout type="info">
+        Requer Python 3.10 ou superior. O CLI é multiplataforma e
+        funciona em macOS, Linux e Windows.
+      </Callout>
 
       <Callout type="info">
         Após a instalação, consulte a{' '}
@@ -99,7 +105,7 @@ criptenv init`}
         <a href="/docs/cli/configuration" className="underline font-medium">
           Configuração
         </a>{' '}
-        para personalizar o comportamento do CLI.
+        para entender a estrutura local.
       </Callout>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">Próximos Passos</h2>
@@ -112,7 +118,7 @@ criptenv init`}
         />
         <DocCard
           title="Configuração"
-          description="Estrutura do ~/.criptenv/, variáveis de ambiente, banco de dados e senha mestra."
+          description="Estrutura do ~/.criptenv/, variáveis de ambiente e senha mestra."
           href="/docs/cli/configuration"
         />
       </CardGrid>

@@ -6,8 +6,6 @@ import {
   Callout,
   Steps,
   Step,
-  Tabs,
-  Tab,
 } from '@/components/docs';
 
 export default function CICDSetupPage() {
@@ -27,7 +25,7 @@ export default function CICDSetupPage() {
       <p className="text-muted-foreground mb-8">
         Configure o CriptEnv no seu pipeline de CI/CD para carregar secrets de
         forma segura durante build, testes e deploy. Suporte para GitHub
-        Actions, GitLab CI, CircleCI e mais.
+        Actions e outras plataformas via CLI.
       </p>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
@@ -46,7 +44,7 @@ export default function CICDSetupPage() {
           </p>
           <CodeBlock language="text" title="Configuração do secret">
 {`Nome: CRIPTENV_TOKEN
-Valor: <seu-token-de-api>`}
+Valor: <seu-token-de-ci>`}
           </CodeBlock>
         </Step>
 
@@ -66,7 +64,7 @@ jobs:
         uses: criptenv/action@v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
-          project-id: 'seu-project-id'
+          project: 'seu-project-id'
           environment: staging
 
       - name: Instalar dependências
@@ -80,9 +78,7 @@ jobs:
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">GitLab CI</h2>
 
-      <Tabs defaultValue="cli">
-        <Tab value="cli" label="Usando CLI">
-          <CodeBlock language="yaml" title=".gitlab-ci.yml">
+      <CodeBlock language="yaml" title=".gitlab-ci.yml">
 {`stages:
   - build
   - test
@@ -93,48 +89,15 @@ variables:
 
 build:
   stage: build
-  image: node:20
+  image: python:3.12
   before_script:
-    - npm install -g @criptenv/cli
-    - criptenv load --project seu-project-id --output .env
+    - pip install criptenv
+    - criptenv ci login --token $CRIPTENV_TOKEN
   script:
+    - criptenv ci deploy -p <project-id> -e production
     - npm ci
-    - npm run build
-  artifacts:
-    paths:
-      - .env
-
-test:
-  stage: test
-  image: node:20
-  before_script:
-    - npm install -g @criptenv/cli
-    - criptenv load --project seu-project-id --output .env
-  script:
-    - npm test`}
-          </CodeBlock>
-        </Tab>
-        <Tab value="api" label="Usando API">
-          <CodeBlock language="yaml" title=".gitlab-ci.yml (API direta)">
-{`stages:
-  - build
-  - deploy
-
-load-secrets:
-  stage: .pre
-  image: alpine:latest
-  script:
-    - apk add --no-cache curl jq
-    - |
-      SECRETS=$(curl -s -H "Authorization: Bearer $CRIPTENV_TOKEN" \
-        "https://api.ccriptenv.dev/v1/projects/seu-project-id/env" | jq -r 'to_entries[] | "\(.key)=\(.value)"')
-      echo "$SECRETS" > .env
-  artifacts:
-    paths:
-      - .env`}
-          </CodeBlock>
-        </Tab>
-      </Tabs>
+    - npm run build`}
+      </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">CircleCI</h2>
       <CodeBlock language="yaml" title=".circleci/config.yml">
@@ -147,10 +110,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Carregar variáveis de ambiente
+          name: Instalar CriptEnv CLI
           command: |
-            npm install -g @criptenv/cli
-            criptenv load --project seu-project-id --output .env
+            pip install criptenv
+            criptenv ci login --token $CRIPTENV_TOKEN
+      - run:
+          name: Deploy secrets
+          command: criptenv ci deploy -p <project-id>
       - run:
           name: Instalar dependências
           command: npm ci
@@ -184,10 +150,6 @@ workflows:
         <li>
           <strong>Rotacione tokens:</strong> atualize os tokens do CriptEnv
           periodicamente
-        </li>
-        <li>
-          <strong>Use cache:</strong> ative o cache do SDK para reduzir chamadas
-          à API durante o pipeline
         </li>
       </ul>
 

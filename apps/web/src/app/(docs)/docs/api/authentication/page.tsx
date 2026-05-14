@@ -84,7 +84,7 @@ export default function ApiAuthenticationPage() {
 
       <CodeBlock language="bash" title="Login via API">
         {`# Fazer login e receber cookie de sessão
-curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/login" \\
+curl -X POST "https://criptenv-api.77mdevseven.tech/api/auth/signin" \\
   -H "Content-Type: application/json" \\
   -c cookies.txt \\
   -d '{
@@ -95,7 +95,7 @@ curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/login" \\
 
       <CodeBlock language="bash" title="Usar sessão em requisições subsequentes">
         {`# Usar o cookie salvo em requisições seguintes
-curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects" \\
+curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
   -b cookies.txt`}
       </CodeBlock>
 

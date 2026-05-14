@@ -67,11 +67,11 @@ export default function RenderIntegrationPage() {
         Sincronização via CLI
       </h2>
       <CodeBlock language="bash" title="Sincronizar com Render">
-{`# Sincronizar Environment Group
-criptenv sync --provider render --env-group meu-env-group
+{`# Sincronizar com Render
+criptenv integrations sync render -p <project-id>
 
 # Sincronizar com ambiente específico
-criptenv sync --provider render --env-group meu-env-group --environment production`}
+criptenv integrations sync render -e production -p <project-id>`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">

@@ -35,7 +35,7 @@ export default function ApiOverviewPage() {
       </p>
 
       <CodeBlock language="text">
-        {`https://criptenv-api.77mdevseven.tech/v1`}
+        {`https://criptenv-api.77mdevseven.tech/api/v1`}
       </CodeBlock>
 
       <p className="text-muted-foreground mb-4">
@@ -92,42 +92,26 @@ export default function ApiOverviewPage() {
 
       <CodeBlock language="json" title="200 OK">
         {`{
-  "data": {
-    "id": "proj_k8j2m4n6",
-    "name": "meu-projeto",
-    "created_at": "2025-01-15T10:30:00Z"
-  }
+  "id": "proj_k8j2m4n6",
+  "name": "meu-projeto",
+  "created_at": "2025-01-15T10:30:00Z"
 }`}
       </CodeBlock>
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Resposta de Sucesso (Lista)</h3>
 
       <CodeBlock language="json" title="200 OK — Lista paginada">
-        {`{
-  "data": [
-    { "id": "proj_k8j2m4n6", "name": "projeto-a" },
-    { "id": "proj_m2n4p6q8", "name": "projeto-b" }
-  ],
-  "pagination": {
-    "page": 1,
-    "per_page": 20,
-    "total": 42,
-    "total_pages": 3
-  }
-}`}
+        {`[
+  { "id": "proj_k8j2m4n6", "name": "projeto-a" },
+  { "id": "proj_m2n4p6q8", "name": "projeto-b" }
+]`}
       </CodeBlock>
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Resposta de Erro</h3>
 
       <CodeBlock language="json" title="Erro padrão">
         {`{
-  "error": {
-    "code": "validation_error",
-    "message": "O campo 'name' é obrigatório.",
-    "details": [
-      { "field": "name", "issue": "required" }
-    ]
-  }
+  "detail": "O campo 'name' é obrigatório."
 }`}
       </CodeBlock>
 
@@ -167,18 +151,23 @@ export default function ApiOverviewPage() {
           </thead>
           <tbody>
             <tr className="border-b border-[var(--border)]">
-              <td className="px-4 py-3">Sessão</td>
+              <td className="px-4 py-3">Sessão (pública)</td>
               <td className="px-4 py-3"><InlineCode>100 req</InlineCode></td>
               <td className="px-4 py-3">por minuto</td>
             </tr>
             <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
               <td className="px-4 py-3">API Key</td>
-              <td className="px-4 py-3"><InlineCode>500 req</InlineCode></td>
+              <td className="px-4 py-3"><InlineCode>1000 req</InlineCode></td>
               <td className="px-4 py-3">por minuto</td>
             </tr>
             <tr className="border-b border-[var(--border)]">
               <td className="px-4 py-3">CI Token</td>
               <td className="px-4 py-3"><InlineCode>200 req</InlineCode></td>
+              <td className="px-4 py-3">por minuto</td>
+            </tr>
+            <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
+              <td className="px-4 py-3">Auth (IP)</td>
+              <td className="px-4 py-3"><InlineCode>5 req</InlineCode></td>
               <td className="px-4 py-3">por minuto</td>
             </tr>
           </tbody>
@@ -241,7 +230,7 @@ X-RateLimit-Reset: 1705312800`}
       </div>
 
       <CodeBlock language="bash" title="Exemplo de paginação">
-        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects?page=2&per_page=10" \\
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects?page=2&per_page=10" \\
   -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
       </CodeBlock>
 

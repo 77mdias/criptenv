@@ -53,7 +53,7 @@ export default function DocsPage() {
         <CodeBlock language="bash" title="Exemplo rápido">
 {`# Definir um secret
 $ criptenv set DATABASE_URL=postgresql://localhost/mydb
-$ criptenv set API_KEY=sk-abc123def456
+$ criptenv set API_KEY=your_api_key_here
 
 # Obter um secret (descriptografado localmente)
 $ criptenv get DATABASE_URL
@@ -203,14 +203,14 @@ $ criptenv list`}
           <ExternalCard
             icon={Globe}
             title="API Reference"
-            description="Documentação completa de todos os ~50 endpoints da API REST."
+            description="Documentação completa dos endpoints da API REST."
             href="/docs/api"
           />
           <ExternalCard
             icon={GithubIcon}
             title="GitHub (Open Source)"
             description="Código fonte aberto, issues, contribuições. Licença MIT."
-            href="https://github.com/criptenv/criptenv"
+            href="https://github.com/77mdias/criptenv"
             external
           />
           <ExternalCard

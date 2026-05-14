@@ -82,7 +82,7 @@ jobs:
         uses: criptenv/action@v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
-          project-id: 'seu-project-id'
+          project: 'seu-project-id'
         env:
           CRIPTENV_TOKEN: \${{ secrets.CRIPTENV_TOKEN }}
 
@@ -96,7 +96,7 @@ jobs:
       </Steps>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Variáveis de Ambiente
+        Variáveis de Entrada
       </h2>
       <p className="text-muted-foreground mb-4">
         A Action suporta as seguintes variáveis de entrada:
@@ -109,13 +109,13 @@ jobs:
             type: 'string',
             required: true,
             description:
-              'Token de API do CriptEnv. Recomendado usar via GitHub Secrets.',
+              'Token de CI do CriptEnv (começa com ci_). Recomendado usar via GitHub Secrets.',
           },
           {
-            name: 'project-id',
+            name: 'project',
             type: 'string',
             required: true,
-            description: 'ID do projeto no CriptEnv a ser descriptografado.',
+            description: 'ID do projeto no CriptEnv.',
           },
           {
             name: 'environment',
@@ -125,11 +125,18 @@ jobs:
               'Ambiente alvo (ex: production, staging). Padrão: production.',
           },
           {
-            name: 'format',
+            name: 'api-url',
             type: 'string',
             required: false,
             description:
-              'Formato de saída: env (padrão) ou json.',
+              'URL da API do CriptEnv. Padrão: https://criptenv-api.77mdevseven.tech/api/v1.',
+          },
+          {
+            name: 'prefix',
+            type: 'string',
+            required: false,
+            description:
+              'Prefixo para as variáveis de ambiente. Padrão: SECRET_.',
           },
         ]}
       />
@@ -152,7 +159,7 @@ jobs:
       - uses: criptenv/action@v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
-          project-id: 'seu-project-id'
+          project: 'seu-project-id'
           environment: staging
 
       - run: npm run build
@@ -167,7 +174,7 @@ jobs:
       - uses: criptenv/action@v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
-          project-id: 'seu-project-id'
+          project: 'seu-project-id'
           environment: production
 
       - run: npm run build

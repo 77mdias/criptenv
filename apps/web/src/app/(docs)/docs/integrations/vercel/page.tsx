@@ -86,10 +86,10 @@ development      →  Development`}
       </p>
       <CodeBlock language="bash" title="Sincronizar com Vercel">
 {`# Sincronizar todas as variáveis
-criptenv sync --provider vercel --project meu-projeto
+criptenv integrations sync vercel -p <project-id>
 
 # Sincronizar apenas o ambiente de produção
-criptenv sync --provider vercel --project meu-projeto --environment production`}
+criptenv integrations sync vercel -e production -p <project-id>`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">

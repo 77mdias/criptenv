@@ -31,8 +31,8 @@ export default function FirstProjectPage() {
         Pré-requisitos
       </h2>
       <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-        <li>Uma conta no CriptEnv (gratuito para projetos pessoais)</li>
-        <li>Node.js 18+ instalado (para o CLI)</li>
+        <li>Uma conta no CriptEnv (gratuita)</li>
+        <li>Python 3.10+ instalado</li>
         <li>Acesso ao terminal</li>
       </ul>
 
@@ -42,70 +42,67 @@ export default function FirstProjectPage() {
         <Step title="Crie sua conta">
           <p className="text-muted-foreground">
             Acesse{' '}
-            <a href="https://criptenv.dev" className="underline">
-              criptenv.dev
+            <a href="https://criptenv.77mdevseven.tech" className="underline">
+              criptenv.77mdevseven.tech
             </a>{' '}
-            e crie sua conta gratuitamente. Você pode usar login com GitHub
-            para agilizar o processo.
+            e crie sua conta gratuitamente. Você pode usar login com GitHub,
+            Google ou Discord para agilizar o processo.
           </p>
-        </Step>
-
-        <Step title="Crie um novo projeto">
-          <p className="text-muted-foreground">
-            No painel, clique em <strong>&quot;Novo Projeto&quot;</strong> e
-            dê um nome ao seu projeto (ex: <code>meu-app</code>). Escolha uma
-            região de armazenamento preferida.
-          </p>
-          <CodeBlock language="text" title="Exemplo de configuração">
-{`Nome: meu-app
-Região: São Paulo (sa-east-1)
-Plano: Gratuito`}
-          </CodeBlock>
-        </Step>
-
-        <Step title="Adicione suas variáveis de ambiente">
-          <p className="text-muted-foreground">
-            No painel do projeto, vá em <strong>Variáveis</strong> e adicione
-            seus secrets. Você pode adicionar manualmente ou importar de um
-            arquivo <code>.env</code>.
-          </p>
-          <CodeBlock language="bash" title="Importar de arquivo .env">
-{`# Use o CLI para importar variáveis existentes
-npx @criptenv/cli import .env`}
-          </CodeBlock>
         </Step>
 
         <Step title="Instale o CLI">
           <CodeBlock language="bash" title="Instalar CLI">
-{`# Instalar globalmente
-npm install -g @criptenv/cli
-
-# Ou usar diretamente com npx
-npx @criptenv/cli --version`}
+{`git clone https://github.com/77mdias/criptenv.git
+cd criptenv/apps/cli
+pip install -e ".[dev]"`}
           </CodeBlock>
         </Step>
 
-        <Step title="Autentique o CLI">
-          <CodeBlock language="bash" title="Autenticação">
-{`# Login interativo
-criptenv auth login
+        <Step title="Inicialize e faça login">
+          <CodeBlock language="bash" title="Inicializar e autenticar">
+{`criptenv init
+criptenv login --email you@example.com`}
+          </CodeBlock>
+        </Step>
 
-# Ou use um token diretamente
-criptenv auth --token SEU_TOKEN`}
+        <Step title="Crie um novo projeto">
+          <p className="text-muted-foreground">
+            Crie um projeto via CLI (você também pode criar pelo dashboard web):
+          </p>
+          <CodeBlock language="bash" title="Criar projeto">
+{`criptenv projects create meu-app`}
+          </CodeBlock>
+          <Callout type="tip" className="mt-3">
+            Você será solicitado a definir uma senha de vault para o projeto.
+            Essa senha é usada para criptografar os secrets deste projeto.
+          </Callout>
+        </Step>
+
+        <Step title="Adicione suas variáveis de ambiente">
+          <p className="text-muted-foreground">
+            Adicione seus secrets via CLI:
+          </p>
+          <CodeBlock language="bash" title="Adicionar secrets">
+{`criptenv set DATABASE_URL="postgres://user:pass@host/db"
+criptenv set API_KEY="your_api_key_here"`}
+          </CodeBlock>
+        </Step>
+
+        <Step title="Sincronize com a nuvem">
+          <p className="text-muted-foreground">
+            Envie seus secrets criptografados para o servidor:
+          </p>
+          <CodeBlock language="bash" title="Push para nuvem">
+{`criptenv push -p <project-id>`}
           </CodeBlock>
         </Step>
 
         <Step title="Carregue as variáveis no seu projeto">
           <p className="text-muted-foreground">
-            Use o CLI para descriptografar e carregar as variáveis de
-            ambiente no seu projeto.
+            Exporte os secrets para um arquivo .env local:
           </p>
-          <CodeBlock language="bash" title="Carregar variáveis">
-{`# Carregar e exportar como variáveis de ambiente
-criptenv load --project meu-app
-
-# Ou gerar um arquivo .env local
-criptenv load --project meu-app --output .env.local`}
+          <CodeBlock language="bash" title="Exportar para .env">
+{`criptenv export -o .env.local`}
           </CodeBlock>
         </Step>
       </Steps>
@@ -130,10 +127,9 @@ criptenv load --project meu-app --output .env.local`}
           para colaborar no gerenciamento de secrets
         </li>
         <li>
-          <a href="/docs/sdks/javascript" className="underline">
-            Use o SDK
-          </a>{' '}
-          para integrar diretamente na sua aplicação
+          <a href="/docs/cli/commands" className="underline">
+            Explore a referência completa de comandos
+          </a>
         </li>
       </ul>
     </div>

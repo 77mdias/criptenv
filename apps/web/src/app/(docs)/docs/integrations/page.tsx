@@ -34,7 +34,7 @@ export default function IntegrationsPage() {
         />
         <DocCard
           title="Railway"
-          description="Integre o CriptEnv com o Railway para gerenciar variáveis de ambiente dos seus serviços de forma segura."
+          description="Em breve. Integração com Railway para sincronização de variáveis de ambiente."
           href="/docs/integrations/railway"
           icon="railway"
         />

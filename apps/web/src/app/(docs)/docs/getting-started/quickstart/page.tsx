@@ -6,8 +6,6 @@ import {
   Callout,
   Steps,
   Step,
-  Tabs,
-  Tab,
 } from '@/components/docs';
 
 export default function QuickstartPage() {
@@ -28,47 +26,43 @@ export default function QuickstartPage() {
       </p>
 
       <Callout type="info">
-        Pré-requisitos: Python 3.10+ instalado no seu sistema. Para macOS, você
-        também pode usar o Homebrew.
+        Pré-requisitos: Python 3.10+ instalado no seu sistema.
       </Callout>
 
       <Steps>
         <Step title="Instale o CLI">
           <p className="mb-4">
-            Escolha o método de instalação preferido para o seu sistema
-            operacional:
+            Clone o repositório e instale o CLI em modo editável:
           </p>
-
-          <Tabs defaultValue="macos">
-            <Tab value="macos" label="macOS">
-              <CodeBlock language="bash" code="brew install criptenv/tap/criptenv" />
-            </Tab>
-            <Tab value="linux" label="Linux">
-              <CodeBlock
-                language="bash"
-                code="curl -fsSL https://get.criptenv.dev | sh"
-              />
-            </Tab>
-            <Tab value="windows" label="Windows">
-              <CodeBlock language="powershell" code="scoop install criptenv" />
-            </Tab>
-            <Tab value="pip" label="pip">
-              <CodeBlock language="bash" code="pip install criptenv" />
-            </Tab>
-          </Tabs>
+          <CodeBlock
+            language="bash"
+            code={`git clone https://github.com/77mdias/criptenv.git
+cd criptenv/apps/cli
+pip install -e ".[dev]"`}
+          />
         </Step>
 
         <Step title="Inicialize o CriptEnv">
           <p className="mb-4">
-            Execute o comando de inicialização para configurar o diretório local
-            do CriptEnv:
+            Execute o comando de inicialização para configurar o vault local:
           </p>
           <CodeBlock language="bash" code="criptenv init" />
           <p className="mt-3 text-sm text-muted-foreground">
             Isso criará a pasta{' '}
-            <code className="bg-muted px-1 rounded text-sm">.criptenv</code> no
-            diretório atual, onde ficarão suas configurações e vault local.
+            <code className="bg-muted px-1 rounded text-sm">~/.criptenv/</code> no
+            diretório home, onde ficarão suas configurações e vault local.
           </p>
+        </Step>
+
+        <Step title="Crie uma conta e faça login">
+          <p className="mb-4">
+            Acesse{' '}
+            <a href="https://criptenv.77mdevseven.tech" className="underline">
+              criptenv.77mdevseven.tech
+            </a>{' '}
+            e crie sua conta gratuitamente. Depois autentique o CLI:
+          </p>
+          <CodeBlock language="bash" code="criptenv login --email you@example.com" />
         </Step>
 
         <Step title="Crie um projeto">
@@ -77,16 +71,11 @@ export default function QuickstartPage() {
           </p>
           <CodeBlock
             language="bash"
-            code={`criptenv project create meu-projeto
-criptenv project use meu-projeto`}
+            code={`criptenv projects create meu-projeto`}
           />
           <Callout type="tip" className="mt-3">
             Você pode criar múltiplos projetos e alternar entre eles a qualquer
-            momento com{' '}
-            <code className="bg-muted px-1 rounded text-sm">
-              criptenv project use
-            </code>
-            .
+            momento.
           </Callout>
         </Step>
 
@@ -97,8 +86,7 @@ criptenv project use meu-projeto`}
           <CodeBlock
             language="bash"
             code={`criptenv set DATABASE_URL="postgres://user:pass@host/db"
-criptenv set API_KEY="sk-1234567890abcdef"
-criptenv set STRIPE_SECRET="sk_live_abc123"`}
+criptenv set API_KEY="your_api_key_here"`}
           />
           <p className="mt-3 text-sm text-muted-foreground">
             Todos os segredos são criptografados localmente com AES-256-GCM
@@ -109,15 +97,14 @@ criptenv set STRIPE_SECRET="sk_live_abc123"`}
 
         <Step title="Liste seus segredos">
           <p className="mb-4">
-            Veja todos os segredos configurados no projeto atual:
+            Veja todos os segredos configurados:
           </p>
           <CodeBlock
             language="bash"
             code={`criptenv list
 # Saída:
 # DATABASE_URL
-# API_KEY
-# STRIPE_SECRET`}
+# API_KEY`}
           />
           <Callout type="info" className="mt-3">
             O comando{' '}
@@ -136,12 +123,15 @@ criptenv set STRIPE_SECRET="sk_live_abc123"`}
             code={`criptenv get DATABASE_URL
 # Saída: postgres://user:pass@host/db`}
           />
-          <p className="mt-3 mb-3 text-sm text-muted-foreground">
-            Você também pode injetar os segredos diretamente em um comando:
+        </Step>
+
+        <Step title="Sincronize com a nuvem">
+          <p className="mb-4">
+            Envie seus segredos criptografados para o servidor:
           </p>
           <CodeBlock
             language="bash"
-            code='criptenv run -- node server.js'
+            code={`criptenv push -p <project-id>`}
           />
         </Step>
       </Steps>
@@ -149,7 +139,7 @@ criptenv set STRIPE_SECRET="sk_live_abc123"`}
       <h2 className="text-2xl font-bold mt-12 mb-4">Próximos passos</h2>
       <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
         <li>
-          Aprenda a{' '}
+          Aprenda os{' '}
           <a
             href="/docs/getting-started/concepts"
             className="text-primary hover:underline"
@@ -159,22 +149,22 @@ criptenv set STRIPE_SECRET="sk_live_abc123"`}
           do CriptEnv
         </li>
         <li>
-          Configure{' '}
+          Explore a{' '}
           <a
-            href="/docs/environments"
+            href="/docs/cli/commands"
             className="text-primary hover:underline"
           >
-            múltiplos ambientes
-          </a>{' '}
-          (dev, staging, production)
+            referência completa de comandos
+          </a>
         </li>
         <li>
           Sincronize seus segredos com a nuvem usando{' '}
-          <code className="bg-muted px-1 rounded text-sm">criptenv push</code>
+          <code className="bg-muted px-1 rounded text-sm">criptenv push</code> e{' '}
+          <code className="bg-muted px-1 rounded text-sm">criptenv pull</code>
         </li>
         <li>
           Integre com seu{' '}
-          <a href="/docs/ci-cd" className="text-primary hover:underline">
+          <a href="/docs/guides/cicd-setup" className="text-primary hover:underline">
             pipeline de CI/CD
           </a>
         </li>
