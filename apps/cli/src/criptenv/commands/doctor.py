@@ -105,7 +105,7 @@ def doctor_command(verbose: bool):
     # Check 6: API connectivity
     try:
         import httpx
-        response = httpx.get(f"{API_BASE_URL}/docs", timeout=5.0)
+        response = httpx.get(f"{API_BASE_URL}/health", timeout=5.0)
         if response.status_code == 200:
             click.echo(f"  ✓ API server reachable ({API_BASE_URL})")
             checks_passed += 1

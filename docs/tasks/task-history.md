@@ -533,6 +533,38 @@ Correção de falhas de pipeline na coleta dos testes da API e no lint WEB.
 
 ---
 
+## 2026-05-14 — CLI Auth/Vault Separation and Doctor Health Fix
+
+**Resumo:**
+Correção do falso 404 em `criptenv doctor` e separação entre sessão autenticada da CLI e desbloqueio do vault local de secrets.
+
+**Arquivos criados:**
+- `apps/cli/tests/test_session_context.py`
+
+**Arquivos alterados:**
+- `apps/cli/src/criptenv/config.py`
+- `apps/cli/src/criptenv/session.py`
+- `apps/cli/src/criptenv/context.py`
+- `apps/cli/src/criptenv/commands/login.py`
+- `apps/cli/src/criptenv/commands/doctor.py`
+- `apps/cli/src/criptenv/commands/sync.py`
+- `apps/cli/src/criptenv/commands/auth.py`
+- `apps/cli/src/criptenv/commands/environments.py`
+- `apps/cli/src/criptenv/commands/secrets.py`
+- `apps/cli/tests/conftest.py`
+- `apps/cli/tests/test_commands.py`
+- `docs/project/decisions.md`
+- `docs/development/CHANGELOG.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+- `doctor` agora consulta `/health`, validado contra a API pública com HTTP 200.
+- API-only commands usam `~/.criptenv/auth.key` para sessão local e não precisam mais da master password do vault.
+- Fluxos que decryptam ou sincronizam secrets continuam exigindo senha de vault/local conforme necessário.
+- Verificações executadas: `python -m pytest apps/cli/tests -q`, `python -m pytest apps/api/tests/test_api_versioning.py -q`, `python -m pytest apps/api/tests/test_openapi_docs.py::TestOpenAPISchema::test_worker_proxy_health_alias_exists -q`.
+
+---
+
 ## 2026-04-30 — Phase 2 Web UI Complete (inferred from CHANGELOG)
 
 **Resumo:**

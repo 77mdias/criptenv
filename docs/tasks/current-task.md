@@ -2,7 +2,7 @@
 
 ## Status atual
 
-**API/WEB/CLI Alignment — 16 gaps em 5 waves, 100% CONCLUÍDO.**
+**API/WEB/CLI Alignment — 16 gaps em 5 waves, 100% CONCLUÍDO. Hotfix CLI auth/vault + doctor aplicado em 2026-05-14.**
 
 ---
 
@@ -42,7 +42,13 @@ Alinhamento completo entre API, WEB e CLI — cobrir todos os endpoints disponí
 
 ### Testes
 - API: **365 passed, 2 skipped**
-- CLI: **173 passed**
+- CLI: **175 passed**
+
+### Hotfix 2026-05-14 ✅
+- `criptenv doctor` agora usa `/health` em vez de `/docs`, removendo falso 404 contra produção.
+- Sessões autenticadas da CLI agora usam `~/.criptenv/auth.key`, separado da master password do vault local.
+- Comandos API-only deixam de pedir master password; fluxos que acessam/decryptam secrets continuam exigindo senha de vault/local.
+- Corrigido uso de project ID resolvido em comandos `env` e helpers de sync.
 
 ---
 
@@ -63,6 +69,6 @@ Alinhamento completo entre API, WEB e CLI — cobrir todos os endpoints disponí
 
 ---
 
-**Document Version**: 1.13
-**Last Updated**: 2026-05-12
-**Status**: CLI auth state fixed for production multi-worker API
+**Document Version**: 1.14
+**Last Updated**: 2026-05-14
+**Status**: CLI auth/vault separation fixed; doctor health check fixed

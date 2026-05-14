@@ -13,9 +13,7 @@ from urllib.parse import urlparse, parse_qs
 import click
 
 from criptenv.context import local_vault, run_async
-from criptenv.crypto.keys import derive_master_key
-from criptenv.vault import queries
-from criptenv.session import SessionManager
+from criptenv.session import SessionManager, get_or_create_auth_key
 from criptenv.api.client import CriptEnvClient
 
 
@@ -34,19 +32,6 @@ def _open_browser(url: str):
         webbrowser.open(url, new=2)  # new=2 -> new tab
     except Exception:
         pass
-
-
-def _prompt_master_password() -> tuple[bytes, str]:
-    """Prompt for master password and return (master_key, salt_hex)."""
-    with local_vault() as db:
-        salt_hex = run_async(queries.get_config(db, "master_salt"))
-        if not salt_hex:
-            click.echo("Error: Run 'criptenv init' first", err=True)
-            raise SystemExit(1)
-
-        master_password = getpass.getpass("Master password: ")
-        master_key = derive_master_key(master_password, bytes.fromhex(salt_hex))
-        return master_key, salt_hex
 
 
 # ─── Browser Login Flow ──────────────────────────────────────────────────────
@@ -111,7 +96,7 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
         pass
 
 
-async def _browser_login(master_key: bytes, db) -> dict:
+async def _browser_login(auth_key: bytes, db) -> dict:
     """Perform browser-based login via localhost redirect."""
     port = _find_free_port()
     callback_url = f"http://127.0.0.1:{port}/callback"
@@ -162,7 +147,7 @@ async def _browser_login(master_key: bytes, db) -> dict:
         user = token_data["user"]
 
         # Store session
-        manager = SessionManager(master_key, db)
+        manager = SessionManager(auth_key, db)
         await manager.login_with_token(token, user)
 
         return user
@@ -174,7 +159,7 @@ async def _browser_login(master_key: bytes, db) -> dict:
 
 # ─── Device Flow ─────────────────────────────────────────────────────────────
 
-async def _device_login(master_key: bytes, db) -> dict:
+async def _device_login(auth_key: bytes, db) -> dict:
     """Perform device authorization grant login."""
     client = CriptEnvClient()
 
@@ -217,7 +202,7 @@ async def _device_login(master_key: bytes, db) -> dict:
             token = poll_data["access_token"]
             user = poll_data["user"]
 
-            manager = SessionManager(master_key, db)
+            manager = SessionManager(auth_key, db)
             await manager.login_with_token(token, user)
             return user
 
@@ -232,7 +217,7 @@ async def _device_login(master_key: bytes, db) -> dict:
 
 # ─── API Key Login ───────────────────────────────────────────────────────────
 
-async def _api_key_login(master_key: bytes, db, api_key: str) -> dict:
+async def _api_key_login(auth_key: bytes, db, api_key: str) -> dict:
     """Login using an API key."""
     client = CriptEnvClient()
     client.set_token(api_key)
@@ -244,7 +229,7 @@ async def _api_key_login(master_key: bytes, db, api_key: str) -> dict:
         raise click.ClickException(f"Invalid API key: {e}")
 
     # Store the API key as the session token
-    manager = SessionManager(master_key, db)
+    manager = SessionManager(auth_key, db)
     await manager.login_with_token(api_key, user)
 
     return user
@@ -277,16 +262,16 @@ def login_command(
         criptenv login --device             # Device code flow (for SSH/headless)
         criptenv login --api-key cek_xxx    # Login with API key
     """
-    master_key, _ = _prompt_master_password()
+    auth_key = get_or_create_auth_key()
 
     with local_vault() as db:
-        manager = SessionManager(master_key, db)
+        manager = SessionManager(auth_key, db)
 
         try:
             if api_key_value:
-                user = run_async(_api_key_login(master_key, db, api_key_value))
+                user = run_async(_api_key_login(auth_key, db, api_key_value))
             elif device_flag:
-                user = run_async(_device_login(master_key, db))
+                user = run_async(_device_login(auth_key, db))
             elif email_flag or email_address:
                 # Legacy email/password login
                 email = email_address or click.prompt("Email")
@@ -294,7 +279,7 @@ def login_command(
                 user = run_async(manager.login(email, password))
             else:
                 # Default: browser-based login
-                user = run_async(_browser_login(master_key, db))
+                user = run_async(_browser_login(auth_key, db))
 
         except click.ClickException:
             raise
@@ -317,15 +302,7 @@ def logout_command():
         criptenv logout
     """
     with local_vault() as db:
-        salt_hex = run_async(queries.get_config(db, "master_salt"))
-        if not salt_hex:
-            click.echo("Error: Run 'criptenv init' first", err=True)
-            raise SystemExit(1)
-
-        master_password = getpass.getpass("Master password: ")
-        master_key = derive_master_key(master_password, bytes.fromhex(salt_hex))
-
-        manager = SessionManager(master_key, db)
+        manager = SessionManager(get_or_create_auth_key(), db)
 
         try:
             run_async(manager.logout())

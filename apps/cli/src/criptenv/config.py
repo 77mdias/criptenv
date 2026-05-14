@@ -7,6 +7,7 @@ from pathlib import Path
 CONFIG_DIR = Path.home() / ".criptenv"
 CONFIG_FILE = CONFIG_DIR / "config.toml"
 DB_FILE = CONFIG_DIR / "vault.db"
+AUTH_KEY_FILE = CONFIG_DIR / "auth.key"
 
 # API configuration
 API_BASE_URL = os.getenv("CRIPTENV_API_URL", "https://criptenv-api.77mdevseven.tech")

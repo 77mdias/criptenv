@@ -288,12 +288,9 @@ def expire_command(key: str, days: int, policy: str, env_name: str | None, proje
     expires_at_str = expires_at.strftime("%Y-%m-%d")
 
     async def _do_expire():
-        async with async_cli_context(require_auth=True) as (db, master_key, client):
-            if master_key is None:
-                raise click.ClickException("Run 'criptenv init' first")
-
+        async with async_cli_context(require_auth=True) as (db, _master_key, client):
             env_id = await _resolve_env_id(db, env_name)
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = resolve_project_id(db, project)
 
             await client.set_expiration(
                 project_id=resolved_project_id,
@@ -328,12 +325,9 @@ def alert_command(key: str, days: int, env_name: str | None, project: str | None
     import asyncio
 
     async def _do_alert():
-        async with async_cli_context(require_auth=True) as (db, master_key, client):
-            if master_key is None:
-                raise click.ClickException("Run 'criptenv init' first")
-
+        async with async_cli_context(require_auth=True) as (db, _master_key, client):
             env_id = await _resolve_env_id(db, env_name)
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = resolve_project_id(db, project)
 
             # Set a default 90-day expiration with the requested alert timing
             expires_at = (datetime.now(timezone.utc) + timedelta(days=90)).isoformat()
@@ -392,10 +386,7 @@ def rotation_list_command(env_name: str | None, project_id: str | None, days: in
     import asyncio
 
     async def _do_list():
-        async with async_cli_context(require_auth=True) as (db, master_key, client):
-            if master_key is None:
-                raise click.ClickException("Run 'criptenv init' first")
-
+        async with async_cli_context(require_auth=True) as (db, _master_key, client):
             resolved_project_id = resolve_project_id(db, project_id)
             result = await client.list_expiring(project_id=resolved_project_id, days=days)
             items = result.get("items", [])
@@ -436,10 +427,7 @@ def rotation_history_command(secret_key: str, env_name: str | None, project_id: 
     import asyncio
 
     async def _do_history():
-        async with async_cli_context(require_auth=True) as (db, master_key, client):
-            if master_key is None:
-                raise click.ClickException("Run 'criptenv init' first")
-
+        async with async_cli_context(require_auth=True) as (db, _master_key, client):
             resolved_project_id = resolve_project_id(db, project_id)
             env_id = await _resolve_env_id(db, env_name)
 

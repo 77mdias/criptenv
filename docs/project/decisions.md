@@ -873,5 +873,27 @@ User accounts could be created and immediately used without confirming ownership
 
 ---
 
+## DEC-033 — CLI Auth Sessions Separated from Local Secrets Vault
+
+**Status:** Approved
+**Date:** 2026-05-14
+**Context:**
+The CLI reused the local secrets vault master password to encrypt API session tokens. As a result, API-only commands such as `projects list`, `env list`, `audit`, `members`, `integrations`, and `status` prompted for the vault password even though they do not decrypt `.env` secrets. `criptenv doctor` also checked `/docs`, which can return 404 in production even when the API is healthy.
+
+**Decision:**
+- Add a local `~/.criptenv/auth.key` file, mode `0600`, used only to encrypt CLI auth/session tokens.
+- Keep the master password requirement for local secret encryption/decryption and sync flows that convert between local secrets and project vault ciphertext.
+- Make authenticated API context use `auth.key` by default and require the master key only when explicitly requested.
+- Support one-time migration of legacy sessions encrypted with the vault master key.
+- Change `doctor` API connectivity check from `/docs` to the stable `/health` endpoint.
+
+**Consequences:**
+- ✅ API-only CLI commands no longer unlock the local secrets vault.
+- ✅ Project vault passwords remain required for project secret access and rekey/push/pull flows.
+- ✅ Existing legacy sessions can be migrated without forcing immediate logout.
+- ⚠️ `auth.key` is a local machine credential and should be protected with filesystem permissions; future hardening can integrate OS keychain storage.
+
+---
+
 **Document Version**: 2.2
-**Last Updated**: 2026-05-13
+**Last Updated**: 2026-05-14

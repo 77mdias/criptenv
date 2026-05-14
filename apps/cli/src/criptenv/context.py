@@ -12,7 +12,7 @@ import aiosqlite
 from criptenv.crypto.keys import derive_master_key
 from criptenv.vault.database import get_db, init_schema, close_db
 from criptenv.vault import queries
-from criptenv.session import SessionManager
+from criptenv.session import SessionManager, get_or_create_auth_key
 from criptenv.api.client import CriptEnvClient
 
 
@@ -44,18 +44,67 @@ async def _load_master_key(db: aiosqlite.Connection) -> bytes:
     return derive_master_key(password, bytes.fromhex(salt_hex))
 
 
-async def _get_session_manager(db: aiosqlite.Connection) -> SessionManager:
-    """Get a SessionManager with a valid authenticated client."""
-    master_key = await _load_master_key(db)
-    manager = SessionManager(master_key, db)
+async def _migrate_legacy_session(
+    db: aiosqlite.Connection,
+    auth_key: bytes,
+) -> tuple[SessionManager, CriptEnvClient] | None:
+    """Migrate a pre-auth-key session encrypted with the vault master key."""
+    salt_hex = await queries.get_config(db, "master_salt")
+    if not salt_hex:
+        return None
 
-    client = await manager.get_authenticated_client()
+    click.echo(
+        "Saved session uses legacy vault encryption. "
+        "Enter the master password once to migrate CLI auth.",
+        err=True,
+    )
+    master_key = await _load_master_key(db)
+    legacy_manager = SessionManager(master_key, db)
+    client = await legacy_manager.get_authenticated_client()
+    session = await legacy_manager.get_active_session()
+    if not client or not session or not client.session_token:
+        return None
+
+    manager = SessionManager(auth_key, db)
+    await manager.login_with_token(
+        client.session_token,
+        {"id": session.user_id, "email": session.email},
+    )
+    migrated_client = await manager.get_authenticated_client()
+    return (manager, migrated_client) if migrated_client else None
+
+
+async def _get_session_manager(
+    db: aiosqlite.Connection,
+    require_master_key: bool = False,
+) -> tuple[SessionManager, bytes | None]:
+    """Get a SessionManager with a valid authenticated client."""
+    if require_master_key:
+        storage_key = await _load_master_key(db)
+        master_key: bytes | None = storage_key
+    else:
+        storage_key = get_or_create_auth_key()
+        master_key = None
+
+    manager = SessionManager(storage_key, db)
+
+    try:
+        client = await manager.get_authenticated_client()
+    except Exception:
+        if require_master_key:
+            raise
+        migrated = await _migrate_legacy_session(db, storage_key)
+        if migrated:
+            manager, client = migrated
+        else:
+            client = None
+
     if not client:
         raise click.ClickException(
             "Not logged in or session expired. Run 'criptenv login' first."
         )
 
-    return manager
+    return manager, master_key
 
 
 async def _resolve_env_id(
@@ -139,27 +188,32 @@ def resolve_project_id(
 
 
 @contextmanager
-def cli_context(require_auth: bool = False):
+def cli_context(require_auth: bool = False, require_master_key: bool | None = None):
     """
-    Context manager that sets up DB, master key, and optionally session.
+    Context manager that sets up DB, optional master key, and optional session.
 
     Usage:
         with cli_context() as (db, master_key):
             # local-only operations (init, set, get, list, delete)
 
-        with cli_context(require_auth=True) as (db, master_key, client):
-            # API operations (push, pull, env list, etc.)
+        with cli_context(require_auth=True) as (db, None, client):
+            # API operations that do not need local secret decryption
+
+        with cli_context(require_auth=True, require_master_key=True) as (db, master_key, client):
+            # API operations that also decrypt local secrets
     """
+    if require_master_key is None:
+        require_master_key = not require_auth
+
     db = run_async(get_db())
     run_async(init_schema(db))
 
     try:
         if require_auth:
-            manager = run_async(_get_session_manager(db))
+            manager, master_key = run_async(_get_session_manager(db, require_master_key))
             client = manager.client
-            master_key = manager.master_key
             yield db, master_key, client
-        else:
+        elif require_master_key:
             # For local-only operations, still need master key
             salt_hex = run_async(queries.get_config(db, "master_salt"))
             if salt_hex:
@@ -168,27 +222,27 @@ def cli_context(require_auth: bool = False):
             else:
                 master_key = None
             yield db, master_key, None
+        else:
+            yield db, None, CriptEnvClient()
     finally:
         run_async(close_db(db))
 
 
 @asynccontextmanager
-async def async_cli_context(require_auth: bool = False):
+async def async_cli_context(require_auth: bool = False, require_master_key: bool | None = None):
     """Async variant of cli_context for Click commands already inside a coroutine."""
+    if require_master_key is None:
+        require_master_key = not require_auth
+
     db = await get_db()
     await init_schema(db)
 
     try:
         if require_auth:
-            master_key = await _load_master_key(db)
-            manager = SessionManager(master_key, db)
-            client = await manager.get_authenticated_client()
-            if not client:
-                raise click.ClickException(
-                    "Not logged in or session expired. Run 'criptenv login' first."
-                )
+            manager, master_key = await _get_session_manager(db, require_master_key)
+            client = manager.client
             yield db, master_key, client
-        else:
+        elif require_master_key:
             salt_hex = await queries.get_config(db, "master_salt")
             if salt_hex:
                 password = _get_master_password()
@@ -196,6 +250,8 @@ async def async_cli_context(require_auth: bool = False):
             else:
                 master_key = None
             yield db, master_key, None
+        else:
+            yield db, None, CriptEnvClient()
     finally:
         await close_db(db)
 

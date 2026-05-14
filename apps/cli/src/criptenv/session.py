@@ -1,5 +1,7 @@
 """Session token management with encryption."""
 
+import os
+import secrets
 import time
 import uuid
 from typing import Optional
@@ -8,22 +10,49 @@ from criptenv.crypto import encrypt, decrypt
 from criptenv.vault.models import Session
 from criptenv.vault import queries
 from criptenv.api.client import CriptEnvClient
+from criptenv.config import AUTH_KEY_FILE
 
 import aiosqlite
 
+AUTH_KEY_LENGTH = 32
+
+
+def get_or_create_auth_key() -> bytes:
+    """Return the local key used to encrypt CLI auth sessions.
+
+    This key protects API session tokens. It is intentionally separate from the
+    user's secrets vault password so API-only commands do not unlock secrets.
+    """
+    if AUTH_KEY_FILE.exists():
+        key = AUTH_KEY_FILE.read_bytes()
+        if len(key) != AUTH_KEY_LENGTH:
+            raise ValueError(f"Invalid CLI auth key at {AUTH_KEY_FILE}")
+        return key
+
+    AUTH_KEY_FILE.parent.mkdir(parents=True, exist_ok=True)
+    key = secrets.token_bytes(AUTH_KEY_LENGTH)
+    fd = os.open(str(AUTH_KEY_FILE), os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "wb") as f:
+        f.write(key)
+    try:
+        os.chmod(AUTH_KEY_FILE, 0o600)
+    except OSError:
+        pass
+    return key
+
 
 class SessionManager:
-    """Manages encrypted session tokens in the local vault."""
+    """Manages encrypted session tokens in the local CLI database."""
 
-    def __init__(self, master_key: bytes, db: aiosqlite.Connection):
-        self.master_key = master_key
+    def __init__(self, storage_key: bytes, db: aiosqlite.Connection):
+        self.storage_key = storage_key
         self.db = db
         self.client = CriptEnvClient()
         self._current_session: Optional[Session] = None
 
     def _encrypt_token(self, token: str) -> bytes:
-        """Encrypt token with master key. Returns iv + ciphertext + auth_tag."""
-        ciphertext, iv, auth_tag, _ = encrypt(token.encode("utf-8"), self.master_key)
+        """Encrypt token with the local session key. Returns iv + ciphertext + auth_tag."""
+        ciphertext, iv, auth_tag, _ = encrypt(token.encode("utf-8"), self.storage_key)
         return iv + ciphertext + auth_tag
 
     def _decrypt_token(self, encrypted: bytes) -> str:
@@ -31,7 +60,7 @@ class SessionManager:
         iv = encrypted[:12]
         ciphertext = encrypted[12:-16]
         auth_tag = encrypted[-16:]
-        plaintext = decrypt(ciphertext, iv, auth_tag, self.master_key)
+        plaintext = decrypt(ciphertext, iv, auth_tag, self.storage_key)
         return plaintext.decode("utf-8")
 
     async def login(self, email: str, password: str) -> dict:

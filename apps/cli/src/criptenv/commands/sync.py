@@ -25,7 +25,7 @@ def _get_vault_password() -> str:
 
 
 def _load_project_vault(client, project_id: str) -> tuple[dict, str]:
-    project = run_async(client.get_project(resolved_project_id))
+    project = run_async(client.get_project(project_id))
     vault_config = project.get("vault_config")
     if not vault_config:
         raise click.ClickException("Project does not have vault password configuration.")
@@ -53,7 +53,7 @@ def push_command(env_name: str | None, project_id: str | None, force: bool):
         criptenv push -e staging -p <project-id>
         criptenv push -p <project-id> --force
     """
-    with cli_context(require_auth=True) as (db, master_key, client):
+    with cli_context(require_auth=True, require_master_key=True) as (db, master_key, client):
         resolved_project_id = resolve_project_id(db, project_id)
         env_id = run_async(_resolve_env_id(db, env_name))
         local_secrets = run_async(queries.list_secrets(db, env_id))
@@ -76,7 +76,7 @@ def push_command(env_name: str | None, project_id: str | None, force: bool):
                 return
 
         try:
-            vault_config, vault_password = _load_project_vault(client, project_id)
+            vault_config, vault_password = _load_project_vault(client, resolved_project_id)
         except click.ClickException as e:
             click.echo(f"Error: {e.message}", err=True)
             raise SystemExit(1)
@@ -131,11 +131,11 @@ def pull_command(env_name: str | None, project_id: str | None, force: bool):
         criptenv pull -e staging -p <project-id>
         criptenv pull -p <project-id> --force
     """
-    with cli_context(require_auth=True) as (db, master_key, client):
+    with cli_context(require_auth=True, require_master_key=True) as (db, master_key, client):
         resolved_project_id = resolve_project_id(db, project_id)
         env_id = run_async(_resolve_env_id(db, env_name))
         try:
-            vault_config, vault_password = _load_project_vault(client, project_id)
+            vault_config, vault_password = _load_project_vault(client, resolved_project_id)
         except click.ClickException as e:
             click.echo(f"Error: {e.message}", err=True)
             raise SystemExit(1)

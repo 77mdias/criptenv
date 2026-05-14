@@ -27,6 +27,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests**: Updated auth route tests, integration tests, and frontend unit tests to cover the new verification flow.
 
 ### Fixed
+- **CLI auth/vault separation**: API-only CLI commands now decrypt session tokens with a dedicated local `auth.key` instead of the local secrets vault master password. Commands that decrypt or sync secrets still require the appropriate vault password. Legacy master-key-encrypted sessions can be migrated on first authenticated use.
+- **CLI doctor**: `criptenv doctor` now checks `/health` instead of `/docs`, avoiding false 404 warnings against production deployments where docs may be unavailable.
+- **CLI project/env routing**: Fixed stale project ID usage in environment commands and project vault sync helpers so resolved project IDs are used consistently.
+- **CLI auth utilities**: `auth forgot-password` and `auth reset-password` now create an unauthenticated API client without trying to unlock the local secrets vault.
 - **Database**: Added `ON DELETE CASCADE` to `sessions.user_id` foreign key. Fixes error when deleting users from Supabase dashboard due to lingering session rows blocking deletion via FK constraint. Includes migration `004_add_ondelete_cascade_sessions_user_id.sql`.
 - **Database**: Comprehensive FK cleanup — added `ON DELETE` behaviors to all `users.id` foreign keys:
   - `CASCADE`: `sessions`, `project_members`, `api_keys` (records deleted with user)

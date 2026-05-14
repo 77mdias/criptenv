@@ -22,10 +22,12 @@ def mock_config_dir(temp_dir, monkeypatch):
     monkeypatch.setattr("criptenv.config.CONFIG_DIR", temp_dir)
     monkeypatch.setattr("criptenv.config.DB_FILE", temp_dir / "vault.db")
     monkeypatch.setattr("criptenv.config.CONFIG_FILE", temp_dir / "config.toml")
+    monkeypatch.setattr("criptenv.config.AUTH_KEY_FILE", temp_dir / "auth.key")
     # Also patch the local bindings in database.py
     monkeypatch.setattr("criptenv.vault.database.CONFIG_DIR", temp_dir)
     monkeypatch.setattr("criptenv.vault.database.DB_FILE", temp_dir / "vault.db")
     # Also patch the local bindings in doctor.py (imports at module level)
     monkeypatch.setattr("criptenv.commands.doctor.CONFIG_DIR", temp_dir)
     monkeypatch.setattr("criptenv.commands.doctor.DB_FILE", temp_dir / "vault.db")
+    monkeypatch.setattr("criptenv.session.AUTH_KEY_FILE", temp_dir / "auth.key")
     return temp_dir

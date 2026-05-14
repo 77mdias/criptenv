@@ -21,10 +21,10 @@ def env_list(project_id: str | None):
         criptenv env list
         criptenv env list -p <project-id>
     """
-    with cli_context(require_auth=True) as (db, master_key, client):
+    with cli_context(require_auth=True) as (db, _master_key, client):
         try:
             resolved_project_id = resolve_project_id(db, project_id)
-            result = run_async(client.list_environments(project_id))
+            result = run_async(client.list_environments(resolved_project_id))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
             raise SystemExit(1)
@@ -56,10 +56,10 @@ def env_create(name: str, project_id: str | None, display_name: str | None):
         criptenv env create staging -p <project-id>
         criptenv env create production -p <project-id> -d "Production Environment"
     """
-    with cli_context(require_auth=True) as (db, master_key, client):
+    with cli_context(require_auth=True) as (db, _master_key, client):
         try:
             resolved_project_id = resolve_project_id(db, project_id)
-            result = run_async(client.create_environment(project_id, name, display_name))
+            result = run_async(client.create_environment(resolved_project_id, name, display_name))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
             raise SystemExit(1)
@@ -85,10 +85,10 @@ def env_update(env_id: str, project_id: str | None, name: str | None, display_na
         click.echo("Error: Provide at least one of --name or --display-name", err=True)
         raise SystemExit(1)
 
-    with cli_context(require_auth=True) as (db, master_key, client):
+    with cli_context(require_auth=True) as (db, _master_key, client):
         try:
             resolved_project_id = resolve_project_id(db, project_id)
-            result = run_async(client.update_environment(project_id, env_id, name=name, display_name=display_name))
+            result = run_async(client.update_environment(resolved_project_id, env_id, name=name, display_name=display_name))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
             raise SystemExit(1)
@@ -113,7 +113,7 @@ def env_delete(env_id: str, project_id: str | None, force: bool):
             click.echo("Aborted.")
             return
 
-    with cli_context(require_auth=True) as (db, master_key, client):
+    with cli_context(require_auth=True) as (db, _master_key, client):
         try:
             resolved_project_id = resolve_project_id(db, project_id)
             run_async(client.delete_environment(resolved_project_id, env_id))
@@ -134,7 +134,7 @@ def env_get(env_id: str, project_id: str | None):
     Examples:
         criptenv env get <env-id> -p <project-id>
     """
-    with cli_context(require_auth=True) as (db, master_key, client):
+    with cli_context(require_auth=True) as (db, _master_key, client):
         try:
             resolved_project_id = resolve_project_id(db, project_id)
             result = run_async(client.get_environment(resolved_project_id, env_id))

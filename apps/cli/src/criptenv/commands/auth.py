@@ -17,7 +17,7 @@ def auth_group():
 @click.argument("email")
 def forgot_password(email: str):
     """Request a password reset email."""
-    with cli_context(require_auth=False) as (_db, _mk, client):
+    with cli_context(require_auth=False, require_master_key=False) as (_db, _mk, client):
         try:
             result = run_async(client.forgot_password(email))
         except Exception as e:
@@ -36,7 +36,7 @@ def reset_password(token: str, password: str):
         click.echo("Error: Password must be at least 8 characters", err=True)
         raise SystemExit(1)
 
-    with cli_context(require_auth=False) as (_db, _mk, client):
+    with cli_context(require_auth=False, require_master_key=False) as (_db, _mk, client):
         try:
             result = run_async(client.reset_password(token, password))
         except Exception as e:

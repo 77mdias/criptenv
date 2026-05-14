@@ -134,3 +134,23 @@ class TestDeleteCommand:
         result = runner.invoke(main, ["delete", "KEY"], input="n\n")
         assert result.exit_code == 0
         assert "Cancelled" in result.output
+
+
+class TestDoctorCommand:
+    def test_doctor_uses_health_endpoint_for_api_check(self, runner, mock_config_dir, monkeypatch):
+        """Doctor should use the stable API health endpoint, not /docs."""
+        import httpx
+
+        seen_urls = []
+
+        def fake_get(url, timeout):
+            seen_urls.append(url)
+            return httpx.Response(200, json={"status": "healthy"})
+
+        monkeypatch.setattr("httpx.get", fake_get)
+
+        result = runner.invoke(main, ["doctor"])
+
+        assert result.exit_code == 0
+        assert seen_urls == ["https://criptenv-api.77mdevseven.tech/health"]
+        assert "API server reachable" in result.output
