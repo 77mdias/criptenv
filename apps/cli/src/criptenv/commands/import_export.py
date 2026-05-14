@@ -2,14 +2,67 @@
 
 import click
 import json
-import time
-import uuid
 
-from criptenv.context import cli_context, local_vault, run_async, _resolve_env_id
-from criptenv.crypto import derive_env_key, encrypt, decrypt
-from criptenv.crypto.utils import generate_id
-from criptenv.vault import queries
-from criptenv.vault.models import Secret
+from criptenv.context import cli_context, run_async, resolve_project_id
+from criptenv.remote_vault import RemoteVault
+
+
+def import_entries_remote(
+    entries: list[tuple[str, str]],
+    env_name: str | None,
+    project: str | None,
+    overwrite: bool,
+) -> tuple[int, int]:
+    """Import parsed key/value entries into the remote project vault."""
+    with cli_context(require_auth=True) as (db, _master_key, client):
+        resolved_project_id = resolve_project_id(db, project)
+        vault = RemoteVault(client, resolved_project_id)
+        state = run_async(vault.load_state(env_name))
+        by_key = {blob["key_id"]: blob for blob in state.blobs}
+        imported = 0
+        skipped = 0
+
+        for key, value in entries:
+            existing = by_key.get(key)
+            if existing and not overwrite:
+                click.echo(f"  Skipped {key} (already exists, use --overwrite)")
+                skipped += 1
+                continue
+
+            version = int(existing.get("version", state.version)) + 1 if existing else state.version + 1
+            by_key[key] = run_async(
+                vault.encrypt_blob(
+                    key,
+                    value.encode("utf-8"),
+                    state.environment.id,
+                    version,
+                )
+            )
+            imported += 1
+
+        if imported:
+            run_async(vault.push_state(state, list(by_key.values())))
+
+    return imported, skipped
+
+
+def export_entries_remote(
+    env_name: str | None,
+    project: str | None,
+) -> dict[str, str]:
+    """Export remote project vault entries as plaintext key/value pairs."""
+    with cli_context(require_auth=True) as (db, _master_key, client):
+        resolved_project_id = resolve_project_id(db, project)
+        vault = RemoteVault(client, resolved_project_id)
+        state = run_async(vault.load_state(env_name))
+        return run_async(vault.decrypt_all(state))
+
+
+def _format_entries(entries: dict[str, str], fmt: str) -> str:
+    if fmt == "json":
+        return json.dumps(entries, indent=2)
+    lines = [f"{key}={value}" for key, value in entries.items()]
+    return "\n".join(lines) + "\n"
 
 
 @click.command("import")
@@ -37,44 +90,14 @@ def import_command(file: str, env_name: str | None, project: str | None, overwri
 
     click.echo(f"Found {len(entries)} entry(ies) in {file}")
 
-    with cli_context() as (db, master_key, _):
-        if master_key is None:
-            click.echo("Error: Run 'criptenv init' first", err=True)
-            raise SystemExit(1)
-
-        env_id = run_async(_resolve_env_id(db, env_name))
-        env_key = derive_env_key(master_key, env_id)
-
-        imported = 0
-        skipped = 0
-
-        for key, value in entries:
-            # Check if exists
-            existing = run_async(queries.get_secret(db, env_id, key))
-            if existing and not overwrite:
-                click.echo(f"  Skipped {key} (already exists, use --overwrite)")
-                skipped += 1
-                continue
-
-            # Encrypt and save
-            plaintext = value.encode("utf-8")
-            ciphertext, iv, auth_tag, checksum = encrypt(plaintext, env_key)
-
-            version = (existing.version + 1) if existing else 1
-            secret = Secret(
-                id=existing.id if existing else generate_id("sec"),
-                environment_id=env_id,
-                key_id=key,
-                iv=iv,
-                ciphertext=ciphertext,
-                auth_tag=auth_tag,
-                version=version,
-                checksum=checksum,
-                created_at=existing.created_at if existing else int(time.time()),
-                updated_at=int(time.time()),
-            )
-            run_async(queries.save_secret(db, secret))
-            imported += 1
+    try:
+        imported, skipped = import_entries_remote(entries, env_name, project, overwrite)
+    except click.ClickException as e:
+        click.echo(f"Error: {e.message}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
 
     click.echo(f"✓ Imported {imported} secret(s)")
     if skipped:
@@ -99,37 +122,20 @@ def export_command(env_name: str | None, project: str | None, output: str | None
         criptenv export -e staging -o .env.staging
         criptenv export --format json -o secrets.json
     """
-    with cli_context() as (db, master_key, _):
-        if master_key is None:
-            click.echo("Error: Run 'criptenv init' first", err=True)
-            raise SystemExit(1)
+    try:
+        entries = export_entries_remote(env_name, project)
+    except click.ClickException as e:
+        click.echo(f"Error: {e.message}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
 
-        env_id = run_async(_resolve_env_id(db, env_name))
-        env_key = derive_env_key(master_key, env_id)
+    if not entries:
+        click.echo("No secrets to export.")
+        return
 
-        secrets = run_async(queries.list_secrets(db, env_id))
-        if not secrets:
-            click.echo("No secrets to export.")
-            return
-
-        # Decrypt all secrets
-        entries = {}
-        for secret in secrets:
-            try:
-                plaintext = decrypt(
-                    secret.ciphertext, secret.iv, secret.auth_tag,
-                    env_key, secret.checksum
-                )
-                entries[secret.key_id] = plaintext.decode("utf-8")
-            except Exception as e:
-                click.echo(f"  Warning: Failed to decrypt {secret.key_id}: {e}", err=True)
-
-    # Format output
-    if fmt == "json":
-        content = json.dumps(entries, indent=2)
-    else:
-        lines = [f"{key}={value}" for key, value in entries.items()]
-        content = "\n".join(lines) + "\n"
+    content = _format_entries(entries, fmt)
 
     # Write output
     if output:

@@ -22,9 +22,11 @@ def run_async(coro):
 
 
 def _get_master_password() -> str:
-    """Prompt user for master password (hidden input).
-    
-    In CI/CD environments, set CRIPTENV_MASTER_PASSWORD to avoid interactive prompt.
+    """Prompt for the legacy local-vault master password.
+
+    Main remote-terminal secret commands use the project Vault password via
+    RemoteVault. This helper remains for compatibility paths/tests that still
+    exercise the historical local vault.
     """
     password = os.getenv("CRIPTENV_MASTER_PASSWORD")
     if password:
@@ -79,20 +81,14 @@ async def _get_session_manager(
     require_master_key: bool = False,
 ) -> tuple[SessionManager, bytes | None]:
     """Get a SessionManager with a valid authenticated client."""
-    if require_master_key:
-        storage_key = await _load_master_key(db)
-        master_key: bytes | None = storage_key
-    else:
-        storage_key = get_or_create_auth_key()
-        master_key = None
+    storage_key = get_or_create_auth_key()
+    master_key: bytes | None = await _load_master_key(db) if require_master_key else None
 
     manager = SessionManager(storage_key, db)
 
     try:
         client = await manager.get_authenticated_client()
     except Exception:
-        if require_master_key:
-            raise
         migrated = await _migrate_legacy_session(db, storage_key)
         if migrated:
             manager, client = migrated
@@ -176,6 +172,30 @@ def resolve_project_id(
 
     # 3. Saved config
     saved = run_async(get_current_project_id(db))
+    if saved:
+        return saved
+
+    raise click.ClickException(
+        "No project selected. Use one of:\n"
+        "  --project <id>                  (per-command flag)\n"
+        "  CRIPTENV_PROJECT=<id>           (environment variable)\n"
+        "  criptenv use <id>               (set default project)"
+    )
+
+
+async def resolve_project_id_async(
+    db: aiosqlite.Connection,
+    explicit_project_id: Optional[str] = None,
+) -> str:
+    """Async variant of resolve_project_id for async Click command bodies."""
+    if explicit_project_id:
+        return explicit_project_id
+
+    env_project = get_project_id_from_env()
+    if env_project:
+        return env_project
+
+    saved = await get_current_project_id(db)
     if saved:
         return saved
 

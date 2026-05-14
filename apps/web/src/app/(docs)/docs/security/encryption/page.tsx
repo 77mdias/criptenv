@@ -168,14 +168,14 @@ export default function EncryptionPage() {
       <p className="text-muted-foreground mb-4">
         Além da chave de criptografia, o CriptEnv deriva uma chave de prova separada
         usada para autorização na API. Isso permite autenticar o usuário sem revelar
-        a chave mestra ou a chave de criptografia.
+        a Vault password ou a chave de criptografia.
       </p>
 
       <CodeBlock
         language="text"
         code={`┌─────────────────────────────────────────────────────────┐
 │  PBKDF2-HMAC-SHA256                                     │
-│     Password: Senha Mestra                              │
+│     Password: Vault Password                            │
 │     Salt: "proof_salt" (constante do sistema)           │
 │     Iterações: 100.000                                  │
 │     Output: Vault Proof (256-bit)                       │
@@ -186,13 +186,13 @@ O servidor armazena apenas o hash do proof para comparação.
 A chave de criptografia real nunca é transmitida.`}
       />
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Cofre Local vs. Nuvem</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">Metadata Local vs. Vault Remoto</h2>
 
       <Tabs defaultValue="local">
-        <Tab value="local" label="Cofre Local">
+        <Tab value="local" label="Metadata Local">
           <div className="mt-4">
             <p className="text-muted-foreground mb-4">
-              O cofre local é armazenado em SQLite no diretório do usuário:
+              O CLI mantém metadata local em SQLite no diretório do usuário:
             </p>
 
             <CodeBlock
@@ -201,25 +201,25 @@ A chave de criptografia real nunca é transmitida.`}
 
 Estrutura do banco de dados:
 ├── sessions     → Sessões autenticadas (criptografadas)
-├── environments → Ambientes com chaves derivadas
-└── secrets      → Variáveis de ambiente (criptografadas)
+├── ci_sessions  → Sessões de CI criptografadas
+├── projects     → Metadata/cache de projetos
+└── environments → Metadata/cache de ambientes
 
 Recursos de segurança:
 • Banco de dados com permissões restritivas (0600)
 • Sessões com expiração automática
-• Chaves de sessão não persistidas em disco
+• auth.key separado para criptografar tokens locais
 • Cleanup automático de sessões expiradas`}
             />
 
             <Callout type="info">
-              O cofre local permite uso offline completo. Todos os segredos necessários
-              para descriptografar seus ambientes estão disponíveis localmente após a
-              autenticação inicial.
+              O fluxo principal da CLI não armazena secrets localmente. Secrets
+              vivem no vault remoto e são descriptografados apenas em memória.
             </Callout>
           </div>
         </Tab>
 
-        <Tab value="cloud" label="Cofre na Nuvem">
+        <Tab value="cloud" label="Vault Remoto">
           <div className="mt-4">
             <p className="text-muted-foreground mb-4">
               O cofre na nuvem armazena apenas dados já criptografados:
@@ -237,8 +237,8 @@ Recursos de segurança:
 
 O que NÃO é armazenado:
 ┌─────────────────────────────────────────────────────┐
-│ ✗ Senha mestra                                      │
-│ ✗ Chave mestra derivada                             │
+│ ✗ Vault password                                    │
+│ ✗ Chave do vault derivada                           │
 │ ✗ Chaves de ambiente                                │
 │ ✗ Dados em texto claro                              │
 │ ✗ Chaves de sessão                                  │

@@ -133,7 +133,7 @@ export default function ApiMembersPage() {
 
       <Callout type="info">
         Quando o papel é <InlineCode>admin</InlineCode> ou <InlineCode>developer</InlineCode>,
-        o membro precisa da senha mestra do projeto (compartilhada criptograficamente) para
+        o membro precisa da Vault password do projeto (compartilhada criptograficamente) para
         acessar os segredos. O papel <InlineCode>viewer</InlineCode> não necessita da senha,
         pois só vê metadados.
       </Callout>

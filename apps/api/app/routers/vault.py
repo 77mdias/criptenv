@@ -76,7 +76,8 @@ async def push_vault(
         created_blobs, conflict = await vault_service.push_blobs(
             project_id=project_uuid,
             environment_id=env_uuid,
-            blobs=blobs_data
+            blobs=blobs_data,
+            expected_version=payload.expected_version,
         )
     except ConflictError as e:
         raise HTTPException(

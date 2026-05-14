@@ -71,12 +71,14 @@ def test_integrations_validate_invalid(mock_ctx):
 
 def test_ci_deploy_without_session_reports_login_hint(mock_config_dir, monkeypatch):
     runner = CliRunner()
-    monkeypatch.setenv("CRIPTENV_MASTER_PASSWORD", "password")
 
-    init = runner.invoke(main, ["init"], input="password\npassword\n")
+    init = runner.invoke(main, ["init"])
     assert init.exit_code == 0
 
-    result = runner.invoke(main, ["ci", "deploy", "--env", "production"])
+    with runner.isolated_filesystem():
+        with open(".env.production", "w") as f:
+            f.write("API_KEY=secret\n")
+        result = runner.invoke(main, ["ci", "deploy", "--env", "production", "--file", ".env.production"])
 
     assert result.exit_code == 0
     assert "No active CI session" in result.output

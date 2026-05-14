@@ -81,39 +81,25 @@ class TestCLIHelp:
 
 class TestInitCommand:
     def test_init_creates_dir_and_vault(self, runner, mock_config_dir):
-        """Init should create config dir, vault, and store salt."""
-        # Provide master password twice (set + confirm)
-        result = runner.invoke(main, ["init"], input="testpass123\ntestpass123\n")
+        """Init should create config dir and metadata database without a password."""
+        result = runner.invoke(main, ["init"])
         assert result.exit_code == 0
-        assert "initialized successfully" in result.output
+        assert "configuration ready" in result.output
         assert (mock_config_dir / "vault.db").exists()
 
-    def test_init_password_mismatch(self, runner, mock_config_dir):
-        """Init should fail if passwords don't match."""
-        result = runner.invoke(main, ["init"], input="testpass123\ndifferent\n")
-        assert result.exit_code == 1
-        assert "do not match" in result.output
-
-    def test_init_password_too_short(self, runner, mock_config_dir):
-        """Init should fail if password is too short."""
-        result = runner.invoke(main, ["init"], input="short\nshort\n")
-        assert result.exit_code == 1
-        assert "at least 8 characters" in result.output
-
     def test_init_already_initialized(self, runner, mock_config_dir):
-        """Init should warn if already initialized."""
-        # First init
-        runner.invoke(main, ["init"], input="testpass123\ntestpass123\n")
-        # Second init without --force
-        result = runner.invoke(main, ["init"], input="testpass123\ntestpass123\n")
-        assert "already initialized" in result.output
+        """Init should be idempotent."""
+        runner.invoke(main, ["init"])
+        result = runner.invoke(main, ["init"])
+        assert result.exit_code == 0
+        assert "configuration ready" in result.output
 
     def test_init_force_reinitialize(self, runner, mock_config_dir):
-        """Init --force should reinitialize."""
-        runner.invoke(main, ["init"], input="testpass123\ntestpass123\n")
-        result = runner.invoke(main, ["init", "--force"], input="newpass123\nnewpass123\n")
+        """Init --force should remain accepted for compatibility."""
+        runner.invoke(main, ["init"])
+        result = runner.invoke(main, ["init", "--force"])
         assert result.exit_code == 0
-        assert "initialized successfully" in result.output
+        assert "configuration ready" in result.output
 
 
 class TestSetCommand:
@@ -123,10 +109,10 @@ class TestSetCommand:
         assert "Must be KEY=value" in result.output
 
     def test_set_not_initialized(self, runner, mock_config_dir):
-        """Set should fail if not initialized."""
+        """Set should require an authenticated remote session."""
         result = runner.invoke(main, ["set", "KEY=value"])
         assert result.exit_code == 1
-        assert "init" in result.output.lower()
+        assert "login" in result.output.lower()
 
 
 class TestDeleteCommand:

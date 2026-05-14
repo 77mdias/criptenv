@@ -24,14 +24,14 @@ export default function ZeroKnowledgePage() {
       <p className="text-muted-foreground mb-6">
         A arquitetura de conhecimento zero do CriptEnv garante que o servidor
         <strong> nunca tenha acesso</strong> aos seus segredos em texto claro.
-        Toda criptografia e descriptografia acontece exclusivamente no navegador
-        do usuário, usando a senha mestra que nunca é transmitida.
+        Toda criptografia e descriptografia acontece exclusivamente no cliente
+        do usuário, usando a Vault password do projeto que nunca é transmitida.
       </p>
 
       <Callout type="info">
         Em termos simples: mesmo que o servidor seja completamente comprometido,
         os atacantes só teriam acesso a dados criptografados que são inúteis sem
-        sua senha mestra.
+        a Vault password do projeto.
       </Callout>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">O Que É Conhecimento Zero?</h2>
@@ -60,8 +60,8 @@ export default function ZeroKnowledgePage() {
 │                    NAVEGADOR DO USUÁRIO                       │
 │                                                              │
 │  ┌─────────────┐    ┌──────────────┐    ┌────────────────┐  │
-│  │   Senha     │───▶│   PBKDF2     │───▶│  Chave Mestra  │  │
-│  │   Mestra    │    │  (100k iter) │    │   (256-bit)    │  │
+│  │   Vault     │───▶│   PBKDF2     │───▶│  Chave Vault   │  │
+│  │  Password   │    │  (100k iter) │    │   (256-bit)    │  │
 │  └─────────────┘    └──────────────┘    └───────┬────────┘  │
 │                                                  │           │
 │  ┌─────────────┐    ┌──────────────┐            │           │
@@ -106,8 +106,8 @@ export default function ZeroKnowledgePage() {
           <div className="mt-4">
             <CodeBlock
               language="text"
-              code={`✗ Senha mestra do usuário
-✗ Chave mestra derivada (PBKDF2 output)
+              code={`✗ Vault password do projeto
+✗ Chave do vault derivada (PBKDF2 output)
 ✗ Chaves de ambiente (HKDF output)
 ✗ Valores das variáveis de ambiente em texto claro
 ✗ Nomes das variáveis (se criptografados)
@@ -131,7 +131,7 @@ export default function ZeroKnowledgePage() {
         code={`Geração do Vault Proof:
 ━━━━━━━━━━━━━━━━━━━━━
 
-Senha Mestra + "proof_salt" (constante)
+Vault Password + "proof_salt" (constante)
          │
          ▼
    PBKDF2-HMAC-SHA256 (100.000 iterações)
@@ -147,7 +147,7 @@ Na autenticação, compara o proof enviado com o armazenado.
 Se coincidir → acesso autorizado.
 Se não coincidir → acesso negado.
 
-        Importante: o vault proof é derivado da mesma senha mestra,
+        Importante: o vault proof é derivado da mesma Vault password,
         mas com salt diferente (&quot;proof_salt&quot;), garantindo que:
 • O proof não pode ser usado para derivar a chave de criptografia
 • A chave de criptografia não pode gerar o proof
@@ -176,9 +176,9 @@ Se não coincidir → acesso negado.
         <div className="border rounded-lg p-5">
           <h3 className="font-semibold mb-2">🏢 Segurança para Equipes</h3>
           <p className="text-sm text-muted-foreground">
-            Em ambientes compartilhados, cada membro da equipe mantém sua própria
-            chave mestra. Os segredos são re-criptografados com a chave de cada membro
-            autorizado, garantindo isolamento criptográfico completo.
+            Em ambientes compartilhados, cada membro acessa apenas projetos
+            autorizados e a descriptografia continua acontecendo no cliente,
+            garantindo isolamento criptográfico completo.
           </p>
         </div>
 

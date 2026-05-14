@@ -36,8 +36,9 @@ export default function CliCommandsPage() {
         <InlineCode>criptenv init</InlineCode>
       </h3>
       <p className="mb-4">
-        Inicializa o diretório <InlineCode>~/.criptenv/</InlineCode>, cria o banco de dados
-        SQLite (<InlineCode>vault.db</InlineCode>) e configura a senha mestra.
+        Prepara o diretório <InlineCode>~/.criptenv/</InlineCode> e o banco de
+        metadata local. Este comando é opcional e não cria vault local de
+        secrets nem senha mestra.
       </p>
       <CodeBlock
         language="bash"
@@ -88,7 +89,7 @@ criptenv login --email user@example.com`}
         <InlineCode>criptenv set</InlineCode>
       </h3>
       <p className="mb-4">
-        Criptografa e armazena um segredo no vault local. Use a sintaxe{' '}
+        Criptografa e armazena um segredo no vault remoto do projeto. Use a sintaxe{' '}
         <InlineCode>KEY=value</InlineCode>.
       </p>
       <ParamTable
@@ -109,7 +110,7 @@ criptenv set API_KEY=your_api_key_here -e staging`}
         <InlineCode>criptenv get</InlineCode>
       </h3>
       <p className="mb-4">
-        Descriptografa e exibe o valor de um segredo.
+        Descriptografa em memória e exibe o valor de um segredo remoto.
       </p>
       <ParamTable
         title="Opções"
@@ -130,7 +131,7 @@ criptenv get API_KEY -e production -c`}
         <InlineCode>criptenv list</InlineCode>
       </h3>
       <p className="mb-4">
-        Lista todas as chaves do vault (nunca exibe os valores).
+        Lista todas as chaves do vault remoto sem descriptografar valores.
       </p>
       <ParamTable
         title="Opções"
@@ -149,7 +150,7 @@ criptenv list -e production`}
         <InlineCode>criptenv delete</InlineCode>
       </h3>
       <p className="mb-4">
-        Remove permanentemente um segredo do vault.
+        Remove permanentemente um segredo do vault remoto.
       </p>
       <ParamTable
         title="Opções"
@@ -196,40 +197,46 @@ criptenv rotate DB_PASS -e production -v newSecurePass123`}
         <InlineCode>criptenv push</InlineCode>
       </h3>
       <p className="mb-4">
-        Envia o vault local criptografado para a nuvem.
+        Importa um arquivo <InlineCode>.env</InlineCode> para o vault remoto.
+        Sem arquivo, o comando falha com orientação para usar{' '}
+        <InlineCode>import</InlineCode>.
       </p>
       <ParamTable
         title="Opções"
         rows={[
+          { name: 'FILE', type: 'string', required: true, description: 'Arquivo .env de origem' },
           { name: '--project, -p', type: 'string', required: false, description: 'Projeto específico' },
           { name: '--env, -e', type: 'string', required: false, description: 'Ambiente específico' },
-          { name: '--force', type: 'boolean', required: false, description: 'Sobrescreve sem perguntar' },
+          { name: '--overwrite', type: 'boolean', required: false, description: 'Sobrescreve chaves existentes' },
         ]}
       />
       <CodeBlock
         language="bash"
-        code={`criptenv push -p <project-id>
-criptenv push -e production -p <project-id>`}
+        code={`criptenv push .env -p <project-id>
+criptenv push .env.production -e production -p <project-id> --overwrite`}
       />
 
       <h3 className="text-xl font-semibold mt-8 mb-3">
         <InlineCode>criptenv pull</InlineCode>
       </h3>
       <p className="mb-4">
-        Baixa segredos da nuvem para o vault local.
+        Exporta segredos do vault remoto para um arquivo local. Sem{' '}
+        <InlineCode>--output</InlineCode>, o comando falha com orientação para
+        usar <InlineCode>export</InlineCode>.
       </p>
       <ParamTable
         title="Opções"
         rows={[
           { name: '--project, -p', type: 'string', required: false, description: 'Projeto específico' },
           { name: '--env, -e', type: 'string', required: false, description: 'Ambiente específico' },
-          { name: '--force', type: 'boolean', required: false, description: 'Sobrescreve segredos locais' },
+          { name: '--output, -o', type: 'string', required: true, description: 'Arquivo de saída' },
+          { name: '--format', type: 'string', required: false, description: 'Formato: env ou json' },
         ]}
       />
       <CodeBlock
         language="bash"
-        code={`criptenv pull -p <project-id>
-criptenv pull -e production -p <project-id> --force`}
+        code={`criptenv pull -p <project-id> --output .env
+criptenv pull -e production -p <project-id> -o .env.production`}
       />
 
       {/* ── DATA ────────────────────────────────────────────── */}
@@ -241,13 +248,14 @@ criptenv pull -e production -p <project-id> --force`}
         <InlineCode>criptenv import</InlineCode>
       </h3>
       <p className="mb-4">
-        Importa segredos de um arquivo <InlineCode>.env</InlineCode> para o vault.
+        Importa segredos de um arquivo <InlineCode>.env</InlineCode> para o vault remoto.
       </p>
       <ParamTable
         title="Opções"
         rows={[
           { name: 'FILE', type: 'string', required: true, description: 'Caminho para o arquivo .env' },
           { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de destino' },
+          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de destino' },
           { name: '--overwrite', type: 'boolean', required: false, description: 'Sobrescreve chaves existentes' },
         ]}
       />
@@ -262,7 +270,7 @@ criptenv import secrets.env --overwrite`}
         <InlineCode>criptenv export</InlineCode>
       </h3>
       <p className="mb-4">
-        Exporta segredos do vault para um arquivo <InlineCode>.env</InlineCode> ou JSON.
+        Exporta segredos do vault remoto para um arquivo <InlineCode>.env</InlineCode> ou JSON.
       </p>
       <ParamTable
         title="Opções"
@@ -405,18 +413,19 @@ criptenv projects create meusite --description "Backend do MeuSite"`}
         <InlineCode>criptenv ci deploy</InlineCode>
       </h3>
       <p className="mb-4">
-        Faz push dos segredos locais para a nuvem no contexto de CI.
+        Importa um arquivo de secrets para o vault remoto no contexto de CI.
       </p>
       <ParamTable
         title="Opções"
         rows={[
+          { name: '--file, -f', type: 'string', required: true, description: 'Arquivo .env de origem' },
           { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de deploy' },
           { name: '--project, -p', type: 'string', required: false, description: 'Projeto' },
         ]}
       />
       <CodeBlock
         language="bash"
-        code={`criptenv ci deploy -e production -p <project-id>`}
+        code={`CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production -e production -p <project-id>`}
       />
 
       <h3 className="text-xl font-semibold mt-8 mb-3">

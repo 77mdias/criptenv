@@ -56,10 +56,9 @@ export default function FirstProjectPage() {
           </CodeBlock>
         </Step>
 
-        <Step title="Inicialize e faça login">
-          <CodeBlock language="bash" title="Inicializar e autenticar">
-{`criptenv init
-criptenv login --email you@example.com`}
+        <Step title="Faça login">
+          <CodeBlock language="bash" title="Autenticar CLI">
+{`criptenv login --email you@example.com`}
           </CodeBlock>
         </Step>
 
@@ -86,12 +85,12 @@ criptenv set API_KEY="your_api_key_here"`}
           </CodeBlock>
         </Step>
 
-        <Step title="Sincronize com a nuvem">
+        <Step title="Importe um .env existente">
           <p className="text-muted-foreground">
-            Envie seus secrets criptografados para o servidor:
+            Se você já tem um arquivo .env, importe-o para o vault remoto:
           </p>
-          <CodeBlock language="bash" title="Push para nuvem">
-{`criptenv push -p <project-id>`}
+          <CodeBlock language="bash" title="Importar para o vault remoto">
+{`criptenv push .env -p <project-id>`}
           </CodeBlock>
         </Step>
 

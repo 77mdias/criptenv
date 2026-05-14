@@ -69,7 +69,7 @@ export default function ThreatModelPage() {
           [
             'Ataque de força bruta na senha',
             'Médio',
-            'Tentativa de adivinhar a senha mestra',
+            'Tentativa de adivinhar a Vault password',
             'Mitigado',
           ],
           [
@@ -106,8 +106,8 @@ export default function ThreatModelPage() {
             <li>Vault proof (hash para verificação, não a chave em si)</li>
           </ul>
           <p className="text-sm text-muted-foreground">
-            <strong>Resultado:</strong> Os dados roubados são inúteis. Sem a senha
-            mestra do usuário (que nunca sai do navegador), é computacionalmente
+            <strong>Resultado:</strong> Os dados roubados são inúteis. Sem a Vault
+            password do projeto (que nunca sai do cliente), é computacionalmente
             inviável derivar as chaves de criptografia.
           </p>
         </div>
@@ -129,7 +129,7 @@ export default function ThreatModelPage() {
           </p>
           <ul className="list-disc list-inside text-sm text-muted-foreground space-y-1 mb-3">
             <li>Descriptografar os segredos dos usuários</li>
-            <li>Obter senhas mestras ou chaves derivadas</li>
+            <li>Obter Vault passwords ou chaves derivadas</li>
             <li>Injetar código malicioso que capture chaves (CSP e auditoria de deploy)</li>
             <li>Modificar o código do cliente sem detecção (integridade de deploy)</li>
           </ul>
@@ -157,7 +157,7 @@ export default function ThreatModelPage() {
             <li>TLS obrigatório (HTTPS) para todas as comunicações</li>
             <li>HSTS habilitado para prevenir downgrade para HTTP</li>
             <li>Dados já criptografados antes do envio (double encryption)</li>
-            <li>Senha mestra nunca é transmitida pela rede</li>
+            <li>Vault password nunca é transmitida pela rede</li>
             <li>Chaves derivadas nunca saem do navegador</li>
           </ul>
           <p className="text-sm text-muted-foreground">
@@ -217,7 +217,7 @@ export default function ThreatModelPage() {
           </ul>
           <p className="text-sm text-muted-foreground">
             <strong>Resultado:</strong> O atacante pode acessar a API, mas os dados
-            retornados já estão criptografados. Sem a senha mestra (que não está na
+            retornados já estão criptografados. Sem a Vault password (que não está na
             sessão), não é possível descriptografar nada.
           </p>
         </div>
@@ -230,8 +230,8 @@ export default function ThreatModelPage() {
             <h3 className="font-semibold">Ataque de Força Bruta</h3>
           </div>
           <p className="text-sm text-muted-foreground mb-3">
-            <strong>Cenário:</strong> Um atacante tenta adivinhar a senha mestra do
-            usuário testando milhões de combinações.
+            <strong>Cenário:</strong> Um atacante tenta adivinhar a Vault password do
+            projeto testando milhões de combinações.
           </p>
           <p className="text-sm text-muted-foreground mb-3">
             <strong>Mitigação:</strong>
@@ -278,7 +278,7 @@ as demais continuam protegendo os dados do usuário.`}
 
       <Callout type="warning">
         <strong>Responsabilidade do Usuário:</strong> A segurança do sistema depende
-        fundamentalmente da força da senha mestra. Use uma senha longa, única e
+        fundamentalmente da força da Vault password. Use uma senha longa, única e
         gerada por um gerenciador de senhas. A arquitetura zero-knowledge não pode
         proteger contra uma senha fraca ou reutilizada.
       </Callout>

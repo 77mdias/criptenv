@@ -254,12 +254,19 @@ class CriptEnvClient:
     # ─── Vault ────────────────────────────────────────────────────────────────
 
     async def push_vault(
-        self, project_id: str, env_id: str, blobs: list[dict], vault_proof: str | None = None
+        self,
+        project_id: str,
+        env_id: str,
+        blobs: list[dict],
+        vault_proof: str | None = None,
+        expected_version: int | None = None,
     ) -> dict[str, Any]:
         """POST /api/v1/projects/{id}/environments/{eid}/vault/push"""
         payload: dict[str, Any] = {"blobs": blobs}
         if vault_proof:
             payload["vault_proof"] = vault_proof
+        if expected_version is not None:
+            payload["expected_version"] = expected_version
         resp = await self._request(
             "POST",
             f"/api/v1/projects/{project_id}/environments/{env_id}/vault/push",

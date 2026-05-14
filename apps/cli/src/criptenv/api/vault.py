@@ -8,6 +8,7 @@ async def push_blobs(
     project_id: str,
     env_id: str,
     blobs: list[dict],
+    expected_version: int | None = None,
 ) -> dict:
     """
     Push encrypted blobs to cloud vault.
@@ -19,11 +20,18 @@ async def push_blobs(
         blobs: List of encrypted blob dicts with keys:
             key_id, iv (base64), ciphertext (base64),
             auth_tag (base64), version, checksum
+        expected_version: Version read before mutation. When provided, the API
+            rejects stale writes with 409.
 
     Returns:
         Response with pushed blobs and version
     """
-    return await client.push_vault(project_id, env_id, blobs)
+    return await client.push_vault(
+        project_id,
+        env_id,
+        blobs,
+        expected_version=expected_version,
+    )
 
 
 async def pull_blobs(

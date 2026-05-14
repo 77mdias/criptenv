@@ -17,8 +17,7 @@ def doctor_command(verbose: bool):
     \b
     Checks:
       • Configuration directory exists
-      • Local vault is accessible
-      • Master password configured
+      • Local metadata database is accessible
       • Session is valid
       • API server is reachable
 
@@ -45,32 +44,22 @@ def doctor_command(verbose: bool):
         click.echo("    Run 'criptenv init' to create it")
         checks_failed += 1
 
-    # Check 2: Database file
+    # Check 2: Metadata database file
     if DB_FILE.exists():
-        click.echo("  ✓ Local vault database exists")
+        click.echo("  ✓ Local metadata database exists")
         if verbose:
             import os
             size = os.path.getsize(DB_FILE)
             click.echo(f"    Path: {DB_FILE} ({size} bytes)")
         checks_passed += 1
     else:
-        click.echo("  ✗ Local vault database missing")
+        click.echo("  ✗ Local metadata database missing")
         click.echo("    Run 'criptenv init' to create it")
         checks_failed += 1
 
-    # Check 3: Master password configured
+    # Check 3: Session and lightweight metadata
     try:
         with local_vault() as db:
-            salt_hex = run_async(queries.get_config(db, "master_salt"))
-            if salt_hex:
-                click.echo("  ✓ Master password configured")
-                checks_passed += 1
-            else:
-                click.echo("  ✗ Master password not configured")
-                click.echo("    Run 'criptenv init' to set it up")
-                checks_failed += 1
-
-            # Check 4: Session
             session = run_async(queries.get_active_session(db))
             if session:
                 if session.is_expired:
@@ -89,20 +78,16 @@ def doctor_command(verbose: bool):
                 click.echo("    Run 'criptenv login' to authenticate")
                 # Not a failure for local-only usage
 
-            # Check 5: Secrets count
-            envs = run_async(queries.list_environments(db))
-            total_secrets = 0
-            for env in envs:
-                secrets = run_async(queries.list_secrets(db, env.id))
-                total_secrets += len(secrets)
             if verbose:
-                click.echo(f"  ℹ {len(envs)} environment(s), {total_secrets} secret(s)")
+                current_project = run_async(queries.get_config(db, "current_project_id"))
+                if current_project:
+                    click.echo(f"  ℹ Current project: {current_project}")
 
     except Exception as e:
         click.echo(f"  ✗ Database error: {e}")
         checks_failed += 1
 
-    # Check 6: API connectivity
+    # Check 4: API connectivity
     try:
         import httpx
         response = httpx.get(f"{API_BASE_URL}/health", timeout=5.0)

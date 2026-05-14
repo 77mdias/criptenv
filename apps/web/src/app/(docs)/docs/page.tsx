@@ -106,7 +106,7 @@ $ criptenv list`}
           />
           <DocCard
             title="Sincronizar com Cloud"
-            description="Push e pull de secrets entre vault local e servidor. Versionamento e detecção de conflitos."
+            description="CLI e web usam o mesmo vault remoto criptografado. Push importa arquivos; pull exporta para arquivos locais."
             icon={GitBranch}
             href="/docs/cli/commands"
           />

@@ -1,12 +1,12 @@
-"""Tests for import/export and doctor commands."""
+"""Tests for remote import/export and doctor commands."""
+
+from unittest.mock import patch
 
 import pytest
-import tempfile
-import os
-from pathlib import Path
 from click.testing import CliRunner
 
 from criptenv.cli import main
+from tests.conftest import remote_cli_context_for
 
 
 @pytest.fixture
@@ -14,204 +14,132 @@ def runner():
     return CliRunner()
 
 
-MASTER_PASSWORD = "testpass123"
-
-
 class TestImportExport:
-    """Test import/export .env file flow."""
-
-    def _init(self, runner, mock_config_dir):
-        """Helper: initialize CriptEnv."""
-        result = runner.invoke(
-            main, ["init"],
-            input=f"{MASTER_PASSWORD}\n{MASTER_PASSWORD}\n"
-        )
-        assert result.exit_code == 0
-
-    def test_import_env_file(self, runner, mock_config_dir, tmp_path):
-        """Should import secrets from a .env file."""
-        self._init(runner, mock_config_dir)
-
-        # Create a .env file
+    def test_import_env_file(self, runner, remote_vault_client, tmp_path):
         env_file = tmp_path / "test.env"
         env_file.write_text(
             "# Comment line\n"
             "API_KEY=secret123\n"
             "DB_HOST=localhost\n"
             "DB_PORT=5432\n"
-            "\n"  # empty line
+            "\n"
             "QUOTED_VALUE=\"hello world\"\n"
         )
 
-        # Import
-        result = runner.invoke(
-            main, ["import", str(env_file)],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert result.exit_code == 0
-        assert "Imported 4 secret(s)" in result.output
+        with (
+            patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
+            patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
+        ):
+            result = runner.invoke(main, ["import", str(env_file), "-p", "prj_123"])
+            assert result.exit_code == 0
+            assert "Imported 4 secret(s)" in result.output
 
-        # Verify they were imported
-        result = runner.invoke(
-            main, ["list"],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert result.exit_code == 0
-        assert "API_KEY" in result.output
-        assert "DB_HOST" in result.output
-        assert "DB_PORT" in result.output
-        assert "QUOTED_VALUE" in result.output
+            result = runner.invoke(main, ["list", "-p", "prj_123"])
+            assert result.exit_code == 0
+            assert "API_KEY" in result.output
+            assert "DB_HOST" in result.output
+            assert "DB_PORT" in result.output
+            assert "QUOTED_VALUE" in result.output
 
-    def test_import_skip_existing(self, runner, mock_config_dir, tmp_path):
-        """Should skip existing secrets without --overwrite."""
-        self._init(runner, mock_config_dir)
-
-        # Set a secret first
-        runner.invoke(
-            main, ["set", "API_KEY=original"],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-
-        # Create .env with same key
+    def test_import_skip_existing(self, runner, remote_vault_client, tmp_path):
         env_file = tmp_path / "test.env"
         env_file.write_text("API_KEY=overwritten\nDB_HOST=localhost\n")
 
-        # Import without --overwrite
-        result = runner.invoke(
-            main, ["import", str(env_file)],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert result.exit_code == 0
-        assert "Skipped 1" in result.output
-        assert "Imported 1" in result.output
+        with (
+            patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
+            patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
+        ):
+            runner.invoke(main, ["set", "API_KEY=original", "-p", "prj_123"])
+            result = runner.invoke(main, ["import", str(env_file), "-p", "prj_123"])
+            assert result.exit_code == 0
+            assert "Skipped 1" in result.output
+            assert "Imported 1" in result.output
 
-        # Verify original value preserved
-        result = runner.invoke(
-            main, ["get", "API_KEY"],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert "original" in result.output
+            result = runner.invoke(main, ["get", "API_KEY", "-p", "prj_123"])
+            assert "original" in result.output
 
-    def test_import_overwrite(self, runner, mock_config_dir, tmp_path):
-        """Should overwrite with --overwrite flag."""
-        self._init(runner, mock_config_dir)
-
-        runner.invoke(
-            main, ["set", "API_KEY=original"],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-
+    def test_import_overwrite(self, runner, remote_vault_client, tmp_path):
         env_file = tmp_path / "test.env"
         env_file.write_text("API_KEY=new_value\n")
 
-        result = runner.invoke(
-            main, ["import", str(env_file), "--overwrite"],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert result.exit_code == 0
-        assert "Imported 1" in result.output
+        with (
+            patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
+            patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
+        ):
+            runner.invoke(main, ["set", "API_KEY=original", "-p", "prj_123"])
+            result = runner.invoke(main, ["import", str(env_file), "--overwrite", "-p", "prj_123"])
+            assert result.exit_code == 0
+            assert "Imported 1" in result.output
 
-        result = runner.invoke(
-            main, ["get", "API_KEY"],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert "new_value" in result.output
+            result = runner.invoke(main, ["get", "API_KEY", "-p", "prj_123"])
+            assert "new_value" in result.output
 
-    def test_export_env_format(self, runner, mock_config_dir, tmp_path):
-        """Should export secrets in .env format."""
-        self._init(runner, mock_config_dir)
-
-        # Set some secrets
-        runner.invoke(main, ["set", "KEY_A=val_a"], input=f"{MASTER_PASSWORD}\n")
-        runner.invoke(main, ["set", "KEY_B=val_b"], input=f"{MASTER_PASSWORD}\n")
-
-        # Export to file
+    def test_export_env_format(self, runner, remote_vault_client, tmp_path):
         output_file = tmp_path / "exported.env"
-        result = runner.invoke(
-            main, ["export", "-o", str(output_file)],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert result.exit_code == 0
-        assert "Exported 2 secret(s)" in result.output
 
-        # Verify file content
+        with (
+            patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
+            patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
+        ):
+            runner.invoke(main, ["set", "KEY_A=val_a", "-p", "prj_123"])
+            runner.invoke(main, ["set", "KEY_B=val_b", "-p", "prj_123"])
+            result = runner.invoke(main, ["export", "-o", str(output_file), "-p", "prj_123"])
+            assert result.exit_code == 0
+            assert "Exported 2 secret(s)" in result.output
+
         content = output_file.read_text()
         assert "KEY_A=val_a" in content
         assert "KEY_B=val_b" in content
 
-    def test_export_json_format(self, runner, mock_config_dir, tmp_path):
-        """Should export secrets in JSON format."""
-        self._init(runner, mock_config_dir)
-
-        runner.invoke(main, ["set", "KEY_A=val_a"], input=f"{MASTER_PASSWORD}\n")
-
+    def test_export_json_format(self, runner, remote_vault_client, tmp_path):
         output_file = tmp_path / "exported.json"
-        result = runner.invoke(
-            main, ["export", "--format", "json", "-o", str(output_file)],
-            input=f"{MASTER_PASSWORD}\n"
-        )
-        assert result.exit_code == 0
+
+        with (
+            patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
+            patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
+        ):
+            runner.invoke(main, ["set", "KEY_A=val_a", "-p", "prj_123"])
+            result = runner.invoke(main, ["export", "--format", "json", "-o", str(output_file), "-p", "prj_123"])
+            assert result.exit_code == 0
 
         import json
+
         data = json.loads(output_file.read_text())
         assert data["KEY_A"] == "val_a"
 
-    def test_export_empty(self, runner, mock_config_dir):
-        """Should handle export with no secrets."""
-        self._init(runner, mock_config_dir)
+    def test_export_empty(self, runner, remote_vault_client):
+        with patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)):
+            result = runner.invoke(main, ["export", "-p", "prj_123"])
 
-        result = runner.invoke(
-            main, ["export"],
-            input=f"{MASTER_PASSWORD}\n"
-        )
         assert result.exit_code == 0
         assert "No secrets" in result.output
 
     def test_import_empty_file(self, runner, mock_config_dir, tmp_path):
-        """Should handle empty .env file."""
-        self._init(runner, mock_config_dir)
-
         env_file = tmp_path / "empty.env"
         env_file.write_text("# Only comments\n\n")
 
-        result = runner.invoke(
-            main, ["import", str(env_file)],
-            input=f"{MASTER_PASSWORD}\n"
-        )
+        result = runner.invoke(main, ["import", str(env_file), "-p", "prj_123"])
         assert result.exit_code == 0
         assert "No entries" in result.output
 
 
 class TestDoctor:
-    """Test doctor diagnostic command."""
-
     def test_doctor_not_initialized(self, runner, mock_config_dir):
-        """Doctor should report missing config when not initialized."""
         result = runner.invoke(main, ["doctor"])
         assert result.exit_code == 0
         assert "CriptEnv Doctor" in result.output
         assert "missing" in result.output.lower() or "not configured" in result.output.lower()
 
     def test_doctor_initialized(self, runner, mock_config_dir):
-        """Doctor should pass checks when initialized."""
-        # Initialize
-        runner.invoke(
-            main, ["init"],
-            input=f"{MASTER_PASSWORD}\n{MASTER_PASSWORD}\n"
-        )
+        runner.invoke(main, ["init"])
 
         result = runner.invoke(main, ["doctor"])
         assert result.exit_code == 0
         assert "Configuration directory exists" in result.output
-        assert "vault database exists" in result.output
-        assert "Master password configured" in result.output
+        assert "metadata database exists" in result.output
 
     def test_doctor_verbose(self, runner, mock_config_dir):
-        """Doctor --verbose should show extra details."""
-        runner.invoke(
-            main, ["init"],
-            input=f"{MASTER_PASSWORD}\n{MASTER_PASSWORD}\n"
-        )
+        runner.invoke(main, ["init"])
 
         result = runner.invoke(main, ["doctor", "--verbose"])
         assert result.exit_code == 0

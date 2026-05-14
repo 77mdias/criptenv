@@ -63,13 +63,21 @@ NEXT_PUBLIC_COOKIE_DOMAIN=localhost
 
 ### CLI
 
-CLI uses a local vault at `~/.criptenv/vault.db`. No `.env` file needed — configuration is stored in the vault database. By default, the CLI talks to the production API at `https://criptenv-api.77mdevseven.tech`.
+The CLI is a remote terminal for the project vault. Secrets are read from and written to the remote encrypted vault, then decrypted or encrypted in memory on the client. The local `~/.criptenv/` directory stores only lightweight metadata such as auth sessions, the current project, cached project/environment metadata, and `auth.key` for local session encryption. It is not the primary storage for secrets.
+
+No `.env` file is required for CLI configuration. By default, the CLI talks to the production API at `https://criptenv-api.77mdevseven.tech`.
 
 **Environment variables for development:**
 
 ```bash
 # When running CLI against local API
 CRIPTENV_API_URL=http://localhost:8000
+
+# Optional project default for CLI commands
+CRIPTENV_PROJECT=project-id-or-slug
+
+# Optional non-interactive Vault password for secret commands/CI
+CRIPTENV_VAULT_PASSWORD=project-vault-password
 ```
 
 ---
@@ -154,7 +162,6 @@ cd apps/web
 npm run dev
 
 # CLI (terminal 3)
-criptenv init
 criptenv login --email your@email.com
 ```
 

@@ -87,11 +87,9 @@ class SessionManager:
         return await self._store_session(token, user)
 
     async def _store_session(self, token: str, user: dict) -> dict:
-        """Encrypt and store a session token in the local vault."""
-        # Encrypt token with master key
+        """Encrypt and store a session token in the local metadata database."""
         token_encrypted = self._encrypt_token(token)
 
-        # Store in local vault
         session = Session(
             id=str(uuid.uuid4()),
             user_id=user["id"],
@@ -124,7 +122,7 @@ class SessionManager:
         self._current_session = None
 
     async def get_active_session(self) -> Optional[Session]:
-        """Get the active (non-expired) session from local vault."""
+        """Get the active (non-expired) session from local metadata."""
         if self._current_session and not self._current_session.is_expired:
             return self._current_session
 

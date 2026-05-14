@@ -20,95 +20,88 @@ export default function CliConfigurationPage() {
 
       <h1 className="text-3xl font-bold mt-4 mb-2">Configuração do CLI</h1>
       <p className="text-lg text-muted-foreground mb-8">
-        Entenda como o CriptEnv organiza seus dados localmente, como funciona a
-        senha mestra e como personalizar o comportamento via variáveis de
-        ambiente.
+        Entenda como o CriptEnv CLI funciona como terminal remoto, quais dados
+        ficam localmente e como usar variáveis de ambiente em automações.
       </p>
 
-      {/* ── DIRECTORY STRUCTURE ─────────────────────────────── */}
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Estrutura do Diretório
+        Terminal Remoto
       </h2>
       <p className="mb-4">
-        O CriptEnv armazena todos os dados locais em{' '}
-        <InlineCode>~/.criptenv/</InlineCode>. Após executar{' '}
-        <InlineCode>criptenv init</InlineCode>, a estrutura é a seguinte:
+        Os comandos principais operam diretamente no vault remoto do projeto.
+        O CLI baixa blobs criptografados, descriptografa em memória quando
+        necessário, recriptografa no próprio processo e envia apenas ciphertext
+        para a API.
+      </p>
+      <Callout type="info">
+        O backend nunca recebe secrets em texto claro e a Vault password do
+        projeto nunca é enviada ao servidor.
+      </Callout>
+
+      <h2 className="text-2xl font-semibold mt-10 mb-4">
+        Estrutura Local
+      </h2>
+      <p className="mb-4">
+        O diretório <InlineCode>~/.criptenv/</InlineCode> guarda apenas
+        metadata leve e credenciais locais de sessão:
       </p>
       <CodeBlock
         language="text"
         code={`~/.criptenv/
-└── vault.db          # Banco de dados SQLite com segredos criptografados`}
+├── auth.key          # chave local para criptografar tokens de sessão
+└── vault.db          # SQLite com sessão, projeto atual e metadata`}
       />
 
-      <h3 className="text-xl font-semibold mt-8 mb-3">vault.db</h3>
-      <p className="mb-4">
-        O coração do CriptEnv. Um banco de dados SQLite que armazena todos os
-        segredos criptografados localmente com AES-256-GCM. Cada segredo é
-        versionado, permitindo rotação sem perder o histórico.
-      </p>
-      <Callout type="warning">
-        Nunca compartilhe ou faça backup do <InlineCode>vault.db</InlineCode>{' '}
-        para locais inseguros. O arquivo contém dados criptografados, mas a
-        segurança depende da força da sua senha mestra.
-      </Callout>
-
-      <p className="mb-4">Tabelas internas do banco:</p>
       <div className="overflow-x-auto rounded-lg border border-[var(--border)] my-4">
         <table className="w-full text-sm">
           <thead>
             <tr className="bg-[var(--background-muted)] border-b border-[var(--border)]">
-              <th className="px-4 py-3 text-left font-semibold">Tabela</th>
+              <th className="px-4 py-3 text-left font-semibold">Arquivo</th>
               <th className="px-4 py-3 text-left font-semibold">Descrição</th>
             </tr>
           </thead>
           <tbody>
             <tr className="border-b border-[var(--border)]">
-              <td className="px-4 py-3 font-mono text-emerald-500">secrets</td>
-              <td className="px-4 py-3">Segredos criptografados com metadados (chave, IV, auth_tag, versão, ambiente, projeto)</td>
+              <td className="px-4 py-3 font-mono text-emerald-500">auth.key</td>
+              <td className="px-4 py-3">Chave local usada para proteger tokens de sessão da CLI e do CI.</td>
             </tr>
             <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
-              <td className="px-4 py-3 font-mono text-emerald-500">environments</td>
-              <td className="px-4 py-3">Ambientes registrados (dev, staging, production, etc.)</td>
-            </tr>
-            <tr className="border-b border-[var(--border)]">
-              <td className="px-4 py-3 font-mono text-emerald-500">projects</td>
-              <td className="px-4 py-3">Projetos e suas configurações locais</td>
-            </tr>
-            <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
-              <td className="px-4 py-3 font-mono text-emerald-500">ci_sessions</td>
-              <td className="px-4 py-3">Sessões de CI/CD criptografadas</td>
+              <td className="px-4 py-3 font-mono text-emerald-500">vault.db</td>
+              <td className="px-4 py-3">Banco SQLite com sessão, projeto atual, cache de metadata e tabelas de compatibilidade.</td>
             </tr>
           </tbody>
         </table>
       </div>
 
-      {/* ── MASTER PASSWORD ─────────────────────────────────── */}
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Senha Mestra</h2>
+      <Callout type="warning">
+        O fluxo normal do CLI não grava uma cópia local dos secrets. Backups de
+        <InlineCode>~/.criptenv/</InlineCode> ainda devem ser protegidos porque
+        contêm credenciais de sessão.
+      </Callout>
+
+      <h2 className="text-2xl font-semibold mt-10 mb-4">
+        Vault Password
+      </h2>
       <p className="mb-4">
-        A senha mestra é usada para derivar a chave de criptografia do vault
-        usando PBKDF2-HMAC-SHA256 com <strong>100.000 iterações</strong>. Ela nunca é armazenada em disco —
-        é solicitada interativamente a cada operação que acessa o vault.
+        A Vault password pertence ao projeto. Ela deriva as chaves de
+        criptografia client-side e é solicitada apenas quando um comando precisa
+        descriptografar ou alterar secrets.
       </p>
 
       <CodeBlock
         language="bash"
-        code={`# A senha é solicitada automaticamente ao usar comandos que precisam do vault
-criptenv get DATABASE_URL
+        code={`criptenv get DATABASE_URL -p <project-id>
 > Vault password:`}
       />
 
       <Callout type="info">
-        Para automação em CI/CD, use a variável{' '}
-        <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode> para evitar prompts interativos.
+        Para automação, defina <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode>.
+        O CLI usa essa variável no lugar do prompt interativo.
       </Callout>
 
-      {/* ── ENVIRONMENT VARIABLES ───────────────────────────── */}
       <h2 className="text-2xl font-semibold mt-10 mb-4">
         Variáveis de Ambiente
       </h2>
-      <p className="mb-4">
-        O CLI suporta as seguintes variáveis de ambiente:
-      </p>
       <div className="overflow-x-auto rounded-lg border border-[var(--border)] my-4">
         <table className="w-full text-sm">
           <thead>
@@ -122,12 +115,17 @@ criptenv get DATABASE_URL
             <tr className="border-b border-[var(--border)]">
               <td className="px-4 py-3 font-mono text-emerald-500">CRIPTENV_API_URL</td>
               <td className="px-4 py-3">string</td>
-              <td className="px-4 py-3">URL da API (padrão: https://criptenv-api.77mdevseven.tech)</td>
+              <td className="px-4 py-3">URL da API. Padrão: https://criptenv-api.77mdevseven.tech</td>
             </tr>
             <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
+              <td className="px-4 py-3 font-mono text-emerald-500">CRIPTENV_PROJECT</td>
+              <td className="px-4 py-3">string</td>
+              <td className="px-4 py-3">Projeto padrão para comandos que aceitam <InlineCode>--project</InlineCode>.</td>
+            </tr>
+            <tr className="border-b border-[var(--border)]">
               <td className="px-4 py-3 font-mono text-emerald-500">CRIPTENV_VAULT_PASSWORD</td>
               <td className="px-4 py-3">string</td>
-              <td className="px-4 py-3">Senha do vault para uso não-interativo (CI/CD)</td>
+              <td className="px-4 py-3">Vault password do projeto para uso não interativo.</td>
             </tr>
           </tbody>
         </table>
@@ -135,22 +133,21 @@ criptenv get DATABASE_URL
 
       <CodeBlock
         language="bash"
-        code={`# Exemplo: usar em um script com senha via variável de ambiente
-export CRIPTENV_VAULT_PASSWORD="sua-senha-segura"
-export CRIPTENV_API_URL="https://criptenv-api.77mdevseven.tech"
+        code={`export CRIPTENV_PROJECT="<project-id>"
+export CRIPTENV_VAULT_PASSWORD="project-vault-password"
 
-criptenv get DATABASE_URL`}
+criptenv export -e production -o .env.production`}
       />
 
       <Callout type="warning">
-        Evite definir <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode> em
-        variáveis de ambiente em servidores compartilhados. Prefira a leitura
-        interativa da senha quando possível.
+        Evite expor <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode> em logs,
+        shells compartilhados ou históricos persistentes. Em CI, use o mecanismo
+        de secrets do provedor.
       </Callout>
 
       <Callout type="info">
-        Use <InlineCode>criptenv doctor</InlineCode> para verificar a configuração
-        efetiva e o estado do CLI.
+        Use <InlineCode>criptenv doctor</InlineCode> para verificar sessão,
+        projeto atual, metadata local e conectividade com a API.
       </Callout>
     </div>
   );

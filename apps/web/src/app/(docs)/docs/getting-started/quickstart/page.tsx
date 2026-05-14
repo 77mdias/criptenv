@@ -40,18 +40,6 @@ export default function QuickstartPage() {
           />
         </Step>
 
-        <Step title="Inicialize o CriptEnv">
-          <p className="mb-4">
-            Execute o comando de inicialização para configurar o vault local:
-          </p>
-          <CodeBlock language="bash" code="criptenv init" />
-          <p className="mt-3 text-sm text-muted-foreground">
-            Isso criará a pasta{' '}
-            <code className="bg-muted px-1 rounded text-sm">~/.criptenv/</code> no
-            diretório home, onde ficarão suas configurações e vault local.
-          </p>
-        </Step>
-
         <Step title="Crie uma conta e faça login">
           <p className="mb-4">
             Acesse{' '}
@@ -61,6 +49,11 @@ export default function QuickstartPage() {
             e crie sua conta gratuitamente. Depois autentique o CLI:
           </p>
           <CodeBlock language="bash" code="criptenv login --email you@example.com" />
+          <p className="mt-3 text-sm text-muted-foreground">
+            O comando <code className="bg-muted px-1 rounded text-sm">criptenv init</code>{' '}
+            é opcional. Ele apenas prepara metadata local em{' '}
+            <code className="bg-muted px-1 rounded text-sm">~/.criptenv/</code>.
+          </p>
         </Step>
 
         <Step title="Crie um projeto">
@@ -72,8 +65,8 @@ export default function QuickstartPage() {
             code={`criptenv projects create meu-projeto`}
           />
           <Callout type="tip" className="mt-3">
-            Você pode criar múltiplos projetos e alternar entre eles a qualquer
-            momento.
+            Você definirá uma Vault password para o projeto. Ela protege os
+            secrets e não é enviada ao servidor.
           </Callout>
         </Step>
 
@@ -87,9 +80,8 @@ export default function QuickstartPage() {
 criptenv set API_KEY="your_api_key_here"`}
           />
           <p className="mt-3 text-sm text-muted-foreground">
-            Todos os segredos são criptografados localmente com AES-256-GCM
-            antes de serem armazenados. O CriptEnv nunca envia dados em texto
-            claro para a nuvem.
+            Todos os segredos são criptografados no CLI com AES-256-GCM antes
+            do envio. O CriptEnv nunca recebe dados em texto claro.
           </p>
         </Step>
 
@@ -123,13 +115,15 @@ criptenv set API_KEY="your_api_key_here"`}
           />
         </Step>
 
-        <Step title="Sincronize com a nuvem">
+        <Step title="Importe ou exporte arquivos .env">
           <p className="mb-4">
-            Envie seus segredos criptografados para o servidor:
+            O vault remoto já fica sincronizado. Use arquivos quando precisar
+            migrar ou materializar variáveis localmente:
           </p>
           <CodeBlock
             language="bash"
-            code={`criptenv push -p <project-id>`}
+            code={`criptenv push .env.production -p <project-id>
+criptenv pull -p <project-id> --output .env.production`}
           />
         </Step>
       </Steps>
@@ -156,9 +150,9 @@ criptenv set API_KEY="your_api_key_here"`}
           </a>
         </li>
         <li>
-          Sincronize seus segredos com a nuvem usando{' '}
-          <code className="bg-muted px-1 rounded text-sm">criptenv push</code> e{' '}
-          <code className="bg-muted px-1 rounded text-sm">criptenv pull</code>
+          Importe e exporte arquivos com{' '}
+          <code className="bg-muted px-1 rounded text-sm">criptenv push FILE</code> e{' '}
+          <code className="bg-muted px-1 rounded text-sm">criptenv pull --output FILE</code>
         </li>
         <li>
           Integre com seu{' '}

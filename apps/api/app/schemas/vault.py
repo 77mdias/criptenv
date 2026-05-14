@@ -33,6 +33,7 @@ class VaultBlobPull(BaseModel):
 class VaultPushRequest(BaseModel):
     blobs: list[VaultBlobPush]
     vault_proof: Optional[str] = None
+    expected_version: Optional[int] = Field(default=None, ge=0)
 
 
 class VaultPullResponse(BaseModel):

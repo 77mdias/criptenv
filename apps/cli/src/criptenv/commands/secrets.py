@@ -1,18 +1,12 @@
 """Secret management commands."""
 
 import click
-import time
-import uuid
 import secrets as secret_module
-import hashlib
 import base64
 from datetime import datetime, timezone, timedelta
 
-from criptenv.context import cli_context, run_async, _resolve_env_id, resolve_project_id
-from criptenv.crypto import derive_env_key, encrypt, decrypt
-from criptenv.crypto.utils import generate_id
-from criptenv.vault import queries
-from criptenv.vault.models import Secret
+from criptenv.context import cli_context, run_async, resolve_project_id, resolve_project_id_async
+from criptenv.remote_vault import RemoteVault
 
 
 # ─── Secret Management Commands ────────────────────────────────────────────────
@@ -38,36 +32,27 @@ def set_command(key_value: str, env_name: str | None, project: str | None):
 
     key_id, value = key_value.split("=", 1)
 
-    with cli_context() as (db, master_key, _):
-        if master_key is None:
-            click.echo("Error: Run 'criptenv init' first", err=True)
-            raise SystemExit(1)
-
-        env_id = run_async(_resolve_env_id(db, env_name))
-        env_key = derive_env_key(master_key, env_id)
-
-        # Encrypt the value
-        plaintext = value.encode("utf-8")
-        ciphertext, iv, auth_tag, checksum = encrypt(plaintext, env_key)
-
-        # Check if secret already exists (upsert)
-        existing = run_async(queries.get_secret(db, env_id, key_id))
-        version = (existing.version + 1) if existing else 1
-
-        secret = Secret(
-            id=existing.id if existing else generate_id("sec"),
-            environment_id=env_id,
-            key_id=key_id,
-            iv=iv,
-            ciphertext=ciphertext,
-            auth_tag=auth_tag,
-            version=version,
-            checksum=checksum,
-            created_at=existing.created_at if existing else int(time.time()),
-            updated_at=int(time.time()),
-        )
-
-        run_async(queries.save_secret(db, secret))
+    try:
+        with cli_context(require_auth=True) as (db, _master_key, client):
+            resolved_project_id = resolve_project_id(db, project)
+            vault = RemoteVault(client, resolved_project_id)
+            state = run_async(vault.load_state(env_name))
+            existing = next((blob for blob in state.blobs if blob["key_id"] == key_id), None)
+            version = int(existing.get("version", state.version)) + 1 if existing else state.version + 1
+            new_blob = run_async(vault.encrypt_blob(
+                key_id,
+                value.encode("utf-8"),
+                state.environment.id,
+                version,
+            ))
+            blobs = [blob for blob in state.blobs if blob["key_id"] != key_id]
+            blobs.append(new_blob)
+            run_async(vault.push_state(state, blobs))
+    except click.ClickException:
+        raise
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
 
     click.echo(f"✓ Set {key_id}" + (f" (v{version})" if version > 1 else ""))
 
@@ -88,25 +73,22 @@ def get_command(key: str, env_name: str | None, project: str | None, clipboard: 
         criptenv get API_KEY
         criptenv get DB_PASSWORD -e staging
     """
-    with cli_context() as (db, master_key, _):
-        if master_key is None:
-            click.echo("Error: Run 'criptenv init' first", err=True)
-            raise SystemExit(1)
-
-        env_id = run_async(_resolve_env_id(db, env_name))
-        env_key = derive_env_key(master_key, env_id)
-
-        secret = run_async(queries.get_secret(db, env_id, key))
-        if not secret:
-            click.echo(f"Error: Secret '{key}' not found", err=True)
-            raise SystemExit(1)
-
-        # Decrypt
-        plaintext = decrypt(
-            secret.ciphertext, secret.iv, secret.auth_tag,
-            env_key, secret.checksum
-        )
-        value = plaintext.decode("utf-8")
+    try:
+        with cli_context(require_auth=True) as (db, _master_key, client):
+            resolved_project_id = resolve_project_id(db, project)
+            vault = RemoteVault(client, resolved_project_id)
+            state = run_async(vault.load_state(env_name))
+            blob = next((item for item in state.blobs if item["key_id"] == key), None)
+            if not blob:
+                raise click.ClickException(f"Secret '{key}' not found")
+            plaintext = run_async(vault.decrypt_blob(blob, state.environment.id))
+            value = plaintext.decode("utf-8")
+    except click.ClickException as e:
+        click.echo(f"Error: {e.message}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
 
     if clipboard:
         try:
@@ -138,13 +120,18 @@ def list_command(env_name: str | None, project: str | None):
         criptenv list
         criptenv list -e staging
     """
-    from criptenv.context import local_vault
-
-    with local_vault() as db:
-        env_id = run_async(_resolve_env_id(db, env_name))
-        secrets = run_async(queries.list_secrets(db, env_id))
-        env = run_async(queries.get_environment(db, env_id))
-        env_display = env.name if env else env_id
+    try:
+        with cli_context(require_auth=True) as (db, _master_key, client):
+            resolved_project_id = resolve_project_id(db, project)
+            vault = RemoteVault(client, resolved_project_id)
+            state = run_async(vault.load_state(env_name))
+            env_display, secrets = state.environment.name, state.blobs
+    except click.ClickException as e:
+        click.echo(f"Error: {e.message}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
 
     if not secrets:
         click.echo("No secrets found.")
@@ -153,8 +140,8 @@ def list_command(env_name: str | None, project: str | None):
     click.echo(f"Secrets in '{env_display}':")
     click.echo("")
     for s in secrets:
-        updated = time.strftime("%Y-%m-%d %H:%M", time.localtime(s.updated_at))
-        click.echo(f"  {s.key_id:<30} v{s.version:<3} {updated}")
+        updated = str(s.get("updated_at", ""))[:16].replace("T", " ")
+        click.echo(f"  {s.get('key_id', 'unknown'):<30} v{int(s.get('version', 1)):<3} {updated}")
 
     click.echo("")
     click.echo(f"Total: {len(secrets)} secret(s)")
@@ -178,15 +165,23 @@ def delete_command(key: str, env_name: str | None, project: str | None, force: b
             click.echo("Cancelled.")
             return
 
-    with cli_context() as (db, _, _):
-        env_id = run_async(_resolve_env_id(db, env_name))
-        deleted = run_async(queries.delete_secret_by_key(db, env_id, key))
-
-    if deleted:
-        click.echo(f"✓ Deleted {key}")
-    else:
-        click.echo(f"Error: Secret '{key}' not found", err=True)
+    try:
+        with cli_context(require_auth=True) as (db, _master_key, client):
+            resolved_project_id = resolve_project_id(db, project)
+            vault = RemoteVault(client, resolved_project_id)
+            state = run_async(vault.load_state(env_name))
+            blobs = [blob for blob in state.blobs if blob["key_id"] != key]
+            if len(blobs) == len(state.blobs):
+                raise click.ClickException(f"Secret '{key}' not found")
+            run_async(vault.push_state(state, blobs))
+    except click.ClickException as e:
+        click.echo(f"Error: {e.message}", err=True)
         raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+
+    click.echo(f"✓ Deleted {key}")
 
 
 # ─── Rotation Commands (M3.5) ──────────────────────────────────────────────────
@@ -225,43 +220,33 @@ def rotate_command(key: str, env_name: str | None, project: str | None,
             click.echo("Cancelled.")
             return
     
-    with cli_context() as (db, master_key, session):
-        if master_key is None:
-            click.echo("Error: Run 'criptenv login' first", err=True)
-            raise SystemExit(1)
-        
-        env_id = run_async(_resolve_env_id(db, env_name))
-        env_key = derive_env_key(master_key, env_id)
-        
-        # Get current secret
-        current_secret = run_async(queries.get_secret(db, env_id, key))
-        if not current_secret:
-            click.echo(f"Error: Secret '{key}' not found", err=True)
-            raise SystemExit(1)
-        
-        old_version = current_secret.version
-        
-        # Encrypt new value
-        plaintext = new_value.encode("utf-8")
-        ciphertext, iv, auth_tag, checksum = encrypt(plaintext, env_key)
-        
-        # Create new version
-        secret = Secret(
-            id=generate_id("sec"),
-            environment_id=env_id,
-            key_id=key,
-            iv=iv,
-            ciphertext=ciphertext,
-            auth_tag=auth_tag,
-            version=old_version + 1,
-            checksum=checksum,
-            created_at=int(time.time()),
-            updated_at=int(time.time()),
-        )
-        
-        run_async(queries.save_secret(db, secret))
+    try:
+        with cli_context(require_auth=True) as (db, _master_key, client):
+            resolved_project_id = resolve_project_id(db, project)
+            vault = RemoteVault(client, resolved_project_id)
+            state = run_async(vault.load_state(env_name))
+            current_blob = next((blob for blob in state.blobs if blob["key_id"] == key), None)
+            if not current_blob:
+                raise click.ClickException(f"Secret '{key}' not found")
+            old_version = int(current_blob.get("version", state.version))
+            new_blob = run_async(vault.encrypt_blob(
+                key,
+                new_value.encode("utf-8"),
+                state.environment.id,
+                old_version + 1,
+            ))
+            blobs = [blob for blob in state.blobs if blob["key_id"] != key]
+            blobs.append(new_blob)
+            run_async(vault.push_state(state, blobs))
+            version = old_version + 1
+    except click.ClickException as e:
+        click.echo(f"Error: {e.message}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
     
-    click.echo(f"✓ Rotated {key}: v{old_version} → v{old_version + 1}")
+    click.echo(f"✓ Rotated {key} (v{version})")
 
 
 @click.command("expire")
@@ -289,12 +274,12 @@ def expire_command(key: str, days: int, policy: str, env_name: str | None, proje
 
     async def _do_expire():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            env_id = await _resolve_env_id(db, env_name)
-            resolved_project_id = resolve_project_id(db, project)
+            resolved_project_id = await resolve_project_id_async(db, project)
+            env = await RemoteVault(client, resolved_project_id).resolve_environment(env_name)
 
             await client.set_expiration(
                 project_id=resolved_project_id,
-                env_id=env_id,
+                env_id=env.id,
                 key=key,
                 expires_at=expires_at_iso,
                 rotation_policy=policy,
@@ -326,15 +311,15 @@ def alert_command(key: str, days: int, env_name: str | None, project: str | None
 
     async def _do_alert():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            env_id = await _resolve_env_id(db, env_name)
-            resolved_project_id = resolve_project_id(db, project)
+            resolved_project_id = await resolve_project_id_async(db, project)
+            env = await RemoteVault(client, resolved_project_id).resolve_environment(env_name)
 
             # Set a default 90-day expiration with the requested alert timing
             expires_at = (datetime.now(timezone.utc) + timedelta(days=90)).isoformat()
 
             await client.set_expiration(
                 project_id=resolved_project_id,
-                env_id=env_id,
+                env_id=env.id,
                 key=key,
                 expires_at=expires_at,
                 rotation_policy="notify",
@@ -387,7 +372,7 @@ def rotation_list_command(env_name: str | None, project_id: str | None, days: in
 
     async def _do_list():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.list_expiring(project_id=resolved_project_id, days=days)
             items = result.get("items", [])
 
@@ -423,17 +408,17 @@ def rotation_history_command(secret_key: str, env_name: str | None, project_id: 
         criptenv rotation history <secret-key>
         criptenv rotation history <secret-key> -e staging
     """
-    from criptenv.context import async_cli_context, _resolve_env_id
+    from criptenv.context import async_cli_context
     import asyncio
 
     async def _do_history():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = resolve_project_id(db, project_id)
-            env_id = await _resolve_env_id(db, env_name)
+            resolved_project_id = await resolve_project_id_async(db, project_id)
+            env = await RemoteVault(client, resolved_project_id).resolve_environment(env_name)
 
             result = await client.get_rotation_history(
                 project_id=resolved_project_id,
-                env_id=env_id,
+                env_id=env.id,
                 secret_key=secret_key,
             )
             items = result.get("items", [])

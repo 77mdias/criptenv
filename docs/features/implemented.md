@@ -13,7 +13,7 @@ All completed features organized by phase.
 ## `init` Command
 
 **Status:** ✅ Implemented  
-**Description:** Initialize local vault with master password  
+**Description:** Prepare local CLI metadata/configuration without creating a local secrets vault or master password  
 **Files:** `apps/cli/src/criptenv/commands/init.py`  
 **Tests:** Part of `test_commands.py`
 
@@ -27,8 +27,8 @@ All completed features organized by phase.
 ## `secrets` Commands (set, get, list, delete)
 
 **Status:** ✅ Implemented  
-**Description:** Full CRUD on secrets with client-side encryption  
-**Files:** `apps/cli/src/criptenv/commands/secrets.py`  
+**Description:** Remote terminal CRUD against the project vault. The CLI pulls encrypted blobs, decrypts in memory when needed, mutates locally, and pushes encrypted blobs back with optimistic version checks.  
+**Files:** `apps/cli/src/criptenv/commands/secrets.py`, `apps/cli/src/criptenv/remote_vault.py`  
 **Tests:** `test_secrets_flow.py`
 
 ## `projects` Command
@@ -48,21 +48,21 @@ All completed features organized by phase.
 ## `sync` Commands (push, pull)
 
 **Status:** ✅ Implemented  
-**Description:** Sync encrypted vault with cloud  
+**Description:** Remote aliases for file import/export: `push FILE` imports `.env` values into the remote vault, `pull --output FILE` exports decrypted values to a file. Bare push/pull fail with explicit guidance.  
 **Files:** `apps/cli/src/criptenv/commands/sync.py`  
-**Tests:** Part of `test_secrets_flow.py`
+**Tests:** `test_sync_commands.py`
 
 ## `import` / `export` Commands
 
 **Status:** ✅ Implemented  
-**Description:** Import from .env files, export to .env or JSON  
+**Description:** Import from `.env` files into the remote project vault, export remote secrets to `.env` or JSON without persisting local secret copies  
 **Files:** `apps/cli/src/criptenv/commands/import_export.py`  
 **Tests:** `test_import_export.py`
 
 ## `doctor` Command
 
 **Status:** ✅ Implemented  
-**Description:** Diagnostic checks for config, vault, session, API  
+**Description:** Diagnostic checks for local metadata, auth session, current project, and API health  
 **Files:** `apps/cli/src/criptenv/commands/doctor.py`  
 **Tests:** Part of `test_import_export.py`
 
@@ -78,16 +78,16 @@ All completed features organized by phase.
 ## Key Derivation (PBKDF2HMAC + HKDF)
 
 **Status:** ✅ Implemented  
-**Description:** Master key derived with 100,000 PBKDF2 iterations, per-env keys via HKDF  
+**Description:** Project vault key derived from the project Vault password with 100,000 PBKDF2 iterations, per-environment keys via HKDF  
 **Files:** `apps/cli/src/criptenv/crypto/keys.py`  
 **Tests:** `test_crypto.py`
 
-### Local Vault
+### Local Metadata Store
 
-## SQLite Vault
+## SQLite Metadata Database
 
 **Status:** ✅ Implemented  
-**Description:** Local database at `~/.criptenv/vault.db`  
+**Description:** Local database at `~/.criptenv/vault.db` for auth/session metadata, current project, CI session metadata, and compatibility tables. Main CLI secret flows use the remote project vault.  
 **Files:** `apps/cli/src/criptenv/vault/database.py`, `models.py`, `queries.py`  
 **Tests:** `test_vault.py` (22 tests)
 
@@ -153,7 +153,7 @@ All completed features organized by phase.
 ## Vault Push/Pull
 
 **Status:** ✅ Implemented  
-**Description:** Sync secrets between local vault and cloud  
+**Description:** Store opaque encrypted blobs and serve pull/version metadata. Push now accepts `expected_version` and returns `409 Conflict` for stale writes.  
 **Files:** `apps/api/app/routers/vault.py`, `apps/api/app/services/vault_service.py`  
 **Tests:** Integration tests
 
@@ -396,7 +396,7 @@ All completed features organized by phase.
 ## `ci deploy`
 
 **Status:** ✅ Implemented  
-**Description:** Push local vault secrets to cloud; optional `--provider <name>` sync  
+**Description:** Import an explicit env file into the remote vault in CI context; optional `--provider <name>` sync  
 **Files:** `apps/cli/src/criptenv/commands/ci.py`  
 **Tests:** `test_ci_commands.py`
 

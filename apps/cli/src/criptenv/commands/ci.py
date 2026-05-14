@@ -3,29 +3,21 @@
 Implements M3.3 CI Tokens Enhancement specification:
 - ci-login: Login with CI token, save session locally
 - ci-secrets: List available secrets for CI context
-- ci-deploy: Deploy local secrets to cloud
+- ci-deploy: Import an env file into the remote vault
 - ci-tokens: Manage CI tokens (list, create, revoke)
 """
 
 import asyncio
-import base64
-import json
-import os
 import time
 from typing import Optional
 
 import click
 
 from criptenv.api.client import CriptEnvClient
-from criptenv.context import async_cli_context, cli_context, _resolve_env_id
-from criptenv.crypto import (
-    decrypt,
-    derive_env_key,
-    derive_project_env_key,
-    derive_vault_proof,
-    encrypt,
-    verify_project_vault_password,
-)
+from criptenv.commands.import_export import _parse_env_file
+from criptenv.context import cli_context
+from criptenv.remote_vault import RemoteVault
+from criptenv.session import get_or_create_auth_key
 from criptenv.vault.models import CISession
 from criptenv.vault import queries
 
@@ -35,17 +27,19 @@ from criptenv.vault import queries
 # =============================================================================
 
 class CISessionManager:
-    """Manages encrypted CI session tokens in the local vault."""
+    """Manages encrypted CI session tokens in the local metadata database."""
 
-    def __init__(self, master_key: bytes, db):
-        self.master_key = master_key
+    def __init__(self, storage_key: bytes, db):
+        self.storage_key = storage_key
         self.db = db
         self.client = CriptEnvClient()
         self._current_session: Optional[CISession] = None
 
     def _encrypt_token(self, token: str) -> bytes:
-        """Encrypt token with master key. Returns iv + ciphertext + auth_tag."""
-        ciphertext, iv, auth_tag, _ = encrypt(token.encode("utf-8"), self.master_key)
+        """Encrypt token with the local session storage key."""
+        from criptenv.crypto import encrypt
+
+        ciphertext, iv, auth_tag, _ = encrypt(token.encode("utf-8"), self.storage_key)
         return iv + ciphertext + auth_tag
 
     def _decrypt_token(self, encrypted: bytes) -> str:
@@ -53,7 +47,9 @@ class CISessionManager:
         iv = encrypted[:12]
         ciphertext = encrypted[12:-16]
         auth_tag = encrypted[-16:]
-        plaintext = decrypt(ciphertext, iv, auth_tag, self.master_key)
+        from criptenv.crypto import decrypt
+
+        plaintext = decrypt(ciphertext, iv, auth_tag, self.storage_key)
         return plaintext.decode("utf-8")
 
     async def ci_login(self, ci_token: str, project_id: Optional[str] = None) -> dict:
@@ -75,10 +71,8 @@ class CISessionManager:
         scopes = response.get("permissions", ["read:secrets"])
         expires_in = response.get("expires_in", 3600)
 
-        # Encrypt session token with master key
         token_encrypted = self._encrypt_token(session_token)
 
-        # Store in local vault
         ci_session = CISession(
             id=f"ci_{int(time.time())}",
             project_id=project_id,
@@ -103,7 +97,7 @@ class CISessionManager:
         }
 
     async def get_active_session(self) -> Optional[CISession]:
-        """Get the active (non-expired) CI session from local vault."""
+        """Get the active (non-expired) CI session from local metadata."""
         if self._current_session and not self._current_session.is_expired:
             return self._current_session
 
@@ -128,6 +122,10 @@ class CISessionManager:
         self._current_session = None
 
 
+def _ci_manager(db) -> CISessionManager:
+    return CISessionManager(get_or_create_auth_key(), db)
+
+
 # =============================================================================
 # CLI Commands
 # =============================================================================
@@ -139,7 +137,7 @@ def ci():
     These commands allow CI/CD systems to authenticate with CriptEnv
     using tokens and perform secret operations without user interaction.
 
-    For non-interactive use, set CRIPTENV_MASTER_PASSWORD environment variable.
+    For non-interactive secret writes, set CRIPTENV_VAULT_PASSWORD.
     """
     pass
 
@@ -157,34 +155,28 @@ def ci_login(token: str, project: Optional[str]):
     Example:
         criptenv ci login --token ci_abc123xyz
     """
-    async def _do_login():
-        with cli_context() as (db, master_key, _):
-            manager = CISessionManager(master_key, db)
-            result = await manager.ci_login(token, project)
+    with cli_context(require_master_key=False) as (db, _master_key, _):
+        manager = _ci_manager(db)
+        result = asyncio.run(manager.ci_login(token, project))
 
-            click.echo(f"✓ Logged in to project: {result['project_name']} ({result['project_id']})")
-            click.echo(f"  Scopes: {', '.join(result['scopes'])}")
-            click.echo(f"  Session expires in: {result['expires_in']} seconds")
-
-    asyncio.run(_do_login())
+    click.echo(f"✓ Logged in to project: {result['project_name']} ({result['project_id']})")
+    click.echo(f"  Scopes: {', '.join(result['scopes'])}")
+    click.echo(f"  Session expires in: {result['expires_in']} seconds")
 
 
 @ci.command("logout")
 def ci_logout():
     """Logout from CI session and clear local credentials."""
-    async def _do_logout():
-        with cli_context() as (db, master_key, _):
-            manager = CISessionManager(master_key, db)
-            session = await manager.get_active_session()
+    with cli_context(require_master_key=False) as (db, _master_key, _):
+        manager = _ci_manager(db)
+        session = asyncio.run(manager.get_active_session())
 
-            if not session:
-                click.echo("No active CI session found.")
-                return
+        if not session:
+            click.echo("No active CI session found.")
+            return
 
-            await manager.logout()
-            click.echo("✓ CI session logged out successfully.")
-
-    asyncio.run(_do_logout())
+        asyncio.run(manager.logout())
+        click.echo("✓ CI session logged out successfully.")
 
 
 @ci.command("secrets")
@@ -198,182 +190,147 @@ def ci_secrets(environment: str):
     Example:
         criptenv ci secrets --env production
     """
-    async def _do_list():
-        with cli_context() as (db, master_key, _):
-            manager = CISessionManager(master_key, db)
-            session = await manager.get_active_session()
+    with cli_context(require_master_key=False) as (db, _master_key, _):
+        manager = _ci_manager(db)
+        session = asyncio.run(manager.get_active_session())
 
-            if not session:
-                click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
+        if not session:
+            click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
+            return
+
+        if session.environment_scope and session.environment_scope != environment:
+            click.echo(f"Error: Token is restricted to environment '{session.environment_scope}'", err=True)
+            return
+
+        client = asyncio.run(manager.get_authenticated_client())
+        if not client:
+            click.echo("Error: Invalid CI session. Run 'criptenv ci login --token <token>' again.", err=True)
+            return
+
+        try:
+            secrets_data = asyncio.run(client.get_ci_secrets(session.project_id, environment))
+            blobs = secrets_data.get("blobs", [])
+
+            if not blobs:
+                click.echo(f"No secrets found in {environment} environment.")
                 return
 
-            # Check environment scope
-            if session.environment_scope and session.environment_scope != environment:
-                click.echo(f"Error: Token is restricted to environment '{session.environment_scope}'", err=True)
-                return
+            click.echo(f"Secrets in {environment} (showing keys only for security):")
+            click.echo(f"  Version: {secrets_data.get('version', 'unknown')}")
+            click.echo(f"  Count: {len(blobs)}")
+            click.echo("")
 
-            client = await manager.get_authenticated_client()
-            if not client:
-                click.echo("Error: Invalid CI session. Run 'criptenv ci login --token <token>' again.", err=True)
-                return
+            for blob in blobs:
+                key_id = blob.get("key_id", "unknown")
+                version = blob.get("version", 1)
+                click.echo(f"  {key_id:<40} v{version}")
 
-            try:
-                secrets_data = await client.get_ci_secrets(session.project_id, environment)
-                blobs = secrets_data.get("blobs", [])
-
-                if not blobs:
-                    click.echo(f"No secrets found in {environment} environment.")
-                    return
-
-                click.echo(f"Secrets in {environment} (showing keys only for security):")
-                click.echo(f"  Version: {secrets_data.get('version', 'unknown')}")
-                click.echo(f"  Count: {len(blobs)}")
-                click.echo("")
-
-                for blob in blobs:
-                    key_id = blob.get("key_id", "unknown")
-                    version = blob.get("version", 1)
-                    click.echo(f"  {key_id:<40} v{version}")
-
-            except Exception as e:
-                click.echo(f"Error fetching secrets: {e}", err=True)
-
-    asyncio.run(_do_list())
+        except Exception as e:
+            click.echo(f"Error fetching secrets: {e}", err=True)
 
 
 @ci.command("deploy")
 @click.option("--env", "environment", required=True, help="Environment name")
+@click.option("--file", "-f", "file_path", type=click.Path(exists=True), help="Env file to import into the remote vault")
 @click.option("--provider", help="Sync to provider after push (e.g., vercel, railway, render)")
 @click.option("--dry-run", is_flag=True, help="Show what would be deployed without actually deploying")
-def ci_deploy(environment: str, provider: Optional[str], dry_run: bool):
-    """Deploy local secrets to CriptEnv cloud.
+def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str], dry_run: bool):
+    """Deploy an env file to CriptEnv cloud.
 
-    Pushes local vault secrets to CriptEnv cloud, then optionally
-    syncs to connected providers.
+    Imports a local env file into the remote vault, then optionally syncs
+    to connected providers.
 
     Example:
-        criptenv ci deploy --env production --provider vercel
+        criptenv ci deploy --env production --file .env.production --provider vercel
     """
-    async def _do_deploy():
-        async with async_cli_context() as (db, master_key, _):
-            manager = CISessionManager(master_key, db)
-            session = await manager.get_active_session()
+    if not file_path:
+        click.echo(
+            "Error: ci deploy now imports a file into the remote vault. "
+            "Use 'criptenv ci deploy --file <file> --env <environment>'.",
+            err=True,
+        )
+        raise SystemExit(1)
 
-            if not session:
-                click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
-                return
+    entries = _parse_env_file(file_path)
+    if not entries:
+        click.echo("No entries found in file.")
+        return
 
-            # Check environment scope
-            if session.environment_scope and session.environment_scope != environment:
-                click.echo(
-                    f"Error: Token is restricted to environment '{session.environment_scope}'",
-                    err=True
-                )
-                return
+    with cli_context(require_master_key=False) as (db, _master_key, _):
+        manager = _ci_manager(db)
+        session = asyncio.run(manager.get_active_session())
 
-            # Resolve environment name to ID
-            try:
-                env_id = await _resolve_env_id(db, environment)
-            except click.ClickException as e:
-                click.echo(f"Error: {e.message}", err=True)
-                return
+        if not session:
+            click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
+            return
 
-            # Get local secrets for this environment
-            local_secrets = await queries.list_secrets(db, env_id)
-
-            if not local_secrets:
-                click.echo(f"No local secrets found for environment '{environment}'.")
-                return
-
-            if dry_run:
-                click.echo(f"[DRY RUN] Would deploy {len(local_secrets)} secret(s) to {environment}")
-                for secret in local_secrets:
-                    click.echo(f"  - {secret.key_id} (v{secret.version})")
-                return
-
-            vault_password = os.getenv("CRIPTENV_VAULT_PASSWORD")
-            if not vault_password:
-                click.echo(
-                    "Error: CI deploy requires CRIPTENV_VAULT_PASSWORD for project vault encryption.",
-                    err=True,
-                )
-                return
-
-            client = await manager.get_authenticated_client()
-            if not client:
-                click.echo("Error: Invalid CI session. Run 'criptenv ci login --token <token>' again.", err=True)
-                return
-
-            try:
-                project = await client.get_project(session.project_id)
-            except Exception as e:
-                click.echo(f"Error fetching project vault config: {e}", err=True)
-                return
-
-            vault_config = project.get("vault_config")
-            if not vault_config or not verify_project_vault_password(vault_password, vault_config):
-                click.echo("Error: Invalid project vault password.", err=True)
-                return
-
-            local_env_key = derive_env_key(master_key, env_id)
-            project_env_key = derive_project_env_key(vault_password, vault_config, env_id)
-            vault_proof = derive_vault_proof(
-                vault_password,
-                vault_config["proof_salt"],
-                int(vault_config.get("iterations", 100000)),
+        if session.environment_scope and session.environment_scope != environment:
+            click.echo(
+                f"Error: Token is restricted to environment '{session.environment_scope}'",
+                err=True,
             )
+            return
 
-            click.echo(f"Deploying {len(local_secrets)} secret(s) to {environment}...")
+        if dry_run:
+            click.echo(f"[DRY RUN] Would deploy {len(entries)} secret(s) from {file_path} to {environment}")
+            for key, _value in entries:
+                click.echo(f"  - {key}")
+            return
 
-            # Re-encrypt local blobs for the project vault.
-            blobs = []
-            for secret in local_secrets:
-                plaintext = decrypt(secret.ciphertext, secret.iv, secret.auth_tag, local_env_key)
-                ciphertext, iv, auth_tag, checksum = encrypt(plaintext, project_env_key)
-                blobs.append({
-                    "key_id": secret.key_id,
-                    "iv": base64.b64encode(iv).decode("ascii"),
-                    "ciphertext": base64.b64encode(ciphertext).decode("ascii"),
-                    "auth_tag": base64.b64encode(auth_tag).decode("ascii"),
-                    "version": secret.version,
-                    "checksum": checksum,
-                })
+        client = asyncio.run(manager.get_authenticated_client())
+        if not client:
+            click.echo("Error: Invalid CI session. Run 'criptenv ci login --token <token>' again.", err=True)
+            return
 
-            # Push to API
+        try:
+            vault = RemoteVault(client, session.project_id)
+            state = asyncio.run(vault.load_state(environment))
+            by_key = {blob["key_id"]: blob for blob in state.blobs}
+
+            for key, value in entries:
+                existing = by_key.get(key)
+                version = int(existing.get("version", state.version)) + 1 if existing else state.version + 1
+                by_key[key] = asyncio.run(
+                    vault.encrypt_blob(
+                        key,
+                        value.encode("utf-8"),
+                        state.environment.id,
+                        version,
+                    )
+                )
+
+            result = asyncio.run(vault.push_state(state, list(by_key.values())))
+            version = result.get("version", "unknown")
+            click.echo(f"✓ Deployment complete ({len(entries)} secret(s), version {version})")
+        except click.ClickException as e:
+            click.echo(f"Error: {e.message}", err=True)
+            return
+        except Exception as e:
+            click.echo(f"Error pushing secrets: {e}", err=True)
+            return
+
+        if provider:
+            click.echo(f"Syncing to {provider}...")
             try:
-                result = await client.push_vault(session.project_id, env_id, blobs, vault_proof=vault_proof)
-                version = result.get("version", "unknown")
-                click.echo(f"✓ Deployment complete (version {version})")
+                integrations = asyncio.run(client.list_integrations(session.project_id))
+                provider_integration = None
+                for integration in integrations:
+                    if integration.get("provider") == provider:
+                        provider_integration = integration
+                        break
+
+                if not provider_integration:
+                    click.echo(
+                        f"Error: No {provider} integration found. "
+                        f"Run 'criptenv integrations connect {provider}' first.",
+                        err=True,
+                    )
+                    return
+
+                asyncio.run(client.sync_integration(session.project_id, provider_integration["id"], direction="push"))
+                click.echo(f"✓ Sync to {provider} complete")
             except Exception as e:
-                click.echo(f"Error pushing secrets: {e}", err=True)
-                return
-
-            # Optional provider sync
-            if provider:
-                click.echo(f"Syncing to {provider}...")
-                try:
-                    # Find integration for this provider
-                    integrations = await client.list_integrations(session.project_id)
-                    provider_integration = None
-                    for integration in integrations:
-                        if integration.get("provider") == provider:
-                            provider_integration = integration
-                            break
-
-                    if not provider_integration:
-                        click.echo(
-                            f"Error: No {provider} integration found. "
-                            f"Run 'criptenv integrations connect {provider}' first.",
-                            err=True
-                        )
-                        return
-
-                    await client.sync_integration(session.project_id, provider_integration["id"], direction="push")
-                    click.echo(f"✓ Sync to {provider} complete")
-                except Exception as e:
-                    click.echo(f"Error syncing to {provider}: {e}", err=True)
-
-    asyncio.run(_do_deploy())
+                click.echo(f"Error syncing to {provider}: {e}", err=True)
 
 
 # =============================================================================
@@ -400,51 +357,48 @@ def ci_tokens_list(include_revoked: bool):
     Example:
         criptenv ci tokens list
     """
-    async def _do_list():
-        with cli_context() as (db, master_key, _):
-            manager = CISessionManager(master_key, db)
-            session = await manager.get_active_session()
+    with cli_context(require_master_key=False) as (db, _master_key, _):
+        manager = _ci_manager(db)
+        session = asyncio.run(manager.get_active_session())
 
-            if not session:
-                click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
+        if not session:
+            click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
+            return
+
+        client = asyncio.run(manager.get_authenticated_client())
+        if not client:
+            click.echo("Error: Invalid CI session.", err=True)
+            return
+
+        try:
+            tokens = asyncio.run(client.list_ci_tokens(session.project_id, include_revoked))
+
+            if not tokens:
+                click.echo("No CI tokens found.")
                 return
 
-            client = await manager.get_authenticated_client()
-            if not client:
-                click.echo("Error: Invalid CI session.", err=True)
-                return
+            click.echo(f"CI Tokens for project {session.project_id}:")
+            click.echo("")
 
-            try:
-                tokens = await client.list_ci_tokens(session.project_id, include_revoked)
+            for token in tokens:
+                name = token.get("name", "Unknown")
+                scopes = token.get("scopes", [])
+                env_scope = token.get("environment_scope") or "all"
+                last_used = token.get("last_used_at") or "never"
+                revoked = token.get("revoked_at")
 
-                if not tokens:
-                    click.echo("No CI tokens found.")
-                    return
+                status = "REVOKED" if revoked else "active"
+                status_color = "red" if revoked else "green"
 
-                click.echo(f"CI Tokens for project {session.project_id}:")
+                click.echo(f"  {name}")
+                click.echo(f"    Scopes: {', '.join(scopes)}")
+                click.echo(f"    Environment: {env_scope}")
+                click.echo(f"    Last used: {last_used}")
+                click.echo(f"    Status: {status} ({status_color})")
                 click.echo("")
 
-                for token in tokens:
-                    name = token.get("name", "Unknown")
-                    scopes = token.get("scopes", [])
-                    env_scope = token.get("environment_scope") or "all"
-                    last_used = token.get("last_used_at") or "never"
-                    revoked = token.get("revoked_at")
-
-                    status = "REVOKED" if revoked else "active"
-                    status_color = "red" if revoked else "green"
-
-                    click.echo(f"  {name}")
-                    click.echo(f"    Scopes: {', '.join(scopes)}")
-                    click.echo(f"    Environment: {env_scope}")
-                    click.echo(f"    Last used: {last_used}")
-                    click.echo(f"    Status: {status} ({status_color})")
-                    click.echo("")
-
-            except Exception as e:
-                click.echo(f"Error listing tokens: {e}", err=True)
-
-    asyncio.run(_do_list())
+        except Exception as e:
+            click.echo(f"Error listing tokens: {e}", err=True)
 
 
 @ci_tokens.command("create")
@@ -461,46 +415,42 @@ def ci_tokens_create(name: str, scopes: str, environment_scope: Optional[str], e
     Example:
         criptenv ci tokens create --name "Deploy Bot" --scopes "read:secrets,write:secrets" --environment production
     """
-    async def _do_create():
-        with cli_context() as (db, master_key, _):
-            manager = CISessionManager(master_key, db)
-            session = await manager.get_active_session()
+    with cli_context(require_master_key=False) as (db, _master_key, _):
+        manager = _ci_manager(db)
+        session = asyncio.run(manager.get_active_session())
 
-            if not session:
-                click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
-                return
+        if not session:
+            click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
+            return
 
-            client = await manager.get_authenticated_client()
-            if not client:
-                click.echo("Error: Invalid CI session.", err=True)
-                return
+        client = asyncio.run(manager.get_authenticated_client())
+        if not client:
+            click.echo("Error: Invalid CI session.", err=True)
+            return
 
-            # Parse scopes
-            scope_list = [s.strip() for s in scopes.split(",")]
+        scope_list = [s.strip() for s in scopes.split(",")]
 
-            try:
-                result = await client.create_ci_token(
-                    project_id=session.project_id,
-                    name=name,
-                    scopes=scope_list,
-                    environment_scope=environment_scope,
-                    expires_days=expires_days,
-                )
+        try:
+            result = asyncio.run(client.create_ci_token(
+                project_id=session.project_id,
+                name=name,
+                scopes=scope_list,
+                environment_scope=environment_scope,
+                expires_days=expires_days,
+            ))
 
-                click.echo("✓ CI Token created successfully!")
-                click.echo("")
-                click.echo("  IMPORTANT: Save this token now! It will not be shown again.")
-                click.echo("")
-                click.echo(f"  Token: {result['token']}")
-                click.echo(f"  Name: {result['token_info']['name']}")
-                click.echo(f"  Scopes: {', '.join(result['token_info']['scopes'])}")
-                if result['token_info'].get('environment_scope'):
-                    click.echo(f"  Environment: {result['token_info']['environment_scope']}")
+            click.echo("✓ CI Token created successfully!")
+            click.echo("")
+            click.echo("  IMPORTANT: Save this token now! It will not be shown again.")
+            click.echo("")
+            click.echo(f"  Token: {result['token']}")
+            click.echo(f"  Name: {result['token_info']['name']}")
+            click.echo(f"  Scopes: {', '.join(result['token_info']['scopes'])}")
+            if result['token_info'].get('environment_scope'):
+                click.echo(f"  Environment: {result['token_info']['environment_scope']}")
 
-            except Exception as e:
-                click.echo(f"Error creating token: {e}", err=True)
-
-    asyncio.run(_do_create())
+        except Exception as e:
+            click.echo(f"Error creating token: {e}", err=True)
 
 
 @ci_tokens.command("revoke")
@@ -515,33 +465,30 @@ def ci_tokens_revoke(token_id: str, force: bool):
     Example:
         criptenv ci tokens revoke 550e8400-e29b-41d4-a716-446655440000
     """
-    async def _do_revoke():
-        with cli_context() as (db, master_key, _):
-            manager = CISessionManager(master_key, db)
-            session = await manager.get_active_session()
+    with cli_context(require_master_key=False) as (db, _master_key, _):
+        manager = _ci_manager(db)
+        session = asyncio.run(manager.get_active_session())
 
-            if not session:
-                click.echo("Error: No active CI session.", err=True)
+        if not session:
+            click.echo("Error: No active CI session.", err=True)
+            return
+
+        if not force:
+            if not click.confirm(f"Revoke token {token_id}? This cannot be undone."):
+                click.echo("Aborted.")
                 return
 
-            if not force:
-                if not click.confirm(f"Revoke token {token_id}? This cannot be undone."):
-                    click.echo("Aborted.")
-                    return
+        client = asyncio.run(manager.get_authenticated_client())
+        if not client:
+            click.echo("Error: Invalid CI session.", err=True)
+            return
 
-            client = await manager.get_authenticated_client()
-            if not client:
-                click.echo("Error: Invalid CI session.", err=True)
-                return
+        try:
+            asyncio.run(client.revoke_ci_token(session.project_id, token_id))
+            click.echo("✓ Token revoked successfully.")
 
-            try:
-                await client.revoke_ci_token(session.project_id, token_id)
-                click.echo("✓ Token revoked successfully.")
-
-            except Exception as e:
-                click.echo(f"Error revoking token: {e}", err=True)
-
-    asyncio.run(_do_revoke())
+        except Exception as e:
+            click.echo(f"Error revoking token: {e}", err=True)
 
 
 # Export commands for registration

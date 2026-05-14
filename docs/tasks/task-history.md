@@ -6,6 +6,41 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-14 — CLI Remote Terminal
+
+**Resumo:**
+Transformada a CLI em um terminal remoto para o vault do projeto. Comandos principais agora operam diretamente nos blobs criptografados remotos, sem master password local no fluxo principal. A única senha de secrets é a Vault password do projeto, solicitada apenas para decrypt/mutação ou via `CRIPTENV_VAULT_PASSWORD`.
+
+**Arquivos criados:**
+- `apps/cli/src/criptenv/remote_vault.py`
+- `docs/features/remote-terminal-cli.md`
+
+**Arquivos alterados:**
+- `apps/api/app/schemas/vault.py` — adiciona `expected_version`.
+- `apps/api/app/routers/vault.py` — repassa `expected_version` ao service.
+- `apps/api/tests/test_project_vault_security.py` — cobre push com versão esperada e conflito 409.
+- `apps/cli/src/criptenv/api/client.py` e `apps/cli/src/criptenv/api/vault.py` — suportam `expected_version`.
+- `apps/cli/src/criptenv/commands/secrets.py` — `set/get/list/delete/rotate` remotos.
+- `apps/cli/src/criptenv/commands/import_export.py` — import/export remotos.
+- `apps/cli/src/criptenv/commands/sync.py` — `push FILE` e `pull --output FILE` como aliases remotos.
+- `apps/cli/src/criptenv/commands/init.py` — setup local sem senha mestra.
+- `apps/cli/src/criptenv/commands/doctor.py` — valida metadata/sessão/API sem master password.
+- `apps/cli/src/criptenv/commands/ci.py` — sessões via `auth.key` e `ci deploy --file` remoto.
+- `apps/cli/tests/*` — suíte atualizada para mocks remotos e aliases.
+- `README.md`, `apps/cli/README.md`, docs internas e docs web.
+
+**Testes:**
+- `python -m pytest apps/cli/tests -q` — 178 passed.
+- `cd apps/api && python -m pytest tests/test_project_vault_security.py -q` — 5 passed.
+- `make web-build` — passed.
+
+**Observações:**
+- O backend continua zero-knowledge: apenas ciphertext é enviado/armazenado.
+- O SQLite local permanece para sessão, projeto atual e metadata leve; não é mais o fluxo principal de armazenamento de secrets.
+- Escritas concorrentes agora usam `expected_version`; se o vault mudou desde o pull, a API retorna `409` e a CLI orienta repetir o comando.
+
+---
+
 ## 2026-05-13 — Professional Auth Screens Redesign
 
 **Resumo:**
@@ -561,6 +596,8 @@ Correção do falso 404 em `criptenv doctor` e separação entre sessão autenti
 - `doctor` agora consulta `/health`, validado contra a API pública com HTTP 200.
 - API-only commands usam `~/.criptenv/auth.key` para sessão local e não precisam mais da master password do vault.
 - Fluxos que decryptam ou sincronizam secrets continuam exigindo senha de vault/local conforme necessário.
+- Corrigido bug em comandos de sync: `require_master_key=True` agora usa `auth.key` para a sessão da API e master key apenas para o vault local.
+- Corrigido bug em `pull`/`push`: ambientes agora são resolvidos via API do projeto remoto e cacheados localmente, evitando falso `Environment not found` quando `env list --project` mostra o ambiente existente.
 - Verificações executadas: `python -m pytest apps/cli/tests -q`, `python -m pytest apps/api/tests/test_api_versioning.py -q`, `python -m pytest apps/api/tests/test_openapi_docs.py::TestOpenAPISchema::test_worker_proxy_health_alias_exists -q`.
 
 ---

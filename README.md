@@ -67,10 +67,10 @@ Your Device                          CriptEnv Servers
 └─────────────┘                      └─────────────┘
 ```
 
-1. You enter a **master password** on your device
-2. Secrets are encrypted with **AES-256-GCM** using a key derived from your password
+1. You enter the project's **Vault password** on your device
+2. Secrets are encrypted with **AES-256-GCM** using a key derived from that password
 3. Only the **encrypted blob** is sent to our servers
-4. Decryption only happens **locally** on your authorized devices
+4. Decryption happens **in memory** inside the CLI or web app, never on the server
 
 ---
 
@@ -84,20 +84,19 @@ pip install criptenv
 
 Requires **Python 3.10+**.
 
-### Initialize & Login
+### Login
 
 ```bash
-# Create your local encrypted vault (~/.criptenv/)
-criptenv init
-
 # Authenticate with your account
 criptenv login --email you@example.com
 ```
 
+`criptenv init` is optional and only prepares local CLI metadata under `~/.criptenv/`.
+
 ### Manage Secrets
 
 ```bash
-# Add a secret (encrypted locally before sending)
+# Add a secret to the remote project vault (encrypted locally before sending)
 criptenv set DATABASE_URL=postgres://localhost/mydb
 criptenv set API_KEY=your_api_key_here
 
@@ -114,30 +113,30 @@ criptenv import .env
 criptenv export -o .env.production
 ```
 
-### Sync with Your Team
+### Import / Export Files
 
 ```bash
-# Push encrypted secrets to the cloud
-criptenv push -p my-project
+# Import a .env file into the remote vault
+criptenv push .env.production -p my-project
 
-# Pull latest secrets on another machine
-criptenv pull -p my-project
+# Export the remote vault to a local .env file
+criptenv pull -p my-project --output .env.production
 ```
 
 ### Full Command Reference
 
 | Command | Description |
 |---------|-------------|
-| `criptenv init` | Create your local encrypted vault |
+| `criptenv init` | Prepare local CLI metadata (optional) |
 | `criptenv login` | Sign in to your CriptEnv account |
-| `criptenv set KEY=VALUE` | Encrypt and store a secret |
-| `criptenv get KEY` | Decrypt and retrieve a secret |
-| `criptenv list` | List all secrets (names only) |
-| `criptenv delete KEY` | Remove a secret |
-| `criptenv push -p PROJECT` | Upload encrypted vault to cloud |
-| `criptenv pull -p PROJECT` | Download encrypted vault from cloud |
-| `criptenv import FILE` | Import secrets from `.env` file |
-| `criptenv export -o FILE` | Export secrets to `.env` or JSON |
+| `criptenv set KEY=VALUE` | Encrypt and store a secret in the remote vault |
+| `criptenv get KEY` | Decrypt and retrieve a secret in memory |
+| `criptenv list` | List remote secret keys (names only) |
+| `criptenv delete KEY` | Remove a secret from the remote vault |
+| `criptenv push FILE -p PROJECT` | Import `.env` secrets into the remote vault |
+| `criptenv pull -p PROJECT -o FILE` | Export remote secrets to a file |
+| `criptenv import FILE` | Import secrets from `.env` file into the remote vault |
+| `criptenv export -o FILE` | Export remote secrets to `.env` or JSON |
 | `criptenv rotate KEY` | Rotate a secret value |
 | `criptenv doctor` | Check CLI health and connectivity |
 
@@ -179,7 +178,7 @@ Features:
 CriptEnv is built with security as the primary design constraint:
 
 - **AES-256-GCM** — Industry-standard authenticated encryption
-- **PBKDF2-HMAC-SHA256** — 100,000 iterations for master key derivation
+- **PBKDF2-HMAC-SHA256** — 100,000 iterations for project vault key derivation
 - **HKDF-SHA256** — Per-environment key derivation
 - **HTTP-Only Cookies** — Session tokens protected from XSS attacks
 - **Rate Limiting** — Tiered protection against abuse

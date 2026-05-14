@@ -27,7 +27,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests**: Updated auth route tests, integration tests, and frontend unit tests to cover the new verification flow.
 
 ### Fixed
-- **CLI auth/vault separation**: API-only CLI commands now decrypt session tokens with a dedicated local `auth.key` instead of the local secrets vault master password. Commands that decrypt or sync secrets still require the appropriate vault password. Legacy master-key-encrypted sessions can be migrated on first authenticated use.
+- **CLI Remote Terminal**: Core secret commands (`set`, `get`, `list`, `delete`, `import`, `export`, `rotate`) now operate directly against the remote project vault. Secrets are decrypted only in memory and are no longer mirrored into the local SQLite vault.
+- **CLI password model**: Main CLI flows no longer prompt for a local master password. Secret commands prompt for the project Vault password only when they must decrypt or mutate secrets, and support `CRIPTENV_VAULT_PASSWORD` for automation.
+- **CLI sync semantics**: `criptenv push FILE` is now an import alias for remote `.env` files, and `criptenv pull --output FILE` is now an export alias. Bare `push`/`pull` return clear guidance instead of pretending to sync a local secrets vault.
+- **API vault concurrency**: Vault push accepts `expected_version` and returns `409 Conflict` for stale writes so the CLI can protect users from overwriting concurrent changes.
+- **CI deploy**: `ci deploy` uses the auth-session storage key and imports an explicit file into the remote vault instead of depending on a local master-key vault.
 - **CLI doctor**: `criptenv doctor` now checks `/health` instead of `/docs`, avoiding false 404 warnings against production deployments where docs may be unavailable.
 - **CLI project/env routing**: Fixed stale project ID usage in environment commands and project vault sync helpers so resolved project IDs are used consistently.
 - **CLI auth utilities**: `auth forgot-password` and `auth reset-password` now create an unauthenticated API client without trying to unlock the local secrets vault.

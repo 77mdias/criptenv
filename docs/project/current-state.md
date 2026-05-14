@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅, CLI Remote Terminal ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
 
 ---
 
@@ -23,15 +23,15 @@
 
 | Command | Description | Status |
 |---------|-------------|--------|
-| `init` | Initialize local vault | ✅ |
+| `init` | Prepare local CLI metadata | ✅ |
 | `login` | Authenticate with backend | ✅ |
 | `logout` | Clear session | ✅ |
-| `set` | Add/update secret (encrypted) | ✅ |
-| `get` | Get decrypted secret | ✅ |
-| `list` | List secret names (no values) | ✅ |
-| `delete` | Remove secret | ✅ |
-| `push` | Upload to cloud | ✅ |
-| `pull` | Download from cloud | ✅ |
+| `set` | Add/update remote project secret (encrypted client-side) | ✅ |
+| `get` | Get decrypted remote secret in memory | ✅ |
+| `list` | List remote secret names (no values) | ✅ |
+| `delete` | Remove remote secret | ✅ |
+| `push` | Import `.env` file into remote vault | ✅ |
+| `pull` | Export remote vault to file | ✅ |
 | `env` | Environment management | ✅ |
 | `projects` | Project management | ✅ |
 | `projects create` | Create cloud project with project vault password | ✅ |
@@ -45,7 +45,7 @@
 | `ci login` | Login with CI token | ✅ |
 | `ci logout` | Clear CI session | ✅ |
 | `ci secrets` | List secrets in CI context | ✅ |
-| `ci deploy` | Deploy local secrets to cloud | ✅ |
+| `ci deploy` | Import file into remote vault with CI session | ✅ |
 | `ci tokens list` | List CI tokens | ✅ |
 | `ci tokens create` | Create CI token | ✅ |
 | `ci tokens revoke` | Revoke CI token | ✅ |
@@ -54,7 +54,7 @@
 | `integrations disconnect` | Disconnect provider | ✅ |
 | `integrations sync` | Sync secrets with provider | ✅ |
 
-**CLI Tests**: 173 unit tests passing
+**CLI Tests**: 178 unit tests passing
 
 ### API Backend (apps/api)
 
@@ -64,7 +64,7 @@
 | `auth/oauth` | github, google, discord | ✅ |
 | `projects` | CRUD + list/get with API key + vault rekey | ✅ |
 | `environments` | CRUD + list/get with API key | ✅ |
-| `vault` | push with vault proof, pull/version (session + API key) | ✅ |
+| `vault` | push with vault proof + expected_version, pull/version (session + API key) | ✅ |
 | `members` | CRUD on team members | ✅ |
 | `invites` | create, list, accept, revoke | ✅ |
 | `tokens` | CI/CD tokens CRUD | ✅ |

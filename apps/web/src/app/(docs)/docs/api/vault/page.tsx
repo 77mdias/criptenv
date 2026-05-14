@@ -38,8 +38,8 @@ export default function ApiVaultPage() {
 
       <div className="bg-muted rounded-lg p-4 font-mono text-sm mb-8">
         <p className="text-emerald-500">Push (enviar segredos):</p>
-        <p className="ml-4">1. Cliente obtém senha mestra do usuário</p>
-        <p className="ml-4">2. Deriva chave mestra via PBKDF2 (100k iterações)</p>
+        <p className="ml-4">1. Cliente obtém a Vault password do projeto</p>
+        <p className="ml-4">2. Deriva chave do vault via PBKDF2 (100k iterações)</p>
         <p className="ml-4">3. Deriva chave do ambiente via HKDF (salt = env_id)</p>
         <p className="ml-4">4. Criptografa cada segredo com AES-256-GCM</p>
         <p className="ml-4">5. Envia ciphertext + nonce + tag ao servidor</p>
@@ -50,8 +50,8 @@ export default function ApiVaultPage() {
       </div>
 
       <Callout type="info">
-        O servidor armazena apenas dados opacos (ciphertext). Sem a senha mestra do
-        usuário, é impossível recuperar os valores originais — nem o CriptEnv, nem
+        O servidor armazena apenas dados opacos (ciphertext). Sem a Vault password
+        do projeto, é impossível recuperar os valores originais — nem o CriptEnv, nem
         qualquer pessoa com acesso ao banco de dados, consegue ler os segredos.
       </Callout>
 
@@ -165,7 +165,7 @@ export default function ApiVaultPage() {
 
       <p className="text-muted-foreground mb-4">
         Retorna todos os segredos criptografados de um ambiente. Os dados retornados
-        devem ser descriptografados no cliente usando a chave derivada da senha mestra.
+        devem ser descriptografados no cliente usando a chave derivada da Vault password.
       </p>
 
       <CodeBlock language="text">

@@ -895,5 +895,50 @@ The CLI reused the local secrets vault master password to encrypt API session to
 
 ---
 
-**Document Version**: 2.2
+## DEC-034 — CLI Sync Resolves Project Environments Remotely
+
+**Status:** Approved
+**Date:** 2026-05-14
+**Context:**
+`criptenv env list --project <id>` correctly listed environments from the API, but `criptenv pull -e production --project <id>` resolved `production` only against the local SQLite environment cache. Fresh CLI installs or projects created in the WEB dashboard therefore failed with a false `Environment 'production' not found` even though the remote project contained that environment.
+
+**Decision:**
+- Make `pull` and `push` resolve the environment through `client.list_environments(project_id)`.
+- When the remote environments are fetched, cache their IDs/names locally so later local commands can reference the same environment IDs.
+- If `--env` is omitted, use the remote default environment first, then `production`, then the first environment as a final fallback.
+- Keep local master password behavior unchanged for now: sync still re-encrypts secrets into the local SQLite vault, so local secret storage still needs the local vault key.
+
+**Consequences:**
+- ✅ `criptenv pull -e production -p <project-id>` works for environments that exist remotely but are not cached locally yet.
+- ✅ `criptenv pull -p <project-id>` follows the project's remote default environment instead of the local `default` placeholder.
+- ✅ Local cache becomes aligned with project environment IDs after sync.
+- ⚠️ The CLI still has two password concepts during sync: project vault password for shared cloud secrets and local master password for local encrypted storage. This remains a UX/design follow-up.
+
+---
+
+## DEC-035 — CLI Remote Terminal
+
+**Status:** Approved
+**Date:** 2026-05-14
+**Context:**
+The CLI still behaved like a local encrypted vault that occasionally synchronized with the server. That created two confusing password concepts: a local master password and a project Vault password. It also caused broken flows where remote environments existed but local cache state did not match the project, making commands such as `pull -e production -p <project-id>` fail even when the web dashboard and `env list` showed the environment.
+
+**Decision:**
+- Make the CLI a remote terminal for the project vault. Core secret commands operate directly on remote encrypted blobs.
+- Keep zero-knowledge behavior: the API receives only ciphertext; the CLI decrypts and re-encrypts in memory using the project Vault password.
+- Remove the local master password from the main CLI path. `init` only prepares local metadata/configuration; auth sessions use `~/.criptenv/auth.key`.
+- Introduce a `RemoteVault` CLI layer for project/environment resolution, vault config loading, Vault password prompt/env handling, pull/decrypt/mutate/encrypt/push, and stale-write errors.
+- Redefine `push FILE` as remote import and `pull --output FILE` as remote export. Bare `push`/`pull` fail with explicit guidance.
+- Add optimistic write protection with `expected_version` on vault push; stale writes return `409 Conflict`.
+
+**Consequences:**
+- ✅ CLI behavior now matches the web app: one remote project vault, always synchronized.
+- ✅ Secret commands no longer ask for a local master password.
+- ✅ `CRIPTENV_VAULT_PASSWORD` is the single automation password for secret decrypt/mutate flows.
+- ✅ Concurrent edits are protected by version conflict detection.
+- ⚠️ The legacy SQLite vault code remains for metadata, sessions, compatibility, and historical tests, but it is no longer the main secrets storage model.
+
+---
+
+**Document Version**: 2.4
 **Last Updated**: 2026-05-14

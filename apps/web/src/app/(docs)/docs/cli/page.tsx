@@ -36,8 +36,8 @@ export default function CliOverviewPage() {
           description="Seus segredos são criptografados localmente com AES-256-GCM antes de qualquer sincronização. O servidor nunca vê seus dados em texto claro."
         />
         <DocCard
-          title="Offline-Ready"
-          description="O vault local funciona sem internet. Sincronize com a nuvem quando quiser, da maneira que quiser (push/pull)."
+          title="Terminal Remoto"
+          description="A CLI opera no vault remoto do projeto, mantendo tudo sincronizado com o dashboard web e com a equipe."
         />
       </CardGrid>
 
@@ -51,7 +51,7 @@ export default function CliOverviewPage() {
         />
         <DocCard
           title="Sincronização"
-          description="Push e pull do vault local para a nuvem, mantendo seus ambientes sempre atualizados."
+          description="Push importa arquivos .env para o vault remoto; pull exporta o vault remoto para arquivos locais."
           href="/docs/cli/commands#sync"
         />
         <DocCard
@@ -83,8 +83,8 @@ export default function CliOverviewPage() {
         code={`# Instalar via pip
 pip install criptenv
 
-# Inicializar o vault local
-criptenv init`}
+# Autenticar a CLI
+criptenv login --email you@example.com`}
       />
 
       <Callout type="info">
@@ -114,7 +114,7 @@ criptenv init`}
         />
         <DocCard
           title="Configuração"
-          description="Estrutura do ~/.criptenv/, variáveis de ambiente e senha mestra."
+          description="Estrutura do ~/.criptenv/, sessão local, Vault password e variáveis de ambiente."
           href="/docs/cli/configuration"
         />
       </CardGrid>

@@ -23,12 +23,14 @@ export default function SecurityOverviewPage() {
         O CriptEnv foi projetado com uma arquitetura de <strong>conhecimento zero</strong> (zero-knowledge),
         garantindo que seus segredos de ambiente nunca sejam expostos ao servidor.
         Toda criptografia acontece no lado do cliente — o servidor armazena apenas
-        dados criptografados que não podem ser decifrados sem sua senha mestra.
+        dados criptografados que não podem ser decifrados sem a Vault password
+        do projeto.
       </p>
 
       <Callout type="info">
-        Sua senha mestra nunca é enviada ao servidor. Ela é usada localmente para
-        derivar chaves criptográficas que nunca saem do seu dispositivo.
+        A Vault password do projeto nunca é enviada ao servidor. Ela é usada
+        localmente para derivar chaves criptográficas que nunca saem do seu
+        dispositivo.
       </Callout>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">Princípios de Segurança</h2>
@@ -78,9 +80,9 @@ export default function SecurityOverviewPage() {
       </p>
 
       <div className="bg-muted rounded-lg p-4 font-mono text-sm mb-8">
-        <p>Senha Mestra</p>
+        <p>Vault Password</p>
         <p className="ml-4">↓ PBKDF2-HMAC-SHA256 (100k iterações)</p>
-        <p className="ml-4">Chave Mestra (256-bit)</p>
+        <p className="ml-4">Chave do Vault (256-bit)</p>
         <p className="ml-8">↓ HKDF-SHA256 (salt=env_id)</p>
         <p className="ml-8">Chave do Ambiente (256-bit)</p>
         <p className="ml-12">↓ AES-256-GCM</p>
