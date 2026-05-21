@@ -942,3 +942,40 @@ The CLI still behaved like a local encrypted vault that occasionally synchronize
 
 **Document Version**: 2.4
 **Last Updated**: 2026-05-14
+
+---
+
+## DEC-036 — Pix contribution UX timeout and mobile overflow hardening
+
+**Status:** Approved
+**Date:** 2026-05-21
+**Context:**
+The `/contribute` flow allowed very long Pix wait windows and mobile users could hit horizontal scroll, reducing trust and usability during payment.
+
+**Decision:**
+- Cap the visible Pix payment window to **2 minutes** in the QR panel.
+- Add a visual countdown progress bar that decreases with time remaining.
+- Harden `/contribute` layout for narrow screens (`overflow-x-clip`, reduced mobile paddings/text sizing, `min-w-0` on grid items).
+
+**Consequences:**
+- ✅ Mobile experience avoids horizontal scrolling in common viewport sizes.
+- ✅ Users get clearer urgency and feedback while waiting for Pix confirmation.
+- ⚠️ The UI cap is client-side visibility behavior and does not alter provider expiration semantics returned by the backend.
+
+---
+
+## DEC-037 — Temporary python-jose version ceiling for API security audit
+
+**Status:** Approved
+**Date:** 2026-05-21
+**Context:**
+CI failed at `pip-audit -r apps/api/requirements.txt` with `python-jose 3.5.0` flagged by `PYSEC-2025-185`.
+
+**Decision:**
+- Apply a version ceiling in API requirements: `python-jose[cryptography]>=3.3.0,<3.5.0`.
+- Keep the dependency in place for existing auth code while avoiding the vulnerable release line.
+
+**Consequences:**
+- ✅ CI environments resolving to 3.5.0 will downgrade to a non-flagged version.
+- ✅ No auth code refactor required in this hotfix path.
+- ⚠️ This is a mitigation pin; dependency should be revisited when a patched upstream release strategy is clearer.

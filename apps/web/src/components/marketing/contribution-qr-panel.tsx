@@ -15,8 +15,14 @@ interface ContributionQRPanelProps {
   onRetry: () => void
 }
 
+const MAX_PIX_WINDOW_SECONDS = 120
+
 function formatTimeLeft(expiresAt: string): string {
   const diff = new Date(expiresAt).getTime() - Date.now()
+  return formatFromMs(diff)
+}
+
+function formatFromMs(diff: number): string {
   if (diff <= 0) return "00:00"
   const minutes = Math.floor(diff / 60000)
   const seconds = Math.floor((diff % 60000) / 1000)
@@ -62,10 +68,21 @@ export function ContributionQRPanel({
 }: ContributionQRPanelProps) {
   const [copied, setCopied] = useState(false)
   const [timeLeft, setTimeLeft] = useState(() => formatTimeLeft(expiresAt))
+  const [progressPercent, setProgressPercent] = useState(100)
 
   useEffect(() => {
+    const expiresAtMs = new Date(expiresAt).getTime()
+    const now = Date.now()
+    const startAtMs = Math.max(now, expiresAtMs - MAX_PIX_WINDOW_SECONDS * 1000)
+
     const interval = setInterval(() => {
-      setTimeLeft(formatTimeLeft(expiresAt))
+      const tickNow = Date.now()
+      const msRemaining = Math.max(0, expiresAtMs - tickNow)
+      const totalWindowMs = Math.max(1, expiresAtMs - startAtMs)
+      const nextProgress = Math.min(100, Math.max(0, (msRemaining / totalWindowMs) * 100))
+
+      setTimeLeft(formatFromMs(msRemaining))
+      setProgressPercent(nextProgress)
     }, 1000)
     return () => clearInterval(interval)
   }, [expiresAt])
@@ -143,6 +160,25 @@ export function ContributionQRPanel({
           </span>
         )}
       </div>
+
+      {!isTerminal && (
+        <div className="space-y-1">
+          <div className="h-2 overflow-hidden rounded-full bg-[var(--background-muted)]">
+            <div
+              className="h-full rounded-full bg-[var(--accent)] transition-all duration-1000 ease-linear"
+              style={{ width: `${progressPercent}%` }}
+              role="progressbar"
+              aria-label="Tempo restante do Pix"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(progressPercent)}
+            />
+          </div>
+          <p className="text-[11px] text-[var(--text-muted)]">
+            O QR Code fica disponível por até 2 minutos.
+          </p>
+        </div>
+      )}
 
       {/* QR Code */}
       <div className="mx-auto w-fit">

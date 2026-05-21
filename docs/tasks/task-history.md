@@ -659,3 +659,30 @@ Ver CHANGELOG.md para detalhes completos.
 
 **Document Version**: 1.2
 **Last Updated**: 2026-05-11
+
+## 2026-05-21 — Ajustes UX da página /contribute (Pix)
+
+**Resumo:**
+Removido risco de scroll horizontal em mobile na página de contribuição e implementado limite visual de 2 minutos para pagamento Pix com barra de progresso regressiva.
+
+**Arquivos alterados:**
+- `apps/web/src/app/(marketing)/contribute/page.tsx`
+- `apps/web/src/components/marketing/contribution-qr-panel.tsx`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+
+**Observações:**
+- O backend continua sendo a fonte de verdade para status/expiração (inferred from code); o limite de 2 minutos é comportamento visual para melhorar clareza durante a conversão.
+
+## 2026-05-21 — Mitigação de vulnerabilidade PYSEC-2025-185 no API requirements
+
+**Resumo:**
+Aplicado pin defensivo em dependência de autenticação do backend para evitar resolução da versão vulnerável `python-jose==3.5.0` detectada pelo `pip-audit` da CI.
+
+**Arquivos alterados:**
+- `apps/api/requirements.txt`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+
+**Observações:**
+- Mitigação imediata por faixa de versão; refactor de biblioteca JWT não foi necessário neste ajuste.
