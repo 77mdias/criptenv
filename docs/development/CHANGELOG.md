@@ -508,3 +508,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 [unreleased]: https://github.com/77mdias/criptenv/compare/v0.1.0...HEAD
 [0.1.0]: https://github.com/77mdias/criptenv/releases/tag/v0.1.0
+
+## [unreleased]
+
+### Changed
+
+- **web(contribute):** improved mobile responsiveness on `/contribute` by reducing base paddings/text scale and enforcing safer width behavior in marketing grid cards to prevent horizontal overflow.
+- **web(contribute):** Pix countdown UI now shows a 2-minute maximum payment window with a visual progress bar that decreases in real-time until expiration.

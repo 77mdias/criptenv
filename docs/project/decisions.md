@@ -942,3 +942,22 @@ The CLI still behaved like a local encrypted vault that occasionally synchronize
 
 **Document Version**: 2.4
 **Last Updated**: 2026-05-14
+
+---
+
+## DEC-036 — Pix contribution UX timeout and mobile overflow hardening
+
+**Status:** Approved
+**Date:** 2026-05-21
+**Context:**
+The `/contribute` flow allowed very long Pix wait windows and mobile users could hit horizontal scroll, reducing trust and usability during payment.
+
+**Decision:**
+- Cap the visible Pix payment window to **2 minutes** in the QR panel.
+- Add a visual countdown progress bar that decreases with time remaining.
+- Harden `/contribute` layout for narrow screens (`overflow-x-clip`, reduced mobile paddings/text sizing, `min-w-0` on grid items).
+
+**Consequences:**
+- ✅ Mobile experience avoids horizontal scrolling in common viewport sizes.
+- ✅ Users get clearer urgency and feedback while waiting for Pix confirmation.
+- ⚠️ The UI cap is client-side visibility behavior and does not alter provider expiration semantics returned by the backend.
