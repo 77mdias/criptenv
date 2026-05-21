@@ -214,7 +214,7 @@ export default function ContributePage() {
   }, [contribution, displayedAmount, displayedExpiresAt, displayedProviderStatus, effectiveFlowStatus, resetFlow])
 
   return (
-    <main className="relative min-h-screen overflow-hidden bg-[var(--background)] px-6 pb-20 pt-28 sm:px-8">
+    <main className="relative min-h-screen overflow-x-clip overflow-y-hidden bg-[var(--background)] px-4 pb-20 pt-24 sm:px-6 sm:pt-28 md:px-8">
       <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_78%_18%,var(--glow-soft),transparent_32%),linear-gradient(to_bottom,transparent_70%,var(--background-subtle))]" />
 
       <div className="relative mx-auto w-full max-w-6xl">
@@ -226,12 +226,12 @@ export default function ContributePage() {
           Voltar
         </Link>
 
-        <section className="grid gap-10 lg:grid-cols-[0.9fr_1.1fr] lg:items-end">
-          <div>
+        <section className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-10">
+          <div className="min-w-0">
             <div className="flex h-14 w-14 items-center justify-center rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/10">
               <HeartHandshake className="h-7 w-7 text-[var(--accent)]" />
             </div>
-            <h1 className="mt-8 max-w-3xl text-5xl font-light leading-[0.98] tracking-tight text-[var(--text-primary)] sm:text-6xl">
+            <h1 className="mt-8 max-w-3xl text-4xl font-light leading-[0.98] tracking-tight text-[var(--text-primary)] sm:text-5xl lg:text-6xl">
               Contribua com o <span className="font-semibold text-[var(--accent)]">CriptEnv</span>
             </h1>
             <p className="mt-6 max-w-xl text-base font-light leading-relaxed text-[var(--text-tertiary)]">
@@ -239,7 +239,7 @@ export default function ContributePage() {
             </p>
           </div>
 
-          <Card className="rounded-xl border-[var(--border)] bg-[var(--surface)]/80 p-6 backdrop-blur-sm sm:p-8">
+          <Card className="min-w-0 rounded-xl border-[var(--border)] bg-[var(--surface)]/80 p-5 backdrop-blur-sm sm:p-8">
             <h2 className="text-xl font-semibold tracking-tight text-[var(--text-primary)]">
               Gerar contribuição
             </h2>
@@ -286,8 +286,8 @@ export default function ContributePage() {
           </Card>
         </section>
 
-        <section className="mt-10 grid gap-10 lg:grid-cols-[0.9fr_1.1fr]">
-          <div className="rounded-xl border border-[var(--border)] bg-[var(--background-subtle)] p-6">
+        <section className="mt-10 grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
+          <div className="min-w-0 rounded-xl border border-[var(--border)] bg-[var(--background-subtle)] p-6">
             <p className="font-mono text-xs uppercase text-[var(--text-muted)]">open source</p>
             <p className="mt-3 text-sm leading-relaxed text-[var(--text-tertiary)]">
               O CriptEnv segue MIT License. Contribuições ajudam a manter infraestrutura, auditoria, documentação e evolução do produto sem comprometer o princípio zero-knowledge.

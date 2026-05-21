@@ -659,3 +659,17 @@ Ver CHANGELOG.md para detalhes completos.
 
 **Document Version**: 1.2
 **Last Updated**: 2026-05-11
+
+## 2026-05-21 — Ajustes UX da página /contribute (Pix)
+
+**Resumo:**
+Removido risco de scroll horizontal em mobile na página de contribuição e implementado limite visual de 2 minutos para pagamento Pix com barra de progresso regressiva.
+
+**Arquivos alterados:**
+- `apps/web/src/app/(marketing)/contribute/page.tsx`
+- `apps/web/src/components/marketing/contribution-qr-panel.tsx`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+
+**Observações:**
+- O backend continua sendo a fonte de verdade para status/expiração (inferred from code); o limite de 2 minutos é comportamento visual para melhorar clareza durante a conversão.
