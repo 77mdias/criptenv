@@ -673,3 +673,21 @@ Removido risco de scroll horizontal em mobile na página de contribuição e imp
 
 **Observações:**
 - O backend continua sendo a fonte de verdade para status/expiração (inferred from code); o limite de 2 minutos é comportamento visual para melhorar clareza durante a conversão.
+
+---
+
+## 2026-05-23 — Correção do audit de dependências da API
+
+**Resumo:**
+Adicionado piso explícito `pyasn1>=0.6.3` ao requirements da API para impedir que o workflow Security resolva a versão vulnerável `pyasn1 0.4.8` reportada por `pip-audit` em CVE-2026-30922.
+
+**Arquivos alterados:**
+- `apps/api/requirements.txt`
+- `docs/project/tech-stack.md`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+- A dependência é transitiva do stack de autenticação (`python-jose`) (inferred from resolver output).
+- Verificações locais: `make api-test` e `apps/api/.venv/bin/pip-audit -r apps/api/requirements.txt`.

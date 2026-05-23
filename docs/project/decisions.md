@@ -940,8 +940,8 @@ The CLI still behaved like a local encrypted vault that occasionally synchronize
 
 ---
 
-**Document Version**: 2.4
-**Last Updated**: 2026-05-14
+**Document Version**: 2.5
+**Last Updated**: 2026-05-23
 
 ---
 
@@ -961,3 +961,20 @@ The `/contribute` flow allowed very long Pix wait windows and mobile users could
 - ✅ Mobile experience avoids horizontal scrolling in common viewport sizes.
 - ✅ Users get clearer urgency and feedback while waiting for Pix confirmation.
 - ⚠️ The UI cap is client-side visibility behavior and does not alter provider expiration semantics returned by the backend.
+
+---
+
+## DEC-037 — Explicit pyasn1 Security Floor for API Audits
+
+**Status:** Approved
+**Date:** 2026-05-23
+**Context:**
+The Security workflow failed during `pip-audit -r apps/api/requirements.txt` because the requirements graph could resolve `pyasn1 0.4.8`, which is affected by CVE-2026-30922. `pyasn1` is used transitively by the API auth stack through `python-jose`.
+
+**Decision:**
+Add `pyasn1>=0.6.3` directly to `apps/api/requirements.txt` and document it in the project tech stack as a security floor for the transitive auth dependency.
+
+**Consequences:**
+- ✅ The dependency audit cannot select the vulnerable `pyasn1 0.4.8` release.
+- ✅ The auth implementation stays on the existing `python-jose[cryptography]` path.
+- ⚠️ Future auth dependency updates should keep direct security floors when advisories affect transitive packages.

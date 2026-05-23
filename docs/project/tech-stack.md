@@ -28,6 +28,7 @@ asyncpg>=0.9.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 python-jose[cryptography]>=3.3.0
+pyasn1>=0.6.3
 passlib[bcrypt]>=1.7.4
 httpx>=0.27.0
 apscheduler>=3.10.0

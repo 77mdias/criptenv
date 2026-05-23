@@ -27,6 +27,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests**: Updated auth route tests, integration tests, and frontend unit tests to cover the new verification flow.
 
 ### Fixed
+- **API dependency audit**: Added an explicit `pyasn1>=0.6.3` security floor to the API requirements so `pip-audit -r apps/api/requirements.txt` cannot resolve vulnerable `pyasn1 0.4.8` through transitive auth dependencies.
 - **CLI Remote Terminal**: Core secret commands (`set`, `get`, `list`, `delete`, `import`, `export`, `rotate`) now operate directly against the remote project vault. Secrets are decrypted only in memory and are no longer mirrored into the local SQLite vault.
 - **CLI password model**: Main CLI flows no longer prompt for a local master password. Secret commands prompt for the project Vault password only when they must decrypt or mutate secrets, and support `CRIPTENV_VAULT_PASSWORD` for automation.
 - **CLI sync semantics**: `criptenv push FILE` is now an import alias for remote `.env` files, and `criptenv pull --output FILE` is now an export alias. Bare `push`/`pull` return clear guidance instead of pretending to sync a local secrets vault.
