@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Changed
+
+#### Pix Contribution 2-Minute UI Window (2026-05-23)
+
+- **Frontend**: `/contribute` now enforces a real 2-minute visible Pix window using the local creation time, even when Mercado Pago returns a longer provider expiration.
+- **UX**: The QR panel countdown starts at `02:00`, shows a compact “Janela Pix de 2 minutos” progress bar, and hides QR/copy-paste details when the local window expires.
+- **Payment status**: A backend `PAID` status still takes precedence over the local timeout so valid confirmations are not hidden.
+- **Provider constraint**: The backend does not force a 2-minute Mercado Pago expiration because Checkout API Pix requires `date_of_expiration` between 30 minutes and 30 days.
+
 ### Added
 
 #### Pix Contribution Thank-You Emails (2026-05-23)

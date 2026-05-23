@@ -940,7 +940,7 @@ The CLI still behaved like a local encrypted vault that occasionally synchronize
 
 ---
 
-**Document Version**: 2.6
+**Document Version**: 2.7
 **Last Updated**: 2026-05-23
 
 ---
@@ -1000,3 +1000,25 @@ The public `/contribute` Pix flow collected optional payer name/email but did no
 - ✅ Webhook retries, manual sync, and paid-status lookups do not duplicate successful emails.
 - ✅ Payment confirmation remains reliable even if Resend is unavailable.
 - ⚠️ Concurrent workers could still race before `thank_you_email_sent_at` is flushed; if this becomes visible in production, move thank-you delivery to a queued/outbox worker with a uniqueness constraint.
+
+---
+
+## DEC-039 — Strict 2-Minute Visible Pix Contribution Window
+
+**Status:** Approved
+**Date:** 2026-05-23
+**Context:**
+The `/contribute` QR panel already mentioned a 2-minute Pix window, but the countdown still depended on Mercado Pago's `expires_at`. Because Checkout API Pix defaults to 24 hours and only allows `date_of_expiration` between 30 minutes and 30 days, the UI could display a longer-than-intended payment window.
+
+**Decision:**
+- Enforce a client-side visible Pix deadline at `createdAt + 2 minutes`, capped earlier if the provider expiration is sooner.
+- Drive the countdown and progress bar from the local visible deadline instead of the provider-only expiration.
+- Hide QR/copy-paste details after the visible window expires.
+- Keep backend `PAID` status ahead of the local timeout so confirmed payments remain visible.
+- Do not change Mercado Pago `date_of_expiration` to 2 minutes because that is below the provider-supported minimum.
+
+**Consequences:**
+- ✅ Visitors see a true `02:00` countdown and a clearer urgency signal.
+- ✅ The app's UX policy is independent from the provider's longer Pix validity.
+- ✅ Late status reconciliation can still show confirmed payments.
+- ⚠️ Mercado Pago may technically keep the Pix payment valid beyond the app's visible window; app behavior intentionally asks users to generate a new Pix after 2 minutes.

@@ -34,8 +34,27 @@ type ContributionFlowStatus =
   | "expired"
   | "error";
 
+const PIX_UI_WINDOW_MS = 120_000;
+
 function isExpired(expiresAt?: string | null) {
   return Boolean(expiresAt && new Date(expiresAt).getTime() <= Date.now());
+}
+
+function buildVisiblePixDeadline(
+  createdAt: number | null,
+  providerExpiresAt?: string | null,
+) {
+  if (createdAt === null) return providerExpiresAt || null;
+
+  const uiDeadlineMs = createdAt + PIX_UI_WINDOW_MS;
+  const providerDeadlineMs = providerExpiresAt
+    ? new Date(providerExpiresAt).getTime()
+    : Number.NaN;
+  const visibleDeadlineMs = Number.isFinite(providerDeadlineMs)
+    ? Math.min(uiDeadlineMs, providerDeadlineMs)
+    : uiDeadlineMs;
+
+  return new Date(visibleDeadlineMs).toISOString();
 }
 
 function mapProviderStatus(
@@ -131,9 +150,13 @@ export default function ContributePage() {
   const displayedAmount = Number(
     statusResponse?.amount || contribution?.amount || 0,
   );
+  const visiblePixExpiresAt = buildVisiblePixDeadline(
+    createdAt,
+    displayedExpiresAt,
+  );
   const effectiveFlowStatus =
     flowStatus === "pending"
-      ? mapProviderStatus(displayedProviderStatus, displayedExpiresAt)
+      ? mapProviderStatus(displayedProviderStatus, visiblePixExpiresAt)
       : flowStatus;
 
   const resetFlow = useCallback(() => {
@@ -152,7 +175,7 @@ export default function ContributePage() {
 
   const refreshStatus = useCallback(
     async (forceSync = false) => {
-      if (!contribution || flowStatus !== "pending") return;
+      if (!contribution || flowStatus !== "pending") return null;
 
       try {
         const now = new Date().getTime();
@@ -175,9 +198,16 @@ export default function ContributePage() {
         }
 
         setStatusResponse(nextStatus);
-        setFlowStatus(
-          mapProviderStatus(nextStatus.status, nextStatus.expires_at),
+        const nextFlowStatus = mapProviderStatus(
+          nextStatus.status,
+          nextStatus.expires_at,
         );
+        setFlowStatus((current) =>
+          current === "expired" && nextFlowStatus === "pending"
+            ? current
+            : nextFlowStatus,
+        );
+        return nextFlowStatus;
       } catch (err: unknown) {
         const message =
           err instanceof Error
@@ -185,6 +215,7 @@ export default function ContributePage() {
             : "Não foi possível atualizar o status do pagamento";
         setError(message);
         setFlowStatus("error");
+        return "error";
       }
     },
     [contribution, createdAt, flowStatus, lastSyncAt],
@@ -199,6 +230,35 @@ export default function ContributePage() {
 
     return () => window.clearInterval(interval);
   }, [contribution, effectiveFlowStatus, refreshStatus]);
+
+  useEffect(() => {
+    if (
+      !contribution ||
+      flowStatus !== "pending" ||
+      displayedProviderStatus === "PAID" ||
+      !visiblePixExpiresAt
+    ) {
+      return;
+    }
+
+    const msUntilVisibleExpiration =
+      new Date(visiblePixExpiresAt).getTime() - Date.now();
+
+    const timeout = window.setTimeout(() => {
+      setFlowStatus((current) =>
+        current === "pending" ? "expired" : current,
+      );
+      void refreshStatus(true);
+    }, Math.max(0, msUntilVisibleExpiration));
+
+    return () => window.clearTimeout(timeout);
+  }, [
+    contribution,
+    displayedProviderStatus,
+    flowStatus,
+    refreshStatus,
+    visiblePixExpiresAt,
+  ]);
 
   const onSubmit = async (data: ContributionInput) => {
     setError(null);
@@ -253,7 +313,8 @@ export default function ContributePage() {
         <ContributionQRPanel
           qrCodeBase64={contribution.pix_qr_code_base64}
           copyPasteCode={contribution.pix_copy_paste}
-          expiresAt={displayedExpiresAt || contribution.expires_at}
+          startedAt={createdAt}
+          expiresAt={visiblePixExpiresAt || contribution.expires_at}
           status={panelStatus}
           amount={displayedAmount}
           onRetry={resetFlow}
@@ -262,11 +323,12 @@ export default function ContributePage() {
     );
   }, [
     contribution,
+    createdAt,
     displayedAmount,
-    displayedExpiresAt,
     displayedProviderStatus,
     effectiveFlowStatus,
     resetFlow,
+    visiblePixExpiresAt,
   ]);
 
   return (

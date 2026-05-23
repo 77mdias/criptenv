@@ -9,24 +9,33 @@ import { cn } from "@/lib/utils"
 interface ContributionQRPanelProps {
   qrCodeBase64: string
   copyPasteCode: string
+  startedAt: number | null
   expiresAt: string
   status: string
   amount: number
   onRetry: () => void
 }
 
-const MAX_PIX_WINDOW_SECONDS = 120
-
-function formatTimeLeft(expiresAt: string): string {
-  const diff = new Date(expiresAt).getTime() - Date.now()
-  return formatFromMs(diff)
-}
-
 function formatFromMs(diff: number): string {
   if (diff <= 0) return "00:00"
-  const minutes = Math.floor(diff / 60000)
-  const seconds = Math.floor((diff % 60000) / 1000)
+  const totalSeconds = Math.ceil(diff / 1000)
+  const minutes = Math.floor(totalSeconds / 60)
+  const seconds = totalSeconds % 60
   return `${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`
+}
+
+function getWindowState(startedAt: number | null, expiresAt: string) {
+  const expiresAtMs = new Date(expiresAt).getTime()
+  const startedAtMs = startedAt ?? Date.now()
+  const tickNow = Date.now()
+  const totalWindowMs = Math.max(1, expiresAtMs - startedAtMs)
+  const msRemaining = Math.max(0, expiresAtMs - tickNow)
+  const progressPercent = Math.min(100, Math.max(0, (msRemaining / totalWindowMs) * 100))
+
+  return {
+    timeLeft: formatFromMs(msRemaining),
+    progressPercent,
+  }
 }
 
 function statusBadgeVariant(status: string) {
@@ -61,31 +70,26 @@ function statusLabel(status: string): string {
 export function ContributionQRPanel({
   qrCodeBase64,
   copyPasteCode,
+  startedAt,
   expiresAt,
   status,
   amount,
   onRetry,
 }: ContributionQRPanelProps) {
   const [copied, setCopied] = useState(false)
-  const [timeLeft, setTimeLeft] = useState(() => formatTimeLeft(expiresAt))
-  const [progressPercent, setProgressPercent] = useState(100)
+  const [windowState, setWindowState] = useState(() =>
+    getWindowState(startedAt, expiresAt)
+  )
 
   useEffect(() => {
-    const expiresAtMs = new Date(expiresAt).getTime()
-    const now = Date.now()
-    const startAtMs = Math.max(now, expiresAtMs - MAX_PIX_WINDOW_SECONDS * 1000)
+    const updateWindowState = () => {
+      setWindowState(getWindowState(startedAt, expiresAt))
+    }
 
-    const interval = setInterval(() => {
-      const tickNow = Date.now()
-      const msRemaining = Math.max(0, expiresAtMs - tickNow)
-      const totalWindowMs = Math.max(1, expiresAtMs - startAtMs)
-      const nextProgress = Math.min(100, Math.max(0, (msRemaining / totalWindowMs) * 100))
-
-      setTimeLeft(formatFromMs(msRemaining))
-      setProgressPercent(nextProgress)
-    }, 1000)
+    updateWindowState()
+    const interval = setInterval(updateWindowState, 1000)
     return () => clearInterval(interval)
-  }, [expiresAt])
+  }, [expiresAt, startedAt])
 
   const handleCopy = useCallback(async () => {
     try {
@@ -97,7 +101,7 @@ export function ContributionQRPanel({
     }
   }, [copyPasteCode])
 
-  const isExpired = status === "EXPIRED" || timeLeft === "00:00"
+  const isExpired = status === "EXPIRED" || windowState.timeLeft === "00:00"
   const isPaid = status === "PAID"
   const isTerminal = ["PAID", "EXPIRED", "CANCELLED", "FAILED", "REFUNDED"].includes(status)
 
@@ -151,31 +155,39 @@ export function ContributionQRPanel({
   return (
     <div className="flex flex-col gap-5">
       {/* Status */}
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-3">
         <Badge variant={statusBadgeVariant(status)}>{statusLabel(status)}</Badge>
         {!isTerminal && (
-          <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--text-muted)]">
+          <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs text-[var(--text-muted)]">
             <Timer className="h-3.5 w-3.5" />
-            Expira em {timeLeft}
+            Expira em {windowState.timeLeft}
           </span>
         )}
       </div>
 
       {!isTerminal && (
-        <div className="space-y-1">
+        <div className="rounded-lg border border-[var(--border)] bg-[var(--background-subtle)] p-3">
+          <div className="mb-2 flex items-center justify-between gap-3">
+            <span className="text-xs font-medium text-[var(--text-secondary)]">
+              Janela Pix de 2 minutos
+            </span>
+            <span className="font-mono text-xs text-[var(--text-muted)]">
+              {windowState.timeLeft}
+            </span>
+          </div>
           <div className="h-2 overflow-hidden rounded-full bg-[var(--background-muted)]">
             <div
               className="h-full rounded-full bg-[var(--accent)] transition-all duration-1000 ease-linear"
-              style={{ width: `${progressPercent}%` }}
+              style={{ width: `${windowState.progressPercent}%` }}
               role="progressbar"
               aria-label="Tempo restante do Pix"
               aria-valuemin={0}
               aria-valuemax={100}
-              aria-valuenow={Math.round(progressPercent)}
+              aria-valuenow={Math.round(windowState.progressPercent)}
             />
           </div>
-          <p className="text-[11px] text-[var(--text-muted)]">
-            O QR Code fica disponível por até 2 minutos.
+          <p className="mt-2 text-[11px] leading-relaxed text-[var(--text-muted)]">
+            Gere um novo código se a confirmação não chegar dentro desta janela.
           </p>
         </div>
       )}

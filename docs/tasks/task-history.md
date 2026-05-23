@@ -716,3 +716,22 @@ Implementado envio automático de email bilíngue de agradecimento quando uma co
 **Observações:**
 - O envio é idempotente por `thank_you_email_sent_at` e registra falhas em `thank_you_email_error`.
 - O email só é enviado quando `payer_email` foi informado.
+
+---
+
+## 2026-05-23 — Janela visual real de 2 minutos para Pix `/contribute`
+
+**Resumo:**
+Corrigida a página pública de contribuição para aplicar uma janela visual real de 2 minutos ao Pix. O contador agora inicia em `02:00`, a barra de progresso acompanha essa janela local, e QR/code deixam de aparecer quando o prazo visual termina.
+
+**Arquivos alterados:**
+- `apps/web/src/app/(marketing)/contribute/page.tsx`
+- `apps/web/src/components/marketing/contribution-qr-panel.tsx`
+- `apps/web/src/app/(marketing)/contribute/__tests__/page.test.tsx`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+- O vencimento nativo do Mercado Pago não foi reduzido para 2 minutos porque Checkout API Pix exige `date_of_expiration` entre 30 minutos e 30 dias.
+- Um status backend `PAID` continua prevalecendo sobre a expiração local da UI.

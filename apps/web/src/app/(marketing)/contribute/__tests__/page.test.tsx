@@ -22,6 +22,27 @@ const pendingContribution = {
   expires_at: new Date(Date.now() + 60_000).toISOString(),
 }
 
+function pendingStatus(expiresAt: string) {
+  return {
+    contribution_id: pendingContribution.contribution_id,
+    status: "PENDING",
+    amount: 25,
+    provider_payment_id: "123",
+    paid_at: null,
+    refunded_at: null,
+    cancelled_at: null,
+    expires_at: expiresAt,
+  }
+}
+
+function paidStatus(expiresAt: string) {
+  return {
+    ...pendingStatus(expiresAt),
+    status: "PAID",
+    paid_at: new Date().toISOString(),
+  }
+}
+
 describe("ContributePage", () => {
   beforeEach(() => {
     jest.useRealTimers()
@@ -45,16 +66,9 @@ describe("ContributePage", () => {
 
   it("submits amount as a number and shows Pix QR details", async () => {
     mockedContributionsApi.createPixContribution.mockResolvedValue(pendingContribution)
-    mockedContributionsApi.getContributionStatus.mockResolvedValue({
-      contribution_id: pendingContribution.contribution_id,
-      status: "PENDING",
-      amount: 25,
-      provider_payment_id: "123",
-      paid_at: null,
-      refunded_at: null,
-      cancelled_at: null,
-      expires_at: pendingContribution.expires_at,
-    })
+    mockedContributionsApi.getContributionStatus.mockResolvedValue(
+      pendingStatus(pendingContribution.expires_at)
+    )
 
     render(<ContributePage />)
 
@@ -76,16 +90,9 @@ describe("ContributePage", () => {
     const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
 
     mockedContributionsApi.createPixContribution.mockResolvedValue(pendingContribution)
-    mockedContributionsApi.getContributionStatus.mockResolvedValue({
-      contribution_id: pendingContribution.contribution_id,
-      status: "PAID",
-      amount: 25,
-      provider_payment_id: "123",
-      paid_at: new Date().toISOString(),
-      refunded_at: null,
-      cancelled_at: null,
-      expires_at: pendingContribution.expires_at,
-    })
+    mockedContributionsApi.getContributionStatus.mockResolvedValue(
+      paidStatus(pendingContribution.expires_at)
+    )
 
     render(<ContributePage />)
 
@@ -98,6 +105,98 @@ describe("ContributePage", () => {
     })
 
     expect(await screen.findByText("Pagamento confirmado!")).toBeInTheDocument()
+  })
+
+  it("limits a long provider Pix expiration to a visible 2-minute window", async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date("2026-05-23T12:00:00.000Z"))
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    const providerExpiresAt = new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()
+
+    mockedContributionsApi.createPixContribution.mockResolvedValue({
+      ...pendingContribution,
+      expires_at: providerExpiresAt,
+    })
+    mockedContributionsApi.getContributionStatus.mockResolvedValue(
+      pendingStatus(providerExpiresAt)
+    )
+
+    render(<ContributePage />)
+
+    await user.type(screen.getByLabelText("Valor"), "25")
+    await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
+
+    expect(await screen.findByText("Aguardando pagamento")).toBeInTheDocument()
+    expect(screen.getByText("Janela Pix de 2 minutos")).toBeInTheDocument()
+    expect(screen.getAllByText("02:00").length).toBeGreaterThan(0)
+  })
+
+  it("hides the Pix QR details after the 2-minute visible window expires", async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date("2026-05-23T12:00:00.000Z"))
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    const providerExpiresAt = new Date(Date.now() + 30 * 60 * 1000).toISOString()
+
+    mockedContributionsApi.createPixContribution.mockResolvedValue({
+      ...pendingContribution,
+      expires_at: providerExpiresAt,
+    })
+    mockedContributionsApi.getContributionStatus.mockResolvedValue(
+      pendingStatus(providerExpiresAt)
+    )
+    mockedContributionsApi.syncContributionStatus.mockResolvedValue(
+      pendingStatus(providerExpiresAt)
+    )
+
+    render(<ContributePage />)
+
+    await user.type(screen.getByLabelText("Valor"), "25")
+    await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
+    await screen.findByAltText("QR Code Pix")
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(120_000)
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByText("QR Code expirado")).toBeInTheDocument()
+    expect(screen.queryByAltText("QR Code Pix")).not.toBeInTheDocument()
+    expect(screen.queryByText(/000201010212/)).not.toBeInTheDocument()
+  })
+
+  it("keeps a paid backend status ahead of the local 2-minute expiration", async () => {
+    jest.useFakeTimers()
+    jest.setSystemTime(new Date("2026-05-23T12:00:00.000Z"))
+    const user = userEvent.setup({ advanceTimers: jest.advanceTimersByTime })
+    const createdAtMs = Date.now()
+    const providerExpiresAt = new Date(createdAtMs + 24 * 60 * 60 * 1000).toISOString()
+
+    mockedContributionsApi.createPixContribution.mockResolvedValue({
+      ...pendingContribution,
+      expires_at: providerExpiresAt,
+    })
+    mockedContributionsApi.getContributionStatus.mockResolvedValue(
+      pendingStatus(providerExpiresAt)
+    )
+    mockedContributionsApi.syncContributionStatus.mockImplementation(async () =>
+      Date.now() >= createdAtMs + 120_000
+        ? paidStatus(providerExpiresAt)
+        : pendingStatus(providerExpiresAt)
+    )
+
+    render(<ContributePage />)
+
+    await user.type(screen.getByLabelText("Valor"), "25")
+    await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
+    await screen.findByText("Aguardando pagamento")
+
+    await act(async () => {
+      await jest.advanceTimersByTimeAsync(120_000)
+      await Promise.resolve()
+    })
+
+    expect(await screen.findByText("Pagamento confirmado!")).toBeInTheDocument()
+    expect(screen.queryByText("QR Code expirado")).not.toBeInTheDocument()
   })
 
   it("shows an expired state when the created Pix is already expired", async () => {
