@@ -940,7 +940,7 @@ The CLI still behaved like a local encrypted vault that occasionally synchronize
 
 ---
 
-**Document Version**: 2.5
+**Document Version**: 2.6
 **Last Updated**: 2026-05-23
 
 ---
@@ -978,3 +978,25 @@ Add `pyasn1>=0.6.3` directly to `apps/api/requirements.txt` and document it in t
 - ✅ The dependency audit cannot select the vulnerable `pyasn1 0.4.8` release.
 - ✅ The auth implementation stays on the existing `python-jose[cryptography]` path.
 - ⚠️ Future auth dependency updates should keep direct security floors when advisories affect transitive packages.
+
+---
+
+## DEC-038 — Pix Contribution Thank-You Emails
+
+**Status:** Approved
+**Date:** 2026-05-23
+**Context:**
+The public `/contribute` Pix flow collected optional payer name/email but did not acknowledge successful supporters after Mercado Pago confirmed payment. The contribution flow is operationally separate from zero-knowledge vault data, so it can use existing transactional email infrastructure without exposing secrets.
+
+**Decision:**
+- Send a bilingual Portuguese/English thank-you email when a contribution reaches `PAID`.
+- Send only when `payer_email` is present; the public contribution form remains optional for name and email.
+- Track `thank_you_email_sent_at` and `thank_you_email_error` on `contributions` to avoid duplicate successful sends and preserve failure diagnostics.
+- Treat email as best-effort: failures are logged and stored but never block payment status reconciliation.
+- Reuse the existing Resend-backed `EmailService` and local dev mock behavior when `RESEND_API_KEY` is not configured.
+
+**Consequences:**
+- ✅ Contributors who provide email receive a warmer confirmation after payment.
+- ✅ Webhook retries, manual sync, and paid-status lookups do not duplicate successful emails.
+- ✅ Payment confirmation remains reliable even if Resend is unavailable.
+- ⚠️ Concurrent workers could still race before `thank_you_email_sent_at` is flushed; if this becomes visible in production, move thank-you delivery to a queued/outbox worker with a uniqueness constraint.

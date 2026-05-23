@@ -9,6 +9,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Pix Contribution Thank-You Emails (2026-05-23)
+
+- **Backend**: Paid Pix contributions now send a bilingual Portuguese/English thank-you email when `payer_email` is provided.
+- **Idempotency**: Contributions track `thank_you_email_sent_at` and `thank_you_email_error` so webhook retries, status sync, and status polling do not send duplicate successful thank-you emails.
+- **Reliability**: Email delivery is best-effort. Resend failures are logged and stored on the contribution without blocking Mercado Pago payment reconciliation.
+- **Migration**: Added Alembic revision `20260523_0005_add_contribution_thank_you_email_tracking` for thank-you email tracking columns.
+- **Tests**: Added contribution service and email template coverage for paid transitions, missing emails, duplicate prevention, failure handling, retry-on-paid-status lookup, and dev mock behavior.
+
 #### Email Verification System (2026-05-13)
 
 - **Backend**: New `EmailVerificationToken` model with 24-hour expiry, similar to `PasswordResetToken`.

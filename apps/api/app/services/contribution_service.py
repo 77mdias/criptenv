@@ -15,6 +15,7 @@ from sqlalchemy import select
 
 from app.config import settings
 from app.models.contribution import Contribution, ContributionStatus
+from app.services.email_service import EmailService
 from app.services.mercadopago_client import MercadoPagoClient, MercadoPagoError
 
 logger = logging.getLogger(__name__)
@@ -255,6 +256,8 @@ class ContributionService:
             raise ContributionNotFoundError(
                 f"Contribution not found: {contribution_id}"
             )
+        if contribution.status == ContributionStatus.PAID:
+            await self._send_thank_you_email_if_needed(contribution)
         return contribution
     
     async def process_webhook_notification(
@@ -319,6 +322,8 @@ class ContributionService:
                 "Ignoring webhook for contribution %s: already in terminal state %s",
                 contribution.id, contribution.status
             )
+            if contribution.status == ContributionStatus.PAID:
+                await self._send_thank_you_email_if_needed(contribution)
             return True
         
         # Query Mercado Pago for authoritative status
@@ -401,11 +406,46 @@ class ContributionService:
             contribution.cancelled_at = now
         
         await self.db.flush()
+
+        if new_status == ContributionStatus.PAID:
+            await self._send_thank_you_email_if_needed(contribution)
         
         logger.info(
             "Contribution %s status updated: %s -> %s",
             contribution.id, old_status, new_status
         )
+
+    async def _send_thank_you_email_if_needed(self, contribution: Contribution) -> None:
+        """Best-effort, idempotent thank-you email for paid Pix contributions."""
+        if contribution.status != ContributionStatus.PAID:
+            return
+
+        if not contribution.payer_email:
+            return
+
+        if contribution.thank_you_email_sent_at:
+            return
+
+        try:
+            EmailService().send_contribution_thank_you(
+                to=contribution.payer_email,
+                amount=Decimal(str(contribution.amount)),
+                name=contribution.payer_name,
+                contribution_id=str(contribution.id),
+            )
+        except Exception as exc:  # noqa: BLE001 - email must not block payment reconciliation
+            contribution.thank_you_email_error = str(exc)
+            await self.db.flush()
+            logger.warning(
+                "Failed to send contribution thank-you email: contribution=%s, error=%s",
+                contribution.id,
+                exc,
+            )
+            return
+
+        contribution.thank_you_email_sent_at = datetime.now(timezone.utc)
+        contribution.thank_you_email_error = None
+        await self.db.flush()
     
     async def sync_contribution_status(self, contribution_id: UUID) -> Contribution:
         """Manually sync a contribution status with Mercado Pago.
@@ -438,6 +478,8 @@ class ContributionService:
         
         # Skip if already terminal
         if contribution.is_terminal_status():
+            if contribution.status == ContributionStatus.PAID:
+                await self._send_thank_you_email_if_needed(contribution)
             return contribution
         
         try:

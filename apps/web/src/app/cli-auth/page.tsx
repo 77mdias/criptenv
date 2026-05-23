@@ -1,45 +1,59 @@
-"use client"
+"use client";
 
-import { useState, Suspense, useCallback, useMemo } from "react"
-import { useSearchParams } from "next/navigation"
-import Link from "next/link"
-import { Loader2, Terminal, CheckCircle, AlertCircle, ArrowRight } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { OAuthButtonGroup } from "@/components/ui/oauth-button"
-import { Input } from "@/components/ui/input"
-import { Separator } from "@/components/ui/separator"
-import { useAuth } from "@/hooks/use-auth"
-import { useForm } from "react-hook-form"
-import { zodResolver } from "@hookform/resolvers/zod"
-import { loginSchema, type LoginInput } from "@/lib/validators/schemas"
+import { useState, Suspense, useCallback, useMemo } from "react";
+import { useSearchParams } from "next/navigation";
+import Link from "next/link";
+import {
+  Loader2,
+  Terminal,
+  CheckCircle,
+  AlertCircle,
+  ArrowRight,
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { OAuthButtonGroup } from "@/components/ui/oauth-button";
+import { Input } from "@/components/ui/input";
+import { Separator } from "@/components/ui/separator";
+import { useAuth } from "@/hooks/use-auth";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { loginSchema, type LoginInput } from "@/lib/validators/schemas";
 
-type Step = "checking" | "login" | "confirm" | "authorizing" | "success" | "error"
+type Step =
+  | "checking"
+  | "login"
+  | "confirm"
+  | "authorizing"
+  | "success"
+  | "error";
 
 function CLIAuthContent() {
-  const searchParams = useSearchParams()
-  const { user, login, isLoading: authLoading } = useAuth()
+  const searchParams = useSearchParams();
+  const { user, login, isLoading: authLoading } = useAuth();
 
-  const state = searchParams.get("state")
-  const callback = searchParams.get("callback")
-  const deviceCode = searchParams.get("device_code")
+  const state = searchParams.get("state");
+  const callback = searchParams.get("callback");
+  const deviceCode = searchParams.get("device_code");
 
-  const hasValidParams = Boolean(state || deviceCode)
+  const hasValidParams = Boolean(state || deviceCode);
 
   // Explicit mutable steps override the derived state
-  const [explicitStep, setExplicitStep] = useState<Step | null>(null)
+  const [explicitStep, setExplicitStep] = useState<Step | null>(null);
   const [errorMsg, setErrorMsg] = useState<string | null>(
-    hasValidParams ? null : "Parâmetros inválidos. Inicie o login a partir da CLI."
-  )
-  const [loginError, setLoginError] = useState<string | null>(null)
+    hasValidParams
+      ? null
+      : "Parâmetros inválidos. Inicie o login a partir da CLI.",
+  );
+  const [loginError, setLoginError] = useState<string | null>(null);
 
   // Derive the current step from props and explicit overrides
   const step = useMemo<Step>(() => {
-    if (explicitStep) return explicitStep
-    if (!hasValidParams) return "error"
-    if (authLoading) return "checking"
-    if (user) return "confirm"
-    return "login"
-  }, [explicitStep, hasValidParams, authLoading, user])
+    if (explicitStep) return explicitStep;
+    if (!hasValidParams) return "error";
+    if (authLoading) return "checking";
+    if (user) return "confirm";
+    return "login";
+  }, [explicitStep, hasValidParams, authLoading, user]);
 
   const {
     register,
@@ -47,24 +61,25 @@ function CLIAuthContent() {
     formState: { errors, isSubmitting },
   } = useForm<LoginInput>({
     resolver: zodResolver(loginSchema),
-  })
+  });
 
   const onLoginSubmit = useCallback(
     async (data: LoginInput) => {
-      setLoginError(null)
+      setLoginError(null);
       try {
-        await login(data.email, data.password)
-        setExplicitStep("confirm")
+        await login(data.email, data.password);
+        setExplicitStep("confirm");
       } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : "Email ou senha inválidos"
-        setLoginError(message)
+        const message =
+          err instanceof Error ? err.message : "Email ou senha inválidos";
+        setLoginError(message);
       }
     },
-    [login]
-  )
+    [login],
+  );
 
   const handleAuthorize = useCallback(async () => {
-    setExplicitStep("authorizing")
+    setExplicitStep("authorizing");
     try {
       if (state) {
         // Browser redirect flow
@@ -73,23 +88,23 @@ function CLIAuthContent() {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ state }),
-        })
+        });
 
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          throw new Error(data.detail || "Falha ao autorizar CLI")
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || "Falha ao autorizar CLI");
         }
 
-        const data = await res.json()
-        const authCode = data.auth_code
+        const data = await res.json();
+        const authCode = data.auth_code;
 
         // Redirect back to CLI localhost callback
         if (callback) {
-          const callbackUrl = new URL(callback)
-          callbackUrl.searchParams.set("code", authCode)
-          window.location.href = callbackUrl.toString()
+          const callbackUrl = new URL(callback);
+          callbackUrl.searchParams.set("code", authCode);
+          window.location.href = callbackUrl.toString();
         } else {
-          setExplicitStep("success")
+          setExplicitStep("success");
         }
       } else if (deviceCode) {
         // Device flow
@@ -98,55 +113,59 @@ function CLIAuthContent() {
           headers: { "Content-Type": "application/json" },
           credentials: "include",
           body: JSON.stringify({ device_code: deviceCode }),
-        })
+        });
 
         if (!res.ok) {
-          const data = await res.json().catch(() => ({}))
-          throw new Error(data.detail || "Falha ao autorizar dispositivo")
+          const data = await res.json().catch(() => ({}));
+          throw new Error(data.detail || "Falha ao autorizar dispositivo");
         }
 
-        setExplicitStep("success")
+        setExplicitStep("success");
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido"
-      setErrorMsg(message)
-      setExplicitStep("error")
+      const message = err instanceof Error ? err.message : "Erro desconhecido";
+      setErrorMsg(message);
+      setExplicitStep("error");
     }
-  }, [state, callback, deviceCode])
+  }, [state, callback, deviceCode]);
 
   if (step === "checking") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
-        <p className="text-sm text-[var(--text-tertiary)]">Verificando sessão...</p>
+      <div className="flex flex-col items-center justify-center min-h-100 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-(--accent)" />
+        <p className="text-sm text-(--text-tertiary)">Verificando sessão...</p>
       </div>
-    )
+    );
   }
 
   if (step === "error") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4 max-w-md mx-auto">
+      <div className="flex flex-col items-center justify-center min-h-100 space-y-4 max-w-md mx-auto">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-red-100 text-red-600">
           <AlertCircle className="h-6 w-6" />
         </div>
-        <h2 className="text-xl font-semibold text-[var(--text-primary)]">Erro na autorização</h2>
-        <p className="text-sm text-[var(--text-tertiary)] text-center">{errorMsg}</p>
+        <h2 className="text-xl font-semibold text-(--text-primary)">
+          Erro na autorização
+        </h2>
+        <p className="text-sm text-(--text-tertiary) text-center">{errorMsg}</p>
         <Link href="/login">
           <Button variant="outline">Voltar para login</Button>
         </Link>
       </div>
-    )
+    );
   }
 
   if (step === "login") {
     return (
       <div className="space-y-6 max-w-md mx-auto">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--accent)/10 text-(--accent)">
             <Terminal className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Autorizar CLI</h1>
-          <p className="text-sm text-[var(--text-tertiary)]">
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Autorizar CLI
+          </h1>
+          <p className="text-sm text-(--text-tertiary)">
             Faça login para autorizar o acesso do CriptEnv CLI ao sua conta.
           </p>
         </div>
@@ -180,37 +199,44 @@ function CLIAuthContent() {
 
         <div className="relative">
           <Separator className="my-4" />
-          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--background)] px-2 text-xs text-[var(--text-tertiary)]">
+          <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--background) px-2 text-xs text-(--text-tertiary)">
             ou continue com
           </span>
         </div>
 
         <OAuthButtonGroup />
       </div>
-    )
+    );
   }
 
   if (step === "confirm") {
     return (
       <div className="space-y-6 max-w-md mx-auto">
         <div className="text-center space-y-2">
-          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[var(--accent)]/10 text-[var(--accent)]">
+          <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-(--accent)/10 text-(--accent)">
             <Terminal className="h-6 w-6" />
           </div>
-          <h1 className="text-2xl font-semibold tracking-tight">Autorizar CLI</h1>
-          <p className="text-sm text-[var(--text-tertiary)]">
-            Você está autorizando o <strong>CriptEnv CLI</strong> a acessar sua conta.
+          <h1 className="text-2xl font-semibold tracking-tight">
+            Autorizar CLI
+          </h1>
+          <p className="text-sm text-(--text-tertiary)">
+            Você está autorizando o <strong>CriptEnv CLI</strong> a acessar sua
+            conta.
           </p>
         </div>
 
-        <div className="rounded-lg border border-[var(--border)] bg-[var(--surface)] p-4 space-y-3">
+        <div className="rounded-lg border border-(--border) bg-(--surface) p-4 space-y-3">
           <div className="flex items-center gap-3">
-            <div className="h-8 w-8 rounded-full bg-[var(--accent)]/10 flex items-center justify-center text-[var(--accent)] text-sm font-medium">
-              {user?.name?.[0]?.toUpperCase() || user?.email?.[0]?.toUpperCase() || "U"}
+            <div className="h-8 w-8 rounded-full bg-(--accent)/10 flex items-center justify-center text-(--accent) text-sm font-medium">
+              {user?.name?.[0]?.toUpperCase() ||
+                user?.email?.[0]?.toUpperCase() ||
+                "U"}
             </div>
             <div>
-              <p className="text-sm font-medium text-[var(--text-primary)]">{user?.name || user?.email}</p>
-              <p className="text-xs text-[var(--text-tertiary)]">{user?.email}</p>
+              <p className="text-sm font-medium text-(--text-primary)">
+                {user?.name || user?.email}
+              </p>
+              <p className="text-xs text-(--text-tertiary)">{user?.email}</p>
             </div>
           </div>
         </div>
@@ -220,34 +246,41 @@ function CLIAuthContent() {
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
 
-        <p className="text-center text-xs text-[var(--text-tertiary)]">
-          Você pode revogar o acesso do CLI a qualquer momento nas configurações da conta.
+        <p className="text-center text-xs text-(--text-tertiary)">
+          Você pode revogar o acesso do CLI a qualquer momento nas configurações
+          da conta.
         </p>
       </div>
-    )
+    );
   }
 
   if (step === "authorizing") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-        <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
+      <div className="flex flex-col items-center justify-center min-h-100 space-y-4">
+        <Loader2 className="h-8 w-8 animate-spin text-(--accent)" />
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">Autorizando...</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">Redirecionando de volta para o terminal</p>
+          <h2 className="text-xl font-semibold text-(--text-primary)">
+            Autorizando...
+          </h2>
+          <p className="text-sm text-(--text-tertiary)">
+            Redirecionando de volta para o terminal
+          </p>
         </div>
       </div>
-    )
+    );
   }
 
   if (step === "success") {
     return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+      <div className="flex flex-col items-center justify-center min-h-100 space-y-4">
         <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-green-100 text-green-600">
           <CheckCircle className="h-6 w-6" />
         </div>
         <div className="text-center space-y-2">
-          <h2 className="text-xl font-semibold text-[var(--text-primary)]">CLI autorizado!</h2>
-          <p className="text-sm text-[var(--text-tertiary)]">
+          <h2 className="text-xl font-semibold text-(--text-primary)">
+            CLI autorizado!
+          </h2>
+          <p className="text-sm text-(--text-tertiary)">
             {deviceCode
               ? "Você pode fechar esta janela e voltar ao terminal."
               : "Redirecionando de volta para o CLI..."}
@@ -259,10 +292,10 @@ function CLIAuthContent() {
           </Link>
         )}
       </div>
-    )
+    );
   }
 
-  return null
+  return null;
 }
 
 export default function CLIAuthPage() {
@@ -270,14 +303,14 @@ export default function CLIAuthPage() {
     <div className="flex min-h-screen items-center justify-center px-4">
       <Suspense
         fallback={
-          <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
-            <p className="text-sm text-[var(--text-tertiary)]">Carregando...</p>
+          <div className="flex flex-col items-center justify-center min-h-100 space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-(--accent)" />
+            <p className="text-sm text-(--text-tertiary)">Carregando...</p>
           </div>
         }
       >
         <CLIAuthContent />
       </Suspense>
     </div>
-  )
+  );
 }

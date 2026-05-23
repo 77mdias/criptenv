@@ -462,10 +462,11 @@ All completed features organized by phase.
 | Cloud integrations (Render) | 3 | ✅ |
 | Cloud integrations (Railway) | 3 | ⚠️ Pending |
 | Integration config encryption | 3 | ❌ |
+| Pix contribution thank-you email | 3 | ✅ |
 | Web alert configuration UI | 3 | ⚠️ Partial |
 | Email/Slack notifications | 3 | ❌ |
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: 2026-05-03
+**Document Version**: 1.2  
+**Last Updated**: 2026-05-23

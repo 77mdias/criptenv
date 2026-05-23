@@ -691,3 +691,28 @@ Adicionado piso explícito `pyasn1>=0.6.3` ao requirements da API para impedir q
 **Observações:**
 - A dependência é transitiva do stack de autenticação (`python-jose`) (inferred from resolver output).
 - Verificações locais: `make api-test` e `apps/api/.venv/bin/pip-audit -r apps/api/requirements.txt`.
+
+---
+
+## 2026-05-23 — Email de agradecimento para contribuição Pix
+
+**Resumo:**
+Implementado envio automático de email bilíngue de agradecimento quando uma contribuição Pix é confirmada como `PAID`, mantendo o email opcional e sem bloquear a reconciliação do pagamento caso o Resend falhe.
+
+**Arquivos criados:**
+- `apps/api/migrations/versions/20260523_0005_add_contribution_thank_you_email_tracking.py`
+
+**Arquivos alterados:**
+- `apps/api/app/models/contribution.py`
+- `apps/api/app/services/contribution_service.py`
+- `apps/api/app/services/email_service.py`
+- `apps/api/tests/test_contributions.py`
+- `docs/development/CHANGELOG.md`
+- `docs/project/current-state.md`
+- `docs/project/decisions.md`
+- `docs/features/implemented.md`
+- `docs/tasks/task-history.md`
+
+**Observações:**
+- O envio é idempotente por `thank_you_email_sent_at` e registra falhas em `thank_you_email_error`.
+- O email só é enviado quando `payer_email` foi informado.

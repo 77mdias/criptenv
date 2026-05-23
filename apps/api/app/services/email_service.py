@@ -1,6 +1,7 @@
 """Email service using Resend for transactional emails."""
 
 from datetime import datetime, timezone
+from decimal import Decimal
 from typing import Optional
 
 import resend
@@ -393,6 +394,93 @@ CriptEnv — Zero-Knowledge Secret Management
 Need help? Visit {settings.FRONTEND_URL}/support
 """
         return self._send(to, "Welcome to CriptEnv — Your account is ready", html, text)
+
+    # ─── Email: Contribution Thank You ───────────────────────────────────────
+
+    @staticmethod
+    def _format_brl(amount: Decimal) -> str:
+        """Format a Decimal amount as Brazilian Real for contributor emails."""
+        normalized = Decimal(str(amount)).quantize(Decimal("0.01"))
+        return f"R$ {normalized:,.2f}".replace(",", "X").replace(".", ",").replace("X", ".")
+
+    def send_contribution_thank_you(
+        self,
+        to: str,
+        amount: Decimal,
+        name: Optional[str] = None,
+        contribution_id: Optional[str] = None,
+    ) -> Optional[dict]:
+        """Send a bilingual thank-you email after a Pix contribution is paid."""
+        amount_text = self._format_brl(amount)
+        display_name = (name or "").strip()
+        greeting_pt = f"Ola, {display_name}!" if display_name else "Ola!"
+        greeting_en = f"Hi, {display_name}!" if display_name else "Hi!"
+        reference_text = contribution_id or "unavailable"
+
+        content = f"""
+        <h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#111827;">Obrigado por apoiar o CriptEnv</h1>
+        <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+          {greeting_pt} Confirmamos sua contribuição Pix de <strong style="color:#111827;">{amount_text}</strong>.
+          Seu apoio ajuda a manter o CriptEnv open source, auditavel e comprometido com uma arquitetura
+          zero-knowledge para gerenciamento seguro de secrets.
+        </p>
+        <p style="margin:0 0 20px;font-size:15px;color:#374151;line-height:1.6;">
+          Cada contribuição ajuda a cobrir infraestrutura, documentacao, testes e a evolucao do produto
+          sem abrir mao da transparencia do projeto.
+        </p>
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:20px 0;background-color:#f9fafb;border-radius:8px;border:1px solid #e5e7eb;">
+          <tr>
+            <td style="padding:18px 22px;">
+              <p style="margin:0 0 8px;font-size:12px;color:#9ca3af;text-transform:uppercase;letter-spacing:0.5px;">Contribuicao / Contribution</p>
+              <p style="margin:0;font-size:18px;color:#111827;font-weight:700;">{amount_text}</p>
+              <p style="margin:8px 0 0;font-size:12px;color:#6b7280;">Referencia / Reference: {reference_text}</p>
+            </td>
+          </tr>
+        </table>
+        <h2 style="margin:28px 0 12px;font-size:18px;font-weight:700;color:#111827;">Thank you for supporting CriptEnv</h2>
+        <p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">
+          {greeting_en} Your Pix contribution of <strong style="color:#111827;">{amount_text}</strong> has been confirmed.
+          Your support helps keep CriptEnv open source, auditable, and focused on zero-knowledge secret management.
+        </p>
+        <p style="margin:0;font-size:15px;color:#374151;line-height:1.6;">
+          We are grateful to have you helping this project stay independent and useful for developers and teams.
+        </p>
+        """
+
+        html = self._base_template(
+            title="Obrigado pela sua contribuicao — CriptEnv",
+            content_html=content,
+            preheader="Obrigado por apoiar o CriptEnv / Thank you for supporting CriptEnv."
+        )
+
+        text = f"""Obrigado por apoiar o CriptEnv
+
+{greeting_pt}
+
+Confirmamos sua contribuicao Pix de {amount_text}.
+Seu apoio ajuda a manter o CriptEnv open source, auditavel e comprometido com uma arquitetura zero-knowledge para gerenciamento seguro de secrets.
+
+Referencia da contribuicao: {reference_text}
+
+Thank you for supporting CriptEnv
+
+{greeting_en}
+
+Your Pix contribution of {amount_text} has been confirmed.
+Your support helps keep CriptEnv open source, auditable, and focused on zero-knowledge secret management.
+
+Contribution reference: {reference_text}
+
+—
+CriptEnv — Zero-Knowledge Secret Management
+Need help? Visit {settings.FRONTEND_URL}/support
+"""
+        return self._send(
+            to,
+            "Obrigado pela sua contribuição ao CriptEnv / Thank you for supporting CriptEnv",
+            html,
+            text,
+        )
 
     # ─── Email: Project Invite ────────────────────────────────────────────────
 

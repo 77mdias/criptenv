@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅, CLI Remote Terminal ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅, CLI Remote Terminal ✅, Pix contribution thank-you emails ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
 
 ---
 
@@ -75,11 +75,12 @@
 | `api-keys` | API key CRUD | ✅ |
 | `ci` | CI login, CI secrets | ✅ |
 | `profile` | Update profile, delete account | ✅ |
+| `contributions` | Public Pix creation/status/sync with paid thank-you email | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
 | `vps deploy` | Docker Compose API + Redis + Cloudflare Tunnel + custom domains | ✅ Live smoke validated |
 | `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
 
-**API Tests**: 365 tests passing, 2 skipped
+**API Tests**: 382 tests passing, 2 skipped
 
 ### Web Frontend (apps/web)
 

@@ -7,7 +7,7 @@ import uuid
 from datetime import datetime, timezone
 from typing import Optional
 
-from sqlalchemy import Column, String, DateTime, Numeric, Index, func
+from sqlalchemy import Column, String, DateTime, Numeric, Index, func, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 
 from app.database import Base
@@ -65,6 +65,10 @@ class Contribution(Base):
     # Provider response and metadata
     raw_provider_response = Column(JSONB, nullable=True)
     extra_metadata = Column(JSONB, nullable=True)
+
+    # Transactional email side effects
+    thank_you_email_sent_at = Column(DateTime(timezone=True), nullable=True)
+    thank_you_email_error = Column(Text, nullable=True)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now())

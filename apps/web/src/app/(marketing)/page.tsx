@@ -1,9 +1,9 @@
-"use client"
+"use client";
 
-import dynamic from "next/dynamic"
-import Image from "next/image"
-import Link from "next/link"
-import type { ReactNode } from "react"
+import dynamic from "next/dynamic";
+import Image from "next/image";
+import Link from "next/link";
+import type { ReactNode } from "react";
 import {
   ArrowRight,
   CircleDot,
@@ -13,40 +13,53 @@ import {
   Shield,
   Terminal,
   Users,
-} from "lucide-react"
-import { Footer } from "@/components/layout/footer"
+} from "lucide-react";
+import { Footer } from "@/components/layout/footer";
 const ProblemToVaultSection = dynamic(
-  () => import("@/components/marketing/problem-to-vault-section").then((mod) => mod.ProblemToVaultSection),
+  () =>
+    import("@/components/marketing/problem-to-vault-section").then(
+      (mod) => mod.ProblemToVaultSection,
+    ),
   { ssr: false },
-)
+);
 
 const SecurityScrollytelling = dynamic(
-  () => import("@/components/marketing/security-scrollytelling").then((mod) => mod.SecurityScrollytelling),
+  () =>
+    import("@/components/marketing/security-scrollytelling").then(
+      (mod) => mod.SecurityScrollytelling,
+    ),
   { ssr: false },
-)
-import { Badge } from "@/components/ui/badge"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+);
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
 
 const HeroScene = dynamic(
-  () => import("@/components/marketing/hero-scene").then((mod) => mod.HeroScene),
+  () =>
+    import("@/components/marketing/hero-scene").then((mod) => mod.HeroScene),
   {
     ssr: false,
     loading: () => (
-      <div className="absolute inset-0 rounded-[var(--radius-xl)] bg-[radial-gradient(circle_at_center,var(--glow-soft),transparent_62%)]" />
+      <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,var(--glow-soft),transparent_62%)]" />
     ),
   },
-)
+);
 
 const LandingMotion = dynamic(
-  () => import("@/components/marketing/landing-motion").then((mod) => mod.LandingMotion),
+  () =>
+    import("@/components/marketing/landing-motion").then(
+      (mod) => mod.LandingMotion,
+    ),
   { ssr: false },
-)
+);
 
 const PricingCardCarousel = dynamic(
-  () => import("@/components/marketing/pricing-card-carousel").then((mod) => mod.PricingCardCarousel),
+  () =>
+    import("@/components/marketing/pricing-card-carousel").then(
+      (mod) => mod.PricingCardCarousel,
+    ),
   { ssr: false },
-)
+);
 
 const features = [
   {
@@ -73,7 +86,7 @@ const features = [
     description:
       "Trilha de auditoria de todas as operações. Quem acessou, quando, de onde.",
   },
-]
+];
 
 const steps = [
   {
@@ -100,7 +113,7 @@ const steps = [
     title: "Equipe decripta local",
     desc: "Cada membro decripta com sua própria chave. Zero-knowledge garantido.",
   },
-]
+];
 
 const plans = [
   {
@@ -146,10 +159,10 @@ const plans = [
     featured: false,
     href: "/docs",
   },
-]
+];
 
 const marketingSectionClass =
-  "scroll-mt-14 px-6 py-20 sm:px-8 sm:py-24 lg:flex lg:min-h-screen lg:items-center lg:py-0"
+  "scroll-mt-14 px-6 py-20 sm:px-8 sm:py-24 lg:flex lg:min-h-screen lg:items-center lg:py-0";
 
 function TerminalPanel() {
   return (
@@ -160,11 +173,11 @@ function TerminalPanel() {
           <span className="h-2.5 w-2.5 rounded-full bg-amber-300/80" />
           <span className="h-2.5 w-2.5 rounded-full bg-green-400/80" />
         </div>
-        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-[var(--text-muted)]">
+        <span className="font-mono text-[10px] uppercase tracking-[0.2em] text-(--text-muted)">
           encrypted session
         </span>
       </div>
-      <div className="space-y-3 p-5 font-mono text-xs text-[var(--text-secondary)] sm:p-6 break-all">
+      <div className="space-y-3 p-5 font-mono text-xs text-(--text-secondary) sm:p-6 break-all">
         <p>
           <span className="text-green-400">$</span> criptenv init
         </p>
@@ -172,8 +185,8 @@ function TerminalPanel() {
           <span className="text-green-400">$</span> criptenv set DATABASE_URL
           postgres://...
         </p>
-        <p className="text-[var(--text-muted)]">encrypting with AES-GCM-256...</p>
-        <div className="grid gap-2 rounded-lg border border-black/8 bg-black/[0.025] p-3 dark:border-white/10 dark:bg-white/[0.03]">
+        <p className="text-(--text-muted)">encrypting with AES-GCM-256...</p>
+        <div className="grid gap-2 rounded-lg border border-black/8 bg-black/2.5 p-3 dark:border-white/10 dark:bg-white/3">
           {["vault.local", "team.public-key", "audit.chain"].map((item) => (
             <div key={item} className="flex items-center justify-between gap-4">
               <span>{item}</span>
@@ -184,10 +197,12 @@ function TerminalPanel() {
         <p>
           <span className="text-green-400">$</span> criptenv push
         </p>
-        <p className="text-[var(--text-primary)]">sync complete. server saw 0 secrets.</p>
+        <p className="text-(--text-primary)">
+          sync complete. server saw 0 secrets.
+        </p>
       </div>
     </div>
-  )
+  );
 }
 
 function SectionHeading({
@@ -195,20 +210,26 @@ function SectionHeading({
   title,
   align = "left",
 }: {
-  label: string
-  title: ReactNode
-  align?: "left" | "center"
+  label: string;
+  title: ReactNode;
+  align?: "left" | "center";
 }) {
   return (
-    <div className={align === "center" ? "mx-auto mb-16 max-w-2xl text-center" : "mb-16 max-w-2xl"}>
-      <span className="font-mono text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
+    <div
+      className={
+        align === "center"
+          ? "mx-auto mb-16 max-w-2xl text-center"
+          : "mb-16 max-w-2xl"
+      }
+    >
+      <span className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
         {label}
       </span>
-      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--text-primary)] md:text-4xl">
+      <h2 className="mt-4 text-3xl font-semibold tracking-tight text-(--text-primary) md:text-4xl">
         {title}
       </h2>
     </div>
-  )
+  );
 }
 
 export default function LandingPage() {
@@ -216,7 +237,7 @@ export default function LandingPage() {
     <LandingMotion>
       <section
         id="hero"
-        className="relative flex min-h-screen scroll-mt-14 items-center overflow-hidden bg-[var(--background)]"
+        className="relative flex min-h-screen scroll-mt-14 items-center overflow-hidden bg-(--background)"
       >
         <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,var(--glow-soft),transparent_34%),linear-gradient(to_bottom,transparent_72%,var(--background))]" />
 
@@ -224,34 +245,39 @@ export default function LandingPage() {
           <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
             <div className="relative z-10">
               <div data-motion="hero">
-                <Badge variant="outline" className="rounded-md border-[var(--border)] bg-[var(--surface)]/70">
+                <Badge
+                  variant="outline"
+                  className="rounded-md border-(--border) bg-(--surface)/70"
+                >
                   <CircleDot className="h-3 w-3 text-green-400" />
                   Open Source
                 </Badge>
               </div>
               <h1
                 data-motion="hero"
-                className="mt-8 max-w-3xl text-5xl font-light leading-[0.95] tracking-tight text-[var(--text-primary)] sm:text-6xl lg:text-7xl"
+                className="mt-8 max-w-3xl text-5xl font-light leading-[0.95] tracking-tight text-(--text-primary) sm:text-6xl lg:text-7xl"
               >
-                Secrets{" "}
-                <span className="font-semibold">seguros,</span>
+                Secrets <span className="font-semibold">seguros,</span>
                 <br />
-                <span className="font-semibold text-[var(--accent)]">
+                <span className="font-semibold text-(--accent)">
                   equipe feliz.
                 </span>
               </h1>
               <p
                 data-motion="hero"
-                className="mt-8 max-w-md text-base font-light leading-relaxed text-[var(--text-tertiary)]"
+                className="mt-8 max-w-md text-base font-light leading-relaxed text-(--text-tertiary)"
               >
                 Gestão de secrets com criptografia Zero-Knowledge. Seus .env
                 criptografados antes mesmo de sair do seu computador.
               </p>
-              <div data-motion="hero" className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4">
+              <div
+                data-motion="hero"
+                className="mt-10 flex flex-col gap-3 sm:flex-row sm:gap-4"
+              >
                 <Link href="/signup">
                   <Button
                     size="lg"
-                    className="w-full bg-[var(--accent)] text-xs font-bold uppercase tracking-wider text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] sm:w-auto"
+                    className="w-full bg-(--accent) text-xs font-bold uppercase tracking-wider text-(--accent-foreground) hover:bg-(--accent-hover) sm:w-auto"
                   >
                     Start Project
                     <ArrowRight className="h-4 w-4" />
@@ -261,7 +287,7 @@ export default function LandingPage() {
                   <Button
                     size="lg"
                     variant="secondary"
-                    className="w-full border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)] sm:w-auto"
+                    className="w-full border-(--border) text-(--text-primary) hover:bg-(--background-subtle) sm:w-auto"
                   >
                     Learn More
                   </Button>
@@ -269,24 +295,30 @@ export default function LandingPage() {
               </div>
             </div>
 
-            <div data-motion="hero" className="relative min-h-[400px] overflow-visible sm:min-h-[520px] lg:min-h-[640px]">
+            <div
+              data-motion="hero"
+              className="relative min-h-100 overflow-visible sm:min-h-130 lg:min-h-160"
+            >
               <HeroScene />
               <div className="absolute inset-x-0 bottom-4 mx-auto w-full max-w-xl px-2 sm:bottom-10">
                 <TerminalPanel />
               </div>
-              <div className="absolute left-1/2 top-10 h-56 w-56 -translate-x-1/2 rounded-full border border-[var(--border)] bg-[var(--surface)]/20 blur-3xl" />
+              <div className="absolute left-1/2 top-10 h-56 w-56 -translate-x-1/2 rounded-full border border-(--border) bg-(--surface)/20 blur-3xl" />
             </div>
           </div>
         </div>
 
         <div className="absolute bottom-8 left-1/2 z-10 -translate-x-1/2">
-          <div className="h-12 w-px animate-pulse bg-gradient-to-b from-transparent via-[var(--accent)]/50 to-transparent" />
+          <div className="h-12 w-px animate-pulse bg-linear-to-b from-transparent via-(--accent)/50 to-transparent" />
         </div>
       </section>
 
       <ProblemToVaultSection />
 
-      <section id="features" className={`${marketingSectionClass} bg-[var(--background)]`}>
+      <section
+        id="features"
+        className={`${marketingSectionClass} bg-(--background)`}
+      >
         <div className="mx-auto w-full max-w-6xl">
           <div data-motion="reveal">
             <SectionHeading label="Features" title="Tudo que você precisa" />
@@ -296,16 +328,16 @@ export default function LandingPage() {
               <Card
                 data-motion="reveal"
                 key={feature.title}
-                className="group relative min-h-[214px] overflow-hidden rounded-xl border-[var(--border)] bg-[var(--surface)]/80 p-8 backdrop-blur-sm transition-all duration-300 hover:border-[var(--accent)]/30 hover:shadow-lg hover:shadow-[var(--glow-soft)]"
+                className="group relative min-h-53.5 overflow-hidden rounded-xl border-(--border) bg-(--surface)/80 p-8 backdrop-blur-sm transition-all duration-300 hover:border-(--accent)/30 hover:shadow-(--glow-soft)"
               >
-                <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-[var(--accent)]/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
-                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--accent)]/20 bg-[var(--accent)]/10">
-                  <feature.icon className="h-6 w-6 text-[var(--accent)]" />
+                <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-(--accent)/30 to-transparent opacity-0 transition-opacity duration-300 group-hover:opacity-100" />
+                <div className="mb-5 flex h-12 w-12 items-center justify-center rounded-xl border border-(--accent)/20 bg-(--accent)/10">
+                  <feature.icon className="h-6 w-6 text-(--accent)" />
                 </div>
-                <h3 className="mb-2 text-xl font-semibold text-[var(--text-primary)]">
+                <h3 className="mb-2 text-xl font-semibold text-(--text-primary)">
                   {feature.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-[var(--text-tertiary)]">
+                <p className="text-sm leading-relaxed text-(--text-tertiary)">
                   {feature.description}
                 </p>
               </Card>
@@ -314,7 +346,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="how-it-works" className={`relative overflow-hidden ${marketingSectionClass}`}>
+      <section
+        id="how-it-works"
+        className={`relative overflow-hidden ${marketingSectionClass}`}
+      >
         <div className="absolute inset-0">
           <Image
             src="/images/fad0f89c8d6a92fc48b19560eef69626.jpg"
@@ -323,7 +358,7 @@ export default function LandingPage() {
             className="object-cover"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-[var(--background)]/92" />
+          <div className="absolute inset-0 bg-(--background)/92" />
         </div>
 
         <div className="relative z-10 mx-auto w-full max-w-6xl">
@@ -333,35 +368,36 @@ export default function LandingPage() {
               label="How It Works"
               title={
                 <>
-                  4 comandos. <span className="text-[var(--accent)]">Zero stress.</span>
+                  4 comandos.{" "}
+                  <span className="text-(--accent)">Zero stress.</span>
                 </>
               }
             />
           </div>
 
           <div className="relative grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-4">
-            <div className="absolute left-0 right-0 top-1/2 hidden h-px bg-[var(--border)] lg:block">
-              <div data-motion="line" className="h-px bg-[var(--accent)]/70" />
+            <div className="absolute left-0 right-0 top-1/2 hidden h-px bg-(--border) lg:block">
+              <div data-motion="line" className="h-px bg-(--accent)/70" />
             </div>
             {steps.map((step) => (
               <Card
                 data-motion="reveal"
                 key={step.num}
-                className="group relative flex min-h-[230px] flex-col rounded-xl border-[var(--border)] bg-[var(--surface)]/85 p-6 backdrop-blur-md transition-all duration-300 hover:border-[var(--accent)]/30"
+                className="group relative flex min-h-57.5 flex-col rounded-xl border-(--border) bg-(--surface)/85 p-6 backdrop-blur-md transition-all duration-300 hover:border-(--accent)/30"
               >
-                <span className="absolute right-4 top-4 font-mono text-5xl font-bold text-[var(--accent)]/10">
+                <span className="absolute right-4 top-4 font-mono text-5xl font-bold text-(--accent)/10">
                   {step.num}
                 </span>
                 <div
-                  className="mb-5 flex min-h-12 items-center rounded-lg border border-[var(--border)] bg-black/45 px-3 py-2 pr-10 font-mono text-xs text-green-400"
+                  className="mb-5 flex min-h-12 items-center rounded-lg border border-(--border) bg-black/45 px-3 py-2 pr-10 font-mono text-xs text-green-400"
                   title={`$ ${step.cmd}`}
                 >
                   <span className="block truncate">$ {step.cmd}</span>
                 </div>
-                <h3 className="mb-2 text-lg font-semibold text-[var(--text-primary)]">
+                <h3 className="mb-2 text-lg font-semibold text-(--text-primary)">
                   {step.title}
                 </h3>
-                <p className="text-sm leading-relaxed text-[var(--text-tertiary)]">
+                <p className="text-sm leading-relaxed text-(--text-tertiary)">
                   {step.desc}
                 </p>
               </Card>
@@ -374,13 +410,17 @@ export default function LandingPage() {
 
       <section
         id="pricing"
-        className={`relative overflow-hidden bg-[var(--background-subtle)] ${marketingSectionClass}`}
+        className={`relative overflow-hidden bg-(--background-subtle) ${marketingSectionClass}`}
       >
-        <div className="pointer-events-none absolute left-1/2 top-1/2 h-[400px] w-[800px] -translate-x-1/2 -translate-y-1/2 rounded-full bg-[var(--accent)]/5 blur-[120px]" />
+        <div className="pointer-events-none absolute left-1/2 top-1/2 h-100 w-200 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--accent)/5 blur-[120px]" />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl">
           <div data-motion="reveal">
-            <SectionHeading align="center" label="Pricing" title="Simple and transparent" />
+            <SectionHeading
+              align="center"
+              label="Pricing"
+              title="Simple and transparent"
+            />
           </div>
           <div data-motion="reveal">
             <PricingCardCarousel cards={plans} autoPlayInterval={4000} />
@@ -388,7 +428,10 @@ export default function LandingPage() {
         </div>
       </section>
 
-      <section id="cta" className={`relative overflow-hidden ${marketingSectionClass}`}>
+      <section
+        id="cta"
+        className={`relative overflow-hidden ${marketingSectionClass}`}
+      >
         <div className="absolute inset-0">
           <Image
             src="/images/wer-haben-vergessen.jpeg"
@@ -397,23 +440,26 @@ export default function LandingPage() {
             className="object-cover"
             loading="lazy"
           />
-          <div className="absolute inset-0 bg-[var(--background)]/90" />
+          <div className="absolute inset-0 bg-(--background)/90" />
         </div>
 
-        <div data-motion="reveal" className="relative z-10 mx-auto grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]">
+        <div
+          data-motion="reveal"
+          className="relative z-10 mx-auto grid w-full max-w-5xl items-center gap-10 lg:grid-cols-[0.9fr_1.1fr]"
+        >
           <div>
-            <h2 className="text-3xl font-semibold tracking-tight text-[var(--text-primary)] md:text-4xl">
-              Pronto para{" "}
-              <span className="text-[var(--accent)]">segurar</span> seus secrets?
+            <h2 className="text-3xl font-semibold tracking-tight text-(--text-primary) md:text-4xl">
+              Pronto para <span className="text-(--accent)">segurar</span> seus
+              secrets?
             </h2>
-            <p className="mt-4 font-mono text-[var(--text-tertiary)]">
+            <p className="mt-4 font-mono text-(--text-tertiary)">
               Open source. Zero-knowledge. Gratuito para começar.
             </p>
             <div className="mt-8 flex flex-col gap-3 sm:flex-row sm:gap-4">
               <Link href="/signup">
                 <Button
                   size="lg"
-                  className="w-full bg-[var(--accent)] text-xs font-bold uppercase tracking-wider text-[var(--accent-foreground)] hover:bg-[var(--accent-hover)] sm:w-auto"
+                  className="w-full bg-(--accent) text-xs font-bold uppercase tracking-wider text-(--accent-foreground) hover:bg-(--accent-hover) sm:w-auto"
                 >
                   Get Started Free
                 </Button>
@@ -422,25 +468,25 @@ export default function LandingPage() {
                 <Button
                   size="lg"
                   variant="secondary"
-                  className="w-full border-[var(--border)] text-[var(--text-primary)] hover:bg-[var(--background-subtle)] sm:w-auto"
+                  className="w-full border-(--border) text-(--text-primary) hover:bg-(--background-subtle) sm:w-auto"
                 >
                   View on GitHub
                 </Button>
               </Link>
             </div>
           </div>
-          <div className="rounded-xl border border-[var(--border)] bg-black/45 p-5 font-mono text-xs text-[var(--text-secondary)] shadow-2xl shadow-black/20 backdrop-blur-md">
+          <div className="rounded-xl border border-(--border) bg-black/45 p-5 font-mono text-xs text-(--text-secondary) shadow-2xl shadow-black/20 backdrop-blur-md">
             <div className="mb-4 flex items-center justify-between border-b border-white/10 pb-3">
-              <div className="flex items-center gap-2 text-[var(--text-primary)]">
+              <div className="flex items-center gap-2 text-(--text-primary)">
                 <Code2 className="h-4 w-4" />
                 terminal
               </div>
-              <GitBranch className="h-4 w-4 text-[var(--text-muted)]" />
+              <GitBranch className="h-4 w-4 text-(--text-muted)" />
             </div>
             <p>
               <span className="text-green-400">$</span> criptenv init
             </p>
-            <p className="mt-3 text-[var(--text-primary)]">
+            <p className="mt-3 text-(--text-primary)">
               vault ready. invite your team when you are.
             </p>
           </div>
@@ -449,5 +495,5 @@ export default function LandingPage() {
 
       <Footer />
     </LandingMotion>
-  )
+  );
 }

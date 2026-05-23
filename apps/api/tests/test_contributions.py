@@ -249,6 +249,199 @@ class TestContributionServiceUnit:
         with pytest.raises(ContributionNotFoundError):
             await service.get_contribution_status(uuid4())
 
+    @pytest.mark.asyncio
+    async def test_paid_transition_sends_thank_you_email_once(self):
+        contribution = Contribution(
+            id=uuid4(),
+            status=ContributionStatus.PENDING,
+            amount=Decimal("25.50"),
+            payer_email="supporter@example.com",
+            payer_name="Ana Silva",
+        )
+        contribution.thank_you_email_sent_at = None
+        contribution.thank_you_email_error = None
+
+        db = FakeDb()
+        service = ContributionService(db)
+
+        with patch("app.services.contribution_service.EmailService", create=True) as email_cls:
+            email_service = MagicMock()
+            email_cls.return_value = email_service
+
+            await service._update_contribution_status(
+                contribution,
+                ContributionStatus.PAID,
+                {"id": 123, "status": "approved"},
+            )
+            await service._update_contribution_status(
+                contribution,
+                ContributionStatus.PAID,
+                {"id": 123, "status": "approved"},
+            )
+
+        email_service.send_contribution_thank_you.assert_called_once_with(
+            to="supporter@example.com",
+            amount=Decimal("25.50"),
+            name="Ana Silva",
+            contribution_id=str(contribution.id),
+        )
+        assert contribution.thank_you_email_sent_at is not None
+        assert contribution.thank_you_email_error is None
+
+    @pytest.mark.asyncio
+    async def test_paid_transition_without_payer_email_does_not_send_email(self):
+        contribution = Contribution(
+            id=uuid4(),
+            status=ContributionStatus.PENDING,
+            amount=Decimal("10.00"),
+            payer_email=None,
+        )
+        contribution.thank_you_email_sent_at = None
+
+        db = FakeDb()
+        service = ContributionService(db)
+
+        with patch("app.services.contribution_service.EmailService", create=True) as email_cls:
+            await service._update_contribution_status(
+                contribution,
+                ContributionStatus.PAID,
+                {"id": 456, "status": "approved"},
+            )
+
+        email_cls.assert_not_called()
+        assert contribution.thank_you_email_sent_at is None
+
+    @pytest.mark.asyncio
+    async def test_paid_transition_does_not_resend_when_already_marked_sent(self):
+        sent_at = datetime.now(timezone.utc)
+        contribution = Contribution(
+            id=uuid4(),
+            status=ContributionStatus.PENDING,
+            amount=Decimal("15.00"),
+            payer_email="supporter@example.com",
+        )
+        contribution.thank_you_email_sent_at = sent_at
+
+        db = FakeDb()
+        service = ContributionService(db)
+
+        with patch("app.services.contribution_service.EmailService", create=True) as email_cls:
+            await service._update_contribution_status(
+                contribution,
+                ContributionStatus.PAID,
+                {"id": 789, "status": "approved"},
+            )
+
+        email_cls.assert_not_called()
+        assert contribution.thank_you_email_sent_at == sent_at
+
+    @pytest.mark.asyncio
+    async def test_thank_you_email_failure_does_not_block_paid_status(self):
+        contribution = Contribution(
+            id=uuid4(),
+            status=ContributionStatus.PENDING,
+            amount=Decimal("30.00"),
+            payer_email="supporter@example.com",
+        )
+        contribution.thank_you_email_sent_at = None
+        contribution.thank_you_email_error = None
+
+        db = FakeDb()
+        service = ContributionService(db)
+
+        with patch("app.services.contribution_service.EmailService", create=True) as email_cls:
+            email_service = MagicMock()
+            email_service.send_contribution_thank_you.side_effect = RuntimeError("resend down")
+            email_cls.return_value = email_service
+
+            await service._update_contribution_status(
+                contribution,
+                ContributionStatus.PAID,
+                {"id": 234, "status": "approved"},
+            )
+
+        assert contribution.status == ContributionStatus.PAID
+        assert contribution.paid_at is not None
+        assert contribution.thank_you_email_sent_at is None
+        assert contribution.thank_you_email_error == "resend down"
+
+    @pytest.mark.asyncio
+    async def test_paid_status_lookup_sends_pending_thank_you_email(self):
+        contribution = Contribution(
+            id=uuid4(),
+            status=ContributionStatus.PAID,
+            amount=Decimal("40.00"),
+            payer_email="supporter@example.com",
+            payer_name="Dev Apoia",
+        )
+        contribution.thank_you_email_sent_at = None
+        contribution.thank_you_email_error = "temporary failure"
+
+        fake_result = MagicMock()
+        fake_result.scalar_one_or_none = lambda: contribution
+
+        db = FakeDb(execute_results=[fake_result])
+        service = ContributionService(db)
+
+        with patch("app.services.contribution_service.EmailService", create=True) as email_cls:
+            email_service = MagicMock()
+            email_cls.return_value = email_service
+
+            result = await service.get_contribution_status(contribution.id)
+
+        assert result == contribution
+        email_service.send_contribution_thank_you.assert_called_once_with(
+            to="supporter@example.com",
+            amount=Decimal("40.00"),
+            name="Dev Apoia",
+            contribution_id=str(contribution.id),
+        )
+        assert contribution.thank_you_email_sent_at is not None
+        assert contribution.thank_you_email_error is None
+
+
+class TestContributionThankYouEmailTemplate:
+    """Test contribution thank-you email generation."""
+
+    def test_send_contribution_thank_you_uses_bilingual_template_and_amount(self):
+        from app.services.email_service import EmailService
+
+        service = object.__new__(EmailService)
+        service.enabled = True
+
+        with patch("app.services.email_service.resend.Emails.send") as mock_send:
+            mock_send.return_value = {"id": "email_123"}
+
+            result = service.send_contribution_thank_you(
+                to="supporter@example.com",
+                amount=Decimal("25.50"),
+                name="Ana Silva",
+                contribution_id="contrib-123",
+            )
+
+        assert result == {"id": "email_123"}
+        params = mock_send.call_args.args[0]
+        assert params["to"] == ["supporter@example.com"]
+        assert params["subject"] == "Obrigado pela sua contribuição ao CriptEnv / Thank you for supporting CriptEnv"
+        assert "Ana Silva" in params["html"]
+        assert "R$ 25,50" in params["html"]
+        assert "Obrigado" in params["html"]
+        assert "Thank you" in params["html"]
+        assert "contrib-123" in params["text"]
+
+    def test_send_contribution_thank_you_returns_dev_mock_when_disabled(self):
+        from app.services.email_service import EmailService
+
+        service = object.__new__(EmailService)
+        service.enabled = False
+
+        result = service.send_contribution_thank_you(
+            to="supporter@example.com",
+            amount=Decimal("5.00"),
+        )
+
+        assert result == {"id": "dev-mock-email-id", "mock": True}
+
 
 # ============================================================================
 # Contribution Router Tests
