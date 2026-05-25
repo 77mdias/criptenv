@@ -362,12 +362,13 @@ export default function LandingPage() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-100 w-200 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--accent)/5 blur-[120px]" />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl">
-          <div data-motion="reveal">
-            <SectionHeading
-              align="center"
-              label="Pricing"
-              title="Gratuito para usar, aberto para apoiar"
-            />
+          <div data-motion="reveal" className="mx-auto mb-10 max-w-2xl text-center">
+            <span className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
+              Pricing
+            </span>
+            <h2 className="mt-3 text-3xl font-semibold tracking-tight text-(--text-primary) md:text-4xl">
+              Gratuito para usar, aberto para apoiar
+            </h2>
           </div>
           <div data-motion="reveal">
             <PricingTrustSection />

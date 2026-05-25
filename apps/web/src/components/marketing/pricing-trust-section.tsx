@@ -47,7 +47,7 @@ const trustItems = [
 ];
 
 const baseActionClass =
-  "inline-flex h-12 items-center justify-center gap-2 whitespace-nowrap rounded-full px-8 py-4 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
+  "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
 
 const primaryActionClass = `${baseActionClass} bg-(--accent) text-xs font-bold uppercase tracking-wider text-(--accent-foreground) hover:bg-(--accent-hover) focus-visible:ring-[var(--accent)]`;
 
@@ -55,13 +55,13 @@ const secondaryActionClass = `${baseActionClass} border border-(--border) text-(
 
 function BenefitList({ items }: { items: string[] }) {
   return (
-    <ul className="space-y-3">
+    <ul className="space-y-2.5">
       {items.map((item) => (
         <li
           key={item}
-          className="flex gap-3 text-sm leading-relaxed text-(--text-secondary)"
+          className="flex gap-3 text-[13px] leading-relaxed text-(--text-secondary)"
         >
-          <Check className="mt-0.5 h-4 w-4 shrink-0 text-lime-400" />
+          <Check className="mt-0.5 h-3.5 w-3.5 shrink-0 text-lime-400" />
           <span>{item}</span>
         </li>
       ))}
@@ -81,11 +81,11 @@ export function PricingTrustSection() {
 
       <div className="relative overflow-hidden rounded-2xl border border-(--border) bg-(--surface)/70 shadow-2xl shadow-black/5 backdrop-blur-md dark:shadow-black/30">
         <div className="grid gap-0 lg:grid-cols-[1.08fr_0.92fr]">
-          <article className="relative overflow-hidden border-b border-(--border) p-6 sm:p-8 lg:border-b-0 lg:border-r lg:p-10">
+          <article className="relative overflow-hidden border-b border-(--border) p-5 sm:p-6 lg:border-b-0 lg:border-r lg:p-7">
             <div className="absolute inset-x-0 top-0 h-px bg-linear-to-r from-transparent via-lime-300/50 to-transparent" />
-            <div className="mb-7 flex items-center justify-between gap-4">
-              <div className="flex h-12 w-12 items-center justify-center rounded-xl border border-lime-300/20 bg-lime-300/10">
-                <HeartHandshake className="h-6 w-6 text-lime-300" />
+            <div className="mb-5 flex items-center justify-between gap-4">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl border border-lime-300/20 bg-lime-300/10">
+                <HeartHandshake className="h-5 w-5 text-lime-300" />
               </div>
               <span className="rounded-full border border-lime-300/20 bg-lime-300/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-lime-200">
                 apoio aberto
@@ -95,27 +95,27 @@ export function PricingTrustSection() {
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
               Sustentado pela comunidade
             </p>
-            <h3 className="mt-3 text-3xl font-semibold tracking-tight text-(--text-primary) sm:text-4xl">
+            <h3 className="mt-2 text-2xl font-semibold tracking-tight text-(--text-primary) sm:text-3xl">
               Apoie o CriptEnv
             </h3>
-            <p className="mt-4 max-w-xl text-sm leading-relaxed text-(--text-tertiary) sm:text-base">
+            <p className="mt-3 max-w-xl text-sm leading-relaxed text-(--text-tertiary)">
               O produto segue gratuito e open source. Sua contribuicao ajuda a
               manter o projeto vivo, independente e mais confiavel para equipes
               que cuidam de secrets todos os dias.
             </p>
 
-            <div className="my-8 flex items-end gap-3">
-              <span className="text-5xl font-semibold tracking-tight text-(--text-primary)">
+            <div className="my-5 flex items-end gap-3">
+              <span className="text-4xl font-semibold tracking-tight text-(--text-primary)">
                 R$ 5+
               </span>
-              <span className="pb-2 font-mono text-xs uppercase tracking-[0.18em] text-(--text-muted)">
+              <span className="pb-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-(--text-muted)">
                 via Pix
               </span>
             </div>
 
             <BenefitList items={contributionBenefits} />
 
-            <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+            <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/contribute"
                 className={`${primaryActionClass} w-full sm:w-auto`}
@@ -132,24 +132,24 @@ export function PricingTrustSection() {
             </div>
           </article>
 
-          <article className="p-6 sm:p-8 lg:p-10">
-            <div className="mb-7 flex h-12 w-12 items-center justify-center rounded-xl border border-sky-300/20 bg-sky-300/10">
-              <ShieldCheck className="h-6 w-6 text-sky-300" />
+          <article className="p-5 sm:p-6 lg:p-7">
+            <div className="mb-5 flex h-10 w-10 items-center justify-center rounded-xl border border-sky-300/20 bg-sky-300/10">
+              <ShieldCheck className="h-5 w-5 text-sky-300" />
             </div>
 
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
               Open Source
             </p>
-            <h3 className="mt-3 text-3xl font-semibold tracking-tight text-(--text-primary)">
+            <h3 className="mt-2 text-2xl font-semibold tracking-tight text-(--text-primary)">
               Free
             </h3>
-            <p className="mt-4 text-sm leading-relaxed text-(--text-tertiary)">
+            <p className="mt-3 text-sm leading-relaxed text-(--text-tertiary)">
               Use o CLI, o dashboard e a base atual sem plano pago. Hosted
               plans podem chegar depois, mas o nucleo aberto continua sendo o
               ponto de partida.
             </p>
 
-            <div className="my-8 rounded-xl border border-(--border) bg-(--background)/50 p-4 font-mono text-xs text-(--text-secondary)">
+            <div className="my-5 rounded-xl border border-(--border) bg-(--background)/50 p-3 font-mono text-[11px] text-(--text-secondary)">
               <div className="flex items-center justify-between gap-3">
                 <span>server.sees</span>
                 <span className="text-lime-300">ciphertext</span>
@@ -164,7 +164,7 @@ export function PricingTrustSection() {
 
             <Link
               href="/signup"
-              className={`${secondaryActionClass} mt-8 w-full`}
+              className={`${secondaryActionClass} mt-6 w-full`}
             >
               Start free
               <ArrowRight className="h-4 w-4" />
@@ -172,12 +172,12 @@ export function PricingTrustSection() {
           </article>
         </div>
 
-        <div className="border-t border-(--border) bg-(--background)/35 p-4 sm:p-5">
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="border-t border-(--border) bg-(--background)/35 p-3 sm:p-4">
+          <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             {trustItems.map((item) => (
               <div
                 key={item.label}
-                className="flex items-center gap-3 rounded-lg border border-(--border) bg-(--surface)/70 px-3 py-3"
+                className="flex items-center gap-3 rounded-lg border border-(--border) bg-(--surface)/70 px-3 py-2.5"
               >
                 <item.icon className="h-4 w-4 shrink-0 text-(--text-muted)" />
                 <div>
@@ -191,7 +191,7 @@ export function PricingTrustSection() {
               </div>
             ))}
           </div>
-          <p className="mt-4 text-center text-xs leading-relaxed text-(--text-muted)">
+          <p className="mt-3 text-center text-[11px] leading-relaxed text-(--text-muted)">
             Sem lock-in comercial: planos hospedados podem evoluir no futuro,
             mas self-hosting e transparencia seguem como prioridades.
           </p>
