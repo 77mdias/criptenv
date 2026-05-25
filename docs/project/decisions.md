@@ -1022,3 +1022,24 @@ The `/contribute` QR panel already mentioned a 2-minute Pix window, but the coun
 - ✅ The app's UX policy is independent from the provider's longer Pix validity.
 - ✅ Late status reconciliation can still show confirmed payments.
 - ⚠️ Mercado Pago may technically keep the Pix payment valid beyond the app's visible window; app behavior intentionally asks users to generate a new Pix after 2 minutes.
+
+---
+
+## DEC-040 — Landing Pricing Trust Section
+
+**Status:** Approved
+**Date:** 2026-05-25
+**Context:**
+The landing pricing section used a GSAP-powered carousel for `Contribute`, `Open Source`, and future hosted-plan messaging. The result felt visually disconnected from the rest of the landing, hid pricing context behind rotation, and added unnecessary motion/timer behavior for a trust-sensitive commercial section.
+
+**Decision:**
+- Replace the carousel with a static trust-focused pricing section.
+- Make `/contribute` the primary CTA with `R$ 5+` Pix support, while keeping `/signup` visible as the free open-source adoption path.
+- Present credibility proof points directly in the section: MIT, zero plaintext, self-hostable, and transparent roadmap.
+- Keep the implementation static and Tailwind-first, with no pricing-specific GSAP, autoplay, timers, or browser-only module behavior.
+
+**Consequences:**
+- ✅ Pricing is easier to scan and better aligned with the landing's technical trust narrative.
+- ✅ The contribution path is more prominent without implying that CriptEnv requires a paid plan.
+- ✅ Removing pricing autoplay reduces motion and Cloudflare Workers SSR risk.
+- ⚠️ The section is less visually playful than the carousel; future experiments should preserve direct access to both contribution and free-start CTAs.

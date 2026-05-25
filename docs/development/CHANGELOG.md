@@ -9,6 +9,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+#### Landing Pricing Trust Section (2026-05-25)
+
+- **Frontend**: Replaced the animated pricing carousel with a static trust-focused pricing section that presents contribution support, free open-source usage, and proof points in one scan-friendly layout.
+- **UX**: Made `/contribute` the primary pricing CTA while keeping `/signup` visible as the free adoption path.
+- **Reliability**: Removed pricing-specific autoplay/timer/GSAP behavior from the landing page, reducing Cloudflare Workers SSR risk and improving reduced-motion behavior.
+- **Decision record**: Added DEC-040 for the landing pricing trust-section direction.
+
 #### Pix Contribution 2-Minute UI Window (2026-05-23)
 
 - **Frontend**: `/contribute` now enforces a real 2-minute visible Pix window using the local creation time, even when Mercado Pago returns a longer provider expiration.

@@ -15,6 +15,7 @@ import {
   Users,
 } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
+import { PricingTrustSection } from "@/components/marketing/pricing-trust-section";
 const ProblemToVaultSection = dynamic(
   () =>
     import("@/components/marketing/problem-to-vault-section").then(
@@ -49,14 +50,6 @@ const LandingMotion = dynamic(
   () =>
     import("@/components/marketing/landing-motion").then(
       (mod) => mod.LandingMotion,
-    ),
-  { ssr: false },
-);
-
-const PricingCardCarousel = dynamic(
-  () =>
-    import("@/components/marketing/pricing-card-carousel").then(
-      (mod) => mod.PricingCardCarousel,
     ),
   { ssr: false },
 );
@@ -112,52 +105,6 @@ const steps = [
     cmd: "criptenv pull",
     title: "Equipe decripta local",
     desc: "Cada membro decripta com sua própria chave. Zero-knowledge garantido.",
-  },
-];
-
-const plans = [
-  {
-    name: "Contribute",
-    description: "Support independent open-source work",
-    price: "R$ 5+",
-    features: [
-      "Pix support for the project",
-      "No paid plan required",
-      "Helps keep CriptEnv independent",
-      "Funds infrastructure and docs",
-    ],
-    cta: "Contribute now",
-    featured: true,
-    badge: "Open support",
-    href: "/contribute",
-  },
-  {
-    name: "Open Source",
-    description: "Use the current CLI and web dashboard",
-    price: "Free",
-    features: [
-      "Zero-knowledge secret storage",
-      "CLI-first encrypted workflows",
-      "Team sync and audit trail",
-      "MIT licensed codebase",
-    ],
-    cta: "Start free",
-    featured: false,
-    href: "/signup",
-  },
-  {
-    name: "Maybe Later",
-    description: "Hosted plans may arrive after the core is stable",
-    price: "Future",
-    features: [
-      "No pricing promise today",
-      "Roadmap stays transparent",
-      "Self-hosting remains a priority",
-      "Built around developer trust",
-    ],
-    cta: "Read the docs",
-    featured: false,
-    href: "/docs",
   },
 ];
 
@@ -419,11 +366,11 @@ export default function LandingPage() {
             <SectionHeading
               align="center"
               label="Pricing"
-              title="Simple and transparent"
+              title="Gratuito para usar, aberto para apoiar"
             />
           </div>
           <div data-motion="reveal">
-            <PricingCardCarousel cards={plans} autoPlayInterval={4000} />
+            <PricingTrustSection />
           </div>
         </div>
       </section>
