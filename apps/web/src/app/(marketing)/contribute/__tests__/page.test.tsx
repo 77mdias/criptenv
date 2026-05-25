@@ -46,6 +46,7 @@ function paidStatus(expiresAt: string) {
 describe("ContributePage", () => {
   beforeEach(() => {
     jest.useRealTimers()
+    sessionStorage.clear()
     mockedContributionsApi.createPixContribution.mockReset()
     mockedContributionsApi.getContributionStatus.mockReset()
     mockedContributionsApi.syncContributionStatus.mockReset()
@@ -81,7 +82,7 @@ describe("ContributePage", () => {
         amount: 25,
       })
     )
-    expect(await screen.findByText("Aguardando pagamento")).toBeInTheDocument()
+    expect(await screen.findByAltText("QR Code Pix")).toBeInTheDocument()
     expect(screen.getByText(/000201010212/)).toBeInTheDocument()
   })
 
@@ -98,7 +99,7 @@ describe("ContributePage", () => {
 
     await user.type(screen.getByLabelText("Valor"), "25")
     await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
-    await screen.findByText("Aguardando pagamento")
+    await screen.findByText("Janela Pix de 2 minutos")
 
     await act(async () => {
       await jest.advanceTimersByTimeAsync(5000)
@@ -126,7 +127,7 @@ describe("ContributePage", () => {
     await user.type(screen.getByLabelText("Valor"), "25")
     await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
 
-    expect(await screen.findByText("Aguardando pagamento")).toBeInTheDocument()
+    expect(await screen.findByAltText("QR Code Pix")).toBeInTheDocument()
     expect(screen.getByText("Janela Pix de 2 minutos")).toBeInTheDocument()
     expect(screen.getAllByText("02:00").length).toBeGreaterThan(0)
   })
@@ -188,7 +189,7 @@ describe("ContributePage", () => {
 
     await user.type(screen.getByLabelText("Valor"), "25")
     await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
-    await screen.findByText("Aguardando pagamento")
+    await screen.findByText("Janela Pix de 2 minutos")
 
     await act(async () => {
       await jest.advanceTimersByTimeAsync(120_000)
