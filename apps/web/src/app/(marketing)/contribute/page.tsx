@@ -35,6 +35,7 @@ type ContributionFlowStatus =
   | "error";
 
 const PIX_UI_WINDOW_MS = 120_000;
+const STORAGE_KEY = "criptenv_contribution_state";
 
 function isExpired(expiresAt?: string | null) {
   return Boolean(expiresAt && new Date(expiresAt).getTime() <= Date.now());
@@ -119,15 +120,65 @@ function IdlePanel() {
   );
 }
 
+function restorePendingState() {
+  try {
+    const raw = sessionStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const saved = JSON.parse(raw);
+    if (!saved?.contribution?.contribution_id || !saved.createdAt) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    const uiDeadlineMs = saved.createdAt + PIX_UI_WINDOW_MS;
+    if (Date.now() >= uiDeadlineMs) {
+      sessionStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+    return saved as {
+      contribution: ContributionPixResponse;
+      createdAt: number;
+      statusResponse?: ContributionStatusResponse;
+    };
+  } catch {
+    sessionStorage.removeItem(STORAGE_KEY);
+    return null;
+  }
+}
+
 export default function ContributePage() {
-  const [flowStatus, setFlowStatus] = useState<ContributionFlowStatus>("idle");
+  const restored = restorePendingState();
+
+  const [flowStatus, setFlowStatus] = useState<ContributionFlowStatus>(
+    restored ? "pending" : "idle",
+  );
   const [contribution, setContribution] =
-    useState<ContributionPixResponse | null>(null);
+    useState<ContributionPixResponse | null>(restored?.contribution ?? null);
   const [statusResponse, setStatusResponse] =
-    useState<ContributionStatusResponse | null>(null);
+    useState<ContributionStatusResponse | null>(
+      restored?.statusResponse ?? null,
+    );
   const [error, setError] = useState<string | null>(null);
-  const [createdAt, setCreatedAt] = useState<number | null>(null);
+  const [createdAt, setCreatedAt] = useState<number | null>(
+    restored?.createdAt ?? null,
+  );
   const [lastSyncAt, setLastSyncAt] = useState<number | null>(null);
+
+  // Persist pending contribution to sessionStorage
+  useEffect(() => {
+    if (contribution && createdAt !== null && flowStatus === "pending") {
+      sessionStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify({ contribution, createdAt, statusResponse }),
+      );
+    } else if (
+      flowStatus === "idle" ||
+      flowStatus === "paid" ||
+      flowStatus === "expired" ||
+      flowStatus === "error"
+    ) {
+      sessionStorage.removeItem(STORAGE_KEY);
+    }
+  }, [contribution, createdAt, flowStatus, statusResponse]);
 
   const {
     register,
@@ -166,6 +217,7 @@ export default function ContributePage() {
     setError(null);
     setCreatedAt(null);
     setLastSyncAt(null);
+    sessionStorage.removeItem(STORAGE_KEY);
     reset({
       amount: undefined,
       payer_name: undefined,

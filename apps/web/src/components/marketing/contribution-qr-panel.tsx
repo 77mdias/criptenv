@@ -156,9 +156,10 @@ export function ContributionQRPanel({
     <div className="flex flex-col gap-5">
       {/* Status */}
       <div className="flex items-center justify-between gap-3">
-        <Badge variant={statusBadgeVariant(status)}>{statusLabel(status)}</Badge>
-        {!isTerminal && (
-          <span className="flex shrink-0 items-center gap-1.5 font-mono text-xs text-[var(--text-muted)]">
+        {isTerminal ? (
+          <Badge variant={statusBadgeVariant(status)}>{statusLabel(status)}</Badge>
+        ) : (
+          <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--text-muted)]">
             <Timer className="h-3.5 w-3.5" />
             Expira em {windowState.timeLeft}
           </span>
