@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, UploadFile, File
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -15,6 +15,7 @@ from app.schemas.auth import (
 from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.services.audit_service import AuditService
+from app.services.avatar_service import AvatarService
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -312,6 +313,72 @@ async def update_profile(
     if old_email and data.email:
         email_service.send_email_changed(to=data.email, old_email=old_email)
         email_service.send_email_changed_alert_to_old(to=old_email, new_email=data.email)
+
+    return _user_to_response(user)
+
+
+@router.post("/me/avatar", response_model=UserResponse)
+async def upload_avatar(
+    request: Request,
+    file: UploadFile = File(...),
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Upload or replace the current user's avatar image.
+    
+    Accepts PNG or JPG images up to 5MB. The file is stored in Supabase Storage
+    with the filename set to the user's ID (e.g., '<uuid>.png'), using upsert
+    to overwrite any previous avatar and keep storage clean.
+    """
+    avatar_service = AvatarService()
+    auth_service = AuthService(db)
+    audit_service = AuditService(db)
+
+    public_url = await avatar_service.upload_avatar(current_user.id, file)
+
+    # Update user record with new avatar URL
+    user = await auth_service.update_avatar(current_user, avatar_url=public_url)
+
+    await audit_service.log(
+        action="avatar.updated",
+        resource_type="user",
+        resource_id=str(current_user.id),
+        user_id=current_user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+        metadata={"avatar_url": public_url},
+    )
+
+    return _user_to_response(user)
+
+
+@router.delete("/me/avatar", response_model=UserResponse)
+async def delete_avatar(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Remove the current user's avatar.
+    
+    Deletes the image from Supabase Storage and clears the avatar_url
+    column in the database.
+    """
+    avatar_service = AvatarService()
+    auth_service = AuthService(db)
+    audit_service = AuditService(db)
+
+    await avatar_service.delete_avatar(current_user.id)
+
+    user = await auth_service.update_avatar(current_user, avatar_url=None)
+
+    await audit_service.log(
+        action="avatar.deleted",
+        resource_type="user",
+        resource_id=str(current_user.id),
+        user_id=current_user.id,
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
+    )
 
     return _user_to_response(user)
 

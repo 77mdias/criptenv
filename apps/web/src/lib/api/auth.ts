@@ -1,4 +1,4 @@
-import { request } from './client';
+import { request, upload } from './client';
 import type { AuthResponse, User, MessageResponse, SessionResponse } from './client';
 
 export const authApi = {
@@ -68,5 +68,15 @@ export const authApi = {
 
   verifyEmail(body: { token: string }): Promise<{ message: string; email_verified: boolean }> {
     return request('POST', '/api/auth/verify-email', body);
+  },
+
+  uploadAvatar(file: File): Promise<User> {
+    const formData = new FormData();
+    formData.append('file', file);
+    return upload('POST', '/api/auth/me/avatar', formData);
+  },
+
+  deleteAvatar(): Promise<User> {
+    return request('DELETE', '/api/auth/me/avatar');
   },
 };

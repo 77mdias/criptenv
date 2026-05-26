@@ -53,6 +53,13 @@ class Settings(BaseSettings):
     # ===========================================
     RESEND_API_KEY: str = ""
     EMAIL_FROM: str = "admin@77mdevseven.tech"
+    
+    # ===========================================
+    # SUPABASE STORAGE
+    # ===========================================
+    SUPABASE_URL: str = ""
+    SUPABASE_SERVICE_KEY: str = ""
+    SUPABASE_AVATAR_BUCKET: str = "avatars"
 
     @field_validator("DEBUG", mode="before")
     @classmethod

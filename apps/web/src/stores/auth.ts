@@ -5,6 +5,7 @@ export interface AuthUser {
   email: string;
   name: string;
   kdf_salt: string;
+  avatar_url: string | null;
   email_verified?: boolean;
   two_factor_enabled?: boolean;
 }

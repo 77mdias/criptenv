@@ -38,6 +38,7 @@ export interface User {
   email: string;
   name: string;
   kdf_salt: string;
+  avatar_url: string | null;
   created_at: string;
   email_verified?: boolean;
   two_factor_enabled?: boolean;
@@ -439,6 +440,49 @@ export function peekCached<T>(
   }
 
   return cached.data as T;
+}
+
+export async function upload<T>(
+  method: string,
+  path: string,
+  formData: FormData,
+  params?: Record<string, string | number | undefined>,
+): Promise<T> {
+  const url = buildUrl(path, params);
+  const cacheKey = url.toString();
+
+  const fetchPromise = (async () => {
+    const res = await fetch(cacheKey, {
+      method,
+      credentials: "include",
+      body: formData,
+      // Do NOT set Content-Type header — browser sets it with multipart boundary
+    });
+
+    if (res.status === 204) {
+      invalidateCache();
+      return undefined as T;
+    }
+
+    const data = await res.json().catch(() => null);
+
+    if (!res.ok) {
+      throw new ApiError(
+        (data as { detail?: string })?.detail || `Request failed: ${res.status}`,
+        res.status,
+        data,
+      );
+    }
+
+    invalidateCache();
+    return data as T;
+  })();
+
+  try {
+    return await fetchPromise;
+  } catch (error) {
+    throw error;
+  }
 }
 
 export async function request<T>(

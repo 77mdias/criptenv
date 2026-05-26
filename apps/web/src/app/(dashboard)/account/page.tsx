@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { User, Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, QrCode, Link2, Unlink, Mail } from "lucide-react"
+import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, QrCode, Link2, Unlink, Mail } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input"
 import { authApi, peekCached } from "@/lib/api"
 import { useAuthStore } from "@/stores/auth"
 import type { SessionResponse, User as UserType } from "@/lib/api"
+import { AvatarUpload } from "@/components/shared/avatar-upload"
 
 export default function AccountPage() {
   const router = useRouter()
@@ -273,11 +274,20 @@ export default function AccountPage() {
 
       {/* User Info */}
       <Card className="p-6">
-        <div className="flex items-start gap-4">
-          <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-[var(--accent)]/10">
-            <User className="h-6 w-6 text-[var(--accent)]" />
-          </div>
-          <div className="flex-1 space-y-1">
+        <div className="flex flex-col sm:flex-row items-start gap-6">
+          <AvatarUpload
+            currentAvatarUrl={currentUser?.avatar_url || null}
+            userName={currentUser?.name || "Usuário"}
+            onAvatarChange={(url) => {
+              setUser((prev) => (prev ? { ...prev, avatar_url: url } : prev))
+              // Also update auth store if user is cached there
+              const authStoreUser = useAuthStore.getState().user
+              if (authStoreUser) {
+                useAuthStore.getState().setUser({ ...authStoreUser, avatar_url: url })
+              }
+            }}
+          />
+          <div className="flex-1 space-y-1 w-full">
             {editingProfile ? (
               <div className="space-y-3">
                 <div>

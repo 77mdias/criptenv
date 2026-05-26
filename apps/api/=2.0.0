@@ -1,0 +1,253 @@
+Collecting supabase
+  Using cached supabase-2.30.0-py3-none-any.whl.metadata (4.6 kB)
+Collecting realtime==2.30.0 (from supabase)
+  Using cached realtime-2.30.0-py3-none-any.whl.metadata (7.0 kB)
+Collecting supabase-functions==2.30.0 (from supabase)
+  Using cached supabase_functions-2.30.0-py3-none-any.whl.metadata (2.4 kB)
+Collecting storage3==2.30.0 (from supabase)
+  Using cached storage3-2.30.0-py3-none-any.whl.metadata (2.1 kB)
+Collecting supabase-auth==2.30.0 (from supabase)
+  Using cached supabase_auth-2.30.0-py3-none-any.whl.metadata (6.4 kB)
+Collecting postgrest==2.30.0 (from supabase)
+  Using cached postgrest-2.30.0-py3-none-any.whl.metadata (3.4 kB)
+Requirement already satisfied: httpx<0.29,>=0.26 in ./.venv/lib64/python3.14/site-packages (from supabase) (0.28.1)
+Collecting yarl>=1.22.0 (from supabase)
+  Using cached yarl-1.24.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (94 kB)
+Collecting deprecation>=2.1.0 (from postgrest==2.30.0->supabase)
+  Using cached deprecation-2.1.0-py2.py3-none-any.whl.metadata (4.6 kB)
+Requirement already satisfied: pydantic<3.0,>=1.9 in ./.venv/lib64/python3.14/site-packages (from postgrest==2.30.0->supabase) (2.13.3)
+Requirement already satisfied: typing-extensions>=4.14.0 in ./.venv/lib64/python3.14/site-packages (from realtime==2.30.0->supabase) (4.15.0)
+Collecting websockets<16,>=11 (from realtime==2.30.0->supabase)
+  Using cached websockets-15.0.1-py3-none-any.whl.metadata (6.8 kB)
+Collecting pyiceberg>=0.10.0 (from storage3==2.30.0->supabase)
+  Using cached pyiceberg-0.11.1.tar.gz (1.1 MB)
+  Installing build dependencies: started
+  Installing build dependencies: finished with status 'done'
+  Getting requirements to build wheel: started
+  Getting requirements to build wheel: finished with status 'done'
+  Preparing metadata (pyproject.toml): started
+  Preparing metadata (pyproject.toml): finished with status 'done'
+Collecting pyjwt>=2.10.1 (from pyjwt[crypto]>=2.10.1->supabase-auth==2.30.0->supabase)
+  Using cached pyjwt-2.13.0-py3-none-any.whl.metadata (3.4 kB)
+Collecting strenum>=0.4.15 (from supabase-functions==2.30.0->supabase)
+  Using cached StrEnum-0.4.15-py3-none-any.whl.metadata (5.3 kB)
+Requirement already satisfied: anyio in ./.venv/lib64/python3.14/site-packages (from httpx<0.29,>=0.26->supabase) (4.13.0)
+Requirement already satisfied: certifi in ./.venv/lib64/python3.14/site-packages (from httpx<0.29,>=0.26->supabase) (2026.4.22)
+Requirement already satisfied: httpcore==1.* in ./.venv/lib64/python3.14/site-packages (from httpx<0.29,>=0.26->supabase) (1.0.9)
+Requirement already satisfied: idna in ./.venv/lib64/python3.14/site-packages (from httpx<0.29,>=0.26->supabase) (3.13)
+Requirement already satisfied: h11>=0.16 in ./.venv/lib64/python3.14/site-packages (from httpcore==1.*->httpx<0.29,>=0.26->supabase) (0.16.0)
+Collecting h2<5,>=3 (from httpx[http2]<0.29,>=0.26->postgrest==2.30.0->supabase)
+  Using cached h2-4.3.0-py3-none-any.whl.metadata (5.1 kB)
+Collecting hyperframe<7,>=6.1 (from h2<5,>=3->httpx[http2]<0.29,>=0.26->postgrest==2.30.0->supabase)
+  Using cached hyperframe-6.1.0-py3-none-any.whl.metadata (4.3 kB)
+Collecting hpack<5,>=4.1 (from h2<5,>=3->httpx[http2]<0.29,>=0.26->postgrest==2.30.0->supabase)
+  Using cached hpack-4.1.0-py3-none-any.whl.metadata (4.6 kB)
+Requirement already satisfied: annotated-types>=0.6.0 in ./.venv/lib64/python3.14/site-packages (from pydantic<3.0,>=1.9->postgrest==2.30.0->supabase) (0.7.0)
+Requirement already satisfied: pydantic-core==2.46.3 in ./.venv/lib64/python3.14/site-packages (from pydantic<3.0,>=1.9->postgrest==2.30.0->supabase) (2.46.3)
+Requirement already satisfied: typing-inspection>=0.4.2 in ./.venv/lib64/python3.14/site-packages (from pydantic<3.0,>=1.9->postgrest==2.30.0->supabase) (0.4.2)
+Requirement already satisfied: packaging in ./.venv/lib64/python3.14/site-packages (from deprecation>=2.1.0->postgrest==2.30.0->supabase) (26.2)
+Collecting mmh3<6.0.0,>=4.0.0 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached mmh3-5.2.1-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl.metadata (14 kB)
+Requirement already satisfied: requests<3.0.0,>=2.20.0 in ./.venv/lib64/python3.14/site-packages (from pyiceberg>=0.10.0->storage3==2.30.0->supabase) (2.34.0)
+Requirement already satisfied: click<9.0.0,>=7.1.1 in ./.venv/lib64/python3.14/site-packages (from pyiceberg>=0.10.0->storage3==2.30.0->supabase) (8.3.3)
+Collecting rich<15.0.0,>=10.11.0 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached rich-14.3.4-py3-none-any.whl.metadata (18 kB)
+Collecting strictyaml<2.0.0,>=1.7.0 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached strictyaml-1.7.3-py3-none-any.whl.metadata (11 kB)
+Collecting fsspec>=2023.1.0 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached fsspec-2026.4.0-py3-none-any.whl.metadata (10 kB)
+Requirement already satisfied: pyparsing<4.0.0,>=3.1.0 in ./.venv/lib64/python3.14/site-packages (from pyiceberg>=0.10.0->storage3==2.30.0->supabase) (3.3.2)
+Collecting tenacity<10.0.0,>=8.2.3 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached tenacity-9.1.4-py3-none-any.whl.metadata (1.2 kB)
+Collecting pyroaring<2.0.0,>=1.0.0 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached pyroaring-1.1.0-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (11 kB)
+Collecting cachetools<7.0,>=5.5 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached cachetools-6.2.6-py3-none-any.whl.metadata (5.6 kB)
+Collecting zstandard<1.0.0,>=0.13.0 (from pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached zstandard-0.25.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (3.3 kB)
+Requirement already satisfied: charset_normalizer<4,>=2 in ./.venv/lib64/python3.14/site-packages (from requests<3.0.0,>=2.20.0->pyiceberg>=0.10.0->storage3==2.30.0->supabase) (3.4.7)
+Requirement already satisfied: urllib3<3,>=1.26 in ./.venv/lib64/python3.14/site-packages (from requests<3.0.0,>=2.20.0->pyiceberg>=0.10.0->storage3==2.30.0->supabase) (2.7.0)
+Requirement already satisfied: markdown-it-py>=2.2.0 in ./.venv/lib64/python3.14/site-packages (from rich<15.0.0,>=10.11.0->pyiceberg>=0.10.0->storage3==2.30.0->supabase) (4.2.0)
+Requirement already satisfied: pygments<3.0.0,>=2.13.0 in ./.venv/lib64/python3.14/site-packages (from rich<15.0.0,>=10.11.0->pyiceberg>=0.10.0->storage3==2.30.0->supabase) (2.20.0)
+Collecting python-dateutil>=2.6.0 (from strictyaml<2.0.0,>=1.7.0->pyiceberg>=0.10.0->storage3==2.30.0->supabase)
+  Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+Requirement already satisfied: mdurl~=0.1 in ./.venv/lib64/python3.14/site-packages (from markdown-it-py>=2.2.0->rich<15.0.0,>=10.11.0->pyiceberg>=0.10.0->storage3==2.30.0->supabase) (0.1.2)
+Requirement already satisfied: cryptography>=3.4.0 in ./.venv/lib64/python3.14/site-packages (from pyjwt[crypto]>=2.10.1->supabase-auth==2.30.0->supabase) (47.0.0)
+Requirement already satisfied: cffi>=2.0.0 in ./.venv/lib64/python3.14/site-packages (from cryptography>=3.4.0->pyjwt[crypto]>=2.10.1->supabase-auth==2.30.0->supabase) (2.0.0)
+Requirement already satisfied: pycparser in ./.venv/lib64/python3.14/site-packages (from cffi>=2.0.0->cryptography>=3.4.0->pyjwt[crypto]>=2.10.1->supabase-auth==2.30.0->supabase) (3.0)
+Requirement already satisfied: six>=1.5 in ./.venv/lib64/python3.14/site-packages (from python-dateutil>=2.6.0->strictyaml<2.0.0,>=1.7.0->pyiceberg>=0.10.0->storage3==2.30.0->supabase) (1.17.0)
+Collecting multidict>=4.0 (from yarl>=1.22.0->supabase)
+  Using cached multidict-6.7.1-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (5.3 kB)
+Collecting propcache>=0.2.1 (from yarl>=1.22.0->supabase)
+  Using cached propcache-0.5.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (16 kB)
+Using cached supabase-2.30.0-py3-none-any.whl (16 kB)
+Using cached postgrest-2.30.0-py3-none-any.whl (23 kB)
+Using cached realtime-2.30.0-py3-none-any.whl (22 kB)
+Using cached storage3-2.30.0-py3-none-any.whl (28 kB)
+Using cached supabase_auth-2.30.0-py3-none-any.whl (48 kB)
+Using cached supabase_functions-2.30.0-py3-none-any.whl (8.8 kB)
+Using cached h2-4.3.0-py3-none-any.whl (61 kB)
+Using cached hpack-4.1.0-py3-none-any.whl (34 kB)
+Using cached hyperframe-6.1.0-py3-none-any.whl (13 kB)
+Using cached websockets-15.0.1-py3-none-any.whl (169 kB)
+Using cached deprecation-2.1.0-py2.py3-none-any.whl (11 kB)
+Using cached cachetools-6.2.6-py3-none-any.whl (11 kB)
+Using cached mmh3-5.2.1-cp314-cp314-manylinux1_x86_64.manylinux_2_28_x86_64.manylinux_2_5_x86_64.whl (103 kB)
+Using cached pyroaring-1.1.0-cp314-cp314-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (2.2 MB)
+Using cached rich-14.3.4-py3-none-any.whl (310 kB)
+Using cached strictyaml-1.7.3-py3-none-any.whl (123 kB)
+Using cached tenacity-9.1.4-py3-none-any.whl (28 kB)
+Using cached zstandard-0.25.0-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (5.6 MB)
+Using cached fsspec-2026.4.0-py3-none-any.whl (203 kB)
+Using cached pyjwt-2.13.0-py3-none-any.whl (31 kB)
+Using cached python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+Using cached StrEnum-0.4.15-py3-none-any.whl (8.9 kB)
+Using cached yarl-1.24.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (107 kB)
+Using cached multidict-6.7.1-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (248 kB)
+Using cached propcache-0.5.2-cp314-cp314-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (61 kB)
+Building wheels for collected packages: pyiceberg
+  Building wheel for pyiceberg (pyproject.toml): started
+  Building wheel for pyiceberg (pyproject.toml): finished with status 'error'
+  error: subprocess-exited-with-error
+  
+  × Building wheel for pyiceberg (pyproject.toml) did not run successfully.
+  │ exit code: 1
+  ╰─> [129 lines of output]
+      running bdist_wheel
+      running build
+      running build_py
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/types.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/typedef.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/transforms.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/serializers.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/schema.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/partitioning.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/manifest.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/exceptions.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/conversions.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/truncate.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/singleton.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/schema_conversion.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/properties.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/parsing.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/lazydict.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/deprecated.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/decimal.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/datetime.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/config.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/concurrent.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/bin_packing.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      copying ./pyiceberg/utils/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/utils
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/upsert_util.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/statistics.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/sorting.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/snapshots.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/refs.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/puffin.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/name_mapping.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/metadata.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/maintenance.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/locations.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/inspect.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/delete_file_index.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      copying ./pyiceberg/table/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/io
+      copying ./pyiceberg/io/pyarrow.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/io
+      copying ./pyiceberg/io/fsspec.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/io
+      copying ./pyiceberg/io/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/io
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/expressions
+      copying ./pyiceberg/expressions/visitors.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/expressions
+      copying ./pyiceberg/expressions/parser.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/expressions
+      copying ./pyiceberg/expressions/literals.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/expressions
+      copying ./pyiceberg/expressions/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/expressions
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/cli
+      copying ./pyiceberg/cli/output.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/cli
+      copying ./pyiceberg/cli/console.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/cli
+      copying ./pyiceberg/cli/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/cli
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/sql.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/noop.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/memory.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/hive.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/glue.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/dynamodb.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/bigquery_metastore.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      copying ./pyiceberg/catalog/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      copying ./pyiceberg/avro/writer.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      copying ./pyiceberg/avro/resolver.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      copying ./pyiceberg/avro/reader.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      copying ./pyiceberg/avro/file.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      copying ./pyiceberg/avro/encoder.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      copying ./pyiceberg/avro/decoder.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      copying ./pyiceberg/avro/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      copying ./pyiceberg/table/update/validate.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      copying ./pyiceberg/table/update/statistics.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      copying ./pyiceberg/table/update/spec.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      copying ./pyiceberg/table/update/sorting.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      copying ./pyiceberg/table/update/snapshot.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      copying ./pyiceberg/table/update/schema.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      copying ./pyiceberg/table/update/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/table/update
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/catalog/rest
+      copying ./pyiceberg/catalog/rest/scan_planning.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog/rest
+      copying ./pyiceberg/catalog/rest/response.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog/rest
+      copying ./pyiceberg/catalog/rest/auth.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog/rest
+      copying ./pyiceberg/catalog/rest/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/catalog/rest
+      creating build/lib.linux-x86_64-cpython-314/pyiceberg/avro/codecs
+      copying ./pyiceberg/avro/codecs/zstandard_codec.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro/codecs
+      copying ./pyiceberg/avro/codecs/snappy_codec.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro/codecs
+      copying ./pyiceberg/avro/codecs/deflate.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro/codecs
+      copying ./pyiceberg/avro/codecs/codec.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro/codecs
+      copying ./pyiceberg/avro/codecs/bzip2.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro/codecs
+      copying ./pyiceberg/avro/codecs/__init__.py -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro/codecs
+      creating build/lib.linux-x86_64-cpython-314/hive_metastore
+      copying vendor/hive_metastore/ttypes.py -> build/lib.linux-x86_64-cpython-314/hive_metastore
+      copying vendor/hive_metastore/constants.py -> build/lib.linux-x86_64-cpython-314/hive_metastore
+      copying vendor/hive_metastore/__init__.py -> build/lib.linux-x86_64-cpython-314/hive_metastore
+      copying vendor/hive_metastore/ThriftHiveMetastore.py -> build/lib.linux-x86_64-cpython-314/hive_metastore
+      creating build/lib.linux-x86_64-cpython-314/fb303
+      copying vendor/fb303/ttypes.py -> build/lib.linux-x86_64-cpython-314/fb303
+      copying vendor/fb303/constants.py -> build/lib.linux-x86_64-cpython-314/fb303
+      copying vendor/fb303/__init__.py -> build/lib.linux-x86_64-cpython-314/fb303
+      copying vendor/fb303/FacebookService.py -> build/lib.linux-x86_64-cpython-314/fb303
+      running egg_info
+      writing pyiceberg.egg-info/PKG-INFO
+      writing dependency_links to pyiceberg.egg-info/dependency_links.txt
+      writing entry points to pyiceberg.egg-info/entry_points.txt
+      writing requirements to pyiceberg.egg-info/requires.txt
+      writing top-level names to pyiceberg.egg-info/top_level.txt
+      reading manifest file 'pyiceberg.egg-info/SOURCES.txt'
+      reading manifest template 'MANIFEST.in'
+      warning: no previously-included files matching '*/__pycache__/*' found anywhere in distribution
+      no previously-included directories found matching '.venv'
+      no previously-included directories found matching 'build'
+      no previously-included directories found matching 'dist'
+      no previously-included directories found matching '.pytest_cache'
+      adding license file 'LICENSE'
+      adding license file 'NOTICE'
+      writing manifest file 'pyiceberg.egg-info/SOURCES.txt'
+      copying ./pyiceberg/py.typed -> build/lib.linux-x86_64-cpython-314/pyiceberg
+      copying ./pyiceberg/avro/decoder_fast.pyi -> build/lib.linux-x86_64-cpython-314/pyiceberg/avro
+      running build_ext
+      building 'pyiceberg.avro.decoder_fast' extension
+      creating build/temp.linux-x86_64-cpython-314/pyiceberg/avro
+      gcc -fno-strict-overflow -Wsign-compare -DDYNAMIC_ANNOTATIONS_ENABLED=1 -DNDEBUG -fcf-protection -fexceptions -fcf-protection -fexceptions -fcf-protection -fexceptions -O3 -fPIC -Ipyiceberg/avro -I/home/jeandias/projects/criptenv/apps/api/.venv/include -I/usr/include/python3.14 -c pyiceberg/avro/decoder_fast.c -o build/temp.linux-x86_64-cpython-314/pyiceberg/avro/decoder_fast.o -O3
+      pyiceberg/avro/decoder_fast.c:41:10: fatal error: Python.h: Arquivo ou diretório inexistente
+         41 | #include "Python.h"
+            |          ^~~~~~~~~~
+      compilation terminated.
+      error: command '/usr/bin/gcc' failed with exit code 1
+      [end of output]
+  
+  note: This error originates from a subprocess, and is likely not a problem with pip.
+  ERROR: Failed building wheel for pyiceberg
+Failed to build pyiceberg
+error: failed-wheel-build-for-install
+
+× Failed to build installable wheels for some pyproject.toml based projects
+╰─> pyiceberg

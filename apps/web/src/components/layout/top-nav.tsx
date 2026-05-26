@@ -4,6 +4,7 @@ import Link from "next/link";
 import { Menu, Search, Bell, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui";
+import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/layout/brand";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
@@ -25,6 +26,7 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
     toggleSidebarMobile,
     setCommandPaletteOpen,
   } = useUIStore();
+  const authUser = useAuthStore((state) => state.user);
 
   return (
     <header
@@ -108,8 +110,17 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
         <div className="scale-90 sm:scale-100">
           <ThemeSwitch />
         </div>
-        <div className="ml-0.5 sm:ml-2 flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-(--accent) text-(--accent-foreground) text-[10px] sm:text-xs font-bold">
-          U
+        <div className="ml-0.5 sm:ml-2 flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-(--accent) text-(--accent-foreground) text-[10px] sm:text-xs font-bold overflow-hidden">
+          {authUser?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img
+              src={authUser.avatar_url}
+              alt={authUser.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span>{authUser?.name?.charAt(0).toUpperCase() || "U"}</span>
+          )}
         </div>
       </div>
     </header>

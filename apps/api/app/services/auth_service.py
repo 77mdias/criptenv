@@ -319,6 +319,12 @@ class AuthService:
         await self.db.flush()
         return user
 
+    async def update_avatar(self, user: User, avatar_url: Optional[str] = None) -> User:
+        """Update user's avatar URL."""
+        user.avatar_url = avatar_url
+        await self.db.flush()
+        return user
+
     async def delete_account(self, user: User) -> bool:
         """Permanently delete user account and all associated data."""
         # Delete all sessions

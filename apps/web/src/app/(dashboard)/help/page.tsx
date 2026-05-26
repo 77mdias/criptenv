@@ -15,7 +15,7 @@ export default function HelpPage() {
 
       {/* Quick Links */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
-        <a href="/docs">
+        <a href="/docs" target="_blank" rel="noopener noreferrer">
           <Card className="p-4 md:p-6 hover:shadow-lg transition-all cursor-pointer h-full">
             <div className="flex items-start gap-3 md:gap-4">
               <div className="flex h-9 w-9 md:h-10 md:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--accent)]/10">
