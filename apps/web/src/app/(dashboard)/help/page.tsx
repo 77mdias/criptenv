@@ -5,7 +5,7 @@ import { Card } from "@/components/ui/card"
 
 export default function HelpPage() {
   return (
-    <div className="space-y-8">
+    <div className="space-y-6 md:space-y-8">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Ajuda</h1>
         <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
@@ -14,21 +14,17 @@ export default function HelpPage() {
       </div>
 
       {/* Quick Links */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-        <a
-          href="https://github.com/jeandias/criptenv/docs"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <Card className="p-6 hover:shadow-lg transition-all cursor-pointer h-full">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)]/10">
-                <FileText className="h-5 w-5 text-[var(--accent)]" />
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4">
+        <a href="/docs">
+          <Card className="p-4 md:p-6 hover:shadow-lg transition-all cursor-pointer h-full">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="flex h-9 w-9 md:h-10 md:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--accent)]/10">
+                <FileText className="h-4 w-4 md:h-5 md:w-5 text-[var(--accent)]" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-[var(--text-primary)]">Documentação</h3>
-                  <ExternalLink className="h-3 w-3 text-[var(--text-muted)]" />
+                  <ExternalLink className="h-3 w-3 text-[var(--text-muted)] flex-shrink-0" />
                 </div>
                 <p className="text-sm text-[var(--text-muted)] font-mono mt-1">
                   Guias completos e referências da API
@@ -43,15 +39,15 @@ export default function HelpPage() {
           target="_blank"
           rel="noopener noreferrer"
         >
-          <Card className="p-6 hover:shadow-lg transition-all cursor-pointer h-full">
-            <div className="flex items-start gap-4">
-              <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)]/10">
-                <MessageCircle className="h-5 w-5 text-[var(--accent)]" />
+          <Card className="p-4 md:p-6 hover:shadow-lg transition-all cursor-pointer h-full">
+            <div className="flex items-start gap-3 md:gap-4">
+              <div className="flex h-9 w-9 md:h-10 md:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--accent)]/10">
+                <MessageCircle className="h-4 w-4 md:h-5 md:w-5 text-[var(--accent)]" />
               </div>
-              <div className="flex-1">
+              <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-[var(--text-primary)]">Suporte</h3>
-                  <ExternalLink className="h-3 w-3 text-[var(--text-muted)]" />
+                  <ExternalLink className="h-3 w-3 text-[var(--text-muted)] flex-shrink-0" />
                 </div>
                 <p className="text-sm text-[var(--text-muted)] font-mono mt-1">
                   Abra issues e peça ajuda na comunidade
@@ -63,13 +59,13 @@ export default function HelpPage() {
       </div>
 
       {/* FAQ */}
-      <Card className="p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <CircleHelp className="h-5 w-5 text-[var(--accent)]" />
+      <Card className="p-4 md:p-6">
+        <div className="flex items-center gap-3 mb-4 md:mb-6">
+          <CircleHelp className="h-5 w-5 text-[var(--accent)] flex-shrink-0" />
           <h2 className="text-lg font-semibold">Perguntas Frequentes</h2>
         </div>
 
-        <div className="space-y-6">
+        <div className="space-y-5 md:space-y-6">
           <div>
             <h3 className="font-medium text-[var(--text-primary)] mb-2">
               Como adicionar secrets em um projeto?
@@ -113,12 +109,12 @@ export default function HelpPage() {
       </Card>
 
       {/* Security Notice */}
-      <Card className="p-6 border-[var(--accent)]/50">
-        <div className="flex items-start gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--accent)]/10">
-            <Shield className="h-5 w-5 text-[var(--accent)]" />
+      <Card className="p-4 md:p-6 border-[var(--accent)]/50">
+        <div className="flex items-start gap-3 md:gap-4">
+          <div className="flex h-9 w-9 md:h-10 md:w-10 flex-shrink-0 items-center justify-center rounded-lg bg-[var(--accent)]/10">
+            <Shield className="h-4 w-4 md:h-5 md:w-5 text-[var(--accent)]" />
           </div>
-          <div>
+          <div className="min-w-0">
             <h3 className="font-semibold text-[var(--text-primary)]">
               Segurança em primeiro lugar
             </h3>
