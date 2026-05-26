@@ -312,16 +312,16 @@ export default function AccountPage() {
               </div>
             ) : (
               <>
-                <div className="flex items-center justify-between">
-                  <div>
-                    <h2 className="font-semibold text-[var(--text-primary)]">
+                <div className="flex items-start justify-between gap-2 flex-wrap sm:flex-nowrap">
+                  <div className="min-w-0">
+                    <h2 className="font-semibold text-[var(--text-primary)] truncate">
                       {currentUser?.name || "Usuário"}
                     </h2>
-                    <p className="text-sm text-[var(--text-tertiary)] font-mono">
+                    <p className="text-sm text-[var(--text-tertiary)] font-mono truncate">
                       {currentUser?.email}
                     </p>
                   </div>
-                  <Button size="sm" variant="secondary" onClick={() => {
+                  <Button size="sm" variant="secondary" className="shrink-0" onClick={() => {
                     setEditName(currentUser?.name || "")
                     setEditEmail(currentUser?.email || "")
                     setEditingProfile(true)
@@ -394,7 +394,7 @@ export default function AccountPage() {
               </div>
             </div>
           ) : (
-            <Button size="sm" variant="secondary" onClick={() => setShowChangePassword(true)}>
+            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px]" onClick={() => setShowChangePassword(true)}>
               <KeyRound className="h-4 w-4 mr-1" /> Alterar senha
             </Button>
           )}
@@ -442,11 +442,11 @@ export default function AccountPage() {
               </div>
             </div>
           ) : currentUser?.two_factor_enabled ? (
-            <Button size="sm" variant="danger" onClick={handleDisable2FA}>
+            <Button size="sm" variant="danger" className="w-full sm:w-auto sm:min-w-[180px]" onClick={handleDisable2FA}>
               <Shield className="h-4 w-4 mr-1" /> Desativar 2FA
             </Button>
           ) : (
-            <Button size="sm" variant="secondary" onClick={handleSetup2FA}>
+            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px]" onClick={handleSetup2FA}>
               <Shield className="h-4 w-4 mr-1" /> Ativar 2FA
             </Button>
           )}

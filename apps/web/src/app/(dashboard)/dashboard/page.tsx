@@ -103,7 +103,7 @@ export default function DashboardPage() {
       </div>
 
       {/* Stats */}
-      <div className="grid grid-cols-2 lg:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
         {loading ? (
           <>
             <Card>
@@ -144,8 +144,8 @@ export default function DashboardPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
                   <FolderOpen className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </div>
-                <div>
-                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider">
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
                     Projects
                   </p>
                   <p className="text-2xl font-semibold tracking-tight">
@@ -153,7 +153,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono">
+              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
                 {projects.length === 0 ? "Nenhum projeto ainda" : `${projects.length} ativos`}
               </p>
             </Card>
@@ -163,8 +163,8 @@ export default function DashboardPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
                   <Key className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </div>
-                <div>
-                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider">
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
                     Secrets
                   </p>
                   <p className="text-2xl font-semibold tracking-tight">
@@ -172,7 +172,7 @@ export default function DashboardPage() {
                   </p>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono">
+              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
                 {totalSecrets === 0 ? "Nenhuma secret ainda" : `${totalSecrets} secrets no total`}
               </p>
             </Card>
@@ -182,18 +182,18 @@ export default function DashboardPage() {
                 <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
                   <Clock className="h-5 w-5 text-[var(--text-tertiary)]" />
                 </div>
-                <div>
-                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider">
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
                     Last Sync
                   </p>
-                  <p className="text-2xl font-semibold tracking-tight">
+                  <p className="text-lg sm:text-2xl font-semibold tracking-tight truncate">
                     {auditLogs.length > 0 && auditLogs[0].created_at
                       ? formatRelativeTime(auditLogs[0].created_at)
                       : "—"}
                   </p>
                 </div>
               </div>
-              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono">
+              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
                 Última atividade
               </p>
             </Card>
@@ -234,13 +234,13 @@ export default function DashboardPage() {
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background-muted)]">
                     <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
                   </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm text-[var(--text-primary)]">
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="text-sm text-[var(--text-primary)] truncate">
                       <span className="font-medium">{log.action}</span>
                       {" · "}
                       <span className="font-mono text-[var(--text-secondary)]">{log.resource_type}</span>
                     </p>
-                    <p className="text-xs text-[var(--text-muted)] font-mono">
+                    <p className="text-xs text-[var(--text-muted)] font-mono truncate">
                       {description}
                     </p>
                   </div>
