@@ -1043,3 +1043,67 @@ The landing pricing section used a GSAP-powered carousel for `Contribute`, `Open
 - ✅ The contribution path is more prominent without implying that CriptEnv requires a paid plan.
 - ✅ Removing pricing autoplay reduces motion and Cloudflare Workers SSR risk.
 - ⚠️ The section is less visually playful than the carousel; future experiments should preserve direct access to both contribution and free-start CTAs.
+
+---
+
+## DEC-041 — Landing How It Works Remote Vault Narrative
+
+**Status:** Approved
+**Date:** 2026-05-26
+**Context:**
+The landing `How It Works` section still described an older CLI mental model centered on `criptenv init`, bare `push`, and bare `pull`. After the CLI Remote Terminal work, the main flow is a remote project vault: the CLI authenticates, prompts for the project Vault password only when secret access is needed, decrypts in memory, and sends versioned ciphertext to the API.
+
+**Decision:**
+- Reframe `How It Works` around the real remote-vault journey: `login`, `projects create`, `set`, and explicit file export/CI usage.
+- Show the operational path as `CLI local -> ciphertext -> API vault -> web + CI`, making it clear that the server coordinates encrypted blobs instead of seeing plaintext.
+- Add short trust proof points directly in the section: Vault password never sent, API sees ciphertext/metadata, and concurrent edits use version protection.
+- Update adjacent landing copy so the feature cards, hero terminal, and CTA terminal no longer imply a local secrets vault as the primary product model.
+
+**Consequences:**
+- ✅ Customer-facing onboarding now matches the current CLI, web, and CI behavior.
+- ✅ The section explains how the product works without duplicating the deeper security scrollytelling section.
+- ✅ The design remains static/Tailwind-first and does not add new Cloudflare Workers SSR risk.
+- ⚠️ Future CLI semantics changes must be reflected in this section quickly because it now teaches the canonical first-use flow.
+
+---
+
+## DEC-042 — Landing Final CTA Professional Close
+
+**Status:** Approved
+**Date:** 2026-05-26
+**Context:**
+The final landing CTA still used a simple split of headline, two buttons, and a small gray terminal block. After the pricing and `How It Works` redesigns, the closing section felt less polished than the rest of the landing and did not reinforce the remote-vault trust story at the point of conversion.
+
+**Decision:**
+- Rebuild the final CTA as a secure launch panel that combines concise product copy, signup/GitHub actions, trust proof points, and a remote-vault terminal state.
+- Keep `/signup` as the primary CTA and GitHub as the secondary CTA.
+- Treat the existing background image as subtle atmosphere behind a controlled overlay instead of leaving it as the dominant visual.
+- Reuse the landing's existing Tailwind, button, icon, terminal, border, and backdrop-blur language without adding new dependencies or browser-only behavior.
+
+**Consequences:**
+- ✅ The final conversion moment now matches the professionalism and density of the updated landing sections.
+- ✅ The closing copy reinforces zero plaintext, free start, and open-source trust without introducing new claims.
+- ✅ The implementation stays static and compatible with Cloudflare Workers SSR constraints.
+- ⚠️ Future CTA experiments should preserve the signup/GitHub hierarchy unless pricing or onboarding strategy changes.
+
+---
+
+## DEC-043 — Remote Vault Checksum Canonicalization
+
+**Status:** Approved
+**Date:** 2026-05-26
+**Context:**
+The Web dashboard stored remote vault blob checksums as `sha256(key:iv:ciphertext:authTag)`, while the CLI validated remote blob checksums as `sha256(plaintext)`. This made secrets created in the Web dashboard decrypt successfully at the AES-GCM layer but fail the CLI's additional checksum check with `Checksum mismatch`.
+
+**Decision:**
+- Treat `sha256(key:iv:ciphertext:authTag)` as the canonical checksum for remote vault blobs.
+- Keep AES-GCM authentication as the primary cryptographic integrity guarantee.
+- Make the CLI accept both canonical remote checksums and legacy plaintext checksums when reading existing blobs.
+- Make all new CLI remote vault writes, including `projects rekey`, emit the canonical Web-compatible checksum.
+- Send `expected_version` from the Web dashboard when pushing vault changes so browser writes use the same optimistic concurrency guard as CLI writes.
+
+**Consequences:**
+- ✅ Secrets created or edited in the Web dashboard can be pulled/exported by the CLI.
+- ✅ Secrets created or edited by the CLI keep the checksum shape expected by the Web/API model.
+- ✅ Existing legacy CLI blobs remain readable without a database migration.
+- ⚠️ The plaintext checksum path remains only as backward compatibility and should not be used for new remote vault writes.

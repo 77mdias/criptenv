@@ -2,7 +2,7 @@
 
 ## Status atual
 
-**CLI Remote Terminal implementado em 2026-05-14. A CLI agora opera diretamente no vault remoto do projeto, sem master password local no caminho principal.**
+**CLI Remote Terminal implementado em 2026-05-14 e interoperabilidade de checksum CLI/Web corrigida em 2026-05-26. A CLI agora opera diretamente no vault remoto do projeto, sem master password local no caminho principal.**
 
 ---
 
@@ -50,16 +50,23 @@ Transformar a CLI em um terminal remoto sincronizado com o WEB: comandos princip
 - API focado em vault/version conflict: **5 passed**
 - Web build: **`make web-build` passed**
 
+### Correção de interoperabilidade CLI/Web ✅
+- Checksum canônico do vault remoto definido como `sha256(key_id:iv:ciphertext:auth_tag)`, alinhado ao Web.
+- CLI lê blobs novos do Web e blobs legados com checksum de plaintext.
+- CLI passa a gravar novos blobs remotos no formato canônico.
+- `projects rekey` usa o mesmo helper de checksum e aceita blobs originados pelo Web.
+- Web dashboard envia `expected_version` ao salvar secrets para usar a mesma proteção de concorrência da CLI.
+
 ---
 
 ## Próximos passos recomendados
 
 1. Publicar nova versão da CLI.
 2. Atualizar a documentação hospedada em `criptenv.77mdevseven.tech/docs` a partir de `docs/features/remote-terminal-cli.md`.
-3. Fazer smoke em produção: `criptenv login`, `criptenv set/get/list -p <project-id>`, `criptenv push .env -p <project-id>` e `criptenv pull -p <project-id> -o .env.production`.
+3. Fazer smoke em produção: criar/editar secret no Web, rodar `criptenv pull -p <project-id> -e <env> -o .env.production`, rodar `criptenv set KEY=value -p <project-id> -e <env>`, e recarregar o Web para confirmar leitura.
 
 ---
 
-**Document Version**: 1.15
-**Last Updated**: 2026-05-14
-**Status**: CLI Remote Terminal implemented and verified
+**Document Version**: 1.16
+**Last Updated**: 2026-05-26
+**Status**: CLI Remote Terminal implemented, verified, and checksum-aligned with Web/API

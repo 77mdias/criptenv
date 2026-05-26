@@ -276,7 +276,11 @@ class TestProjectExtraCommands:
     @patch("criptenv.commands.projects.getpass.getpass")
     @patch("criptenv.commands.projects.cli_context")
     def test_projects_rekey(self, mock_ctx, mock_getpass, runner):
-        from criptenv.crypto import build_project_vault_config
+        import hashlib
+
+        from criptenv.crypto import build_project_vault_config, derive_project_env_key
+        from criptenv.crypto.core import encrypt
+        from criptenv.crypto.utils import to_base64
 
         # Setup passwords
         current_pwd = "current_password_123"
@@ -286,6 +290,16 @@ class TestProjectExtraCommands:
         # Build a real vault config for the current password so verification passes
         vault_config, vault_proof = build_project_vault_config(current_pwd)
 
+        env_id = "env_123"
+        env_key = derive_project_env_key(current_pwd, vault_config, env_id)
+        ciphertext, iv, auth_tag, _ = encrypt(b"secret-value", env_key)
+        iv_b64 = to_base64(iv)
+        ct_b64 = to_base64(ciphertext)
+        at_b64 = to_base64(auth_tag)
+        web_checksum = hashlib.sha256(
+            f"API_KEY:{iv_b64}:{ct_b64}:{at_b64}".encode("utf-8")
+        ).hexdigest()
+
         mock_client = AsyncMock()
         mock_client.get_project = AsyncMock(return_value={
             "id": "prj_123",
@@ -293,10 +307,17 @@ class TestProjectExtraCommands:
             "vault_config": vault_config,
         })
         mock_client.list_environments = AsyncMock(return_value={
-            "environments": [{"id": "env_123", "name": "production"}]
+            "environments": [{"id": env_id, "name": "production"}]
         })
         mock_client.pull_vault = AsyncMock(return_value={
-            "blobs": [],
+            "blobs": [{
+                "key_id": "API_KEY",
+                "iv": iv_b64,
+                "ciphertext": ct_b64,
+                "auth_tag": at_b64,
+                "checksum": web_checksum,
+                "version": 1,
+            }],
             "version": 1,
         })
         mock_client.rekey_project = AsyncMock(return_value={"vault_config": {}})
@@ -314,6 +335,10 @@ class TestProjectExtraCommands:
         assert "new_vault_config" in call_kwargs
         assert "new_vault_proof" in call_kwargs
         assert "environments" in call_kwargs
+        rekey_blob = call_kwargs["environments"][0]["blobs"][0]
+        assert rekey_blob["checksum"] == hashlib.sha256(
+            f"{rekey_blob['key_id']}:{rekey_blob['iv']}:{rekey_blob['ciphertext']}:{rekey_blob['auth_tag']}".encode("utf-8")
+        ).hexdigest()
 
 
 # ─── Environments (update/delete/get) ────────────────────────────────────────────

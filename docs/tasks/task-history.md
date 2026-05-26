@@ -735,3 +735,29 @@ Corrigida a página pública de contribuição para aplicar uma janela visual re
 **Observações:**
 - O vencimento nativo do Mercado Pago não foi reduzido para 2 minutos porque Checkout API Pix exige `date_of_expiration` entre 30 minutos e 30 dias.
 - Um status backend `PAID` continua prevalecendo sobre a expiração local da UI.
+
+---
+
+## 2026-05-26 — Alinhamento de checksum do vault remoto CLI/Web
+
+**Resumo:**
+Corrigida a interoperabilidade do vault remoto para que a CLI leia secrets criadas pelo Web e continue produzindo blobs compatíveis com o Web/API. O checksum canônico remoto agora é `sha256(key_id:iv:ciphertext:auth_tag)`, com leitura compatível para blobs legados que usavam checksum de plaintext.
+
+**Arquivos criados:**
+- `apps/cli/tests/test_remote_vault.py`
+- `apps/web/src/lib/api/__tests__/vault.test.ts`
+
+**Arquivos alterados:**
+- `apps/cli/src/criptenv/remote_vault.py`
+- `apps/cli/src/criptenv/commands/projects.py`
+- `apps/cli/tests/test_team_commands.py`
+- `apps/web/src/app/(dashboard)/projects/[id]/secrets/page.tsx`
+- `apps/web/src/lib/api/client.ts`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+- `docs/features/remote-terminal-cli.md`
+- `docs/tasks/current-task.md`
+
+**Observações:**
+- AES-GCM continua sendo a garantia criptográfica de integridade; o checksum é metadado de interoperabilidade entre clientes.
+- Web saves agora enviam `expected_version`, alinhando a proteção de concorrência com a CLI.

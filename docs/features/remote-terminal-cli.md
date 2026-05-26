@@ -82,6 +82,18 @@ The CLI sends the vault version it read before mutation as `expected_version`.
 - If another client changed the vault first, the API returns `409 Conflict`.
 - The CLI tells the user to repeat the command so it can read the latest vault before writing.
 
+The web dashboard also sends `expected_version` when saving secrets, so CLI and Web writes use the same optimistic concurrency rule.
+
+## Blob Checksum Compatibility
+
+Remote vault blobs use the Web-compatible checksum format:
+
+```text
+sha256(key_id:iv:ciphertext:auth_tag)
+```
+
+AES-256-GCM remains the cryptographic integrity check. The checksum is shared metadata that lets CLI and Web clients agree on the same remote blob shape. The CLI still accepts older plaintext checksums when reading existing blobs, but all new remote vault writes use the Web-compatible format.
+
 ## Zero-Knowledge Guarantees
 
 - Plaintext secrets never leave the CLI process.

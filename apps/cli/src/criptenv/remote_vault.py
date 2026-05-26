@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import getpass
+import hashlib
 import os
 from dataclasses import dataclass
 from typing import Any
@@ -18,6 +19,40 @@ from criptenv.crypto import (
     verify_project_vault_password,
 )
 from criptenv.crypto.utils import from_base64, to_base64
+
+
+def compute_remote_blob_checksum(
+    key_id: str,
+    iv: str,
+    ciphertext: str,
+    auth_tag: str,
+) -> str:
+    """Compute the canonical remote vault checksum used by the web app."""
+    return hashlib.sha256(
+        f"{key_id}:{iv}:{ciphertext}:{auth_tag}".encode("utf-8")
+    ).hexdigest()
+
+
+def verify_remote_blob_checksum(blob: dict[str, Any], plaintext: bytes) -> None:
+    """Accept canonical remote checksums and legacy plaintext checksums."""
+    expected = blob.get("checksum")
+    if not expected:
+        return
+
+    canonical = compute_remote_blob_checksum(
+        blob["key_id"],
+        blob["iv"],
+        blob["ciphertext"],
+        blob["auth_tag"],
+    )
+    if expected == canonical:
+        return
+
+    legacy_plaintext = hashlib.sha256(plaintext).hexdigest()
+    if expected == legacy_plaintext:
+        return
+
+    raise ValueError("Checksum mismatch - data may be corrupted")
 
 
 def get_vault_password() -> str:
@@ -141,13 +176,14 @@ class RemoteVault:
 
     async def decrypt_blob(self, blob: dict[str, Any], environment_id: str) -> bytes:
         env_key = await self.environment_key(environment_id)
-        return decrypt(
+        plaintext = decrypt(
             from_base64(blob["ciphertext"]),
             from_base64(blob["iv"]),
             from_base64(blob["auth_tag"]),
             env_key,
-            blob.get("checksum"),
         )
+        verify_remote_blob_checksum(blob, plaintext)
+        return plaintext
 
     async def encrypt_blob(
         self,
@@ -157,14 +193,22 @@ class RemoteVault:
         version: int,
     ) -> dict[str, Any]:
         env_key = await self.environment_key(environment_id)
-        ciphertext, iv, auth_tag, checksum = encrypt(plaintext, env_key)
+        ciphertext, iv, auth_tag, _checksum = encrypt(plaintext, env_key)
+        iv_b64 = to_base64(iv)
+        ciphertext_b64 = to_base64(ciphertext)
+        auth_tag_b64 = to_base64(auth_tag)
         return {
             "key_id": key_id,
-            "iv": to_base64(iv),
-            "ciphertext": to_base64(ciphertext),
-            "auth_tag": to_base64(auth_tag),
+            "iv": iv_b64,
+            "ciphertext": ciphertext_b64,
+            "auth_tag": auth_tag_b64,
             "version": version,
-            "checksum": checksum,
+            "checksum": compute_remote_blob_checksum(
+                key_id,
+                iv_b64,
+                ciphertext_b64,
+                auth_tag_b64,
+            ),
         }
 
     def push_shape(self, blob: dict[str, Any]) -> dict[str, Any]:

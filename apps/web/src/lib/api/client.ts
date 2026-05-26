@@ -122,6 +122,7 @@ export interface VaultBlobPush {
 export interface VaultPushRequest {
   blobs: VaultBlobPush[];
   vault_proof?: string;
+  expected_version?: number;
 }
 
 export interface VaultPullResponse {

@@ -346,7 +346,11 @@ export default function SecretsPage() {
     try {
       const envKey = await deriveProjectEnvironmentKey(keyMaterial, activeEnv.id)
       const blobs = await encryptVault(nextSecrets, envKey, vaultVersion + 1)
-      const data = await vaultApi.push(projectId, activeEnv.id, { blobs, vault_proof: vaultProof })
+      const data = await vaultApi.push(projectId, activeEnv.id, {
+        blobs,
+        vault_proof: vaultProof,
+        expected_version: vaultVersion,
+      })
       setVaultBlobs(data.blobs)
       setVaultVersion(data.version)
       setSecretCountState((currentState) =>

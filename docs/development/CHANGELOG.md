@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+#### Landing Final CTA Professional Close (2026-05-26)
+
+- **Frontend**: Rebuilt the final landing CTA as a secure launch panel with controlled background imagery, trust proof points, primary signup action, GitHub secondary action, and a refined remote-vault terminal surface.
+- **UX**: Aligned the closing section with the `How It Works` visual language so the last conversion moment feels like part of the same product story instead of a detached text-and-terminal block.
+- **Decision record**: Added DEC-042 for the landing final CTA direction.
+
+#### Landing How It Works Remote Vault Narrative (2026-05-26)
+
+- **Frontend**: Rebuilt the landing `How It Works` section around the current remote-vault CLI model: login, project vault creation, encrypted remote secret writes, and explicit export/CI usage.
+- **UX**: Replaced the old `init -> set -> push -> pull` card story with a professional sealed-flow layout showing CLI local decrypt, AES-256-GCM ciphertext, API vault storage, and web/CI consumption.
+- **Copy accuracy**: Updated adjacent landing feature, hero terminal, and CTA terminal copy so the customer-facing story no longer implies a primary local secrets vault or bare push/pull sync flow.
+- **Decision record**: Added DEC-041 for the landing remote-vault narrative direction.
+
 #### Landing Pricing Trust Section (2026-05-25)
 
 - **Frontend**: Replaced the animated pricing carousel with a static trust-focused pricing section that presents contribution support, free open-source usage, and proof points in one scan-friendly layout.
@@ -51,6 +64,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests**: Updated auth route tests, integration tests, and frontend unit tests to cover the new verification flow.
 
 ### Fixed
+- **CLI/Web vault interoperability**: Remote vault blobs now use the Web/API-compatible checksum format `sha256(key:iv:ciphertext:authTag)` when written by the CLI. The CLI also accepts legacy plaintext checksums while reading existing blobs, fixing `criptenv pull --output ...` failures with `Checksum mismatch` for secrets created in the web dashboard.
+- **Web vault concurrency**: Web dashboard vault pushes now send `expected_version`, matching the API/CLI optimistic concurrency model and preventing stale browser writes from silently overwriting remote vault changes.
 - **API dependency audit**: Added an explicit `pyasn1>=0.6.3` security floor to the API requirements so `pip-audit -r apps/api/requirements.txt` cannot resolve vulnerable `pyasn1 0.4.8` through transitive auth dependencies.
 - **CLI Remote Terminal**: Core secret commands (`set`, `get`, `list`, `delete`, `import`, `export`, `rotate`) now operate directly against the remote project vault. Secrets are decrypted only in memory and are no longer mirrored into the local SQLite vault.
 - **CLI password model**: Main CLI flows no longer prompt for a local master password. Secret commands prompt for the project Vault password only when they must decrypt or mutate secrets, and support `CRIPTENV_VAULT_PASSWORD` for automation.

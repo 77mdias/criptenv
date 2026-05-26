@@ -2,12 +2,15 @@
 
 import click
 import getpass
-import hashlib
 
 from criptenv.context import cli_context, run_async
 from criptenv.crypto import build_project_vault_config, derive_project_env_key
 from criptenv.crypto.core import encrypt as crypto_encrypt, decrypt as crypto_decrypt
 from criptenv.crypto.utils import to_base64, from_base64
+from criptenv.remote_vault import (
+    compute_remote_blob_checksum,
+    verify_remote_blob_checksum,
+)
 
 
 @click.group("projects")
@@ -249,11 +252,10 @@ def projects_rekey(project_id: str, force: bool):
                     iv = from_base64(blob["iv"])
                     ciphertext = from_base64(blob["ciphertext"])
                     auth_tag = from_base64(blob["auth_tag"])
-                    expected_checksum = blob.get("checksum")
-
                     plaintext = crypto_decrypt(
-                        ciphertext, iv, auth_tag, old_env_key, expected_checksum
+                        ciphertext, iv, auth_tag, old_env_key
                     )
+                    verify_remote_blob_checksum(blob, plaintext)
 
                     # Re-encrypt
                     new_ct, new_iv, new_at, _ = crypto_encrypt(plaintext, new_env_key)
@@ -262,17 +264,17 @@ def projects_rekey(project_id: str, force: bool):
                     ct_b64 = to_base64(new_ct)
                     at_b64 = to_base64(new_at)
 
-                    # Compute checksum matching web format: sha256(key:iv:ct:auth_tag)
-                    checksum_str = hashlib.sha256(
-                        f"{blob['key_id']}:{iv_b64}:{ct_b64}:{at_b64}".encode()
-                    ).hexdigest()
-
                     new_blobs.append({
                         "key_id": blob["key_id"],
                         "iv": iv_b64,
                         "ciphertext": ct_b64,
                         "auth_tag": at_b64,
-                        "checksum": checksum_str,
+                        "checksum": compute_remote_blob_checksum(
+                            blob["key_id"],
+                            iv_b64,
+                            ct_b64,
+                            at_b64,
+                        ),
                         "version": version + 1,
                     })
 
