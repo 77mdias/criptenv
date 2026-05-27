@@ -462,11 +462,7 @@ async def setup_2fa(
     db: AsyncSession = Depends(get_db)
 ):
     auth_service = AuthService(db)
-    secret_uri = await auth_service.setup_2fa(current_user)
-
-    # Generate 8 backup codes
-    import secrets
-    backup_codes = [secrets.token_hex(4).upper() for _ in range(8)]
+    secret_uri, backup_codes = await auth_service.setup_2fa(current_user)
 
     return TwoFactorSetupResponse(secret_uri=secret_uri, backup_codes=backup_codes)
 

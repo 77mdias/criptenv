@@ -1128,3 +1128,25 @@ Avatar uploads failed with Supabase Storage returning `PGRST125 Invalid path spe
 - ✅ Storage path errors are reported as upstream failures instead of being mislabeled as missing buckets.
 - ✅ Service-role credentials stay server-only and are no longer logged in avatar upload diagnostics.
 - ⚠️ Operators must ensure VPS/API `.env` files use the project base URL, not a REST or Storage endpoint URL.
+
+---
+
+## DEC-045 — Real 2FA with QR Code and Persisted Backup Codes
+
+**Status:** Approved
+**Date:** 2026-05-27
+**Context:**
+The account security page already showed a 2FA setup flow, but the QR code was a static icon (not scannable) and backup codes were generated in the router without being persisted to the database. If the user lost the codes shown during setup, recovery was impossible.
+
+**Decision:**
+- Use `qrcode.react` on the frontend to render a real scannable QR code from the `otpauth://` URI returned by the backend.
+- Store backup code hashes (SHA-256) in a new `two_factor_backup_codes` JSONB column on the `users` table.
+- Generate 10 backup codes during 2FA setup (up from 8) and persist their hashes immediately.
+- Clear backup codes when 2FA is disabled.
+- Add a `verify_backup_code` service method for future use during login recovery flows.
+
+**Consequences:**
+- ✅ Users can scan the QR code with any authenticator app (Google Authenticator, Authy, etc.).
+- ✅ Backup codes are recoverable by the backend for future login-with-backup-code flows.
+- ✅ Backup codes are stored as hashes, not plaintext, limiting exposure if the database is compromised.
+- ⚠️ The login flow still does not enforce 2FA challenge yet; this will be addressed in a separate auth-hardening task.

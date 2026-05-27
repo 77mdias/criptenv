@@ -38,6 +38,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Account Security 2FA Real QR Code and Backup Codes (2026-05-27)
+
+- **Frontend**: `account/page.tsx` now renders a real scannable QR code using `qrcode.react` (`QRCodeSVG`) from the `otpauth://` URI returned by the backend. Replaced the previous static Lucide `QrCode` icon.
+- **Backend**: `AuthService.setup_2fa()` now returns both the `otpauth` URI and the plaintext backup codes, and persists SHA-256 hashes of those codes in the new `users.two_factor_backup_codes` JSONB column.
+- **Backend**: `AuthService.disable_2fa()` clears both the TOTP secret and backup codes.
+- **Backend**: Added `AuthService.verify_backup_code()` for future login recovery flows.
+- **Database**: Migration `007_add_two_factor_backup_codes.sql` adds the `two_factor_backup_codes` column idempotently.
+- **Decision record**: Added DEC-045 for real 2FA implementation.
+
 #### Pix Contribution Thank-You Emails (2026-05-23)
 
 - **Backend**: Paid Pix contributions now send a bilingual Portuguese/English thank-you email when `payer_email` is provided.

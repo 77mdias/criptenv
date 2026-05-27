@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter } from "next/navigation"
-import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, QrCode, Link2, Unlink, Mail } from "lucide-react"
+import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail } from "lucide-react"
+import { QRCodeSVG } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -419,7 +420,7 @@ export default function AccountPage() {
               </p>
               {twoFASecretUri && (
                 <div className="p-4 bg-white rounded-lg inline-block">
-                  <QrCode className="h-32 w-32 text-black" />
+                  <QRCodeSVG value={twoFASecretUri} size={180} level="M" includeMargin />
                   <p className="text-xs text-black font-mono mt-2 break-all">{twoFASecretUri}</p>
                 </div>
               )}

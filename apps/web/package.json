@@ -54,6 +54,7 @@
     "lucide-react": "^1.14.0",
     "next": "16.2.6",
     "pagefind": "^1.5.2",
+    "qrcode.react": "^4.2.0",
     "react": "^19.2.5",
     "react-dom": "^19.2.5",
     "react-hook-form": "^7.74.0",

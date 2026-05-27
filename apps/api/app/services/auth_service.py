@@ -343,12 +343,25 @@ class AuthService:
 
     # ─── Two-Factor Authentication ───────────────────────────────────────────
 
-    async def setup_2fa(self, user: User) -> str:
-        """Generate and store a new 2FA secret for the user. Returns the secret URI for QR code."""
+    def _hash_backup_code(self, code: str) -> str:
+        import hashlib
+        return hashlib.sha256(code.encode("utf-8")).hexdigest()
+
+    async def setup_2fa(self, user: User) -> tuple[str, list[str]]:
+        """Generate and store a new 2FA secret for the user.
+
+        Returns a tuple of (otpauth_uri, backup_codes).
+        Backup codes are stored as SHA-256 hashes in the database.
+        """
         import pyotp
 
         secret = pyotp.random_base32()
         user.two_factor_secret = secret.encode("utf-8")
+
+        # Generate 10 backup codes (8 hex chars each)
+        backup_codes = [secrets.token_hex(4).upper() for _ in range(10)]
+        user.two_factor_backup_codes = [self._hash_backup_code(c) for c in backup_codes]
+
         await self.db.flush()
 
         # Build otpauth URI for QR code
@@ -356,7 +369,7 @@ class AuthService:
             name=user.email,
             issuer_name="CriptEnv"
         )
-        return uri
+        return uri, backup_codes
 
     async def verify_and_enable_2fa(self, user: User, code: str) -> bool:
         """Verify a TOTP code and enable 2FA."""
@@ -374,6 +387,20 @@ class AuthService:
         await self.db.flush()
         return True
 
+    async def verify_backup_code(self, user: User, code: str) -> bool:
+        """Verify a backup code and remove it from the user's list."""
+        if not user.two_factor_backup_codes:
+            return False
+
+        code_hash = self._hash_backup_code(code)
+        if code_hash in user.two_factor_backup_codes:
+            user.two_factor_backup_codes = [
+                h for h in user.two_factor_backup_codes if h != code_hash
+            ]
+            await self.db.flush()
+            return True
+        return False
+
     async def disable_2fa(self, user: User, password: str) -> bool:
         """Disable 2FA after verifying the user's password."""
         if not self.verify_password(password, user.password_hash):
@@ -381,6 +408,7 @@ class AuthService:
 
         user.two_factor_enabled = False
         user.two_factor_secret = None
+        user.two_factor_backup_codes = []
         await self.db.flush()
         return True
 

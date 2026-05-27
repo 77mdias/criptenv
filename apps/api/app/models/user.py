@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Boolean, DateTime, LargeBinary, ForeignKey, func, Index
-from sqlalchemy.dialects.postgresql import UUID, CITEXT
+from sqlalchemy.dialects.postgresql import UUID, CITEXT, JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
@@ -17,6 +17,7 @@ class User(Base):
     wrapped_dek = Column(LargeBinary)
     two_factor_secret = Column(LargeBinary)
     two_factor_enabled = Column(Boolean, default=False)
+    two_factor_backup_codes = Column(JSONB, default=list)
     email_verified = Column(Boolean, default=False)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
