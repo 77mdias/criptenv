@@ -31,7 +31,10 @@ const worker = {
     if (url.pathname.startsWith("/api/")) {
       const apiBaseUrl = normalizeApiBaseUrl(env);
       if (!apiBaseUrl) {
-        return new Response("API proxy is not configured.", { status: 500 });
+        return new Response(
+          JSON.stringify({ detail: "API proxy is not configured." }),
+          { status: 500, headers: { "Content-Type": "application/json" } }
+        );
       }
 
       const targetUrl = `${apiBaseUrl}${url.pathname}${url.search}`;
@@ -45,20 +48,45 @@ const worker = {
         headers.set("x-forwarded-for", clientIp);
       }
 
-      // Remove Content-Length when proxying a stream body to prevent mismatches
-      // between the original length and the actual streamed bytes.
+      // Remove hop-by-hop headers that can cause issues when proxying
       headers.delete("content-length");
       headers.delete("content-encoding");
+      headers.delete("transfer-encoding");
 
       const isBodyAllowed = request.method !== "GET" && request.method !== "HEAD";
+      let body: ArrayBuffer | undefined;
+
+      if (isBodyAllowed && request.body) {
+        try {
+          // Bufferize body to avoid stream issues when proxying multipart uploads.
+          // Cloudflare Workers may truncate or corrupt ReadableStream bodies
+          // when forwarding to external origins.
+          body = await request.arrayBuffer();
+        } catch (err) {
+          const message = err instanceof Error ? err.message : "Unknown error";
+          console.error("[worker] Failed to read request body:", message);
+          return new Response(
+            JSON.stringify({ detail: `Failed to read request body: ${message}` }),
+            { status: 400, headers: { "Content-Type": "application/json" } }
+          );
+        }
+      }
 
       try {
         const response = await fetch(targetUrl, {
           method: request.method,
           headers,
-          body: isBodyAllowed ? request.body : undefined,
+          body,
           redirect: "manual",
         });
+
+        // Log non-success responses for debugging
+        if (!response.ok) {
+          console.warn(
+            `[worker] API proxy ${request.method} ${url.pathname} -> ${response.status} ${response.statusText}`
+          );
+        }
+
         return response;
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";

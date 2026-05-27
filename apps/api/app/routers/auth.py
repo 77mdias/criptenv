@@ -334,13 +334,22 @@ async def upload_avatar(
     with the filename set to the user's ID (e.g., '<uuid>.png'), using upsert
     to overwrite any previous avatar and keep storage clean.
     """
+    logger.info(
+        "Avatar upload started: user=%s content_type=%s filename=%s",
+        current_user.id,
+        request.headers.get("content-type"),
+        file.filename,
+    )
+
     avatar_service = AvatarService()
     auth_service = AuthService(db)
     audit_service = AuditService(db)
 
     try:
         public_url = await avatar_service.upload_avatar(current_user.id, file)
+        logger.info("Avatar upload successful: user=%s url=%s", current_user.id, public_url)
     except HTTPException:
+        logger.warning("Avatar upload HTTPException: user=%s", current_user.id)
         raise
     except Exception as exc:
         logger.exception("Unexpected error uploading avatar for user %s", current_user.id)
