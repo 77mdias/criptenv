@@ -1168,3 +1168,28 @@ Keep `/projects/[id]/secrets/page.tsx` as a thin server wrapper and move the int
 - ✅ Zero-knowledge behavior remains browser-only and unchanged.
 - ✅ Vault checksum sorting and version propagation have focused unit coverage.
 - ⚠️ The dashboard layout still uses a client auth shell, so broader RSC gains require a separate auth/layout refactor.
+
+---
+
+## DEC-047 — Hold Web Toolchain Majors for Dependabot Updates
+
+**Date:** 2026-05-27
+**Status:** ✅ Accepted
+**Context:**
+Dependabot's grouped web dependency PR attempted to move ESLint to 10, TypeScript to 6, and `@types/node` to 25. `eslint-config-next@16.2.6` still depends on React/import/a11y ESLint plugins whose peer/API compatibility is limited to ESLint 9, causing the web lint job to fail after install.
+
+**Decision:**
+Keep the web toolchain on compatible majors for now:
+- `eslint` stays on 9.x
+- `typescript` stays on 5.x
+- `@types/node` stays on 20.x
+
+Other safe grouped web dependency updates can proceed.
+
+**Rationale:**
+This keeps Dependabot useful while preserving the same compatibility envelope validated by the current Vinext/Next stack and CI jobs.
+
+**Consequences:**
+- ✅ Dependabot web PRs can pass `npm ci`, lint, Vinext check, tests, and build.
+- ✅ Avoids adopting ESLint 10 before the Next ESLint plugin chain supports it.
+- ❌ These majors need a future upgrade pass once the ecosystem catches up.

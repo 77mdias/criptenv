@@ -79,6 +79,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Tests**: Updated auth route tests, integration tests, and frontend unit tests to cover the new verification flow.
 
 ### Fixed
+- **Dependabot web dependency PR**: Kept the grouped web update on compatible toolchain majors by holding ESLint at 9, TypeScript at 5, and Node types at 20 while still accepting the safe web dependency bumps. This fixes the Dependabot PR's `npm ci`/lint path without weakening the normal CI workflow.
 - **Avatar uploads**: Supabase Storage uploads now require `SUPABASE_URL` to be the project base URL, use `httpx` directly instead of shelling out to `curl`, authenticate server-side with `SUPABASE_SERVICE_KEY`, and report Storage path errors as upstream failures instead of incorrectly saying the bucket is missing.
 - **Avatar response serialization**: Avatar/profile updates now refresh the user row after `flush()`, and avatar routes refresh once more after best-effort audit logging, so server-generated `updated_at` values do not trigger async SQLAlchemy lazy loading and `MissingGreenlet` errors while returning avatar responses.
 - **CLI/Web vault interoperability**: Remote vault blobs now use the Web/API-compatible checksum format `sha256(key:iv:ciphertext:authTag)` when written by the CLI. The CLI also accepts legacy plaintext checksums while reading existing blobs, fixing `criptenv pull --output ...` failures with `Checksum mismatch` for secrets created in the web dashboard.

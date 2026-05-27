@@ -6,6 +6,31 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-27 — Dependabot Web Toolchain Compatibility
+
+**Resumo:**
+Corrigido o PR agrupado do Dependabot para as dependências web. O update automático havia subido `eslint` para 10, `typescript` para 6 e `@types/node` para 25; `eslint-config-next@16.2.6` ainda carrega plugins que quebram com ESLint 10. A branch do PR agora mantém os majors compatíveis (`eslint` 9, `typescript` 5, `@types/node` 20) e preserva os demais bumps seguros.
+
+**Arquivos alterados:**
+- `apps/web/package.json`
+- `apps/web/package-lock.json`
+- `docs/development/CHANGELOG.md`
+- `docs/project/decisions.md`
+- `docs/tasks/task-history.md`
+
+**Testes:**
+- `cd apps/web && npm ci` — passed.
+- `make web-lint` — passed with 3 existing warnings.
+- `make web-test-unit` — 15 suites passed, 63 tests passed.
+- `make web-check-vinext` — 100% compatible.
+- `make web-build` — passed.
+
+**Observações:**
+- Antes do ajuste, `npm run lint` falhava com `react/display-name: contextOrFilename.getFilename is not a function` sob ESLint 10.
+- O erro de `npm ci` reportado no run remoto era de lockfile fora de sincronia em run anterior/stale; a branch atual instala corretamente depois da regeneração do lock.
+
+---
+
 ## 2026-05-27 — Supabase Avatar Upload Hardening
 
 **Resumo:**
