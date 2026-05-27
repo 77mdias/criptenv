@@ -323,6 +323,7 @@ class AuthService:
         """Update user's avatar URL."""
         user.avatar_url = avatar_url
         await self.db.flush()
+        await self.db.refresh(user)
         return user
 
     async def delete_account(self, user: User) -> bool:
