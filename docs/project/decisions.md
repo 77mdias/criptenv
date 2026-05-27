@@ -1150,3 +1150,21 @@ The account security page already showed a 2FA setup flow, but the QR code was a
 - ✅ Backup codes are recoverable by the backend for future login-with-backup-code flows.
 - ✅ Backup codes are stored as hashes, not plaintext, limiting exposure if the database is compromised.
 - ⚠️ The login flow still does not enforce 2FA challenge yet; this will be addressed in a separate auth-hardening task.
+
+---
+
+## DEC-046 — Secrets Page Feature Module Refactor
+
+**Status:** Approved
+**Date:** 2026-05-27
+**Context:**
+The project secrets page mixed route rendering, API loading, browser-only cryptography, vault mutations, modal state, and presentation in one large client component. This made the zero-knowledge flow harder to audit and increased the amount of code forced into the route component.
+
+**Decision:**
+Keep `/projects/[id]/secrets/page.tsx` as a thin server wrapper and move the interactive dashboard behavior into a feature-local client module with a dedicated hook, vault crypto helpers, and focused presentation components.
+
+**Consequences:**
+- ✅ Secrets page responsibilities are split into smaller, auditable modules.
+- ✅ Zero-knowledge behavior remains browser-only and unchanged.
+- ✅ Vault checksum sorting and version propagation have focused unit coverage.
+- ⚠️ The dashboard layout still uses a client auth shell, so broader RSC gains require a separate auth/layout refactor.

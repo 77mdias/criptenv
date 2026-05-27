@@ -9,6 +9,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+#### Secrets Browser Feature Module Refactor (2026-05-27)
+
+- **Frontend**: Refactored `/projects/[id]/secrets` from a single large client page into a server route wrapper plus a feature-local client module, hook, vault crypto helpers, and focused presentation components.
+- **Security**: Preserved zero-knowledge browser-only decryption/encryption, canonical vault checksum generation, and optimistic `expected_version` writes.
+- **Reliability**: Added focused unit coverage for vault crypto sorting, checksum input shape, and version propagation.
+
 #### Landing Final CTA Professional Close (2026-05-26)
 
 - **Frontend**: Rebuilt the final landing CTA as a secure launch panel with controlled background imagery, trust proof points, primary signup action, GitHub secondary action, and a refined remote-vault terminal surface.
