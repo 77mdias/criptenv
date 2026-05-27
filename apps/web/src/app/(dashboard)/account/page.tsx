@@ -274,7 +274,7 @@ export default function AccountPage() {
 
       {/* User Info */}
       <Card className="p-6">
-        <div className="flex flex-col sm:flex-row items-start gap-6">
+        <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           <AvatarUpload
             currentAvatarUrl={currentUser?.avatar_url || null}
             userName={currentUser?.name || "Usuário"}
