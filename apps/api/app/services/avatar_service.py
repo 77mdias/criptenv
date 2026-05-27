@@ -124,6 +124,14 @@ class AvatarService:
             "Content-Type": file.content_type or "application/octet-stream",
         }
 
+        # Debug: log headers being sent (mask sensitive values)
+        logger.info(
+            "Supabase upload headers: apikey=%s... auth=%s... content-type=%s",
+            headers["apikey"][:8] if headers["apikey"] else "EMPTY",
+            headers["Authorization"][:15] if headers["Authorization"] else "EMPTY",
+            headers["Content-Type"],
+        )
+
         client = self._get_client()
         try:
             response = await client.post(upload_url, content=content, headers=headers)
@@ -188,6 +196,12 @@ class AvatarService:
             "apikey": anon_key or service_key,
             "Content-Type": "application/json",
         }
+
+        logger.info(
+            "Supabase delete headers: apikey=%s... auth=%s...",
+            headers["apikey"][:8] if headers["apikey"] else "EMPTY",
+            headers["Authorization"][:15] if headers["Authorization"] else "EMPTY",
+        )
 
         paths = [f"{user_id}.png", f"{user_id}.jpg", f"{user_id}.jpeg"]
 
