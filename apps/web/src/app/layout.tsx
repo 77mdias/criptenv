@@ -17,7 +17,20 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="pt-BR" suppressHydrationWarning>
-      <head />
+      <head>
+        <link
+          rel="icon"
+          type="image/png"
+          href="/images/logocriptenv-aba-light.png"
+          media="(prefers-color-scheme: light)"
+        />
+        <link
+          rel="icon"
+          type="image/png"
+          href="/images/logocriptenv-aba.png"
+          media="(prefers-color-scheme: dark)"
+        />
+      </head>
       <body
         className="min-h-screen bg-(--background) text-(--text-primary) antialiased"
         suppressHydrationWarning
