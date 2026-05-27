@@ -382,6 +382,7 @@ async def upload_avatar(
         # Audit log failure is non-fatal
         logger.exception("Failed to write audit log for avatar update")
 
+    await db.refresh(user)
     return _user_to_response(user)
 
 
@@ -432,6 +433,7 @@ async def delete_avatar(
     except Exception:
         logger.exception("Failed to write audit log for avatar deletion")
 
+    await db.refresh(user)
     return _user_to_response(user)
 
 

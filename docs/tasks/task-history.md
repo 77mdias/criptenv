@@ -9,12 +9,14 @@ This file records completed tasks and major project milestones.
 ## 2026-05-27 — Supabase Avatar Upload Hardening
 
 **Resumo:**
-Corrigido o fluxo de upload de avatar para Supabase Storage. A API agora exige `SUPABASE_URL` como URL base do projeto, rejeita URLs com `/rest/v1` ou `/storage/v1`, usa `httpx` em vez de `curl`, autentica server-side com `SUPABASE_SERVICE_KEY` e deixa erros de path do Storage claros sem tratá-los como bucket ausente. Também corrigido o `MissingGreenlet` ao retornar a resposta do upload, refrescando o usuário após atualizar `avatar_url`.
+Corrigido o fluxo de upload de avatar para Supabase Storage. A API agora exige `SUPABASE_URL` como URL base do projeto, rejeita URLs com `/rest/v1` ou `/storage/v1`, usa `httpx` em vez de `curl`, autentica server-side com `SUPABASE_SERVICE_KEY` e deixa erros de path do Storage claros sem tratá-los como bucket ausente. Também corrigido o `MissingGreenlet` ao retornar respostas de avatar, refrescando o usuário após updates de perfil/avatar e novamente após audit log best-effort.
 
 **Arquivos alterados:**
 - `apps/api/app/services/avatar_service.py`
 - `apps/api/app/services/auth_service.py`
+- `apps/api/app/routers/auth.py`
 - `apps/api/tests/test_auth_service.py`
+- `apps/api/tests/test_auth_routes.py`
 - `apps/api/tests/test_avatar_service.py`
 - `apps/api/.env.example`
 - `deploy/vps/.env.example`
@@ -25,7 +27,8 @@ Corrigido o fluxo de upload de avatar para Supabase Storage. A API agora exige `
 **Testes:**
 - `cd apps/api && python -m pytest tests/test_avatar_service.py -q` — 4 passed.
 - `cd apps/api && python -m pytest tests/test_auth_service.py tests/test_avatar_service.py -q` — 5 passed.
-- `cd apps/api && python -m pytest tests -q` — 387 passed, 2 skipped.
+- `cd apps/api && python -m pytest tests/test_auth_service.py tests/test_auth_routes.py tests/test_avatar_service.py -q` — 19 passed.
+- `cd apps/api && python -m pytest tests -q` — 390 passed, 2 skipped.
 
 **Observações:**
 - O bucket `avatars` continua público para leitura de URLs públicas.

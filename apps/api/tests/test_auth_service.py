@@ -21,3 +21,18 @@ async def test_update_avatar_refreshes_user_after_flush():
     assert user.avatar_url == "https://example.com/avatar.png"
     db.flush.assert_awaited_once()
     db.refresh.assert_awaited_once_with(user)
+
+
+@pytest.mark.asyncio
+async def test_update_profile_refreshes_user_after_flush():
+    """Profile updates should refresh server-generated fields before response serialization."""
+    db = SimpleNamespace(flush=AsyncMock(), refresh=AsyncMock())
+    user = SimpleNamespace(name="Old Name", email="dev@example.com")
+    service = AuthService(db)
+
+    updated_user = await service.update_profile(user, name="New Name")
+
+    assert updated_user is user
+    assert user.name == "New Name"
+    db.flush.assert_awaited_once()
+    db.refresh.assert_awaited_once_with(user)

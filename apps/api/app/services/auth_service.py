@@ -317,6 +317,7 @@ class AuthService:
             user.email_verified = False
 
         await self.db.flush()
+        await self.db.refresh(user)
         return user
 
     async def update_avatar(self, user: User, avatar_url: Optional[str] = None) -> User:

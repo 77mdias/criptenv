@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
+from unittest.mock import AsyncMock
 from uuid import uuid4
 
 from fastapi import FastAPI
@@ -8,7 +9,9 @@ from fastapi.testclient import TestClient
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.routers.auth import router as auth_router
+from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
+from app.services.avatar_service import AvatarService
 from app.services.email_service import EmailService
 
 
@@ -298,3 +301,76 @@ def test_verify_email_with_invalid_token(monkeypatch):
     assert response.status_code == 400
     payload = response.json()
     assert "Invalid" in payload["detail"] or "expired" in payload["detail"].lower()
+
+
+# ─── Avatar Route Tests ──────────────────────────────────────────────────────
+
+
+def test_upload_avatar_refreshes_user_after_audit_before_response(monkeypatch):
+    """Upload route should refresh the user after audit flushes and before serialization."""
+    user = make_user()
+    fake_db = SimpleNamespace(refresh=AsyncMock())
+
+    async def fake_db_dependency():
+        yield fake_db
+
+    async def fake_upload_avatar(self, user_id, file):
+        return "https://abc.supabase.co/storage/v1/object/public/avatars/avatar.png"
+
+    async def fake_update_avatar(self, current_user, avatar_url=None):
+        current_user.avatar_url = avatar_url
+        return current_user
+
+    async def fake_audit_log(self, **kwargs):
+        return None
+
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_db] = fake_db_dependency
+    monkeypatch.setattr(AvatarService, "upload_avatar", fake_upload_avatar)
+    monkeypatch.setattr(AuthService, "update_avatar", fake_update_avatar)
+    monkeypatch.setattr(AuditService, "log", fake_audit_log)
+
+    with TestClient(app) as client:
+        response = client.post(
+            "/api/auth/me/avatar",
+            files={"file": ("avatar.png", b"avatar-bytes", "image/png")},
+        )
+
+    assert response.status_code == 200
+    assert response.json()["avatar_url"].endswith("/avatar.png")
+    fake_db.refresh.assert_awaited_once_with(user)
+
+
+def test_delete_avatar_refreshes_user_after_audit_before_response(monkeypatch):
+    """Delete route should refresh the user after audit flushes and before serialization."""
+    user = make_user()
+    user.avatar_url = "https://abc.supabase.co/storage/v1/object/public/avatars/avatar.png"
+    fake_db = SimpleNamespace(refresh=AsyncMock())
+
+    async def fake_db_dependency():
+        yield fake_db
+
+    async def fake_delete_avatar(self, user_id):
+        return None
+
+    async def fake_update_avatar(self, current_user, avatar_url=None):
+        current_user.avatar_url = avatar_url
+        return current_user
+
+    async def fake_audit_log(self, **kwargs):
+        return None
+
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_db] = fake_db_dependency
+    monkeypatch.setattr(AvatarService, "delete_avatar", fake_delete_avatar)
+    monkeypatch.setattr(AuthService, "update_avatar", fake_update_avatar)
+    monkeypatch.setattr(AuditService, "log", fake_audit_log)
+
+    with TestClient(app) as client:
+        response = client.delete("/api/auth/me/avatar")
+
+    assert response.status_code == 200
+    assert response.json()["avatar_url"] is None
+    fake_db.refresh.assert_awaited_once_with(user)
