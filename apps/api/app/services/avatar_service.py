@@ -78,6 +78,12 @@ def _get_storage_config() -> tuple[str, str, str, str]:
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Supabase storage is not configured on the server.",
         )
+    if not settings.SUPABASE_ANON_KEY:
+        logger.error("SUPABASE_ANON_KEY is missing or empty")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="Supabase anon key is not configured on the server.",
+        )
     return (
         settings.SUPABASE_URL.rstrip("/"),
         settings.SUPABASE_SERVICE_KEY,
@@ -127,8 +133,8 @@ class AvatarService:
         # Debug: log headers being sent (mask sensitive values)
         logger.info(
             "Supabase upload headers: apikey=%s... auth=%s... content-type=%s",
-            headers["apikey"][:8] if headers["apikey"] else "EMPTY",
-            headers["Authorization"][:15] if headers["Authorization"] else "EMPTY",
+            headers["apikey"][:20] if headers["apikey"] else "EMPTY",
+            headers["Authorization"][:20] if headers["Authorization"] else "EMPTY",
             headers["Content-Type"],
         )
 
@@ -199,8 +205,8 @@ class AvatarService:
 
         logger.info(
             "Supabase delete headers: apikey=%s... auth=%s...",
-            headers["apikey"][:8] if headers["apikey"] else "EMPTY",
-            headers["Authorization"][:15] if headers["Authorization"] else "EMPTY",
+            headers["apikey"][:20] if headers["apikey"] else "EMPTY",
+            headers["Authorization"][:20] if headers["Authorization"] else "EMPTY",
         )
 
         paths = [f"{user_id}.png", f"{user_id}.jpg", f"{user_id}.jpeg"]
