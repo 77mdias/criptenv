@@ -1107,3 +1107,24 @@ The Web dashboard stored remote vault blob checksums as `sha256(key:iv:ciphertex
 - ✅ Secrets created or edited by the CLI keep the checksum shape expected by the Web/API model.
 - ✅ Existing legacy CLI blobs remain readable without a database migration.
 - ⚠️ The plaintext checksum path remains only as backward compatibility and should not be used for new remote vault writes.
+
+---
+
+## DEC-044 — Supabase Storage URL Base for Avatar Uploads
+
+**Status:** Approved
+**Date:** 2026-05-27
+**Context:**
+Avatar uploads failed with Supabase Storage returning `PGRST125 Invalid path specified in request URL`. The API built Storage URLs by appending `/storage/v1/object/...` to `SUPABASE_URL`, but production had been configured with a REST API URL ending in `/rest/v1`, producing an invalid Storage request path.
+
+**Decision:**
+- Treat `SUPABASE_URL` as the Supabase project base URL only, for example `https://your-project.supabase.co`.
+- Reject configured URLs that include `/rest/v1`, `/storage/v1`, query strings, or fragments with a clear `503` configuration error.
+- Use the server-side `SUPABASE_SERVICE_KEY` for both `Authorization` and `apikey` on avatar Storage requests.
+- Keep avatar uploads server-side and independent of bucket policies or anon-key configuration.
+
+**Consequences:**
+- ✅ Misconfigured deployments fail clearly before making invalid Storage calls.
+- ✅ Storage path errors are reported as upstream failures instead of being mislabeled as missing buckets.
+- ✅ Service-role credentials stay server-only and are no longer logged in avatar upload diagnostics.
+- ⚠️ Operators must ensure VPS/API `.env` files use the project base URL, not a REST or Storage endpoint URL.

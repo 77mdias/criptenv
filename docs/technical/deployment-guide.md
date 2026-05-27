@@ -118,6 +118,9 @@ Fill:
 | `REDIS_URL` | `redis://redis:6379/0` |
 | `WEB_CONCURRENCY` | `3` for the 8GB VPS default |
 | `DB_POOL_SIZE` / `DB_MAX_OVERFLOW` | `2` / `2` default to protect Supabase pooler |
+| `SUPABASE_URL` | Supabase project base URL, e.g. `https://your-project.supabase.co` |
+| `SUPABASE_SERVICE_KEY` | Supabase service-role key for server-side avatar uploads |
+| `SUPABASE_AVATAR_BUCKET` | `avatars` |
 
 ### Start
 
@@ -174,6 +177,9 @@ Do not remove `RenderProvider`; it is unrelated to where CriptEnv itself is host
 | `CORS_ORIGINS` | Yes | Allowed frontend origins |
 | `RATE_LIMIT_STORAGE` | Yes | `redis` for VPS production |
 | `REDIS_URL` | Yes when Redis enabled | `redis://redis:6379/0` |
+| `SUPABASE_URL` | Yes for avatar uploads | Project base URL only; do not append `/rest/v1` or `/storage/v1` |
+| `SUPABASE_SERVICE_KEY` | Yes for avatar uploads | Service-role key used only server-side |
+| `SUPABASE_AVATAR_BUCKET` | Yes for avatar uploads | Storage bucket name, usually `avatars` |
 | `WEB_CONCURRENCY` | VPS compose | API worker count |
 | `SCHEDULER_ENABLED` | Compose-controlled | Disabled in `api`, enabled in `scheduler` |
 | `TUNNEL_TOKEN` | VPS compose | Cloudflare Tunnel token |

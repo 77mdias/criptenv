@@ -1,8 +1,10 @@
 """Avatar upload service using Supabase Storage REST API via httpx."""
 
+import json
 import logging
 import uuid
 from typing import Optional
+from urllib.parse import urlparse
 
 from fastapi import UploadFile, HTTPException, status
 import httpx
@@ -70,26 +72,61 @@ async def _validate_image(file: UploadFile) -> tuple[bytes, str]:
     return content, ext
 
 
-def _get_storage_config() -> tuple[str, str, str, str]:
-    """Return (supabase_url, service_key, anon_key, bucket_name) or raise."""
+def _normalize_supabase_url(raw_url: str) -> str:
+    """Validate and normalize the Supabase project base URL."""
+    supabase_url = raw_url.strip().rstrip("/")
+    parsed = urlparse(supabase_url)
+    path = parsed.path.rstrip("/")
+
+    if parsed.scheme not in {"http", "https"} or not parsed.netloc:
+        logger.error("Invalid SUPABASE_URL configured for avatar storage")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail="SUPABASE_URL must be a valid Supabase project base URL.",
+        )
+
+    if path or parsed.query or parsed.fragment:
+        logger.error("SUPABASE_URL must not include a path, query, or fragment")
+        raise HTTPException(
+            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
+            detail=(
+                "SUPABASE_URL must be the project base URL, for example "
+                "https://your-project.supabase.co. Remove extra path/query data "
+                f"from configured value: {path or parsed.query or parsed.fragment}"
+            ),
+        )
+
+    return supabase_url
+
+
+def _get_storage_config() -> tuple[str, str, str]:
+    """Return (supabase_url, service_key, bucket_name) or raise."""
     if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_KEY:
         logger.error("Supabase storage not configured: SUPABASE_URL or SUPABASE_SERVICE_KEY missing")
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Supabase storage is not configured on the server.",
         )
-    if not settings.SUPABASE_ANON_KEY:
-        logger.error("SUPABASE_ANON_KEY is missing or empty")
-        raise HTTPException(
-            status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
-            detail="Supabase anon key is not configured on the server.",
-        )
     return (
-        settings.SUPABASE_URL.rstrip("/"),
+        _normalize_supabase_url(settings.SUPABASE_URL),
         settings.SUPABASE_SERVICE_KEY,
-        settings.SUPABASE_ANON_KEY,
         settings.SUPABASE_AVATAR_BUCKET or "avatars",
     )
+
+
+def _storage_error_message(body: str) -> str:
+    """Extract a useful Storage error message without exposing credentials."""
+    try:
+        data = json.loads(body)
+    except json.JSONDecodeError:
+        return body[:500] if body else "No response body."
+
+    if isinstance(data, dict):
+        message = data.get("message") or data.get("error") or body
+        code = data.get("code")
+        return f"{code}: {message}" if code else str(message)
+
+    return body[:500] if body else "No response body."
 
 
 class AvatarService:
@@ -121,75 +158,53 @@ class AvatarService:
         content, ext = await _validate_image(file)
         file_name = f"{user_id}{ext}"
 
-        supabase_url, service_key, anon_key, bucket = _get_storage_config()
+        supabase_url, service_key, bucket = _get_storage_config()
         # Supabase Storage REST API upload endpoint
         upload_url = f"{supabase_url}/storage/v1/object/{bucket}/{file_name}"
         headers = {
             "Authorization": f"Bearer {service_key}",
-            "apikey": anon_key,
+            "apikey": service_key,
             "Content-Type": file.content_type or "application/octet-stream",
             "x-upsert": "true",
         }
 
-        # Debug: log full request details
         logger.info(
-            "Supabase upload: url=%s filename=%s content_length=%d apikey=%s... auth=%s...",
+            "Supabase avatar upload: url=%s bucket=%s filename=%s content_length=%d",
             upload_url,
+            bucket,
             file_name,
             len(content),
-            headers["apikey"][:20] if headers["apikey"] else "EMPTY",
-            headers["Authorization"][:20] if headers["Authorization"] else "EMPTY",
         )
 
-        # Try curl first as a workaround for httpx issues with Supabase Storage
-        import tempfile
-        import subprocess
-        import os
-
-        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
-            tmp.write(content)
-            tmp_path = tmp.name
-
+        client = self._get_client()
         try:
-            curl_cmd = [
-                "curl", "-s", "-w", "\\n%{http_code}",
-                "-X", "POST", upload_url,
-                "-H", f"Authorization: Bearer {service_key}",
-                "-H", f"apikey: {anon_key}",
-                "-H", f"Content-Type: {headers['Content-Type']}",
-                "-H", "x-upsert: true",
-                "--data-binary", f"@{tmp_path}",
-            ]
-            logger.info("Running curl: %s", " ".join(curl_cmd[:10]) + " ...")
-            result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=60)
-            logger.info("Curl stdout: %s", result.stdout[:500])
-            if result.stderr:
-                logger.info("Curl stderr: %s", result.stderr[:500])
+            response = await client.post(upload_url, content=content, headers=headers)
+        except httpx.HTTPError as exc:
+            logger.error("Supabase storage upload request failed: %s", exc)
+            raise HTTPException(
+                status_code=status.HTTP_502_BAD_GATEWAY,
+                detail="Supabase Storage upload failed: network error.",
+            ) from exc
 
-            # Parse response: last line is HTTP code, rest is body
-            lines = result.stdout.strip().split("\n")
-            http_code = int(lines[-1]) if lines else 0
-            body = "\n".join(lines[:-1]) if len(lines) > 1 else ""
+        logger.info(
+            "Supabase avatar upload completed: status=%d filename=%s",
+            response.status_code,
+            file_name,
+        )
 
-            if http_code in (200, 201):
-                public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{file_name}"
-                return public_url
+        if response.status_code in (200, 201):
+            return f"{supabase_url}/storage/v1/object/public/{bucket}/{file_name}"
 
-            detail = f"Storage error {http_code}: {body}"
-            logger.error("Supabase storage upload failed: %s", detail)
-
-            if http_code == 400:
-                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid request to storage: {body}")
-            if http_code == 403:
-                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Storage access denied.")
-            if http_code == 404:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Storage bucket '{bucket}' not found.")
-            if http_code == 413:
-                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large.")
-
-            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)
-        finally:
-            os.unlink(tmp_path)
+        error_message = _storage_error_message(response.text)
+        logger.error(
+            "Supabase storage upload failed: status=%d error=%s",
+            response.status_code,
+            error_message,
+        )
+        raise HTTPException(
+            status_code=status.HTTP_502_BAD_GATEWAY,
+            detail=f"Supabase Storage upload failed ({response.status_code}): {error_message}",
+        )
 
     async def delete_avatar(self, user_id: uuid.UUID) -> None:
         """Delete a user's avatar from Supabase Storage.
@@ -203,18 +218,19 @@ class AvatarService:
         Raises:
             HTTPException: On storage deletion errors.
         """
-        supabase_url, service_key, anon_key, bucket = _get_storage_config()
+        supabase_url, service_key, bucket = _get_storage_config()
         delete_url = f"{supabase_url}/storage/v1/object/{bucket}"
         headers = {
             "Authorization": f"Bearer {service_key}",
-            "apikey": anon_key or service_key,
+            "apikey": service_key,
             "Content-Type": "application/json",
         }
 
         logger.info(
-            "Supabase delete headers: apikey=%s... auth=%s...",
-            headers["apikey"][:20] if headers["apikey"] else "EMPTY",
-            headers["Authorization"][:20] if headers["Authorization"] else "EMPTY",
+            "Supabase avatar delete: url=%s bucket=%s user_id=%s",
+            delete_url,
+            bucket,
+            user_id,
         )
 
         paths = [f"{user_id}.png", f"{user_id}.jpg", f"{user_id}.jpeg"]
