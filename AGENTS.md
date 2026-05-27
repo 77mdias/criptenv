@@ -88,7 +88,7 @@ The repository is organized as a monorepo with three applications and one packag
 
 ### Database
 - **PostgreSQL 14+** as the primary data store
-- **Manual migrations** (no Alembic configured)
+- **Alembic** for database migrations (configured in `apps/api/alembic.ini`)
 - Connection pool: size 2, max overflow 5, prepared statements disabled
 
 ---
