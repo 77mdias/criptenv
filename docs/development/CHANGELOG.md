@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Backend**: New scheduler job `session_cleanup` added alongside the existing `expiration_check` job.
 - **Config**: New environment settings `SESSION_MAX_ACTIVE` (default: 5) and `SESSION_INACTIVITY_DAYS` (default: 7).
 - **Migration**: `apps/api/migrations/versions/20260527_0006_add_session_last_accessed_at.py` adds the `last_accessed_at` column and index to existing databases via Alembic.
+- **Deploy**: `apps/api/Dockerfile` now uses `entrypoint.sh` that automatically runs `alembic upgrade head` before starting Gunicorn. Every new container image will apply pending migrations on startup, making schema changes fully automatic in production.
 
 ### Changed
 

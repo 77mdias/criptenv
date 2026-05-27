@@ -42,6 +42,9 @@ COPY --from=deps /usr/local/bin /usr/local/bin
 
 COPY apps/api/ ./
 
+RUN chmod +x entrypoint.sh
+
 EXPOSE 8000
 
+ENTRYPOINT ["./entrypoint.sh"]
 CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]
