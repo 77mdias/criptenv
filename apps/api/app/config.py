@@ -59,6 +59,7 @@ class Settings(BaseSettings):
     # ===========================================
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: str = ""
+    SUPABASE_ANON_KEY: str = ""
     SUPABASE_AVATAR_BUCKET: str = "avatars"
 
     @field_validator("DEBUG", mode="before")

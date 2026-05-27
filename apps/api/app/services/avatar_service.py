@@ -70,8 +70,8 @@ async def _validate_image(file: UploadFile) -> tuple[bytes, str]:
     return content, ext
 
 
-def _get_storage_config() -> tuple[str, str, str]:
-    """Return (supabase_url, service_key, bucket_name) or raise."""
+def _get_storage_config() -> tuple[str, str, str, str]:
+    """Return (supabase_url, service_key, anon_key, bucket_name) or raise."""
     if not settings.SUPABASE_URL or not settings.SUPABASE_SERVICE_KEY:
         logger.error("Supabase storage not configured: SUPABASE_URL or SUPABASE_SERVICE_KEY missing")
         raise HTTPException(
@@ -81,6 +81,7 @@ def _get_storage_config() -> tuple[str, str, str]:
     return (
         settings.SUPABASE_URL.rstrip("/"),
         settings.SUPABASE_SERVICE_KEY,
+        settings.SUPABASE_ANON_KEY,
         settings.SUPABASE_AVATAR_BUCKET or "avatars",
     )
 
@@ -114,11 +115,12 @@ class AvatarService:
         content, ext = await _validate_image(file)
         file_name = f"{user_id}{ext}"
 
-        supabase_url, service_key, bucket = _get_storage_config()
+        supabase_url, service_key, anon_key, bucket = _get_storage_config()
         # Use upsert query param for broader compatibility
         upload_url = f"{supabase_url}/storage/v1/object/{bucket}/{file_name}?upsert=true"
         headers = {
             "Authorization": f"Bearer {service_key}",
+            "apikey": anon_key or service_key,
             "Content-Type": file.content_type or "application/octet-stream",
         }
 
@@ -179,10 +181,11 @@ class AvatarService:
         Raises:
             HTTPException: On storage deletion errors.
         """
-        supabase_url, service_key, bucket = _get_storage_config()
+        supabase_url, service_key, anon_key, bucket = _get_storage_config()
         delete_url = f"{supabase_url}/storage/v1/object/{bucket}"
         headers = {
             "Authorization": f"Bearer {service_key}",
+            "apikey": anon_key or service_key,
             "Content-Type": "application/json",
         }
 
