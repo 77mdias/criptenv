@@ -44,6 +44,7 @@ def make_session():
         expires_at=now + timedelta(days=30),
         created_at=now,
         updated_at=now,
+        last_accessed_at=now,
         ip_address="127.0.0.1",
         user_agent="pytest",
     )

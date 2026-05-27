@@ -36,6 +36,7 @@ class SessionResponse(BaseModel):
     user_id: UUID
     expires_at: datetime
     created_at: datetime
+    last_accessed_at: Optional[datetime] = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
 

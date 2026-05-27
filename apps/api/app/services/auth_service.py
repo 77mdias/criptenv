@@ -117,6 +117,16 @@ class AuthService:
         token = self.generate_session_token()
         expires_at = datetime.now(timezone.utc) + timedelta(days=settings.SESSION_EXPIRE_DAYS)
 
+        # Enforce max active sessions limit: remove oldest if at capacity
+        max_active = getattr(settings, 'SESSION_MAX_ACTIVE', 5)
+        active_sessions = await self.get_user_sessions(user_id)
+        if len(active_sessions) >= max_active:
+            # Sort by created_at ascending and delete the oldest ones
+            sessions_to_remove = active_sessions[max_active - 1:]
+            for old_session in sessions_to_remove:
+                await self.db.delete(old_session)
+            await self.db.flush()
+
         session = Session(
             id=uuid4(),
             user_id=user_id,
@@ -134,16 +144,24 @@ class AuthService:
         if len(token) < 32:
             return None
 
+        now = datetime.now(timezone.utc)
+        inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
+
         result = await self.db.execute(
             select(Session).where(
                 Session.token == token,
-                Session.expires_at > datetime.now(timezone.utc)
+                Session.expires_at > now,
+                Session.last_accessed_at > inactivity_threshold
             )
         )
         session = await self._scalar_one_or_none(result)
 
         if not session:
             return None
+
+        # Update last_accessed_at on every successful validation
+        session.last_accessed_at = now
+        await self.db.flush()
 
         user_result = await self.db.execute(
             select(User).where(User.id == session.user_id)
@@ -205,13 +223,34 @@ class AuthService:
         return invite
 
     async def get_user_sessions(self, user_id: UUID) -> list[Session]:
+        now = datetime.now(timezone.utc)
+        inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
+
         result = await self.db.execute(
             select(Session)
             .where(Session.user_id == user_id)
-            .where(Session.expires_at > datetime.now(timezone.utc))
+            .where(Session.expires_at > now)
+            .where(Session.last_accessed_at > inactivity_threshold)
             .order_by(Session.created_at.desc())
         )
         return list(result.scalars().all())
+
+    async def cleanup_inactive_sessions(self) -> int:
+        """Delete all sessions that have exceeded inactivity or expiration thresholds.
+
+        Returns:
+            Number of sessions deleted.
+        """
+        now = datetime.now(timezone.utc)
+        inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
+
+        result = await self.db.execute(
+            delete(Session).where(
+                (Session.expires_at <= now) | (Session.last_accessed_at <= inactivity_threshold)
+            )
+        )
+        await self.db.flush()
+        return result.rowcount
 
     # ─── Password Reset ──────────────────────────────────────────────────────
 

@@ -42,6 +42,7 @@ def _session_to_response(session) -> SessionResponse:
         user_id=session.user_id,
         expires_at=session.expires_at,
         created_at=session.created_at,
+        last_accessed_at=getattr(session, "last_accessed_at", None),
         ip_address=str(session.ip_address) if session.ip_address else None,
         user_agent=session.user_agent,
     )

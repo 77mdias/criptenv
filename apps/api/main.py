@@ -60,19 +60,42 @@ async def lifespan(app: FastAPI):
     scheduler_manager = None
     if getattr(settings, 'SCHEDULER_ENABLED', True):
         try:
-            from app.jobs.scheduler import init_scheduler_job
+            from app.jobs.scheduler import init_scheduler_job, get_scheduler
             from app.jobs.expiration_check import create_session_scoped_scheduler_job
+            from app.jobs.session_cleanup import create_session_scoped_scheduler_job as create_session_cleanup_job
             from app.database import async_session_factory
+            from apscheduler.triggers.interval import IntervalTrigger
             
-            job_func = create_session_scoped_scheduler_job(async_session_factory)
-            scheduler_manager = init_scheduler_job(
-                job_func,
-                interval_hours=getattr(settings, 'SCHEDULER_INTERVAL_HOURS', 1)
+            scheduler_manager = get_scheduler()
+            
+            # Add secret expiration check job
+            expiration_job = create_session_scoped_scheduler_job(async_session_factory)
+            scheduler_manager.scheduler.add_job(
+                expiration_job,
+                trigger=IntervalTrigger(hours=getattr(settings, 'SCHEDULER_INTERVAL_HOURS', 1)),
+                id="expiration_check",
+                name="Secret Expiration Check",
+                replace_existing=True,
+                misfire_grace_time=300,
             )
-            scheduler_manager.start()
             logger.info(
-                f"Scheduler started (interval: {getattr(settings, 'SCHEDULER_INTERVAL_HOURS', 1)}h)"
+                f"Added expiration check job (interval: {getattr(settings, 'SCHEDULER_INTERVAL_HOURS', 1)}h)"
             )
+            
+            # Add session cleanup job (runs every hour)
+            cleanup_job = create_session_cleanup_job(async_session_factory)
+            scheduler_manager.scheduler.add_job(
+                cleanup_job,
+                trigger=IntervalTrigger(hours=1),
+                id="session_cleanup",
+                name="Inactive Session Cleanup",
+                replace_existing=True,
+                misfire_grace_time=300,
+            )
+            logger.info("Added session cleanup job (interval: 1h)")
+            
+            scheduler_manager.start()
+            logger.info("Scheduler started")
         except ImportError:
             logger.warning("APScheduler not installed, skipping scheduler init")
         except Exception as e:

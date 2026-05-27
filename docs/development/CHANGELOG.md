@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Active Session Limits and Inactivity Cleanup (2026-05-27)
+
+- **Backend**: Sessions are now limited to a maximum of 5 active per user. When a new session is created during login, the oldest active session is automatically revoked if the limit is exceeded.
+- **Backend**: Added `last_accessed_at` tracking to the `sessions` table. Every authenticated request updates this timestamp.
+- **Backend**: Sessions that haven't been accessed for more than 7 days (`SESSION_INACTIVITY_DAYS`) are considered inactive and are excluded from validation and listing. A background cleanup job runs every hour to permanently delete expired and inactive sessions.
+- **Backend**: New scheduler job `session_cleanup` added alongside the existing `expiration_check` job.
+- **Config**: New environment settings `SESSION_MAX_ACTIVE` (default: 5) and `SESSION_INACTIVITY_DAYS` (default: 7).
+- **Migration**: `scripts/migration_001_add_session_last_accessed_at.sql` adds the `last_accessed_at` column and index to existing databases.
+
 ### Changed
 
 #### Secrets Browser Feature Module Refactor (2026-05-27)
