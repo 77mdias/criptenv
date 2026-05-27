@@ -141,50 +141,55 @@ class AvatarService:
             headers["Authorization"][:20] if headers["Authorization"] else "EMPTY",
         )
 
-        client = self._get_client()
+        # Try curl first as a workaround for httpx issues with Supabase Storage
+        import tempfile
+        import subprocess
+        import os
+
+        with tempfile.NamedTemporaryFile(suffix=ext, delete=False) as tmp:
+            tmp.write(content)
+            tmp_path = tmp.name
+
         try:
-            response = await client.post(upload_url, content=content, headers=headers)
-        except httpx.HTTPError as exc:
-            logger.exception("Network error uploading avatar to Supabase")
-            raise HTTPException(
-                status_code=status.HTTP_502_BAD_GATEWAY,
-                detail=f"Network error connecting to storage: {str(exc)}",
-            ) from exc
+            curl_cmd = [
+                "curl", "-s", "-w", "\\n%{http_code}",
+                "-X", "POST", upload_url,
+                "-H", f"Authorization: Bearer {service_key}",
+                "-H", f"apikey: {anon_key}",
+                "-H", f"Content-Type: {headers['Content-Type']}",
+                "-H", "x-upsert: true",
+                "--data-binary", f"@{tmp_path}",
+            ]
+            logger.info("Running curl: %s", " ".join(curl_cmd[:10]) + " ...")
+            result = subprocess.run(curl_cmd, capture_output=True, text=True, timeout=60)
+            logger.info("Curl stdout: %s", result.stdout[:500])
+            if result.stderr:
+                logger.info("Curl stderr: %s", result.stderr[:500])
 
-        if response.status_code in (200, 201):
-            # Build public URL
-            public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{file_name}"
-            return public_url
+            # Parse response: last line is HTTP code, rest is body
+            lines = result.stdout.strip().split("\n")
+            http_code = int(lines[-1]) if lines else 0
+            body = "\n".join(lines[:-1]) if len(lines) > 1 else ""
 
-        # Map Supabase errors to more informative status codes
-        detail = f"Storage error {response.status_code}: {response.text}"
-        logger.error("Supabase storage upload failed: %s", detail)
+            if http_code in (200, 201):
+                public_url = f"{supabase_url}/storage/v1/object/public/{bucket}/{file_name}"
+                return public_url
 
-        if response.status_code == 400:
-            raise HTTPException(
-                status_code=status.HTTP_400_BAD_REQUEST,
-                detail=f"Invalid request to storage: {response.text}",
-            )
-        if response.status_code == 403:
-            raise HTTPException(
-                status_code=status.HTTP_403_FORBIDDEN,
-                detail="Storage access denied. Check Supabase bucket permissions and service key.",
-            )
-        if response.status_code == 404:
-            raise HTTPException(
-                status_code=status.HTTP_404_NOT_FOUND,
-                detail=f"Storage bucket '{bucket}' not found. Create it in Supabase dashboard.",
-            )
-        if response.status_code == 413:
-            raise HTTPException(
-                status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
-                detail="File rejected by storage as too large.",
-            )
+            detail = f"Storage error {http_code}: {body}"
+            logger.error("Supabase storage upload failed: %s", detail)
 
-        raise HTTPException(
-            status_code=status.HTTP_502_BAD_GATEWAY,
-            detail=detail,
-        )
+            if http_code == 400:
+                raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Invalid request to storage: {body}")
+            if http_code == 403:
+                raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail="Storage access denied.")
+            if http_code == 404:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Storage bucket '{bucket}' not found.")
+            if http_code == 413:
+                raise HTTPException(status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE, detail="File too large.")
+
+            raise HTTPException(status_code=status.HTTP_502_BAD_GATEWAY, detail=detail)
+        finally:
+            os.unlink(tmp_path)
 
     async def delete_avatar(self, user_id: uuid.UUID) -> None:
         """Delete a user's avatar from Supabase Storage.
