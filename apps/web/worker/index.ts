@@ -45,12 +45,29 @@ const worker = {
         headers.set("x-forwarded-for", clientIp);
       }
 
-      return fetch(targetUrl, {
-        method: request.method,
-        headers,
-        body: request.method === "GET" || request.method === "HEAD" ? undefined : request.body,
-        redirect: "manual",
-      });
+      // Remove Content-Length when proxying a stream body to prevent mismatches
+      // between the original length and the actual streamed bytes.
+      headers.delete("content-length");
+      headers.delete("content-encoding");
+
+      const isBodyAllowed = request.method !== "GET" && request.method !== "HEAD";
+
+      try {
+        const response = await fetch(targetUrl, {
+          method: request.method,
+          headers,
+          body: isBodyAllowed ? request.body : undefined,
+          redirect: "manual",
+        });
+        return response;
+      } catch (err) {
+        const message = err instanceof Error ? err.message : "Unknown error";
+        console.error("[worker] API proxy error:", message, "URL:", targetUrl);
+        return new Response(
+          JSON.stringify({ detail: `API proxy error: ${message}` }),
+          { status: 502, headers: { "Content-Type": "application/json" } }
+        );
+      }
     }
 
     // Delegate everything to vinext handler

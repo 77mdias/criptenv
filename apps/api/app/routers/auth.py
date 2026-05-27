@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
 
@@ -16,6 +16,7 @@ from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.services.audit_service import AuditService
 from app.services.avatar_service import AvatarService
+import logging
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
 
@@ -317,15 +318,18 @@ async def update_profile(
     return _user_to_response(user)
 
 
+logger = logging.getLogger(__name__)
+
+
 @router.post("/me/avatar", response_model=UserResponse)
 async def upload_avatar(
     request: Request,
-    file: UploadFile = File(...),
+    file: UploadFile,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Upload or replace the current user's avatar image.
-    
+
     Accepts PNG or JPG images up to 5MB. The file is stored in Supabase Storage
     with the filename set to the user's ID (e.g., '<uuid>.png'), using upsert
     to overwrite any previous avatar and keep storage clean.
@@ -334,20 +338,40 @@ async def upload_avatar(
     auth_service = AuthService(db)
     audit_service = AuditService(db)
 
-    public_url = await avatar_service.upload_avatar(current_user.id, file)
+    try:
+        public_url = await avatar_service.upload_avatar(current_user.id, file)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Unexpected error uploading avatar for user %s", current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to process avatar upload: {str(exc)}",
+        ) from exc
 
     # Update user record with new avatar URL
-    user = await auth_service.update_avatar(current_user, avatar_url=public_url)
+    try:
+        user = await auth_service.update_avatar(current_user, avatar_url=public_url)
+    except Exception as exc:
+        logger.exception("Failed to update avatar_url in DB for user %s", current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Avatar uploaded but failed to update profile: {str(exc)}",
+        ) from exc
 
-    await audit_service.log(
-        action="avatar.updated",
-        resource_type="user",
-        resource_id=str(current_user.id),
-        user_id=current_user.id,
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("User-Agent"),
-        metadata={"avatar_url": public_url},
-    )
+    try:
+        await audit_service.log(
+            action="avatar.updated",
+            resource_type="user",
+            resource_id=str(current_user.id),
+            user_id=current_user.id,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+            metadata={"avatar_url": public_url},
+        )
+    except Exception:
+        # Audit log failure is non-fatal
+        logger.exception("Failed to write audit log for avatar update")
 
     return _user_to_response(user)
 
@@ -359,7 +383,7 @@ async def delete_avatar(
     db: AsyncSession = Depends(get_db)
 ):
     """Remove the current user's avatar.
-    
+
     Deletes the image from Supabase Storage and clears the avatar_url
     column in the database.
     """
@@ -367,18 +391,37 @@ async def delete_avatar(
     auth_service = AuthService(db)
     audit_service = AuditService(db)
 
-    await avatar_service.delete_avatar(current_user.id)
+    try:
+        await avatar_service.delete_avatar(current_user.id)
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.exception("Unexpected error deleting avatar for user %s", current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to delete avatar: {str(exc)}",
+        ) from exc
 
-    user = await auth_service.update_avatar(current_user, avatar_url=None)
+    try:
+        user = await auth_service.update_avatar(current_user, avatar_url=None)
+    except Exception as exc:
+        logger.exception("Failed to clear avatar_url in DB for user %s", current_user.id)
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to update profile: {str(exc)}",
+        ) from exc
 
-    await audit_service.log(
-        action="avatar.deleted",
-        resource_type="user",
-        resource_id=str(current_user.id),
-        user_id=current_user.id,
-        ip_address=request.client.host if request.client else None,
-        user_agent=request.headers.get("User-Agent"),
-    )
+    try:
+        await audit_service.log(
+            action="avatar.deleted",
+            resource_type="user",
+            resource_id=str(current_user.id),
+            user_id=current_user.id,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+        )
+    except Exception:
+        logger.exception("Failed to write audit log for avatar deletion")
 
     return _user_to_response(user)
 
