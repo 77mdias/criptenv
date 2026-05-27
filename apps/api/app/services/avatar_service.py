@@ -133,8 +133,10 @@ class AvatarService:
 
         # Debug: log full request details
         logger.info(
-            "Supabase upload: url=%s apikey=%s... auth=%s...",
+            "Supabase upload: url=%s filename=%s content_length=%d apikey=%s... auth=%s...",
             upload_url,
+            file_name,
+            len(content),
             headers["apikey"][:20] if headers["apikey"] else "EMPTY",
             headers["Authorization"][:20] if headers["Authorization"] else "EMPTY",
         )
