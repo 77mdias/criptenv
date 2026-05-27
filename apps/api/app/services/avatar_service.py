@@ -122,20 +122,21 @@ class AvatarService:
         file_name = f"{user_id}{ext}"
 
         supabase_url, service_key, anon_key, bucket = _get_storage_config()
-        # Use upsert query param for broader compatibility
-        upload_url = f"{supabase_url}/storage/v1/object/{bucket}/{file_name}?upsert=true"
+        # Supabase Storage REST API upload endpoint
+        upload_url = f"{supabase_url}/storage/v1/object/{bucket}/{file_name}"
         headers = {
             "Authorization": f"Bearer {service_key}",
-            "apikey": anon_key or service_key,
+            "apikey": anon_key,
             "Content-Type": file.content_type or "application/octet-stream",
+            "x-upsert": "true",
         }
 
-        # Debug: log headers being sent (mask sensitive values)
+        # Debug: log full request details
         logger.info(
-            "Supabase upload headers: apikey=%s... auth=%s... content-type=%s",
+            "Supabase upload: url=%s apikey=%s... auth=%s...",
+            upload_url,
             headers["apikey"][:20] if headers["apikey"] else "EMPTY",
             headers["Authorization"][:20] if headers["Authorization"] else "EMPTY",
-            headers["Content-Type"],
         )
 
         client = self._get_client()
