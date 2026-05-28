@@ -1,13 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { Menu, Search, Bell, ChevronRight } from "lucide-react";
+import { Menu, Search, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useUIStore } from "@/stores/ui";
 import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/layout/brand";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { NotificationBell } from "./notification-bell";
 
 interface Breadcrumb {
   label: string;
@@ -98,15 +99,7 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
         >
           <Search className="h-4 w-4 text-(--text-muted)" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          aria-label="Notifications"
-          className="relative h-8 w-8 sm:h-10 sm:w-10"
-        >
-          <Bell className="h-4 w-4 text-(--text-muted)" />
-          <span className="absolute top-1.5 right-1.5 h-2 w-2 rounded-full bg-red-500" />
-        </Button>
+        <NotificationBell />
         <div className="scale-90 sm:scale-100">
           <ThemeSwitch />
         </div>

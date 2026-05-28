@@ -8,6 +8,7 @@ from app.database import get_db
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.services.email_service import EmailService
+from app.services.notification_service import NotificationService
 from app.config import settings
 from app.schemas.member import InviteCreate, InviteResponse, InviteListResponse
 from app.middleware.auth import get_current_user
@@ -118,6 +119,29 @@ async def create_invite(
             role=payload.role,
             invited_by_name=current_user.name or "",
             expires_days=7
+        )
+
+    # Create in-app notification for the invited user if they have an account
+    notification_service = NotificationService(db)
+    invited_user_result = await db.execute(
+        select(User).where(User.email == payload.email)
+    )
+    invited_user = invited_user_result.scalar_one_or_none()
+    if invited_user:
+        await notification_service.create_notification(
+            user_id=invited_user.id,
+            type="invite",
+            title=f"Convite para {project.name}",
+            message=f"{current_user.name or 'Alguém'} convidou você para participar do projeto '{project.name}' como {payload.role}.",
+            action_url=f"/invites/accept?token={invite.token}",
+            meta={
+                "project_id": str(project_uuid),
+                "project_name": project.name,
+                "invited_by": str(current_user.id),
+                "invited_by_name": current_user.name or "",
+                "role": payload.role,
+                "invite_id": str(invite.id),
+            }
         )
 
     return InviteResponse.model_validate(_force_load_invite(invite))

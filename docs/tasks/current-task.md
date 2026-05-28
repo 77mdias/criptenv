@@ -2,93 +2,66 @@
 
 ## Status atual
 
-**CI/API token remote-auth alignment implementado em 2026-05-28. A separação entre sessão humana, API Key, CI Token e sessão CI temporária agora reflete a arquitetura remota atual da CLI/API/Web.**
+**Sistema de Notificações In-App implementado em 2026-05-28. O ícone de notificação (bell) no top-nav agora é funcional, com badge dinâmico, dropdown de notificações, polling a cada 30s, e integração automática no fluxo de convites. Cores do template de email de convite foram atualizadas para combinar com a identidade visual atual.**
 
 ---
 
 ## Tarefa em foco
 
-Corrigir gaps de CI Tokens e API Keys após a migração da CLI para fluxo remoto, mantendo least privilege e suporte Zero-Knowledge.
+Implementar sistema de notificações in-app funcionando, integrado ao fluxo de convites de projeto, e ajustar cores do template de email.
 
 ## O que foi implementado nesta sessão
 
-### Programmatic Auth Alignment ✅
-- API Keys agora preservam metadados no contexto de autenticação para enforcement de `scopes` e `environment_scope`.
-- Vault pull/version exigem `read:secrets` ou `admin:project` quando autenticados via API Key.
-- Environment e vault reads respeitam `environment_scope`.
-- CI sessions `ci_s_` podem fazer vault push apenas com `write:secrets`.
-- Integração list/sync via CI session exige `write:integrations`.
+### Backend — Sistema de Notificações ✅
+- **`app/models/notification.py`**: Modelo `Notification` com `user_id`, `type`, `title`, `message`, `read_at`, `action_url`, `meta` (JSONB), timestamps.
+- **`app/schemas/notification.py`**: Schemas Pydantic para response, list, mark-read, unread-count.
+- **`app/services/notification_service.py`**: Service com create, list, unread count, mark read, mark all read.
+- **`app/routers/notifications.py`**: Router com 4 endpoints:
+  - `GET /api/v1/notifications`
+  - `GET /api/v1/notifications/unread-count`
+  - `PATCH /api/v1/notifications/{id}/read`
+  - `PATCH /api/v1/notifications/read-all`
+- **Migration**: `20260528_0009_create_notifications_table.py`
+- **Integração em convites**: `app/routers/invites.py` agora cria notificação automaticamente quando o email convidado pertence a um usuário existente.
 
-### CLI Remota ✅
-- `criptenv ci tokens list/create/revoke` agora usa sessão humana normal.
-- Removido registro top-level acidental de `criptenv tokens`; o caminho suportado é `criptenv ci tokens`.
-- `ci login` salva `environment_scope`.
-- `ci secrets` usa endpoint leve de listagem.
-- `ci deploy` valida escopo, ambiente e `CRIPTENV_VAULT_PASSWORD` antes de escrever secrets.
+### Frontend — Sistema de Notificações ✅
+- **`src/lib/api/notifications.ts`**: Cliente tipado para todos os endpoints.
+- **`src/stores/notifications.ts`**: Zustand store com estado de notificações, unread count, dropdown open/close, fetch, mark read (single/bulk).
+- **`src/components/layout/notification-bell.tsx`**: Componente completo com:
+  - Ícone de sino com badge dinâmico (mostra contagem real, sumiu quando zero)
+  - Dropdown panel com lista de notificações
+  - Ícones por tipo (invite, alert, system, email)
+  - Formatação de tempo relativo ("agora", "5m", "2h", "3d")
+  - Indicador visual de não lida (bolinha + background sutil)
+  - Ação de "Marcar todas como lidas"
+  - Click-through para `action_url`
+  - Polling automático a cada 30 segundos
+- **`src/components/layout/top-nav.tsx`**: Substituído botão estático pelo `<NotificationBell />`.
 
-### GitHub Action ✅
-- Novo input opcional `vault-password`.
-- Sem `vault-password`, mantém export de ciphertext.
-- Com `vault-password`, decripta localmente no runner e exporta plaintext mascarado.
+### Email — Ajuste de Cores ✅
+- Gradient do botão CTA: `#4f46e5 → #6366f1` (índigo) atualizado para `#171717 → #262626` (preto/cinza escuro)
+- Links e cores de destaque atualizadas para `#171717`
+- Security box com borda e background atualizados para combinar com o tema minimalista
 
-### Documentação/UI ✅
-- Settings do projeto explicam diferença entre CI Tokens e API Keys.
-- Docs de autenticação corrigidos para `Authorization: Bearer cek_...`.
-- Changelog e decisions atualizados com DEC-048.
-
-## Próximos passos recomendados
-
-1. Validar smoke real: criar CI Token com `read:secrets,write:secrets`, executar `ci login` e `CRIPTENV_VAULT_PASSWORD=... criptenv ci deploy --env production --file .env.production`.
-2. Validar GitHub Action em repositório de teste com e sem `vault-password`.
-3. Quando a Public API de escrita for desenhada, reabilitar escopos reservados de API Key na UI/CLI.
-
----
-
-## Status anterior
-
-**2FA login enforcement implementado em 2026-05-28. Contas com 2FA ativo agora precisam concluir challenge TOTP/backup code antes de receber sessão em login por senha, OAuth ou autorização CLI via browser/device, com opção de lembrar dispositivo por 30 dias.**
-
----
-
-## Tarefa anterior
-
-Finalizar a aplicação real do 2FA no login web/OAuth/CLI browser auth, mantendo sessões em cookies HTTP-only e trusted devices também em cookie HTTP-only com token hashado no banco.
-
----
-
-## O que foi implementado nesta sessão
-
-### 2FA Challenge Enforcement ✅
-- `POST /api/auth/signin` agora retorna `requires_two_factor=true` e cria cookie `two_factor_challenge` quando a conta tem 2FA ativo e o dispositivo não está lembrado.
-- `POST /api/auth/2fa/challenge/verify` valida TOTP ou backup code antes de emitir `session_token`.
-- Backup codes continuam hashados e são consumidos após uso.
-
-### Trusted Devices ✅
-- Criadas tabelas `two_factor_challenges` e `two_factor_trusted_devices`.
-- Dispositivo lembrado usa cookie HTTP-only `two_factor_device` por 30 dias e token hashado no banco.
-- Trusted device exige mesmo user-agent e não é renovado automaticamente.
-
-### OAuth e CLI Auth ✅
-- OAuth redireciona para `/2fa?next=/dashboard` quando a conta exige 2FA.
-- `/cli-auth` preserva o fluxo original e encaminha para `/2fa` antes de autorizar CLI/device flow.
-
-### Web ✅
-- Criada página `/2fa` no layout padrão de autenticação.
-- Login reconhece a resposta discriminada de 2FA e redireciona para o challenge preservando `redirect`.
+### Testes ✅
+- `tests/test_notification_routes.py`: 5 testes passando (list, unread count, mark read, mark all read, 404)
+- Suite completa: **404 testes passando, 2 skipped**
 
 ### Documentação ✅
-- Atualizados changelog, decisions, current state, task history e docs web de autenticação.
+- `docs/development/CHANGELOG.md`: Entrada adicionada em [Unreleased]
+- `docs/project/decisions.md`: DEC-049 registrado
+- `docs/project/current-state.md`: Atualizado para ~95% e marca notificações como implementadas
 
 ---
 
 ## Próximos passos recomendados
 
-1. Aplicar migração Alembic `20260528_0008_create_two_factor_login_tables` no ambiente alvo.
-2. Fazer smoke em produção: ativar 2FA em uma conta, sair, logar novamente, validar challenge, marcar "lembrar dispositivo" e confirmar que o próximo login no mesmo navegador pula o 2FA.
-3. Validar OAuth e `criptenv login --device` com uma conta 2FA ativa.
+1. **Aplicar migration Alembic** `20260528_0009_create_notifications_table` no ambiente de produção.
+2. **Smoke test**: Criar um convite para um usuário existente e verificar se a notificação aparece no bell icon com badge.
+3. **Futuro**: Expandir notificações para outros eventos (secret expirations, member removed, etc.).
 
 ---
 
-**Document Version**: 1.17
+**Document Version**: 1.0
 **Last Updated**: 2026-05-28
-**Status**: 2FA login enforcement implemented and verified locally
+**Status**: In-App Notification System implemented and tested

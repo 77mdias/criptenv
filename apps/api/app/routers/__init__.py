@@ -13,6 +13,7 @@ from app.routers.contributions import router as contributions_router
 from app.routers.webhooks import router as webhooks_router
 from app.routers.cli_auth import router as cli_auth_router
 from app.routers.rotation import router as rotation_router, expiring_router
+from app.routers.notifications import router as notifications_router
 
 __all__ = [
     "auth_router",
@@ -30,5 +31,6 @@ __all__ = [
     "webhooks_router",
     "cli_auth_router",
     "rotation_router",
-    "expiring_router"
+    "expiring_router",
+    "notifications_router"
 ]

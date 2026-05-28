@@ -4,6 +4,32 @@ A record of significant architectural and technical decisions.
 
 ---
 
+## DEC-049 — In-App Notification System
+
+**Date:** 2026-05-28
+**Status:** ✅ Accepted
+**Context:**
+Project invites were only delivered via email. Users with active accounts had no way to see pending invites within the web app, and the notification bell in the top navigation was purely decorative.
+
+**Decision:**
+Build a lightweight in-app notification system:
+- PostgreSQL `notifications` table with `user_id`, `type`, `title`, `message`, `read_at`, `action_url`, and `meta` JSONB.
+- FastAPI router under `/api/v1/notifications` with list, unread-count, mark-read, and mark-all-read endpoints.
+- Notification creation hooked into the invite flow: when an invite is sent to an email that matches an existing user, a notification is created automatically.
+- Frontend `NotificationBell` component with Radix-free dropdown, Zustand store, 30-second polling for unread count, and optimistic mark-as-read.
+
+**Rationale:**
+- Users check the app more frequently than email; in-app notifications reduce invite acceptance friction.
+- A simple table-based approach avoids the complexity of WebSockets or SSE for this use case.
+- Polling every 30s is sufficient for invite notifications and keeps the architecture simple.
+
+**Consequences:**
+- Positive: Faster invite response, bell icon is now functional, consistent UX between email and in-app.
+- Neutral: Future alert types (secret expiration, etc.) can reuse the same notification infrastructure.
+- Negative: 30-second polling adds minor request overhead; can be upgraded to WebSockets later if needed.
+
+---
+
 ## Format
 
 Each decision follows this structure:

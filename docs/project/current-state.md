@@ -2,7 +2,7 @@
 
 ## Estado atual em uma frase
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~92%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅, CLI Remote Terminal ✅, Pix contribution thank-you emails ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
+**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~95%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅, CLI Remote Terminal ✅, Pix contribution thank-you emails ✅, In-App Notifications ✅. Backend migrado e validado em VPS Docker com Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e Supabase externo. Resta Railway provider, Web Alert UI e VPS ops baseline.**
 
 ---
 
@@ -12,7 +12,7 @@
 |-------|--------|------------|
 | **Phase 1 (CLI MVP)** | ✅ COMPLETE | 100% |
 | **Phase 2 (Web UI)** | ✅ COMPLETE | 100% |
-| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~92% |
+| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~95% |
 | **Phase 4 (Enterprise)** | 📋 PLANNED | 0% |
 
 ---
@@ -77,6 +77,7 @@
 | `profile` | Update profile, delete account | ✅ |
 | `contributions` | Public Pix creation/status/sync with paid thank-you email | ✅ |
 | `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
+| `notifications` | In-app notification system (invite alerts, unread badge, mark read) | ✅ |
 | `vps deploy` | Docker Compose API + Redis + Cloudflare Tunnel + custom domains | ✅ Live smoke validated |
 | `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
 
@@ -87,6 +88,7 @@
 | Page | Route | Status |
 |------|-------|--------|
 | Landing | `/` | ✅ |
+| Notifications | Top-nav bell with dropdown, badge, polling | ✅ |
 | Login | `/login` | ✅ |
 | 2FA Challenge | `/2fa` | ✅ TOTP/backup code + remember device |
 | Signup | `/signup` | ✅ |
@@ -138,7 +140,7 @@
 | Risk | Level | Mitigation |
 |------|-------|------------|
 | Railway provider missing | 🟡 Medium | P1 — can be added following Render pattern |
-| Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap |
+| Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap — notification infra ready |
 | APScheduler duplication with multiple workers | 🟡 Medium | Public API workers disable scheduler; dedicated one-worker scheduler service owns jobs |
 | Cloudflare Tunnel availability | 🟡 Medium | Monitor tunnel health and keep rollback API guidance current |
 | VPS operational ownership | 🟡 Medium | Add basic backups, patching routine, container log rotation, uptime checks, and tunnel monitoring |

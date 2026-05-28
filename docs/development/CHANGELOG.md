@@ -9,6 +9,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### In-App Notification System (2026-05-28)
+
+- **Backend**: Created `notifications` table with user-scoped, typed notifications supporting title, message, action URL, read tracking, and metadata.
+- **Backend**: New API endpoints: `GET /api/v1/notifications`, `GET /api/v1/notifications/unread-count`, `PATCH /api/v1/notifications/{id}/read`, `PATCH /api/v1/notifications/read-all`.
+- **Backend**: `NotificationService` handles creation, listing, unread counts, and bulk mark-as-read.
+- **Backend**: When a project invite is created, if the invited email belongs to an existing user, an in-app notification is automatically created alongside the email.
+- **Frontend**: `NotificationBell` component with dynamic badge showing unread count, dropdown panel with notification list, type icons, time-ago formatting, and click-through to action URLs.
+- **Frontend**: Zustand store `useNotificationsStore` manages notification state, polling unread count every 30 seconds, and supports mark-as-read (single and bulk).
+- **Frontend**: `src/lib/api/notifications.ts` client provides typed methods for all notification endpoints.
+- **Email**: Updated email template colors to match the current frontend dark minimal identity — button gradient changed from indigo to `#171717 → #262626`, link colors updated to `#171717`, and security box styling aligned.
+- **Migration**: `apps/api/migrations/versions/20260528_0009_create_notifications_table.py`.
+- **Tests**: Added `tests/test_notification_routes.py` with 5 passing tests covering list, unread count, mark read, mark all read, and 404 handling.
+
 #### CI/API Token Remote Auth Alignment (2026-05-28)
 
 - **Backend**: API Key authentication now preserves credential metadata for scope and environment checks. Vault reads require `read:secrets`/`admin:project`, and `environment_scope` is enforced for environment/vault reads.

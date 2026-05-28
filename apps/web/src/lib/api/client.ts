@@ -366,6 +366,38 @@ export interface RotationHistoryResponse {
   total: number;
 }
 
+export interface Notification {
+  id: string;
+  user_id: string;
+  type: string;
+  title: string;
+  message: string;
+  read_at: string | null;
+  action_url: string | null;
+  meta: Record<string, unknown> | null;
+  created_at: string;
+}
+
+export interface NotificationListResponse {
+  notifications: Notification[];
+  total: number;
+  unread_count: number;
+}
+
+export interface UnreadCountResponse {
+  unread_count: number;
+}
+
+export interface MarkReadResponse {
+  success: boolean;
+  id: string;
+}
+
+export interface MarkAllReadResponse {
+  success: boolean;
+  marked_count: number;
+}
+
 export interface ExpirationResponse {
   id: string;
   secret_key: string;

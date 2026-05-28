@@ -51,7 +51,7 @@ class EmailService:
           <tr>
             <td style="padding:32px 32px 24px;text-align:center;border-bottom:1px solid #e5e7eb;">
               <img src="{logo_url}" alt="CriptEnv" width="160" style="display:block;margin:0 auto;height:auto;max-width:160px;">
-              <div style="font-size:12px;color:#9ca3af;margin-top:8px;letter-spacing:0.8px;text-transform:uppercase;font-weight:500;">
+              <div style="font-size:12px;color:#737373;margin-top:8px;letter-spacing:0.8px;text-transform:uppercase;font-weight:500;">
                 Zero-Knowledge Secret Management
               </div>
             </td>
@@ -71,7 +71,7 @@ class EmailService:
                 CriptEnv — Secure by design. Your secrets never leave your device unencrypted.
               </p>
               <p style="margin:0;font-size:12px;color:#9ca3af;">
-                Need help? Reply to this email or visit our <a href="{settings.FRONTEND_URL}/support" style="color:#4f46e5;text-decoration:none;">Support Center</a>.
+                Need help? Reply to this email or visit our <a href="{settings.FRONTEND_URL}/support" style="color:#171717;text-decoration:none;">Support Center</a>.
               </p>
               <p style="margin:16px 0 0;font-size:11px;color:#9ca3af;">
                 © {datetime.now(timezone.utc).year} CriptEnv. All rights reserved.<br>
@@ -92,7 +92,7 @@ class EmailService:
         return f"""
         <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0;">
           <tr>
-            <td style="border-radius:8px;background:linear-gradient(135deg,#4f46e5,#6366f1);" align="center">
+            <td style="border-radius:8px;background:linear-gradient(135deg,#171717,#262626);" align="center">
               <a href="{url}" class="btn" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;letter-spacing:0.3px;">
                 {label}
               </a>
@@ -105,10 +105,10 @@ class EmailService:
     def _security_box(content: str) -> str:
         """Generate a security notice box."""
         return f"""
-        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;background-color:#eef2ff;border-left:4px solid #6366f1;border-radius:6px;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:24px 0;background-color:#f5f5f5;border-left:4px solid #171717;border-radius:6px;">
           <tr>
             <td style="padding:16px 20px;">
-              <p style="margin:0;font-size:13px;color:#312e81;line-height:1.6;"><strong>Security Notice:</strong> {content}</p>
+              <p style="margin:0;font-size:13px;color:#171717;line-height:1.6;"><strong>Security Notice:</strong> {content}</p>
             </td>
           </tr>
         </table>
@@ -121,7 +121,7 @@ class EmailService:
         <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:16px 0;background-color:#f9fafb;border-radius:6px;border:1px solid #e5e7eb;">
           <tr>
             <td style="padding:14px 18px;word-break:break-all;">
-              <code style="font-size:13px;color:#4f46e5;">{url}</code>
+              <code style="font-size:13px;color:#171717;">{url}</code>
             </td>
           </tr>
         </table>
@@ -206,7 +206,7 @@ Need help? Visit {settings.FRONTEND_URL}/support
         </p>
         """ + self._security_box(
             "If you did not enable 2FA yourself, your account may be compromised. "
-            "Please <a href=\"" + settings.FRONTEND_URL + "/account/security\" style=\"color:#4f46e5;text-decoration:underline;\">review your security settings</a> immediately "
+            "Please <a href=\"" + settings.FRONTEND_URL + "/account/security\" style=\"color:#171717;text-decoration:underline;\">review your security settings</a> immediately "
             "and contact our support team if you need assistance securing your account."
         )
 
@@ -360,7 +360,7 @@ Need help? Visit {settings.FRONTEND_URL}/support
         </ul>
         {self._cta_button(settings.FRONTEND_URL + "/dashboard", "Go to Dashboard")}
         <p style="margin:16px 0 0;font-size:13px;color:#6b7280;line-height:1.6;">
-          Need help getting started? Check out our <a href="{settings.FRONTEND_URL}/docs" style="color:#4f46e5;text-decoration:none;">Documentation</a>
+          Need help getting started? Check out our <a href="{settings.FRONTEND_URL}/docs" style="color:#171717;text-decoration:none;">Documentation</a>
           or reach out to our support team anytime.
         </p>
         """
