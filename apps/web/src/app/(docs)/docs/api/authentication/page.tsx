@@ -5,8 +5,6 @@ import {
   Callout,
   CodeBlock,
   InlineCode,
-  Tabs,
-  Tab,
 } from "@/components/docs";
 
 export default function ApiAuthenticationPage() {
@@ -160,16 +158,17 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 
       <p className="text-muted-foreground mb-4">
         API Keys são tokens permanentes (até serem revogados) com prefixo{" "}
-        <InlineCode>cek_</InlineCode>. Elas são ideais para integrações de
-        terceiros, scripts e ferramentas que precisam de acesso programático à
-        API.
+        <InlineCode>cek_</InlineCode>. Elas são ideais para integrações
+        server-to-server que precisam ler projetos, ambientes e vault blobs
+        criptografados pela API pública.
       </p>
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Escopos</h3>
 
       <p className="text-muted-foreground mb-4">
-        Cada API Key pode ter escopos granulares que controlam quais operações
-        ela pode executar:
+        Hoje a API pública aplica <InlineCode>read:secrets</InlineCode> para
+        leitura de vault e respeita <InlineCode>environment_scope</InlineCode>.
+        Escopos de escrita ficam reservados para endpoints públicos futuros.
       </p>
 
       <div className="overflow-x-auto rounded-lg border border-(--border) my-4">
@@ -183,40 +182,40 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
           <tbody>
             <tr className="border-b border-(--border)">
               <td className="px-4 py-3">
-                <InlineCode>read</InlineCode>
+                <InlineCode>read:secrets</InlineCode>
               </td>
               <td className="px-4 py-3">
-                Leitura de projetos, ambientes e segredos
+                Leitura de projetos, ambientes e vault blobs criptografados
               </td>
             </tr>
             <tr className="border-b border-(--border) bg-(--background-subtle)">
               <td className="px-4 py-3">
-                <InlineCode>write</InlineCode>
+                <InlineCode>write:secrets</InlineCode>
               </td>
               <td className="px-4 py-3">
-                Push de segredos e criação de ambientes
+                Reservado para escrita futura via API pública
               </td>
             </tr>
             <tr className="border-b border-(--border)">
               <td className="px-4 py-3">
-                <InlineCode>admin</InlineCode>
+                <InlineCode>admin:project</InlineCode>
               </td>
-              <td className="px-4 py-3">Gerenciamento de projetos e membros</td>
+              <td className="px-4 py-3">Reservado para administração futura via API pública</td>
             </tr>
             <tr className="border-b border-(--border) bg-(--background-subtle)">
               <td className="px-4 py-3">
-                <InlineCode>env:production</InlineCode>
+                <InlineCode>environment_scope: &quot;production&quot;</InlineCode>
               </td>
               <td className="px-4 py-3">
-                Acesso restrito ao ambiente de produção
+                Restringe a key ao ambiente informado
               </td>
             </tr>
             <tr className="border-b border-(--border)">
               <td className="px-4 py-3">
-                <InlineCode>env:staging</InlineCode>
+                <InlineCode>null</InlineCode>
               </td>
               <td className="px-4 py-3">
-                Acesso restrito ao ambiente de staging
+                Permite leitura em todos os ambientes do projeto
               </td>
             </tr>
           </tbody>
@@ -226,28 +225,26 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
       <h3 className="text-lg font-semibold mt-6 mb-3">Criar uma API Key</h3>
 
       <CodeBlock language="bash" title="Criar API Key via painel ou API">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/api-keys" \\
-  -H "Authorization: Bearer sessao_token" \\
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/v1/projects/{project_id}/api-keys" \\
+  -H "Authorization: Bearer <SESSION_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "name": "GitHub Actions Deploy",
-    "scopes": ["read", "write"],
-    "environment_scope": ["staging", "production"]
+    "name": "Read Bot",
+    "scopes": ["read:secrets"],
+    "environment_scope": "production"
   }'`}
       </CodeBlock>
 
       <CodeBlock language="json" title="Resposta (201 Created)">
         {`{
-  "data": {
-    "id": "key_m2n4p6q8",
-    "name": "GitHub Actions Deploy",
-    "prefix": "cek_",
-    "key": "cek_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6",
-    "scopes": ["read", "write"],
-    "environment_scope": ["staging", "production"],
-    "created_at": "2025-01-15T10:30:00Z"
-  }
-}`}
+	  "id": "key_m2n4p6q8",
+	  "name": "Read Bot",
+	  "prefix": "cek_live_",
+	  "key": "<YOUR_API_KEY>",
+	  "scopes": ["read:secrets"],
+	  "environment_scope": "production",
+	  "created_at": "2026-05-28T10:30:00Z"
+	}`}
       </CodeBlock>
 
       <Callout type="warning">
@@ -260,47 +257,39 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
         Usar API Key nas requisições
       </h3>
 
-      <Tabs>
-        <Tab label="Header Authorization">
-          <CodeBlock language="bash" title="Bearer token no header">
-            {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"`}
-          </CodeBlock>
-        </Tab>
-        <Tab label="Header X-API-Key">
-          <CodeBlock language="bash" title="Header dedicado">
-            {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects" \\
-  -H "X-API-Key: cek_a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6"`}
-          </CodeBlock>
-        </Tab>
-      </Tabs>
+      <CodeBlock language="bash" title="Bearer token no header Authorization">
+        {`curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
+      </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">CI Tokens</h2>
 
       <p className="text-muted-foreground mb-4">
-        CI Tokens são tokens de curta duração (1 hora) com prefixo{" "}
-        <InlineCode>ci_</InlineCode>, projetados para pipelines de CI/CD. Eles
-        são gerados sob demanda e expiram automaticamente, eliminando o risco de
-        tokens esquecidos.
+        CI Tokens têm prefixo <InlineCode>ci_</InlineCode> e são projetados para
+        pipelines de CI/CD. O pipeline troca o token por uma sessão temporária
+        <InlineCode>ci_s_</InlineCode> de 1 hora, com escopos como{" "}
+        <InlineCode>read:secrets</InlineCode>,{" "}
+        <InlineCode>write:secrets</InlineCode> e{" "}
+        <InlineCode>write:integrations</InlineCode>.
       </p>
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Gerar um CI Token</h3>
 
-      <CodeBlock language="bash" title="Gerar CI Token temporário">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/ci-tokens" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
+      <CodeBlock language="bash" title="Gerar CI Token com sessão humana">
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/v1/projects/{project_id}/tokens" \\
+  -H "Authorization: Bearer <SESSION_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "project_id": "proj_k8j2m4n6",
-    "scopes": ["read"],
-    "environment": "production"
+    "name": "GitHub Actions",
+    "scopes": ["read:secrets", "write:secrets"],
+    "environment_scope": "production"
   }'`}
       </CodeBlock>
 
       <CodeBlock language="json" title="Resposta (201 Created)">
         {`{
   "data": {
-    "token": "ci_x9y8z7w6v5u4t3s2r1q0p9o8n7m6l5k4",
+    "token": "<CI_TOKEN>",
     "expires_at": "2025-01-15T11:30:00Z",
     "scopes": ["read"],
     "environment": "production"

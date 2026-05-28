@@ -59,7 +59,7 @@ export default function ApiEnvironmentsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Criar ambiente">
         {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "staging",
@@ -120,7 +120,7 @@ export default function ApiEnvironmentsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Listar ambientes">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
@@ -177,7 +177,7 @@ export default function ApiEnvironmentsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Obter ambiente">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments/env_a1b2c3" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
@@ -240,7 +240,7 @@ export default function ApiEnvironmentsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Atualizar ambiente">
         {`curl -X PATCH "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments/env_d4e5f6" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "staging-v2",
@@ -287,7 +287,7 @@ export default function ApiEnvironmentsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Deletar ambiente">
         {`curl -X DELETE "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/environments/env_d4e5f6" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={204} statusText="No Content">

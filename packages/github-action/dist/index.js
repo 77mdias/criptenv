@@ -31076,9 +31076,12 @@ exports.normalizeKeyName = normalizeKeyName;
 exports.ciLogin = ciLogin;
 exports.getSecrets = getSecrets;
 exports.decryptSecret = decryptSecret;
+exports.exportableSecretValue = exportableSecretValue;
+exports.legacyCiphertextSecret = legacyCiphertextSecret;
 exports.run = run;
 const core = __importStar(__nccwpck_require__(7484));
 const httpClient = __importStar(__nccwpck_require__(4844));
+const crypto = __importStar(__nccwpck_require__(6982));
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [1000, 2000, 4000];
 async function retry(fn, retries = MAX_RETRIES, delays = RETRY_DELAYS) {
@@ -31106,6 +31109,7 @@ function getInputs() {
         apiUrl: (core.getInput("api-url") || "https://criptenv-api.77mdevseven.tech/api/v1").replace(/\/$/, ""),
         prefix: core.getInput("prefix") || "SECRET_",
         versionOutput: core.getInput("version-output") || "version",
+        vaultPassword: core.getInput("vault-password") || "",
     };
 }
 function normalizeKeyName(keyId) {
@@ -31145,7 +31149,58 @@ async function getSecrets(apiUrl, sessionToken, projectId, environment, clientFa
     }
     return response.result;
 }
-function decryptSecret(blob) {
+function fromBase64(value) {
+    return Buffer.from(value, "base64");
+}
+function deriveProjectMasterKey(password, vaultConfig) {
+    return crypto.pbkdf2Sync(password, fromBase64(vaultConfig.salt), vaultConfig.iterations || 100000, 32, "sha256");
+}
+function deriveEnvironmentKey(password, vaultConfig, environmentId) {
+    const masterKey = deriveProjectMasterKey(password, vaultConfig);
+    return Buffer.from(crypto.hkdfSync("sha256", masterKey, Buffer.from(environmentId, "utf8"), Buffer.from("criptenv-vault-v1"), 32));
+}
+function decryptSecret(blob, vaultPassword, vaultConfig, environmentId) {
+    if (!vaultPassword) {
+        return blob.ciphertext;
+    }
+    if (!vaultConfig || !environmentId) {
+        throw new Error("vault-password requires vault_config and environment_id from the API");
+    }
+    const envKey = deriveEnvironmentKey(vaultPassword, vaultConfig, environmentId);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", envKey, fromBase64(blob.iv));
+    decipher.setAuthTag(fromBase64(blob.auth_tag));
+    return Buffer.concat([
+        decipher.update(fromBase64(blob.ciphertext)),
+        decipher.final(),
+    ]).toString("utf8");
+}
+function assertVaultPasswordCanDecrypt(vaultPassword, vaultConfig) {
+    if (!vaultPassword || !vaultConfig) {
+        return;
+    }
+    if (vaultConfig.verifier_ciphertext === "unused" ||
+        vaultConfig.verifier_iv === "unused" ||
+        vaultConfig.verifier_auth_tag === "unused") {
+        return;
+    }
+    const masterKey = deriveProjectMasterKey(vaultPassword, vaultConfig);
+    const decipher = crypto.createDecipheriv("aes-256-gcm", masterKey, fromBase64(vaultConfig.verifier_iv));
+    decipher.setAuthTag(fromBase64(vaultConfig.verifier_auth_tag));
+    const plaintext = Buffer.concat([
+        decipher.update(fromBase64(vaultConfig.verifier_ciphertext)),
+        decipher.final(),
+    ]);
+    if (plaintext.toString("utf8") !== "criptenv-vault-verifier-v1") {
+        throw new Error("Invalid vault password");
+    }
+}
+function exportableSecretValue(blob, secrets, vaultPassword) {
+    if (vaultPassword) {
+        assertVaultPasswordCanDecrypt(vaultPassword, secrets.vault_config);
+    }
+    return decryptSecret(blob, vaultPassword, secrets.vault_config, secrets.environment_id);
+}
+function legacyCiphertextSecret(blob) {
     return blob.ciphertext;
 }
 async function run(inputs = getInputs(), clientFactory = createHttpClient, retryDelays = RETRY_DELAYS) {
@@ -31163,7 +31218,7 @@ async function run(inputs = getInputs(), clientFactory = createHttpClient, retry
         const errors = [];
         for (const blob of secrets.blobs) {
             try {
-                const secretValue = decryptSecret(blob);
+                const secretValue = exportableSecretValue(blob, secrets, inputs.vaultPassword);
                 const varName = `${inputs.prefix}${normalizeKeyName(blob.key_id)}`;
                 core.setSecret(secretValue);
                 core.exportVariable(varName, secretValue);

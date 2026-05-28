@@ -215,6 +215,37 @@ class TestCISessionValidation:
         assert exc_info.value.status_code == 401
 
     @pytest.mark.asyncio
+    async def test_valid_session_returns_ci_metadata(self):
+        """Valid persisted CI sessions should expose token/session metadata."""
+        from app.middleware.ci_auth import validate_ci_session
+
+        project_id = uuid4()
+        ci_token_id = uuid4()
+        session = MagicMock()
+        session.id = uuid4()
+        session.ci_token_id = ci_token_id
+        session.project_id = project_id
+        session.expires_at = datetime.now(timezone.utc) + timedelta(minutes=30)
+        session.scopes = ["read:secrets", "write:secrets"]
+        session.environment_scope = "production"
+
+        mock_result = MagicMock()
+        mock_result.scalar_one_or_none = MagicMock(return_value=session)
+
+        with patch('app.middleware.ci_auth.async_session_factory') as mock_factory:
+            mock_session = AsyncMock(spec=AsyncSession)
+            mock_session.execute = AsyncMock(return_value=mock_result)
+            mock_session.commit = AsyncMock()
+            mock_factory.return_value = AsyncSessionContext(mock_session)
+
+            context = await validate_ci_session(f"ci_s_{uuid4().hex}", project_id)
+
+        assert context["session"] == session
+        assert context["session_id"] == str(session.id)
+        assert context["ci_token_id"] == str(ci_token_id)
+        assert context["environment_scope"] == "production"
+
+    @pytest.mark.asyncio
     async def test_expired_session_token_raises_401(self):
         """Expired persisted CI sessions should be rejected."""
         from app.middleware.ci_auth import validate_ci_session

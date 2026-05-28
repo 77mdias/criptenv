@@ -24,6 +24,18 @@ interface SecretsResponse {
     blobs: VaultBlob[];
     version: number;
     environment: string;
+    environment_id?: string;
+    vault_config?: VaultConfig;
+}
+interface VaultConfig {
+    version: number;
+    kdf: string;
+    iterations: number;
+    salt: string;
+    proof_salt: string;
+    verifier_iv: string;
+    verifier_ciphertext: string;
+    verifier_auth_tag: string;
 }
 export interface ActionInputs {
     token: string;
@@ -32,6 +44,7 @@ export interface ActionInputs {
     apiUrl: string;
     prefix: string;
     versionOutput: string;
+    vaultPassword: string;
 }
 type HttpClientFactory = () => httpClient.HttpClient;
 export declare function retry<T>(fn: () => Promise<T>, retries?: number, delays?: number[]): Promise<T>;
@@ -39,6 +52,8 @@ export declare function getInputs(): ActionInputs;
 export declare function normalizeKeyName(keyId: string): string;
 export declare function ciLogin(apiUrl: string, token: string, projectId: string, clientFactory?: HttpClientFactory): Promise<LoginResponse>;
 export declare function getSecrets(apiUrl: string, sessionToken: string, projectId: string, environment: string, clientFactory?: HttpClientFactory): Promise<SecretsResponse>;
-export declare function decryptSecret(blob: VaultBlob): string;
+export declare function decryptSecret(blob: VaultBlob, vaultPassword?: string, vaultConfig?: VaultConfig, environmentId?: string): string;
+export declare function exportableSecretValue(blob: VaultBlob, secrets: SecretsResponse, vaultPassword: string): string;
+export declare function legacyCiphertextSecret(blob: VaultBlob): string;
 export declare function run(inputs?: ActionInputs, clientFactory?: HttpClientFactory, retryDelays?: number[]): Promise<void>;
 export {};

@@ -28,6 +28,9 @@ inputs:
     description: "Output name for secrets version"
     required: false
     default: "version"
+  vault-password:
+    description: "Optional project vault password. When set, exports plaintext instead of encrypted ciphertext."
+    required: false
 
 outputs:
   secrets-count:

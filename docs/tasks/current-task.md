@@ -2,11 +2,55 @@
 
 ## Status atual
 
-**2FA login enforcement implementado em 2026-05-28. Contas com 2FA ativo agora precisam concluir challenge TOTP/backup code antes de receber sessão em login por senha, OAuth ou autorização CLI via browser/device, com opção de lembrar dispositivo por 30 dias.**
+**CI/API token remote-auth alignment implementado em 2026-05-28. A separação entre sessão humana, API Key, CI Token e sessão CI temporária agora reflete a arquitetura remota atual da CLI/API/Web.**
 
 ---
 
 ## Tarefa em foco
+
+Corrigir gaps de CI Tokens e API Keys após a migração da CLI para fluxo remoto, mantendo least privilege e suporte Zero-Knowledge.
+
+## O que foi implementado nesta sessão
+
+### Programmatic Auth Alignment ✅
+- API Keys agora preservam metadados no contexto de autenticação para enforcement de `scopes` e `environment_scope`.
+- Vault pull/version exigem `read:secrets` ou `admin:project` quando autenticados via API Key.
+- Environment e vault reads respeitam `environment_scope`.
+- CI sessions `ci_s_` podem fazer vault push apenas com `write:secrets`.
+- Integração list/sync via CI session exige `write:integrations`.
+
+### CLI Remota ✅
+- `criptenv ci tokens list/create/revoke` agora usa sessão humana normal.
+- Removido registro top-level acidental de `criptenv tokens`; o caminho suportado é `criptenv ci tokens`.
+- `ci login` salva `environment_scope`.
+- `ci secrets` usa endpoint leve de listagem.
+- `ci deploy` valida escopo, ambiente e `CRIPTENV_VAULT_PASSWORD` antes de escrever secrets.
+
+### GitHub Action ✅
+- Novo input opcional `vault-password`.
+- Sem `vault-password`, mantém export de ciphertext.
+- Com `vault-password`, decripta localmente no runner e exporta plaintext mascarado.
+
+### Documentação/UI ✅
+- Settings do projeto explicam diferença entre CI Tokens e API Keys.
+- Docs de autenticação corrigidos para `Authorization: Bearer cek_...`.
+- Changelog e decisions atualizados com DEC-048.
+
+## Próximos passos recomendados
+
+1. Validar smoke real: criar CI Token com `read:secrets,write:secrets`, executar `ci login` e `CRIPTENV_VAULT_PASSWORD=... criptenv ci deploy --env production --file .env.production`.
+2. Validar GitHub Action em repositório de teste com e sem `vault-password`.
+3. Quando a Public API de escrita for desenhada, reabilitar escopos reservados de API Key na UI/CLI.
+
+---
+
+## Status anterior
+
+**2FA login enforcement implementado em 2026-05-28. Contas com 2FA ativo agora precisam concluir challenge TOTP/backup code antes de receber sessão em login por senha, OAuth ou autorização CLI via browser/device, com opção de lembrar dispositivo por 30 dias.**
+
+---
+
+## Tarefa anterior
 
 Finalizar a aplicação real do 2FA no login web/OAuth/CLI browser auth, mantendo sessões em cookies HTTP-only e trusted devices também em cookie HTTP-only com token hashado no banco.
 

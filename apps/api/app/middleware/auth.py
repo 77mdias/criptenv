@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Optional
 
 from fastapi import Depends, Request, HTTPException, status
@@ -6,7 +7,17 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.services.auth_service import AuthService
 from app.models.user import User
+from app.models.api_key import APIKey
 from app.models.api_key import API_KEY_PREFIX
+
+
+@dataclass
+class AuthContext:
+    """Authenticated principal plus optional programmatic credential metadata."""
+
+    user: User
+    auth_type: str
+    api_key: Optional[APIKey] = None
 
 
 def _extract_token(request: Request) -> Optional[str]:
@@ -58,6 +69,15 @@ async def get_current_user_or_api_key(
     - Session tokens (JWT) for web dashboard users
     - API keys (cek_ prefix) for programmatic access
     """
+    context = await get_current_auth_context(request, db)
+    return context.user
+
+
+async def get_current_auth_context(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> AuthContext:
+    """Authenticate via session token or API key while preserving auth metadata."""
     token = _extract_token(request)
     if not token:
         raise HTTPException(
@@ -68,9 +88,14 @@ async def get_current_user_or_api_key(
     
     # API Key authentication
     if token.startswith(API_KEY_PREFIX):
-        from app.middleware.api_key_auth import validate_api_key, APIKeyError
+        from app.middleware.api_key_auth import validate_api_key_context, APIKeyError
         try:
-            return await validate_api_key(token)
+            api_context = await validate_api_key_context(token)
+            return AuthContext(
+                user=api_context.user,
+                auth_type=api_context.auth_type,
+                api_key=api_context.api_key,
+            )
         except APIKeyError:
             raise
         except Exception:
@@ -91,7 +116,7 @@ async def get_current_user_or_api_key(
             headers={"WWW-Authenticate": "Bearer"},
         )
 
-    return user
+    return AuthContext(user=user, auth_type="session")
 
 
 async def get_optional_user(

@@ -1,0 +1,15 @@
+title = "CriptEnv Gitleaks Config"
+
+[allowlist]
+description = "Ignore documentation placeholders and examples"
+regexes = [
+  # Placeholders used in API documentation examples
+  '''<YOUR_API_KEY>''',
+  '''<SESSION_TOKEN>''',
+  '''<CI_TOKEN>''',
+  '''<ADMIN_API_KEY>''',
+  # Generic placeholder patterns commonly used in docs
+  '''<API_KEY>''',
+  '''<TOKEN>''',
+  '''<SECRET>''',
+]
