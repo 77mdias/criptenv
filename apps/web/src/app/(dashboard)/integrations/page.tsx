@@ -171,7 +171,7 @@ export default function IntegrationsPage() {
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Integrações</h1>
-          <p className="mt-1 font-mono text-sm text-[var(--text-tertiary)]">
+          <p className="mt-1 font-mono text-sm text-(--text-tertiary)">
             {selectedProject ? selectedProject.name : "Selecione um projeto"}
           </p>
         </div>
@@ -179,7 +179,7 @@ export default function IntegrationsPage() {
           <select
             value={selectedProjectId}
             onChange={(event) => setSelectedProjectId(event.target.value)}
-            className="h-10 rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 font-mono text-sm text-[var(--text-primary)]"
+            className="h-10 rounded-lg border border-(--border) bg-(--surface) px-3 font-mono text-sm text-(--text-primary)"
           >
             {projects.map((project) => (
               <option key={project.id} value={project.id}>
@@ -223,7 +223,7 @@ export default function IntegrationsPage() {
                   <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div className="min-w-0">
                       <div className="flex flex-wrap items-center gap-2">
-                        <h2 className="font-mono text-sm font-semibold text-[var(--text-primary)]">
+                        <h2 className="font-mono text-sm font-semibold text-(--text-primary)">
                           {integration.name}
                         </h2>
                         <Badge variant="outline">{integration.provider}</Badge>
@@ -231,7 +231,7 @@ export default function IntegrationsPage() {
                           {integration.status}
                         </Badge>
                       </div>
-                      <p className="mt-2 font-mono text-xs text-[var(--text-muted)]">
+                      <p className="mt-2 font-mono text-xs text-(--text-muted)">
                         {integration.last_sync_at
                           ? `Último sync: ${new Date(integration.last_sync_at).toLocaleString("pt-BR")}`
                           : "Sem sync registrado"}
@@ -272,7 +272,7 @@ export default function IntegrationsPage() {
           <Card className="p-4">
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="flex items-center justify-between">
-                <h2 className="font-mono text-sm font-semibold text-[var(--text-primary)]">
+                <h2 className="font-mono text-sm font-semibold text-(--text-primary)">
                   Vercel
                 </h2>
                 <Button

@@ -1,22 +1,22 @@
-import { KeyRound } from "lucide-react"
-import { SecretsTable } from "@/components/shared/secrets-table"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import type { DecryptedSecret } from "@/components/shared/secret-row"
+import { KeyRound } from "lucide-react";
+import { SecretsTable } from "@/components/shared/secrets-table";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import type { DecryptedSecret } from "@/components/shared/secret-row";
 
 interface UnlockedVaultPanelProps {
-  secrets: DecryptedSecret[]
-  environmentName: string
-  copiedKey: string | null
-  busy: boolean
-  onCopy: (secret: DecryptedSecret) => void
-  onEdit: (secret: DecryptedSecret) => void
-  onDelete: (secret: DecryptedSecret) => void
-  onCreate: () => void
-  onRotate: (secret: DecryptedSecret) => void
-  onSetExpiration: (secret: DecryptedSecret) => void
-  onLock: () => void
+  secrets: DecryptedSecret[];
+  environmentName: string;
+  copiedKey: string | null;
+  busy: boolean;
+  onCopy: (secret: DecryptedSecret) => void;
+  onEdit: (secret: DecryptedSecret) => void;
+  onDelete: (secret: DecryptedSecret) => void;
+  onCreate: () => void;
+  onRotate: (secret: DecryptedSecret) => void;
+  onSetExpiration: (secret: DecryptedSecret) => void;
+  onLock: () => void;
 }
 
 export function UnlockedVaultPanel({
@@ -34,8 +34,8 @@ export function UnlockedVaultPanel({
 }: UnlockedVaultPanelProps) {
   return (
     <Card className="overflow-hidden p-0">
-      <div className="flex items-center justify-between border-b border-[var(--border)] px-4 py-3">
-        <div className="flex items-center gap-2 font-mono text-xs text-[var(--text-muted)]">
+      <div className="flex items-center justify-between border-b border-(--border) px-4 py-3">
+        <div className="flex items-center gap-2 font-mono text-xs text-(--text-muted)">
           <KeyRound className="h-3.5 w-3.5" />
           Vault desbloqueado apenas nesta sessão
         </div>
@@ -46,7 +46,10 @@ export function UnlockedVaultPanel({
       {busy ? (
         <div className="space-y-0">
           {[1, 2, 3].map((item) => (
-            <div key={item} className="border-b border-[var(--border)] px-6 py-4 last:border-0">
+            <div
+              key={item}
+              className="border-b border-(--border) px-6 py-4 last:border-0"
+            >
               <Skeleton className="h-4 w-40" />
               <Skeleton className="mt-2 h-3 w-64" />
             </div>
@@ -66,5 +69,5 @@ export function UnlockedVaultPanel({
         />
       )}
     </Card>
-  )
+  );
 }

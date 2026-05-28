@@ -26,20 +26,20 @@ async function decryptVaultBlobs(blobs: VaultBlob[], key: CryptoKey) {
     blobs.map(async (blob) => ({
       key: blob.key_id,
       value: await decrypt(blob.ciphertext, key, blob.iv, blob.auth_tag),
-    }))
+    })),
   );
 }
 
 async function encryptVaultSecrets(
   secrets: Array<{ key: string; value: string }>,
   key: CryptoKey,
-  version: number
+  version: number,
 ): Promise<VaultBlobPush[]> {
   return Promise.all(
     secrets.map(async (secret) => {
       const encrypted = await encrypt(secret.value, key);
       const digest = await checksum(
-        `${secret.key}:${encrypted.iv}:${encrypted.ciphertext}:${encrypted.authTag}`
+        `${secret.key}:${encrypted.iv}:${encrypted.ciphertext}:${encrypted.authTag}`,
       );
 
       return {
@@ -50,7 +50,7 @@ async function encryptVaultSecrets(
         checksum: digest,
         version,
       };
-    })
+    }),
   );
 }
 
@@ -65,7 +65,9 @@ export default function SettingsPage() {
   const [loading, setLoading] = useState(!cachedProject);
   const [error, setError] = useState<string | null>(null);
   const [name, setName] = useState(cachedProject?.name ?? "");
-  const [description, setDescription] = useState(cachedProject?.description ?? "");
+  const [description, setDescription] = useState(
+    cachedProject?.description ?? "",
+  );
   const [saving, setSaving] = useState(false);
   const [rekeying, setRekeying] = useState(false);
   const [currentVaultPassword, setCurrentVaultPassword] = useState("");
@@ -75,12 +77,12 @@ export default function SettingsPage() {
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
-    let cancelled = false
+    let cancelled = false;
 
     async function fetchProject() {
       try {
         const data = await projectsApi.get(projectId);
-        if (cancelled) return
+        if (cancelled) return;
         setProject(data);
         setName(data.name);
         setDescription(data.description || "");
@@ -100,8 +102,8 @@ export default function SettingsPage() {
     void fetchProject();
 
     return () => {
-      cancelled = true
-    }
+      cancelled = true;
+    };
   }, [projectId]);
 
   const handleSave = async () => {
@@ -134,7 +136,7 @@ export default function SettingsPage() {
 
   const buildRekeyPayload = async (
     currentKeyForEnvironment: (environmentId: string) => Promise<CryptoKey>,
-    newPassword: string
+    newPassword: string,
   ) => {
     const { vaultConfig: newVaultConfig, vaultProof: newVaultProof } =
       await buildProjectVaultConfig(newPassword);
@@ -145,14 +147,21 @@ export default function SettingsPage() {
       envData.environments.map(async (environment) => {
         const vault = await vaultApi.pull(projectId, environment.id);
         const currentEnvKey = await currentKeyForEnvironment(environment.id);
-        const newEnvKey = await deriveProjectEnvironmentKey(newMaterial.keyMaterial, environment.id);
+        const newEnvKey = await deriveProjectEnvironmentKey(
+          newMaterial.keyMaterial,
+          environment.id,
+        );
         const secrets = await decryptVaultBlobs(vault.blobs, currentEnvKey);
 
         return {
           environment_id: environment.id,
-          blobs: await encryptVaultSecrets(secrets, newEnvKey, vault.version + 1),
+          blobs: await encryptVaultSecrets(
+            secrets,
+            newEnvKey,
+            vault.version + 1,
+          ),
         };
-      })
+      }),
     );
 
     return { newVaultConfig, newVaultProof, environments };
@@ -173,28 +182,36 @@ export default function SettingsPage() {
       setError(null);
 
       let currentVaultProof = "legacy-migration";
-      let currentKeyForEnvironment: (environmentId: string) => Promise<CryptoKey>;
+      let currentKeyForEnvironment: (
+        environmentId: string,
+      ) => Promise<CryptoKey>;
 
       if (project?.vault_config) {
-        const currentMaterial = await unlockProjectVault(currentVaultPassword, project.vault_config);
+        const currentMaterial = await unlockProjectVault(
+          currentVaultPassword,
+          project.vault_config,
+        );
         currentVaultProof = currentMaterial.vaultProof;
         currentKeyForEnvironment = (environmentId) =>
           deriveProjectEnvironmentKey(
             currentMaterial.keyMaterial,
-            environmentId
+            environmentId,
           );
       } else {
         if (!user?.kdf_salt) {
-          throw new Error("Sua sessão não tem kdf_salt para migrar este vault legado.");
+          throw new Error(
+            "Sua sessão não tem kdf_salt para migrar este vault legado.",
+          );
         }
-        const legacyKey = await deriveSessionKeyFromBase64Salt(currentVaultPassword, user.kdf_salt);
+        const legacyKey = await deriveSessionKeyFromBase64Salt(
+          currentVaultPassword,
+          user.kdf_salt,
+        );
         currentKeyForEnvironment = async () => legacyKey;
       }
 
-      const { newVaultConfig, newVaultProof, environments } = await buildRekeyPayload(
-        currentKeyForEnvironment,
-        newVaultPassword
-      );
+      const { newVaultConfig, newVaultProof, environments } =
+        await buildRekeyPayload(currentKeyForEnvironment, newVaultPassword);
 
       const updated = await projectsApi.rekeyVault(projectId, {
         current_vault_proof: currentVaultProof,
@@ -208,7 +225,9 @@ export default function SettingsPage() {
       setNewVaultPassword("");
       setConfirmNewVaultPassword("");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao trocar senha do vault");
+      setError(
+        err instanceof Error ? err.message : "Erro ao trocar senha do vault",
+      );
     } finally {
       setRekeying(false);
     }
@@ -221,7 +240,7 @@ export default function SettingsPage() {
           <h1 className="text-2xl font-semibold tracking-tight">
             Configurações
           </h1>
-          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
+          <p className="text-(--text-tertiary) text-sm font-mono mt-1">
             Configure o projeto
           </p>
         </div>
@@ -239,7 +258,7 @@ export default function SettingsPage() {
     <div className="space-y-6">
       <div>
         <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
-        <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
+        <p className="text-(--text-tertiary) text-sm font-mono mt-1">
           Configure o projeto
         </p>
       </div>
@@ -259,31 +278,31 @@ export default function SettingsPage() {
       {/* General Settings */}
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-6">
-          <Settings className="h-5 w-5 text-[var(--text-muted)]" />
-          <h2 className="font-semibold text-[var(--text-primary)]">
+          <Settings className="h-5 w-5 text-(--text-muted)" />
+          <h2 className="font-semibold text-(--text-primary)">
             Informações do projeto
           </h2>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
               Nome
             </label>
             <input
               type="text"
-              className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+              className="flex h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2"
               value={name}
               onChange={(e) => setName(e.target.value)}
             />
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
               Descrição
             </label>
             <textarea
-              className="flex w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2 min-h-[100px] resize-y"
+              className="flex w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2 min-h-25 resize-y"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
               placeholder="Descrição opcional do projeto"
@@ -300,20 +319,20 @@ export default function SettingsPage() {
 
       <Card className="p-6">
         <div className="flex items-center gap-2 mb-6">
-          <KeyRound className="h-5 w-5 text-[var(--text-muted)]" />
-          <h2 className="font-semibold text-[var(--text-primary)]">
+          <KeyRound className="h-5 w-5 text-(--text-muted)" />
+          <h2 className="font-semibold text-(--text-primary)">
             Senha do vault
           </h2>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
               {project?.vault_config ? "Senha atual" : "Senha legada"}
             </label>
             <input
               type="password"
-              className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+              className="flex h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2"
               value={currentVaultPassword}
               onChange={(event) => setCurrentVaultPassword(event.target.value)}
               autoComplete="current-password"
@@ -321,12 +340,12 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
               Nova senha
             </label>
             <input
               type="password"
-              className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+              className="flex h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2"
               value={newVaultPassword}
               onChange={(event) => setNewVaultPassword(event.target.value)}
               autoComplete="new-password"
@@ -334,14 +353,16 @@ export default function SettingsPage() {
           </div>
 
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
               Confirmar nova senha
             </label>
             <input
               type="password"
-              className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+              className="flex h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2"
               value={confirmNewVaultPassword}
-              onChange={(event) => setConfirmNewVaultPassword(event.target.value)}
+              onChange={(event) =>
+                setConfirmNewVaultPassword(event.target.value)
+              }
               autoComplete="new-password"
             />
           </div>
@@ -350,9 +371,15 @@ export default function SettingsPage() {
             <Button
               onClick={handleRekey}
               loading={rekeying}
-              disabled={!currentVaultPassword || !newVaultPassword || !confirmNewVaultPassword}
+              disabled={
+                !currentVaultPassword ||
+                !newVaultPassword ||
+                !confirmNewVaultPassword
+              }
             >
-              {project?.vault_config ? "Trocar senha do vault" : "Migrar vault legado"}
+              {project?.vault_config
+                ? "Trocar senha do vault"
+                : "Migrar vault legado"}
             </Button>
           </div>
         </div>
@@ -365,20 +392,20 @@ export default function SettingsPage() {
           <h2 className="font-semibold text-red-500">Zona de perigo</h2>
         </div>
 
-        <p className="text-sm text-[var(--text-tertiary)] font-mono mb-4">
+        <p className="text-sm text-(--text-tertiary) font-mono mb-4">
           Esta ação não pode ser desfeita. Isso excluirá permanentemente o
           projeto e todos os seus dados.
         </p>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
               Digite <span className="text-red-500">{project?.name}</span> para
               confirmar
             </label>
             <input
               type="text"
-              className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
+              className="flex h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2"
               value={deleteConfirm}
               onChange={(e) => setDeleteConfirm(e.target.value)}
               placeholder={project?.name}

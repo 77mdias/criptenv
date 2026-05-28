@@ -1,14 +1,14 @@
-"use client"
+"use client";
 
-import { useCallback, useEffect, useState } from "react"
-import { useParams } from "next/navigation"
-import { Download, Filter } from "lucide-react"
-import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
-import { Skeleton } from "@/components/ui/skeleton"
-import { AuditTimeline } from "@/components/shared/audit-timeline"
-import { auditApi, peekCached } from "@/lib/api"
-import type { AuditLog, AuditLogListResponse } from "@/lib/api"
+import { useCallback, useEffect, useState } from "react";
+import { useParams } from "next/navigation";
+import { Download, Filter } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
+import { AuditTimeline } from "@/components/shared/audit-timeline";
+import { auditApi, peekCached } from "@/lib/api";
+import type { AuditLog, AuditLogListResponse } from "@/lib/api";
 
 const actions = [
   "",
@@ -20,34 +20,41 @@ const actions = [
   "member.added",
   "member.removed",
   "member.role_changed",
-]
+];
 
-const resourceTypes = ["", "project", "vault", "invite", "member", "environment"]
+const resourceTypes = [
+  "",
+  "project",
+  "vault",
+  "invite",
+  "member",
+  "environment",
+];
 
 export default function AuditPage() {
-  const params = useParams()
-  const projectId = params.id as string
-  const [action, setAction] = useState("")
-  const [resourceType, setResourceType] = useState("")
+  const params = useParams();
+  const projectId = params.id as string;
+  const [action, setAction] = useState("");
+  const [resourceType, setResourceType] = useState("");
   const cachedInitialLogs = peekCached<AuditLogListResponse>(
     `/api/v1/projects/${projectId}/audit`,
-    { page: 1, per_page: 20 }
-  )
-  const [logs, setLogs] = useState<AuditLog[]>(cachedInitialLogs?.logs ?? [])
-  const [total, setTotal] = useState(cachedInitialLogs?.total ?? 0)
-  const [page, setPage] = useState(cachedInitialLogs?.page ?? 1)
-  const [loading, setLoading] = useState(!cachedInitialLogs)
-  const [loadingMore, setLoadingMore] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+    { page: 1, per_page: 20 },
+  );
+  const [logs, setLogs] = useState<AuditLog[]>(cachedInitialLogs?.logs ?? []);
+  const [total, setTotal] = useState(cachedInitialLogs?.total ?? 0);
+  const [page, setPage] = useState(cachedInitialLogs?.page ?? 1);
+  const [loading, setLoading] = useState(!cachedInitialLogs);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const loadLogs = useCallback(
     async (nextPage: number, append = false, showLoading = true) => {
       if (append) {
-        setLoadingMore(true)
+        setLoadingMore(true);
       } else if (showLoading) {
-        setLoading(true)
+        setLoading(true);
       }
-      setError(null)
+      setError(null);
 
       try {
         const data = await auditApi.getLogs(projectId, {
@@ -55,43 +62,50 @@ export default function AuditPage() {
           per_page: 20,
           action: action || undefined,
           resource_type: resourceType || undefined,
-        })
-        setLogs((current) => (append ? [...current, ...data.logs] : data.logs))
-        setTotal(data.total)
-        setPage(data.page)
+        });
+        setLogs((current) => (append ? [...current, ...data.logs] : data.logs));
+        setTotal(data.total);
+        setPage(data.page);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar logs")
+        setError(err instanceof Error ? err.message : "Erro ao carregar logs");
       } finally {
-        setLoading(false)
-        setLoadingMore(false)
+        setLoading(false);
+        setLoadingMore(false);
       }
     },
-    [action, projectId, resourceType]
-  )
+    [action, projectId, resourceType],
+  );
 
   useEffect(() => {
-    const hasDefaultFilters = action === "" && resourceType === ""
+    const hasDefaultFilters = action === "" && resourceType === "";
     const timeoutId = window.setTimeout(() => {
-      void loadLogs(1, false, !(hasDefaultFilters && cachedInitialLogs))
-    }, 0)
+      void loadLogs(1, false, !(hasDefaultFilters && cachedInitialLogs));
+    }, 0);
 
-    return () => window.clearTimeout(timeoutId)
-  }, [action, cachedInitialLogs, loadLogs, resourceType])
+    return () => window.clearTimeout(timeoutId);
+  }, [action, cachedInitialLogs, loadLogs, resourceType]);
 
   const exportJson = () => {
     const blob = new Blob([JSON.stringify(logs, null, 2)], {
       type: "application/json;charset=utf-8",
-    })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `audit-${projectId}.json`
-    link.click()
-    URL.revokeObjectURL(url)
-  }
+    });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `audit-${projectId}.json`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   const exportCsv = () => {
-    const headers = ["timestamp", "action", "resource_type", "resource_id", "user_id", "metadata"]
+    const headers = [
+      "timestamp",
+      "action",
+      "resource_type",
+      "resource_id",
+      "user_id",
+      "metadata",
+    ];
     const rows = logs.map((log) => [
       log.created_at,
       log.action,
@@ -99,50 +113,69 @@ export default function AuditPage() {
       log.resource_id,
       log.user_id,
       JSON.stringify(log.metadata),
-    ])
-    const csv = [headers.join(","), ...rows.map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))].join("\n")
-    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" })
-    const url = URL.createObjectURL(blob)
-    const link = document.createElement("a")
-    link.href = url
-    link.download = `audit-${projectId}.csv`
-    link.click()
-    URL.revokeObjectURL(url)
-  }
+    ]);
+    const csv = [
+      headers.join(","),
+      ...rows.map((r) =>
+        r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","),
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `audit-${projectId}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">Audit Log</h1>
-          <p className="mt-1 font-mono text-sm text-[var(--text-tertiary)]">
+          <p className="mt-1 font-mono text-sm text-(--text-tertiary)">
             {total} eventos registrados para este projeto
           </p>
         </div>
         <div className="flex gap-2">
-          <Button variant="secondary" size="sm" icon={Download} onClick={exportCsv} disabled={logs.length === 0}>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Download}
+            onClick={exportCsv}
+            disabled={logs.length === 0}
+          >
             Export CSV
           </Button>
-          <Button variant="secondary" size="sm" icon={Download} onClick={exportJson} disabled={logs.length === 0}>
+          <Button
+            variant="secondary"
+            size="sm"
+            icon={Download}
+            onClick={exportJson}
+            disabled={logs.length === 0}
+          >
             Export JSON
           </Button>
         </div>
       </div>
 
       <Card className="p-4">
-        <div className="mb-3 flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)]">
+        <div className="mb-3 flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-wider text-(--text-muted)">
           <Filter className="h-3.5 w-3.5" />
           Filtros
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <label className="space-y-1.5">
-            <span className="block font-mono text-xs text-[var(--text-muted)]">Action</span>
+            <span className="block font-mono text-xs text-(--text-muted)">
+              Action
+            </span>
             <select
-              className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text-primary)]"
+              className="h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 text-sm text-(--text-primary)"
               value={action}
               onChange={(event) => {
-                setLoading(true)
-                setAction(event.target.value)
+                setLoading(true);
+                setAction(event.target.value);
               }}
             >
               {actions.map((item) => (
@@ -153,13 +186,15 @@ export default function AuditPage() {
             </select>
           </label>
           <label className="space-y-1.5">
-            <span className="block font-mono text-xs text-[var(--text-muted)]">Resource</span>
+            <span className="block font-mono text-xs text-(--text-muted)">
+              Resource
+            </span>
             <select
-              className="h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 text-sm text-[var(--text-primary)]"
+              className="h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 text-sm text-(--text-primary)"
               value={resourceType}
               onChange={(event) => {
-                setLoading(true)
-                setResourceType(event.target.value)
+                setLoading(true);
+                setResourceType(event.target.value);
               }}
             >
               {resourceTypes.map((item) => (
@@ -208,5 +243,5 @@ export default function AuditPage() {
         </div>
       )}
     </div>
-  )
+  );
 }
