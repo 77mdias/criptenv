@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useCallback } from "react";
+import { useRouter } from "next/navigation";
 import { Bell, Check, Mail, UserPlus, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotificationsStore } from "@/stores/notifications";
@@ -30,6 +31,7 @@ function formatTimeAgo(dateString: string): string {
 }
 
 export function NotificationBell() {
+  const router = useRouter();
   const {
     notifications,
     unreadCount,
@@ -66,14 +68,17 @@ export function NotificationBell() {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [isOpen]);
 
-  const handleNotificationClick = (notification: (typeof notifications)[0]) => {
-    if (!notification.read_at) {
-      markAsRead(notification.id);
-    }
-    if (notification.action_url) {
-      window.location.href = notification.action_url;
-    }
-  };
+  const handleNotificationClick = useCallback(
+    (notification: (typeof notifications)[0]) => {
+      if (!notification.read_at) {
+        markAsRead(notification.id);
+      }
+      if (notification.action_url) {
+        router.push(notification.action_url);
+      }
+    },
+    [markAsRead, router]
+  );
 
   return (
     <div className="relative" ref={dropdownRef}>

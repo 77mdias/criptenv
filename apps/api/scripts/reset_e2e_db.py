@@ -29,6 +29,7 @@ from app.models import (  # noqa: F401
     VaultBlob,
 )
 from app.models.integration import Integration  # noqa: F401
+from app.models.notification import Notification  # noqa: F401
 from app.models.oauth_account import OAuthAccount  # noqa: F401
 from app.models.secret_expiration import SecretExpiration, SecretRotation  # noqa: F401
 
