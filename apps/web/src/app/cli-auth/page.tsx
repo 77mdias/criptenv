@@ -67,7 +67,12 @@ function CLIAuthContent() {
     async (data: LoginInput) => {
       setLoginError(null);
       try {
-        await login(data.email, data.password);
+        const result = await login(data.email, data.password);
+        if ("requires_two_factor" in result) {
+          const next = `${window.location.pathname}${window.location.search}`;
+          window.location.href = `/2fa?next=${encodeURIComponent(next)}`;
+          return;
+        }
         setExplicitStep("confirm");
       } catch (err: unknown) {
         const message =

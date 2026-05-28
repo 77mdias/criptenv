@@ -4,6 +4,7 @@ import { useCallback, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuthStore, type AuthUser } from '@/stores/auth';
 import { authApi, ApiError } from '@/lib/api';
+import type { SigninResponse } from '@/lib/api';
 
 let sessionRequest: Promise<AuthUser | null> | null = null;
 
@@ -67,10 +68,13 @@ export function useAuth() {
   }, [hasCheckedSession, setUser, setLoading, clearAuth]);
 
   const login = useCallback(
-    async (email: string, password: string) => {
+    async (email: string, password: string): Promise<SigninResponse> => {
       const res = await authApi.signin({ email, password });
+      if ('requires_two_factor' in res) {
+        return res;
+      }
       setUser(res.user);
-      return res.user;
+      return res;
     },
     [setUser],
   );

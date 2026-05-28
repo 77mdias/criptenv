@@ -4,12 +4,44 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.config import settings
 from app.database import get_db
+from app.services.auth_service import AuthService
 from app.services.oauth_service import OAuthService
 from app.schemas.auth import AuthResponse, UserResponse, SessionResponse
 from app.middleware.auth import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/api/auth/oauth", tags=["Authentication"])
+
+SESSION_COOKIE = "session_token"
+TWO_FACTOR_CHALLENGE_COOKIE = "two_factor_challenge"
+TWO_FACTOR_DEVICE_COOKIE = "two_factor_device"
+TWO_FACTOR_CHALLENGE_MAX_AGE = 10 * 60
+
+
+def _cookie_secure() -> bool:
+    return not settings.DEBUG
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
+        max_age=30 * 24 * 60 * 60,
+    )
+
+
+def _set_two_factor_challenge_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=TWO_FACTOR_CHALLENGE_COOKIE,
+        value=token,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
+        max_age=TWO_FACTOR_CHALLENGE_MAX_AGE,
+    )
 
 
 def _get_public_request_base_url(request: Request) -> str:
@@ -155,19 +187,45 @@ async def oauth_callback(
             detail=f"OAuth authentication failed: {type(e).__name__}: {str(e) or 'No details'}"
         )
     
+    auth_service = AuthService(db)
+    if user.two_factor_enabled:
+        trusted = await auth_service.is_trusted_two_factor_device(
+            user_id=user.id,
+            device_token=request.cookies.get(TWO_FACTOR_DEVICE_COOKIE),
+            user_agent=request.headers.get("User-Agent"),
+        )
+        if trusted:
+            session = await auth_service.create_session_for_login(
+                user=user,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("User-Agent"),
+            )
+        else:
+            challenge_token, _challenge = await auth_service.create_two_factor_challenge(
+                user_id=user.id,
+                ip_address=request.client.host if request.client else None,
+                user_agent=request.headers.get("User-Agent"),
+            )
+            redirect_response = RedirectResponse(
+                url=f"{settings.FRONTEND_URL.rstrip('/')}/2fa?next=%2Fdashboard",
+                status_code=307,
+            )
+            redirect_response.delete_cookie("oauth_state")
+            _set_two_factor_challenge_cookie(redirect_response, challenge_token)
+            return redirect_response
+
+    if session is None:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="OAuth authentication did not create a session."
+        )
+
     # Redirect to frontend OAuth callback page
     # The session cookie will be sent with this redirect
     frontend_callback_url = f"{settings.FRONTEND_URL.rstrip('/')}/oauth/callback"
     redirect_response = RedirectResponse(url=frontend_callback_url, status_code=307)
     redirect_response.delete_cookie("oauth_state")
-    redirect_response.set_cookie(
-        key="session_token",
-        value=session.token,
-        httponly=True,
-        secure=not settings.DEBUG,
-        samesite="lax",
-        max_age=30 * 24 * 60 * 60,
-    )
+    _set_session_cookie(redirect_response, session.token)
     return redirect_response
 
 

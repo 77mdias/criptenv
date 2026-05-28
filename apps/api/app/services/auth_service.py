@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional
 from uuid import UUID, uuid4
 import base64
+import hashlib
 import inspect
 import os
 import secrets
@@ -11,7 +12,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 
 from app.models.member import ProjectInvite
-from app.models.user import User, Session, PasswordResetToken, EmailVerificationToken
+from app.models.user import (
+    User,
+    Session,
+    TwoFactorChallenge,
+    TwoFactorTrustedDevice,
+    PasswordResetToken,
+    EmailVerificationToken,
+)
 from app.config import settings
 
 
@@ -42,6 +50,12 @@ class AuthService:
 
     def generate_session_token(self) -> str:
         return secrets.token_urlsafe(64)
+
+    def generate_two_factor_token(self) -> str:
+        return secrets.token_urlsafe(48)
+
+    def hash_token(self, token: str) -> str:
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
 
     async def create_user(
         self,
@@ -80,6 +94,15 @@ class AuthService:
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None
     ) -> tuple[User, Session]:
+        user = await self.authenticate_credentials(email=email, password=password)
+        session = await self.create_session_for_login(user=user, ip_address=ip_address, user_agent=user_agent)
+        return user, session
+
+    async def authenticate_credentials(
+        self,
+        email: str,
+        password: str,
+    ) -> User:
         result = await self.db.execute(
             select(User).where(User.email == email)
         )
@@ -89,7 +112,14 @@ class AuthService:
             raise ValueError("Invalid email or password")
 
         await self.ensure_kdf_salt(user)
+        return user
 
+    async def create_session_for_login(
+        self,
+        user: User,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> Session:
         await self.db.execute(
             update(User)
             .where(User.id == user.id)
@@ -106,7 +136,7 @@ class AuthService:
 
         session = await self.create_session(user.id, ip_address, user_agent)
 
-        return user, session
+        return session
 
     async def create_session(
         self,
@@ -410,8 +440,7 @@ class AuthService:
         )
         return uri, backup_codes
 
-    async def verify_and_enable_2fa(self, user: User, code: str) -> bool:
-        """Verify a TOTP code and enable 2FA."""
+    def _verify_totp_code(self, user: User, code: str) -> bool:
         import pyotp
 
         if not user.two_factor_secret:
@@ -419,12 +448,131 @@ class AuthService:
 
         secret = user.two_factor_secret.decode("utf-8")
         totp = pyotp.TOTP(secret)
-        if not totp.verify(code, valid_window=1):
+        return bool(totp.verify(code, valid_window=1))
+
+    async def verify_and_enable_2fa(self, user: User, code: str) -> bool:
+        """Verify a TOTP code and enable 2FA."""
+        if not self._verify_totp_code(user, code):
             return False
 
         user.two_factor_enabled = True
         await self.db.flush()
         return True
+
+    async def create_two_factor_challenge(
+        self,
+        user_id: UUID,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> tuple[str, TwoFactorChallenge]:
+        token = self.generate_two_factor_token()
+        challenge = TwoFactorChallenge(
+            id=uuid4(),
+            user_id=user_id,
+            token_hash=self.hash_token(token),
+            expires_at=datetime.now(timezone.utc) + timedelta(minutes=10),
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+        self.db.add(challenge)
+        await self.db.flush()
+        return token, challenge
+
+    async def is_trusted_two_factor_device(
+        self,
+        user_id: UUID,
+        device_token: Optional[str],
+        user_agent: Optional[str] = None,
+    ) -> bool:
+        if not device_token:
+            return False
+
+        result = await self.db.execute(
+            select(TwoFactorTrustedDevice).where(
+                TwoFactorTrustedDevice.user_id == user_id,
+                TwoFactorTrustedDevice.token_hash == self.hash_token(device_token),
+                TwoFactorTrustedDevice.expires_at > datetime.now(timezone.utc),
+                TwoFactorTrustedDevice.revoked_at.is_(None),
+            )
+        )
+        device = await self._scalar_one_or_none(result)
+        if not device:
+            return False
+
+        if device.user_agent != user_agent:
+            return False
+
+        device.last_used_at = datetime.now(timezone.utc)
+        await self.db.flush()
+        return True
+
+    async def create_trusted_two_factor_device(
+        self,
+        user_id: UUID,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> tuple[str, TwoFactorTrustedDevice]:
+        token = self.generate_two_factor_token()
+        device = TwoFactorTrustedDevice(
+            id=uuid4(),
+            user_id=user_id,
+            token_hash=self.hash_token(token),
+            expires_at=datetime.now(timezone.utc) + timedelta(days=30),
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+        self.db.add(device)
+        await self.db.flush()
+        return token, device
+
+    async def complete_two_factor_challenge(
+        self,
+        challenge_token: str,
+        code: str,
+        remember_device: bool,
+        ip_address: Optional[str] = None,
+        user_agent: Optional[str] = None,
+    ) -> tuple[User, Session, Optional[str]]:
+        result = await self.db.execute(
+            select(TwoFactorChallenge).where(
+                TwoFactorChallenge.token_hash == self.hash_token(challenge_token),
+                TwoFactorChallenge.expires_at > datetime.now(timezone.utc),
+                TwoFactorChallenge.consumed_at.is_(None),
+            )
+        )
+        challenge = await self._scalar_one_or_none(result)
+        if not challenge:
+            raise ValueError("Invalid or expired 2FA challenge")
+
+        user = await self.get_user_by_id(challenge.user_id)
+        if not user or not user.two_factor_enabled:
+            raise ValueError("Invalid or expired 2FA challenge")
+
+        normalized_code = code.strip().replace(" ", "").upper()
+        verified = self._verify_totp_code(user, normalized_code)
+        if not verified:
+            verified = await self.verify_backup_code(user, normalized_code)
+
+        if not verified:
+            raise ValueError("Invalid verification code")
+
+        challenge.consumed_at = datetime.now(timezone.utc)
+        session = await self.create_session_for_login(
+            user=user,
+            ip_address=ip_address,
+            user_agent=user_agent,
+        )
+
+        trusted_token = None
+        if remember_device:
+            trusted_token, _device = await self.create_trusted_two_factor_device(
+                user_id=user.id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+
+        await self.db.flush()
+        return user, session, trusted_token
 
     async def verify_backup_code(self, user: User, code: str) -> bool:
         """Verify a backup code and remove it from the user's list."""

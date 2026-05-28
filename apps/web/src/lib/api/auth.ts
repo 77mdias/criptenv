@@ -1,13 +1,17 @@
 import { request, upload } from './client';
-import type { AuthResponse, User, MessageResponse, SessionResponse } from './client';
+import type { AuthResponse, User, MessageResponse, SessionResponse, SigninResponse } from './client';
 
 export const authApi = {
   signup(body: { email: string; password: string; name: string }): Promise<AuthResponse> {
     return request('POST', '/api/auth/signup', body);
   },
 
-  signin(body: { email: string; password: string }): Promise<AuthResponse> {
+  signin(body: { email: string; password: string }): Promise<SigninResponse> {
     return request('POST', '/api/auth/signin', body);
+  },
+
+  verify2FAChallenge(body: { code: string; remember_device: boolean }): Promise<AuthResponse> {
+    return request('POST', '/api/auth/2fa/challenge/verify', body);
   },
 
   signout(): Promise<MessageResponse> {

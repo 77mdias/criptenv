@@ -308,11 +308,12 @@ class OAuthService:
         base_url: Optional[str] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
-    ) -> tuple[User, Session]:
+    ) -> tuple[User, Optional[Session]]:
         """
         Authenticate or create user via OAuth.
         
-        Returns (user, session) tuple.
+        Returns (user, session) tuple. Session is None when 2FA must be
+        completed before issuing an authenticated session.
         """
         oauth_provider = self.get_provider(provider, base_url)
         
@@ -388,6 +389,11 @@ class OAuthService:
         # Update last login
         user.last_login_at = datetime.now(timezone.utc)
         
+        if user.two_factor_enabled:
+            await self.db.flush()
+            await self.db.refresh(user)
+            return user, None
+
         # Create session
         session = Session(
             id=uuid4(),

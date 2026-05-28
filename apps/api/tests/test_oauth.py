@@ -183,6 +183,50 @@ def test_oauth_callback_sets_session_cookie_and_redirects(monkeypatch):
     assert "session_token=super-secret-session-token" in response.headers["set-cookie"]
 
 
+def test_oauth_callback_with_2fa_redirects_to_challenge_without_session(monkeypatch):
+    two_factor_user = make_user()
+    two_factor_user.two_factor_enabled = True
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    async def fake_authenticate_with_oauth(
+        self,
+        provider,
+        code,
+        base_url=None,
+        ip_address=None,
+        user_agent=None,
+    ):
+        return two_factor_user, None
+
+    async def fake_is_trusted_two_factor_device(self, **kwargs):
+        return False
+
+    async def fake_create_two_factor_challenge(self, **kwargs):
+        return "challenge-token", SimpleNamespace(expires_at=expires_at)
+
+    monkeypatch.setattr(OAuthService, "authenticate_with_oauth", fake_authenticate_with_oauth)
+    monkeypatch.setattr("app.routers.oauth.AuthService.is_trusted_two_factor_device", fake_is_trusted_two_factor_device)
+    monkeypatch.setattr("app.routers.oauth.AuthService.create_two_factor_challenge", fake_create_two_factor_challenge)
+    monkeypatch.setattr(settings, "FRONTEND_URL", "https://criptenv.77mdevseven.tech")
+    monkeypatch.setattr(settings, "DEBUG", False)
+
+    encoded_state = OAuthService.encode_state("github", "expected_state")
+
+    with TestClient(make_app()) as client:
+        response = client.get(
+            "/api/auth/oauth/github/callback",
+            params={"code": "test_code", "state": "expected_state"},
+            cookies={"oauth_state": encoded_state},
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 307
+    assert response.headers["location"] == "https://criptenv.77mdevseven.tech/2fa?next=%2Fdashboard"
+    set_cookie = response.headers["set-cookie"]
+    assert "two_factor_challenge=challenge-token" in set_cookie
+    assert "session_token=" not in set_cookie
+
+
 def test_oauth_init_uses_forwarded_host_for_callback(monkeypatch):
     """Test that OAuth initiation uses the public forwarded host in redirect_uri."""
     monkeypatch.setattr(settings, "GITHUB_CLIENT_ID", "github-client-id")

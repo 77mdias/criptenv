@@ -9,6 +9,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### Enforced Login 2FA Challenges and Trusted Devices (2026-05-28)
+
+- **Backend**: Login now enforces TOTP 2FA for accounts with `two_factor_enabled=true` before issuing a session cookie. Challenges are stored server-side with hashed tokens and expire after 10 minutes.
+- **Backend**: Added trusted 2FA devices using an HTTP-only `two_factor_device` cookie backed by hashed database records expiring after 30 days.
+- **Backend**: OAuth login now redirects 2FA-enabled users to the web 2FA challenge before creating a session, unless the browser has a valid trusted-device cookie.
+- **Frontend**: Added `/2fa` using the existing auth layout, with TOTP/backup-code entry and "remember this device for 30 days".
+- **CLI auth**: Browser/device CLI authorization now routes through the same 2FA challenge when the account requires it.
+- **Database**: Added `two_factor_challenges` and `two_factor_trusted_devices` tables via SQL and Alembic migrations.
+- **Decision record**: Added DEC-047 for enforced 2FA login challenges.
+
 #### Active Session Limits and Inactivity Cleanup (2026-05-27)
 
 - **Backend**: Sessions are now limited to a maximum of 5 active per user. When a new session is created during login, the oldest active session is automatically revoked if the limit is exceeded.

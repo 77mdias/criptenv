@@ -1,4 +1,4 @@
-'use client';
+"use client";
 
 import {
   Breadcrumb,
@@ -7,16 +7,16 @@ import {
   InlineCode,
   Tabs,
   Tab,
-} from '@/components/docs';
+} from "@/components/docs";
 
 export default function ApiAuthenticationPage() {
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'API Reference', href: '/docs/api' },
-          { label: 'Autenticação', href: '/docs/api/authentication' },
+          { label: "Docs", href: "/docs" },
+          { label: "API Reference", href: "/docs/api" },
+          { label: "Autenticação", href: "/docs/api/authentication" },
         ]}
       />
 
@@ -24,20 +24,21 @@ export default function ApiAuthenticationPage() {
 
       <p className="text-muted-foreground mb-6">
         A API do CriptEnv suporta múltiplos métodos de autenticação para atender
-        diferentes cenários: dashboard web, integrações de terceiros e pipelines de CI/CD.
+        diferentes cenários: dashboard web, integrações de terceiros e pipelines
+        de CI/CD.
       </p>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">Visão Geral</h2>
 
       <p className="text-muted-foreground mb-4">
-        Todas as requisições autenticadas devem incluir um token válido. A API identifica
-        automaticamente o tipo de token pelo formato:
+        Todas as requisições autenticadas devem incluir um token válido. A API
+        identifica automaticamente o tipo de token pelo formato:
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-[var(--border)] my-4">
+      <div className="overflow-x-auto rounded-lg border border-(--border) my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-[var(--background-muted)] border-b border-[var(--border)]">
+            <tr className="bg-(--background-muted) border-b border-(--border)">
               <th className="px-4 py-3 text-left font-semibold">Tipo</th>
               <th className="px-4 py-3 text-left font-semibold">Prefixo</th>
               <th className="px-4 py-3 text-left font-semibold">TTL</th>
@@ -45,21 +46,27 @@ export default function ApiAuthenticationPage() {
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-[var(--border)]">
+            <tr className="border-b border-(--border)">
               <td className="px-4 py-3">Sessão</td>
-              <td className="px-4 py-3"><InlineCode>cookie</InlineCode></td>
+              <td className="px-4 py-3">
+                <InlineCode>cookie</InlineCode>
+              </td>
               <td className="px-4 py-3">30 dias</td>
               <td className="px-4 py-3">Dashboard web</td>
             </tr>
-            <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
+            <tr className="border-b border-(--border) bg-(--background-subtle)">
               <td className="px-4 py-3">API Key</td>
-              <td className="px-4 py-3"><InlineCode>cek_</InlineCode></td>
+              <td className="px-4 py-3">
+                <InlineCode>cek_</InlineCode>
+              </td>
               <td className="px-4 py-3">Permanente (revogável)</td>
               <td className="px-4 py-3">Integrações, scripts</td>
             </tr>
-            <tr className="border-b border-[var(--border)]">
+            <tr className="border-b border-(--border)">
               <td className="px-4 py-3">CI Token</td>
-              <td className="px-4 py-3"><InlineCode>ci_</InlineCode></td>
+              <td className="px-4 py-3">
+                <InlineCode>ci_</InlineCode>
+              </td>
               <td className="px-4 py-3">1 hora</td>
               <td className="px-4 py-3">CI/CD pipelines</td>
             </tr>
@@ -70,14 +77,16 @@ export default function ApiAuthenticationPage() {
       <h2 className="text-2xl font-semibold mt-10 mb-4">Sessão (Cookies)</h2>
 
       <p className="text-muted-foreground mb-4">
-        Quando você faz login pelo dashboard web, o servidor cria um cookie HTTP-only
-        seguro que é enviado automaticamente em todas as requisições subsequentes do navegador.
+        Quando você faz login pelo dashboard web, o servidor cria um cookie
+        HTTP-only seguro que é enviado automaticamente em todas as requisições
+        subsequentes do navegador.
       </p>
 
       <Callout type="info">
-        O cookie de sessão é <InlineCode>HttpOnly</InlineCode>,{' '}
-        <InlineCode>Secure</InlineCode> e usa <InlineCode>SameSite=Lax</InlineCode>.
-        Ele não pode ser acessado via JavaScript, protegendo contra ataques XSS.
+        O cookie de sessão é <InlineCode>HttpOnly</InlineCode>,{" "}
+        <InlineCode>Secure</InlineCode> e usa{" "}
+        <InlineCode>SameSite=Lax</InlineCode>. Ele não pode ser acessado via
+        JavaScript, protegendo contra ataques XSS.
       </Callout>
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Fluxo de Login</h3>
@@ -93,7 +102,10 @@ curl -X POST "https://criptenv-api.77mdevseven.tech/api/auth/signin" \\
   }'`}
       </CodeBlock>
 
-      <CodeBlock language="bash" title="Usar sessão em requisições subsequentes">
+      <CodeBlock
+        language="bash"
+        title="Usar sessão em requisições subsequentes"
+      >
         {`# Usar o cookie salvo em requisições seguintes
 curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
   -b cookies.txt`}
@@ -112,56 +124,100 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 }`}
       </CodeBlock>
 
+      <p className="text-muted-foreground mb-4">
+        Se a conta tiver 2FA ativo e o navegador não estiver lembrado, o login
+        retorna um desafio temporário e não cria cookie de sessão até a
+        validação do segundo fator.
+      </p>
+
+      <CodeBlock language="json" title="Resposta quando 2FA é obrigatório">
+        {`{
+  "requires_two_factor": true,
+  "expires_at": "2026-05-28T10:40:00Z"
+}`}
+      </CodeBlock>
+
+      <CodeBlock language="bash" title="Validar desafio 2FA">
+        {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/auth/2fa/challenge/verify" \\
+  -H "Content-Type: application/json" \\
+  -b cookies.txt \\
+  -c cookies.txt \\
+  -d '{
+    "code": "123456",
+    "remember_device": true
+  }'`}
+      </CodeBlock>
+
       <h3 className="text-lg font-semibold mt-6 mb-3">Refresh de Sessão</h3>
 
       <p className="text-muted-foreground mb-4">
-        A sessão é renovada automaticamente a cada requisição bem-sucedida. Se nenhuma
-        requisição for feita por 30 dias, a sessão expira e é necessário fazer login novamente.
+        A sessão é renovada automaticamente a cada requisição bem-sucedida. Se
+        nenhuma requisição for feita por 30 dias, a sessão expira e é necessário
+        fazer login novamente.
       </p>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">API Keys</h2>
 
       <p className="text-muted-foreground mb-4">
-        API Keys são tokens permanentes (até serem revogados) com prefixo{' '}
-        <InlineCode>cek_</InlineCode>. Elas são ideais para integrações de terceiros,
-        scripts e ferramentas que precisam de acesso programático à API.
+        API Keys são tokens permanentes (até serem revogados) com prefixo{" "}
+        <InlineCode>cek_</InlineCode>. Elas são ideais para integrações de
+        terceiros, scripts e ferramentas que precisam de acesso programático à
+        API.
       </p>
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Escopos</h3>
 
       <p className="text-muted-foreground mb-4">
-        Cada API Key pode ter escopos granulares que controlam quais operações ela pode
-        executar:
+        Cada API Key pode ter escopos granulares que controlam quais operações
+        ela pode executar:
       </p>
 
-      <div className="overflow-x-auto rounded-lg border border-[var(--border)] my-4">
+      <div className="overflow-x-auto rounded-lg border border-(--border) my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-[var(--background-muted)] border-b border-[var(--border)]">
+            <tr className="bg-(--background-muted) border-b border-(--border)">
               <th className="px-4 py-3 text-left font-semibold">Escopo</th>
               <th className="px-4 py-3 text-left font-semibold">Permissão</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-[var(--border)]">
-              <td className="px-4 py-3"><InlineCode>read</InlineCode></td>
-              <td className="px-4 py-3">Leitura de projetos, ambientes e segredos</td>
+            <tr className="border-b border-(--border)">
+              <td className="px-4 py-3">
+                <InlineCode>read</InlineCode>
+              </td>
+              <td className="px-4 py-3">
+                Leitura de projetos, ambientes e segredos
+              </td>
             </tr>
-            <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
-              <td className="px-4 py-3"><InlineCode>write</InlineCode></td>
-              <td className="px-4 py-3">Push de segredos e criação de ambientes</td>
+            <tr className="border-b border-(--border) bg-(--background-subtle)">
+              <td className="px-4 py-3">
+                <InlineCode>write</InlineCode>
+              </td>
+              <td className="px-4 py-3">
+                Push de segredos e criação de ambientes
+              </td>
             </tr>
-            <tr className="border-b border-[var(--border)]">
-              <td className="px-4 py-3"><InlineCode>admin</InlineCode></td>
+            <tr className="border-b border-(--border)">
+              <td className="px-4 py-3">
+                <InlineCode>admin</InlineCode>
+              </td>
               <td className="px-4 py-3">Gerenciamento de projetos e membros</td>
             </tr>
-            <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
-              <td className="px-4 py-3"><InlineCode>env:production</InlineCode></td>
-              <td className="px-4 py-3">Acesso restrito ao ambiente de produção</td>
+            <tr className="border-b border-(--border) bg-(--background-subtle)">
+              <td className="px-4 py-3">
+                <InlineCode>env:production</InlineCode>
+              </td>
+              <td className="px-4 py-3">
+                Acesso restrito ao ambiente de produção
+              </td>
             </tr>
-            <tr className="border-b border-[var(--border)]">
-              <td className="px-4 py-3"><InlineCode>env:staging</InlineCode></td>
-              <td className="px-4 py-3">Acesso restrito ao ambiente de staging</td>
+            <tr className="border-b border-(--border)">
+              <td className="px-4 py-3">
+                <InlineCode>env:staging</InlineCode>
+              </td>
+              <td className="px-4 py-3">
+                Acesso restrito ao ambiente de staging
+              </td>
             </tr>
           </tbody>
         </table>
@@ -195,11 +251,14 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
       </CodeBlock>
 
       <Callout type="warning">
-        O campo <InlineCode>key</InlineCode> é retornado apenas na criação. Guarde-o em
-        um local seguro. Se perder, será necessário revogar e criar uma nova chave.
+        O campo <InlineCode>key</InlineCode> é retornado apenas na criação.
+        Guarde-o em um local seguro. Se perder, será necessário revogar e criar
+        uma nova chave.
       </Callout>
 
-      <h3 className="text-lg font-semibold mt-6 mb-3">Usar API Key nas requisições</h3>
+      <h3 className="text-lg font-semibold mt-6 mb-3">
+        Usar API Key nas requisições
+      </h3>
 
       <Tabs>
         <Tab label="Header Authorization">
@@ -219,9 +278,10 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
       <h2 className="text-2xl font-semibold mt-10 mb-4">CI Tokens</h2>
 
       <p className="text-muted-foreground mb-4">
-        CI Tokens são tokens de curta duração (1 hora) com prefixo <InlineCode>ci_</InlineCode>,
-        projetados para pipelines de CI/CD. Eles são gerados sob demanda e expiram
-        automaticamente, eliminando o risco de tokens esquecidos.
+        CI Tokens são tokens de curta duração (1 hora) com prefixo{" "}
+        <InlineCode>ci_</InlineCode>, projetados para pipelines de CI/CD. Eles
+        são gerados sob demanda e expiram automaticamente, eliminando o risco de
+        tokens esquecidos.
       </p>
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Gerar um CI Token</h3>
@@ -248,7 +308,9 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 }`}
       </CodeBlock>
 
-      <h3 className="text-lg font-semibold mt-6 mb-3">Usar CI Token no GitHub Actions</h3>
+      <h3 className="text-lg font-semibold mt-6 mb-3">
+        Usar CI Token no GitHub Actions
+      </h3>
 
       <CodeBlock language="yaml" title=".github/workflows/deploy.yml">
         {`name: Deploy
@@ -285,7 +347,8 @@ jobs:
       <h2 className="text-2xl font-semibold mt-10 mb-4">OAuth</h2>
 
       <p className="text-muted-foreground mb-4">
-        O CriptEnv suporta login social via OAuth 2.0 com os seguintes provedores:
+        O CriptEnv suporta login social via OAuth 2.0 com os seguintes
+        provedores:
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
@@ -311,14 +374,20 @@ jobs:
 
       <h3 className="text-lg font-semibold mt-6 mb-3">Fluxo OAuth 2.0</h3>
 
-      <CodeBlock language="bash" title="1. Iniciar fluxo OAuth — redirecionar o usuário">
+      <CodeBlock
+        language="bash"
+        title="1. Iniciar fluxo OAuth — redirecionar o usuário"
+      >
         {`# Redirecionar o usuário para:
 https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/authorize
   ?redirect_uri=https://app.criptenv.dev/callback
   &state=random_csrf_token`}
       </CodeBlock>
 
-      <CodeBlock language="bash" title="2. Trocar o código por sessão (callback)">
+      <CodeBlock
+        language="bash"
+        title="2. Trocar o código por sessão (callback)"
+      >
         {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/callback" \\
   -H "Content-Type: application/json" \\
   -c cookies.txt \\
@@ -343,13 +412,19 @@ https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/authorize
       </CodeBlock>
 
       <Callout type="info">
-        Após o login OAuth bem-sucedido, um cookie de sessão é criado automaticamente.
-        As requisições subsequentes usam esse cookie normalmente.
+        Após o login OAuth bem-sucedido, um cookie de sessão é criado
+        automaticamente. As requisições subsequentes usam esse cookie
+        normalmente.
       </Callout>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Erros de Autenticação</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">
+        Erros de Autenticação
+      </h2>
 
-      <CodeBlock language="json" title="401 Unauthorized — Token inválido ou expirado">
+      <CodeBlock
+        language="json"
+        title="401 Unauthorized — Token inválido ou expirado"
+      >
         {`{
   "error": {
     "code": "unauthorized",
@@ -374,11 +449,22 @@ https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/authorize
       <h2 className="text-2xl font-semibold mt-10 mb-4">Boas Práticas</h2>
 
       <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-        <li>Use <strong>API Keys</strong> para integrações server-to-server com escopos mínimos necessários.</li>
-        <li>Use <strong>CI Tokens</strong> em pipelines para limitar a janela de exposição a 1 hora.</li>
+        <li>
+          Use <strong>API Keys</strong> para integrações server-to-server com
+          escopos mínimos necessários.
+        </li>
+        <li>
+          Use <strong>CI Tokens</strong> em pipelines para limitar a janela de
+          exposição a 1 hora.
+        </li>
         <li>Nunca exponha API Keys no frontend ou em logs de CI.</li>
-        <li>Rotacione API Keys periodicamente e revogue chaves não utilizadas.</li>
-        <li>Use escopos de ambiente (<InlineCode>env:production</InlineCode>) para limitar o impacto de uma chave comprometida.</li>
+        <li>
+          Rotacione API Keys periodicamente e revogue chaves não utilizadas.
+        </li>
+        <li>
+          Use escopos de ambiente (<InlineCode>env:production</InlineCode>) para
+          limitar o impacto de uma chave comprometida.
+        </li>
       </ul>
     </div>
   );

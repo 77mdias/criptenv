@@ -1168,3 +1168,25 @@ Keep `/projects/[id]/secrets/page.tsx` as a thin server wrapper and move the int
 - ✅ Zero-knowledge behavior remains browser-only and unchanged.
 - ✅ Vault checksum sorting and version propagation have focused unit coverage.
 - ⚠️ The dashboard layout still uses a client auth shell, so broader RSC gains require a separate auth/layout refactor.
+
+---
+
+## DEC-047 — Enforced 2FA Login Challenges and Trusted Devices
+
+**Status:** Approved
+**Date:** 2026-05-28
+**Context:**
+TOTP setup, QR code rendering, and backup-code persistence existed, but login still issued sessions immediately for users with 2FA enabled. This meant 2FA was configurable but not enforced during interactive authentication.
+
+**Decision:**
+- Require a short-lived server-side 2FA challenge before issuing a session for email/password and OAuth logins when `two_factor_enabled=true`.
+- Store challenge and trusted-device tokens only as SHA-256 hashes in the database.
+- Use HTTP-only cookies for the pending challenge and remembered device; never store 2FA trust state in localStorage.
+- Let users remember a browser/device for a fixed 30 days by setting a trusted-device cookie and matching record.
+- Keep API keys and CI tokens outside this interactive challenge flow.
+
+**Consequences:**
+- ✅ Enabled 2FA now blocks session creation until a valid TOTP or backup code is supplied.
+- ✅ Remembered devices avoid repeated 2FA prompts without exposing tokens to JavaScript.
+- ✅ OAuth and browser-based CLI authorization inherit the same enforcement.
+- ⚠️ Trusted devices are browser-cookie based; clearing cookies or changing browsers requires 2FA again.

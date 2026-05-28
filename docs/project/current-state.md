@@ -60,7 +60,7 @@
 
 | Router | Endpoints | Status |
 |--------|-----------|--------|
-| `auth` | signup, signin, signout, session, sessions, oauth, forgot/reset password, change password, 2FA/TOTP | ✅ |
+| `auth` | signup, signin, signout, session, sessions, oauth, forgot/reset password, change password, enforced 2FA/TOTP login challenges | ✅ |
 | `auth/oauth` | github, google, discord | ✅ |
 | `projects` | CRUD + list/get with API key + vault rekey | ✅ |
 | `environments` | CRUD + list/get with API key | ✅ |
@@ -80,7 +80,7 @@
 | `vps deploy` | Docker Compose API + Redis + Cloudflare Tunnel + custom domains | ✅ Live smoke validated |
 | `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
 
-**API Tests**: 382 tests passing, 2 skipped
+**API Tests**: 395 tests passing, 2 skipped
 
 ### Web Frontend (apps/web)
 
@@ -88,6 +88,7 @@
 |------|-------|--------|
 | Landing | `/` | ✅ |
 | Login | `/login` | ✅ |
+| 2FA Challenge | `/2fa` | ✅ TOTP/backup code + remember device |
 | Signup | `/signup` | ✅ |
 | Forgot Password | `/forgot-password` | ✅ |
 | Dashboard | `/dashboard` | ✅ |
@@ -97,11 +98,11 @@
 | Audit Log | `/projects/[id]/audit` | ✅ |
 | Team Settings | `/projects/[id]/members` | ✅ |
 | Project Settings | `/projects/[id]/settings` | ✅ Vault password rotation |
-| Account | `/account` | ✅ OAuth accounts + 2FA |
+| Account | `/account` | ✅ OAuth accounts + 2FA setup |
 | Invites Accept | `/invites/accept?token=` | ✅ |
 | Integrations | `/integrations` | ⚠️ Functional for Vercel, placeholder UI |
 
-**Web Tests**: 41 Jest/React Testing Library tests passing; 4 Cypress E2E tests passing against local Vinext + FastAPI + PostgreSQL test stack.
+**Web Tests**: 69 Jest/React Testing Library tests passing; 4 Cypress E2E tests passing against local Vinext + FastAPI + PostgreSQL test stack.
 
 ---
 
@@ -153,6 +154,6 @@
 
 ---
 
-**Document Version**: 1.7
-**Last Updated**: 2026-05-13
-**Status**: Active Development — Phase 3 (~92% complete, API/WEB/CLI alignment done, VPS backend and app flows validated)
+**Document Version**: 1.8
+**Last Updated**: 2026-05-28
+**Status**: Active Development — Phase 3 (~92% complete, 2FA login enforcement done, API/WEB/CLI alignment done, VPS backend and app flows validated)

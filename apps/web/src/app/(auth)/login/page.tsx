@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import Link from "next/link"
-import { useRouter } from "next/navigation"
+import { useRouter, useSearchParams } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,7 @@ import { authApi, ApiError } from "@/lib/api"
 
 export default function LoginPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { login } = useAuth()
   const [error, setError] = useState<string | null>(null)
   const [unverifiedEmail, setUnverifiedEmail] = useState<string | null>(null)
@@ -35,8 +36,13 @@ export default function LoginPage() {
     setUnverifiedEmail(null)
     setResent(false)
     try {
-      await login(data.email, data.password)
-      router.push("/dashboard")
+      const result = await login(data.email, data.password)
+      if ("requires_two_factor" in result) {
+        const next = searchParams.get("redirect") || "/dashboard"
+        router.push(`/2fa?next=${encodeURIComponent(next)}`)
+        return
+      }
+      router.push(searchParams.get("redirect") || "/dashboard")
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 403) {
         setUnverifiedEmail(data.email)

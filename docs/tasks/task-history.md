@@ -6,6 +6,27 @@ This file records completed tasks and major project milestones.
 
 ---
 
+## 2026-05-28 — Enforced 2FA Login Challenges
+
+**Resumo:**
+Finalizada a aplicação real do 2FA no login. Contas com TOTP ativo agora recebem um challenge antes de qualquer sessão interativa ser emitida, com suporte a código TOTP, código de backup e opção de lembrar o dispositivo por 30 dias via cookie HTTP-only e token hashado no banco.
+
+**Arquivos alterados:**
+- `apps/api/app/routers/auth.py`, `apps/api/app/routers/oauth.py`, `apps/api/app/services/auth_service.py`, `apps/api/app/models/user.py`, `apps/api/app/schemas/auth.py`
+- `apps/web/src/app/(auth)/login/page.tsx`, `apps/web/src/app/(auth)/2fa/page.tsx`, `apps/web/src/app/cli-auth/page.tsx`, `apps/web/src/hooks/use-auth.ts`, `apps/web/src/lib/api/*`
+- `docs/project/decisions.md`, `docs/development/CHANGELOG.md`, `docs/project/current-state.md`
+
+**Testes:**
+- `make api-test` — 395 passed, 2 skipped.
+- `cd apps/web && npm run test:unit` — 69 passed.
+- `make web-build` — passed.
+
+**Observações:**
+- API keys e CI tokens continuam fora do fluxo 2FA por serem credenciais programáticas.
+- OAuth cria challenge e redireciona para `/2fa?next=/dashboard` quando a conta exige segundo fator.
+
+---
+
 ## 2026-05-27 — Supabase Avatar Upload Hardening
 
 **Resumo:**

@@ -1,4 +1,11 @@
-from app.models.user import User, Session, PasswordResetToken, EmailVerificationToken
+from app.models.user import (
+    User,
+    Session,
+    TwoFactorChallenge,
+    TwoFactorTrustedDevice,
+    PasswordResetToken,
+    EmailVerificationToken,
+)
 from app.models.project import Project
 from app.models.environment import Environment
 from app.models.vault import VaultBlob
@@ -10,6 +17,8 @@ from app.models.contribution import Contribution
 __all__ = [
     "User",
     "Session",
+    "TwoFactorChallenge",
+    "TwoFactorTrustedDevice",
     "PasswordResetToken",
     "EmailVerificationToken",
     "Project",

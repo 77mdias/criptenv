@@ -47,6 +47,21 @@ describe("LoginPage", () => {
     expect(push).toHaveBeenCalledWith("/dashboard")
   })
 
+  it("redirects to 2FA challenge when required", async () => {
+    const login = jest.fn().mockResolvedValue({ requires_two_factor: true })
+    const push = jest.fn()
+    mockedUseAuth.mockReturnValue({ login } as unknown as ReturnType<typeof useAuth>)
+    mockedUseRouter.mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>)
+
+    render(<LoginPage />)
+    await userEvent.type(screen.getByLabelText("Email"), "user@example.com")
+    await userEvent.type(screen.getByLabelText("Senha"), "secret")
+    await userEvent.click(screen.getByRole("button", { name: "Entrar" }))
+
+    await waitFor(() => expect(login).toHaveBeenCalledWith("user@example.com", "secret"))
+    expect(push).toHaveBeenCalledWith("/2fa?next=%2Fdashboard")
+  })
+
   it("shows login errors from the auth hook", async () => {
     mockedUseAuth.mockReturnValue({
       login: jest.fn().mockRejectedValue(new Error("Email ou senha inválidos")),

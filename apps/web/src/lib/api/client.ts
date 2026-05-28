@@ -49,6 +49,13 @@ export interface AuthResponse {
   session: SessionResponse;
 }
 
+export interface TwoFactorRequiredResponse {
+  requires_two_factor: true;
+  expires_at: string;
+}
+
+export type SigninResponse = AuthResponse | TwoFactorRequiredResponse;
+
 export interface MessageResponse {
   message: string;
 }

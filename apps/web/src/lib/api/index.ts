@@ -3,6 +3,8 @@ export { ApiError, peekCached, request } from "./client";
 export type {
   User,
   AuthResponse,
+  SigninResponse,
+  TwoFactorRequiredResponse,
   MessageResponse,
   Project,
   ProjectListResponse,

@@ -55,6 +55,11 @@ class AuthResponse(BaseModel):
     session: SessionResponse
 
 
+class TwoFactorRequiredResponse(BaseModel):
+    requires_two_factor: bool = True
+    expires_at: datetime
+
+
 class MessageResponse(BaseModel):
     message: str
 
@@ -95,6 +100,11 @@ class TwoFactorVerifyRequest(BaseModel):
 
 class TwoFactorDisableRequest(BaseModel):
     password: str = Field(..., min_length=1)
+
+
+class TwoFactorChallengeVerifyRequest(BaseModel):
+    code: str = Field(..., min_length=6, max_length=32)
+    remember_device: bool = False
 
 
 class VerifyEmailRequest(BaseModel):

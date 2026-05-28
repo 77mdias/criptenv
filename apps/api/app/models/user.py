@@ -46,6 +46,45 @@ class Session(Base):
     user = relationship("User", back_populates="sessions", foreign_keys=[user_id])
 
 
+class TwoFactorChallenge(Base):
+    __tablename__ = "two_factor_challenges"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    consumed_at = Column(DateTime(timezone=True))
+    ip_address = Column(String(45))
+    user_agent = Column(String(512))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", foreign_keys=[user_id])
+
+    __table_args__ = (
+        Index("idx_two_factor_challenges_user_id_created_at", "user_id", "created_at"),
+    )
+
+
+class TwoFactorTrustedDevice(Base):
+    __tablename__ = "two_factor_trusted_devices"
+
+    id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
+    user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    token_hash = Column(String(64), unique=True, nullable=False, index=True)
+    expires_at = Column(DateTime(timezone=True), nullable=False)
+    revoked_at = Column(DateTime(timezone=True))
+    last_used_at = Column(DateTime(timezone=True))
+    ip_address = Column(String(45))
+    user_agent = Column(String(512))
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+
+    user = relationship("User", foreign_keys=[user_id])
+
+    __table_args__ = (
+        Index("idx_two_factor_trusted_devices_user_id_created_at", "user_id", "created_at"),
+    )
+
+
 class PasswordResetToken(Base):
     __tablename__ = "password_reset_tokens"
 

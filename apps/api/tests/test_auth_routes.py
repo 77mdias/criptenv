@@ -82,10 +82,14 @@ def test_signup_returns_message_and_sends_verification(monkeypatch):
 
 
 def test_signin_sets_cookie_without_returning_session_token(monkeypatch):
-    async def fake_authenticate_user(self, **kwargs):
-        return make_user(), make_session()
+    async def fake_authenticate_credentials(self, **kwargs):
+        return make_user()
 
-    monkeypatch.setattr(AuthService, "authenticate_user", fake_authenticate_user)
+    async def fake_create_session_for_login(self, **kwargs):
+        return make_session()
+
+    monkeypatch.setattr(AuthService, "authenticate_credentials", fake_authenticate_credentials)
+    monkeypatch.setattr(AuthService, "create_session_for_login", fake_create_session_for_login)
 
     with TestClient(make_app()) as client:
         response = client.post(
@@ -104,13 +108,13 @@ def test_signin_rejects_unverified_email(monkeypatch):
     unverified_user = make_user()
     unverified_user.email_verified = False
 
-    async def fake_authenticate_user(self, **kwargs):
-        return unverified_user, make_session()
+    async def fake_authenticate_credentials(self, **kwargs):
+        return unverified_user
 
     async def fake_create_email_verification(self, email):
         return SimpleNamespace(token="dev-verification-token-456")
 
-    monkeypatch.setattr(AuthService, "authenticate_user", fake_authenticate_user)
+    monkeypatch.setattr(AuthService, "authenticate_credentials", fake_authenticate_credentials)
     monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
     monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
 
@@ -123,6 +127,110 @@ def test_signin_rejects_unverified_email(monkeypatch):
     assert response.status_code == 403
     payload = response.json()
     assert "not verified" in payload["detail"].lower() or "verif" in payload["detail"].lower()
+
+
+def test_signin_with_2fa_requires_challenge_without_session_cookie(monkeypatch):
+    two_factor_user = make_user()
+    two_factor_user.two_factor_enabled = True
+    expires_at = datetime.now(timezone.utc) + timedelta(minutes=10)
+
+    async def fake_authenticate_credentials(self, **kwargs):
+        return two_factor_user
+
+    async def fake_is_trusted_two_factor_device(self, **kwargs):
+        return False
+
+    async def fake_create_two_factor_challenge(self, **kwargs):
+        return "challenge-token", SimpleNamespace(expires_at=expires_at)
+
+    monkeypatch.setattr(AuthService, "authenticate_credentials", fake_authenticate_credentials)
+    monkeypatch.setattr(AuthService, "is_trusted_two_factor_device", fake_is_trusted_two_factor_device)
+    monkeypatch.setattr(AuthService, "create_two_factor_challenge", fake_create_two_factor_challenge)
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/signin",
+            json={"email": "dev@example.com", "password": "password123"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["requires_two_factor"] is True
+    assert "expires_at" in payload
+    assert "two_factor_challenge=challenge-token" in response.headers["set-cookie"]
+    assert "session_token=" not in response.headers["set-cookie"]
+
+
+def test_signin_with_2fa_skips_challenge_for_trusted_device(monkeypatch):
+    two_factor_user = make_user()
+    two_factor_user.two_factor_enabled = True
+    session = make_session()
+
+    async def fake_authenticate_credentials(self, **kwargs):
+        return two_factor_user
+
+    async def fake_is_trusted_two_factor_device(self, **kwargs):
+        return True
+
+    async def fake_create_session_for_login(self, **kwargs):
+        return session
+
+    monkeypatch.setattr(AuthService, "authenticate_credentials", fake_authenticate_credentials)
+    monkeypatch.setattr(AuthService, "is_trusted_two_factor_device", fake_is_trusted_two_factor_device)
+    monkeypatch.setattr(AuthService, "create_session_for_login", fake_create_session_for_login)
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/signin",
+            json={"email": "dev@example.com", "password": "password123"},
+            cookies={"two_factor_device": "trusted-token"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "requires_two_factor" not in payload
+    assert payload["user"]["two_factor_enabled"] is True
+    assert "session_token=super-secret-session-token" in response.headers["set-cookie"]
+
+
+def test_verify_2fa_challenge_sets_session_and_remembered_device(monkeypatch):
+    session = make_session()
+    challenge_user = make_user()
+    challenge_user.two_factor_enabled = True
+
+    async def fake_complete_two_factor_challenge(self, **kwargs):
+        assert kwargs["challenge_token"] == "challenge-token"
+        assert kwargs["code"] == "123456"
+        assert kwargs["remember_device"] is True
+        return challenge_user, session, "trusted-token"
+
+    monkeypatch.setattr(AuthService, "complete_two_factor_challenge", fake_complete_two_factor_challenge)
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/2fa/challenge/verify",
+            json={"code": "123456", "remember_device": True},
+            cookies={"two_factor_challenge": "challenge-token"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["user"]["id"] == str(challenge_user.id)
+    set_cookie = response.headers["set-cookie"]
+    assert "session_token=super-secret-session-token" in set_cookie
+    assert "two_factor_device=trusted-token" in set_cookie
+    assert "two_factor_challenge=" in set_cookie
+
+
+def test_verify_2fa_challenge_rejects_missing_challenge_cookie():
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/2fa/challenge/verify",
+            json={"code": "123456", "remember_device": False},
+        )
+
+    assert response.status_code == 401
+    assert "challenge" in response.json()["detail"].lower()
 
 
 def test_get_sessions_hides_session_tokens(monkeypatch):

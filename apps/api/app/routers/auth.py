@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
+from typing import Union
 
 from app.database import get_db
 from app.services.auth_service import AuthService
@@ -10,6 +11,7 @@ from app.schemas.auth import (
     UserSignup, UserSignin, AuthResponse, UserResponse, SessionResponse, MessageResponse,
     ForgotPasswordRequest, ForgotPasswordResponse, ResetPasswordRequest, ChangePasswordRequest,
     UpdateProfileRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest, TwoFactorDisableRequest,
+    TwoFactorRequiredResponse, TwoFactorChallengeVerifyRequest,
     VerifyEmailRequest, SendVerificationResponse, VerifyEmailResponse,
 )
 from app.middleware.auth import get_current_user
@@ -19,6 +21,49 @@ from app.services.avatar_service import AvatarService
 import logging
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
+
+SESSION_COOKIE = "session_token"
+TWO_FACTOR_CHALLENGE_COOKIE = "two_factor_challenge"
+TWO_FACTOR_DEVICE_COOKIE = "two_factor_device"
+TWO_FACTOR_CHALLENGE_MAX_AGE = 10 * 60
+TWO_FACTOR_DEVICE_MAX_AGE = 30 * 24 * 60 * 60
+
+
+def _cookie_secure() -> bool:
+    return not settings.DEBUG
+
+
+def _set_session_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=SESSION_COOKIE,
+        value=token,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
+        max_age=30 * 24 * 60 * 60,
+    )
+
+
+def _set_two_factor_challenge_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=TWO_FACTOR_CHALLENGE_COOKIE,
+        value=token,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
+        max_age=TWO_FACTOR_CHALLENGE_MAX_AGE,
+    )
+
+
+def _set_two_factor_device_cookie(response: Response, token: str) -> None:
+    response.set_cookie(
+        key=TWO_FACTOR_DEVICE_COOKIE,
+        value=token,
+        httponly=True,
+        secure=_cookie_secure(),
+        samesite="lax",
+        max_age=TWO_FACTOR_DEVICE_MAX_AGE,
+    )
 
 
 def _user_to_response(user: User) -> UserResponse:
@@ -83,7 +128,7 @@ async def signup(
     )
 
 
-@router.post("/signin", response_model=AuthResponse)
+@router.post("/signin", response_model=Union[AuthResponse, TwoFactorRequiredResponse])
 async def signin(
     request: Request,
     response: Response,
@@ -94,11 +139,9 @@ async def signin(
     email_service = EmailService()
 
     try:
-        user, session = await auth_service.authenticate_user(
+        user = await auth_service.authenticate_credentials(
             email=data.email,
             password=data.password,
-            ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("User-Agent")
         )
     except ValueError as e:
         raise HTTPException(
@@ -120,14 +163,29 @@ async def signin(
             detail="Email not verified. A new verification email has been sent. Please check your inbox."
         )
 
-    response.set_cookie(
-        key="session_token",
-        value=session.token,
-        httponly=True,
-        secure=True,
-        samesite="lax",
-        max_age=30 * 24 * 60 * 60
+    ip_address = request.client.host if request.client else None
+    user_agent = request.headers.get("User-Agent")
+    if user.two_factor_enabled:
+        trusted = await auth_service.is_trusted_two_factor_device(
+            user_id=user.id,
+            device_token=request.cookies.get(TWO_FACTOR_DEVICE_COOKIE),
+            user_agent=user_agent,
+        )
+        if not trusted:
+            challenge_token, challenge = await auth_service.create_two_factor_challenge(
+                user_id=user.id,
+                ip_address=ip_address,
+                user_agent=user_agent,
+            )
+            _set_two_factor_challenge_cookie(response, challenge_token)
+            return TwoFactorRequiredResponse(expires_at=challenge.expires_at)
+
+    session = await auth_service.create_session_for_login(
+        user=user,
+        ip_address=ip_address,
+        user_agent=user_agent,
     )
+    _set_session_cookie(response, session.token)
 
     return AuthResponse(
         user=_user_to_response(user),
@@ -141,7 +199,7 @@ async def signout(
     response: Response,
     db: AsyncSession = Depends(get_db)
 ):
-    token = request.cookies.get("session_token")
+    token = request.cookies.get(SESSION_COOKIE)
     if not token:
         auth_header = request.headers.get("Authorization")
         if auth_header and auth_header.startswith("Bearer "):
@@ -151,7 +209,7 @@ async def signout(
         auth_service = AuthService(db)
         await auth_service.invalidate_session(token)
 
-    response.delete_cookie("session_token")
+    response.delete_cookie(SESSION_COOKIE)
 
     return MessageResponse(message="Successfully signed out")
 
@@ -486,6 +544,46 @@ async def verify_2fa(
 
     email_service.send_2fa_enabled(str(current_user.email))
     return MessageResponse(message="Two-factor authentication enabled successfully.")
+
+
+@router.post("/2fa/challenge/verify", response_model=AuthResponse)
+async def verify_2fa_challenge(
+    request: Request,
+    response: Response,
+    data: TwoFactorChallengeVerifyRequest,
+    db: AsyncSession = Depends(get_db)
+):
+    challenge_token = request.cookies.get(TWO_FACTOR_CHALLENGE_COOKIE)
+    if not challenge_token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="2FA challenge is missing or expired"
+        )
+
+    auth_service = AuthService(db)
+    try:
+        user, session, trusted_token = await auth_service.complete_two_factor_challenge(
+            challenge_token=challenge_token,
+            code=data.code,
+            remember_device=data.remember_device,
+            ip_address=request.client.host if request.client else None,
+            user_agent=request.headers.get("User-Agent"),
+        )
+    except ValueError as e:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail=str(e)
+        )
+
+    response.delete_cookie(TWO_FACTOR_CHALLENGE_COOKIE)
+    _set_session_cookie(response, session.token)
+    if trusted_token:
+        _set_two_factor_device_cookie(response, trusted_token)
+
+    return AuthResponse(
+        user=_user_to_response(user),
+        session=_session_to_response(session)
+    )
 
 
 @router.get("/invites/lookup", response_model=dict)
