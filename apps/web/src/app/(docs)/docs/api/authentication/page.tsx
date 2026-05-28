@@ -226,7 +226,7 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 
       <CodeBlock language="bash" title="Criar API Key via painel ou API">
         {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/v1/projects/{project_id}/api-keys" \\
-  -H "Authorization: Bearer sessao_token" \\
+  -H "Authorization: Bearer <SESSION_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "Read Bot",
@@ -240,7 +240,7 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 	  "id": "key_m2n4p6q8",
 	  "name": "Read Bot",
 	  "prefix": "cek_live_",
-	  "key": "cek_live_a1b2c3d4e5f6g7h8i9j0k1l2",
+	  "key": "<YOUR_API_KEY>",
 	  "scopes": ["read:secrets"],
 	  "environment_scope": "production",
 	  "created_at": "2026-05-28T10:30:00Z"
@@ -259,7 +259,7 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 
       <CodeBlock language="bash" title="Bearer token no header Authorization">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
-  -H "Authorization: Bearer cek_live_a1b2c3d4e5f6g7h8i9j0k1l2"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">CI Tokens</h2>
@@ -277,7 +277,7 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 
       <CodeBlock language="bash" title="Gerar CI Token com sessão humana">
         {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/v1/projects/{project_id}/tokens" \\
-  -H "Authorization: Bearer sessao_token" \\
+  -H "Authorization: Bearer <SESSION_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "GitHub Actions",
@@ -289,7 +289,7 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
       <CodeBlock language="json" title="Resposta (201 Created)">
         {`{
   "data": {
-    "token": "ci_x9y8z7w6v5u4t3s2r1q0p9o8n7m6l5k4",
+    "token": "<CI_TOKEN>",
     "expires_at": "2025-01-15T11:30:00Z",
     "scopes": ["read"],
     "environment": "production"

@@ -58,7 +58,7 @@ export default function ApiProjectsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Criar projeto">
         {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "meu-app",
@@ -108,7 +108,7 @@ export default function ApiProjectsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Listar projetos">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects?page=1&per_page=10" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
@@ -166,7 +166,7 @@ export default function ApiProjectsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Obter projeto">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
@@ -225,7 +225,7 @@ export default function ApiProjectsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Atualizar projeto">
         {`curl -X PATCH "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "name": "meu-app-v2",
@@ -271,7 +271,7 @@ export default function ApiProjectsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Deletar projeto">
         {`curl -X DELETE "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={204} statusText="No Content">
@@ -304,7 +304,7 @@ export default function ApiProjectsPage() {
 
       <CodeBlock language="bash" title="Exemplo — Re-encrypt vault">
         {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/vault/rekey" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "new_key_id": "key_new123abc",

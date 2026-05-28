@@ -90,7 +90,7 @@ export default function ApiVaultPage() {
 
       <CodeBlock language="bash" title="Exemplo — Push de segredos">
         {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/vault/push" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6" \\
+  -H "Authorization: Bearer <YOUR_API_KEY>" \\
   -H "Content-Type: application/json" \\
   -d '{
     "environment_id": "env_a1b2c3",
@@ -182,7 +182,7 @@ export default function ApiVaultPage() {
 
       <CodeBlock language="bash" title="Exemplo — Pull de segredos">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
@@ -214,7 +214,7 @@ export default function ApiVaultPage() {
 
       <CodeBlock language="bash" title="Pull com names_only (para diff)">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3&names_only=true" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
@@ -257,7 +257,7 @@ export default function ApiVaultPage() {
 
       <CodeBlock language="bash" title="Exemplo — Verificar versão">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/version?environment_id=env_a1b2c3" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">

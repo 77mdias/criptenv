@@ -231,7 +231,7 @@ X-RateLimit-Reset: 1705312800`}
 
       <CodeBlock language="bash" title="Exemplo de paginação">
         {`curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects?page=2&per_page=10" \\
-  -H "Authorization: Bearer cek_a1b2c3d4e5f6"`}
+  -H "Authorization: Bearer <YOUR_API_KEY>"`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">Referência por Domínio</h2>
