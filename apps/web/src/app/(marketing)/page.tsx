@@ -344,7 +344,9 @@ export default function LandingPage() {
             </span>
             <h2 className="mt-3 max-w-2xl text-3xl font-semibold leading-tight text-(--text-primary) md:text-4xl md:leading-[1.08]">
               Um vault remoto.{" "}
-              <span className="text-(--accent)">Zero plaintext no servidor.</span>
+              <span className="text-(--accent)">
+                Zero plaintext no servidor.
+              </span>
             </h2>
             <p className="mt-4 max-w-xl text-sm leading-relaxed text-(--text-tertiary)">
               O CriptEnv funciona como um terminal remoto para o vault do
@@ -372,8 +374,10 @@ export default function LandingPage() {
                     <p className="mt-1 text-white/42">
                       {step.num === "01" && "session stored locally"}
                       {step.num === "02" && "vault proof created client-side"}
-                      {step.num === "03" && "encrypted blob pushed with expected_version"}
-                      {step.num === "04" && "plaintext materialized only on this device"}
+                      {step.num === "03" &&
+                        "encrypted blob pushed with expected_version"}
+                      {step.num === "04" &&
+                        "plaintext materialized only on this device"}
                     </p>
                   </div>
                 ))}
@@ -484,7 +488,10 @@ export default function LandingPage() {
         <div className="pointer-events-none absolute left-1/2 top-1/2 h-100 w-200 -translate-x-1/2 -translate-y-1/2 rounded-full bg-(--accent)/5 blur-[120px]" />
 
         <div className="relative z-10 mx-auto w-full max-w-6xl">
-          <div data-motion="reveal" className="mx-auto mb-10 max-w-2xl text-center">
+          <div
+            data-motion="reveal"
+            className="mx-auto mb-10 max-w-2xl text-center"
+          >
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
               Pricing
             </span>
@@ -553,7 +560,7 @@ export default function LandingPage() {
                   <ArrowRight className="h-4 w-4" />
                 </Button>
               </Link>
-              <Link href="https://github.com/criptenv">
+              <Link href="https://github.com/77mdias/criptenv">
                 <Button
                   size="lg"
                   variant="secondary"
@@ -580,15 +587,21 @@ export default function LandingPage() {
             <div className="grid gap-4 p-4 sm:grid-cols-[1.1fr_0.9fr] sm:p-5">
               <div className="min-w-0 space-y-3 font-mono text-xs leading-relaxed text-(--text-tertiary) dark:text-white/68">
                 <p className="break-all text-green-700 dark:text-green-300">
-                  <span className="text-(--text-muted) dark:text-white/42">$</span> criptenv login
-                  --email dev@company.com
+                  <span className="text-(--text-muted) dark:text-white/42">
+                    $
+                  </span>{" "}
+                  criptenv login --email dev@company.com
                 </p>
                 <p className="break-all text-green-700 dark:text-green-300">
-                  <span className="text-(--text-muted) dark:text-white/42">$</span> criptenv set API_KEY
-                  sk_live_...
+                  <span className="text-(--text-muted) dark:text-white/42">
+                    $
+                  </span>{" "}
+                  criptenv set API_KEY sk_live_...
                 </p>
                 <div className="rounded-lg border border-green-500/18 bg-green-500/8 p-3 dark:border-white/10 dark:bg-white/5">
-                  <p className="text-(--text-primary) dark:text-white/86">vault sealed</p>
+                  <p className="text-(--text-primary) dark:text-white/86">
+                    vault sealed
+                  </p>
                   <p className="mt-1 text-(--text-muted) dark:text-white/42">
                     encrypted remote vault ready for team access.
                   </p>
@@ -605,8 +618,12 @@ export default function LandingPage() {
                     key={label}
                     className="flex items-center justify-between gap-3 rounded-lg border border-green-500/18 bg-green-500/8 px-3 py-2 font-mono text-[11px] dark:border-green-300/24 dark:bg-green-300/8"
                   >
-                    <span className="text-(--text-muted) dark:text-white/42">{label}</span>
-                    <span className="text-green-700 dark:text-green-300">{value}</span>
+                    <span className="text-(--text-muted) dark:text-white/42">
+                      {label}
+                    </span>
+                    <span className="text-green-700 dark:text-green-300">
+                      {value}
+                    </span>
                   </div>
                 ))}
               </div>
