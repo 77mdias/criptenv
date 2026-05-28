@@ -8,7 +8,8 @@ from app.database import get_db
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.environment import EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse, EnvironmentListResponse
-from app.middleware.auth import get_current_user, get_current_user_or_api_key
+from app.middleware.auth import get_current_user, get_current_auth_context, AuthContext
+from app.middleware.api_key_auth import require_api_key_environment
 from app.models.user import User
 from app.models.environment import Environment
 
@@ -101,7 +102,7 @@ async def create_environment(
 @router.get("", response_model=EnvironmentListResponse)
 async def list_environments(
     project_id: str,
-    current_user: User = Depends(get_current_user_or_api_key),
+    auth_context: AuthContext = Depends(get_current_auth_context),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -114,7 +115,7 @@ async def list_environments(
             detail="Invalid project ID"
         )
 
-    member = await project_service.check_user_access(current_user.id, project_uuid)
+    member = await project_service.check_user_access(auth_context.user.id, project_uuid)
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -127,6 +128,10 @@ async def list_environments(
         .order_by(Environment.is_default.desc(), Environment.name)
     )
     environments = [env for env in result.scalars().all() if not getattr(env, "archived", False)]
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        environment_scope = getattr(auth_context.api_key, "environment_scope", None)
+        if environment_scope is not None:
+            environments = [env for env in environments if env.name == environment_scope]
 
     return EnvironmentListResponse(
         environments=[EnvironmentResponse.model_validate(_force_load_environment(e)) for e in environments],
@@ -138,7 +143,7 @@ async def list_environments(
 async def get_environment(
     project_id: str,
     environment_id: str,
-    current_user: User = Depends(get_current_user_or_api_key),
+    auth_context: AuthContext = Depends(get_current_auth_context),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -152,7 +157,7 @@ async def get_environment(
             detail="Invalid ID"
         )
 
-    member = await project_service.check_user_access(current_user.id, project_uuid)
+    member = await project_service.check_user_access(auth_context.user.id, project_uuid)
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -177,6 +182,8 @@ async def get_environment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found"
         )
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        require_api_key_environment(auth_context.api_key, environment.name)
 
     return EnvironmentResponse.model_validate(_force_load_environment(environment))
 

@@ -19,12 +19,12 @@ import { apiKeysApi } from "@/lib/api";
 import type { APIKey, APIKeyCreateResponse } from "@/lib/api/client";
 
 const AVAILABLE_SCOPES = [
-  { value: "read:secrets", label: "Read Secrets", description: "Read secrets from environments" },
-  { value: "write:secrets", label: "Write Secrets", description: "Create/update secrets" },
-  { value: "delete:secrets", label: "Delete Secrets", description: "Delete secrets" },
-  { value: "read:audit", label: "Read Audit", description: "Read audit logs" },
-  { value: "write:integrations", label: "Manage Integrations", description: "Manage integrations" },
-  { value: "admin:project", label: "Admin Project", description: "Full project access (dangerous)" },
+  { value: "read:secrets", label: "Read Secrets", description: "Read encrypted vault blobs from public API", enabled: true },
+  { value: "write:secrets", label: "Write Secrets", description: "Reserved for future public API writes", enabled: false },
+  { value: "delete:secrets", label: "Delete Secrets", description: "Reserved for future public API deletes", enabled: false },
+  { value: "read:audit", label: "Read Audit", description: "Reserved for future audit API access", enabled: false },
+  { value: "write:integrations", label: "Manage Integrations", description: "Use CI Tokens for provider sync automation", enabled: false },
+  { value: "admin:project", label: "Admin Project", description: "Reserved for future public admin API access", enabled: false },
 ];
 
 interface ApiKeysPanelProps {
@@ -126,6 +126,11 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
           <Plus className="h-4 w-4 mr-1" /> Nova API Key
         </Button>
       </div>
+      <p className="text-xs text-[var(--text-muted)] font-mono">
+        Use API Keys para integrações server-to-server que precisam ler dados
+        criptografados da API pública. Para pipelines que escrevem secrets ou
+        sincronizam providers, use CI Tokens.
+      </p>
 
       {error && <p className="text-red-500 text-sm font-mono">{error}</p>}
 
@@ -162,11 +167,13 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">Scopes</label>
             <div className="grid grid-cols-2 gap-2">
               {AVAILABLE_SCOPES.map((scope) => (
-                <label key={scope.value} className="flex items-center gap-2 text-sm">
+                <label key={scope.value} className={`flex items-center gap-2 text-sm ${scope.enabled ? "" : "opacity-50"}`}>
                   <input
                     type="checkbox"
                     checked={newKeyScopes.includes(scope.value)}
+                    disabled={!scope.enabled}
                     onChange={(e) => {
+                      if (!scope.enabled) return;
                       if (e.target.checked) {
                         setNewKeyScopes([...newKeyScopes, scope.value]);
                       } else {
@@ -174,7 +181,10 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
                       }
                     }}
                   />
-                  <span className="text-[var(--text-secondary)]">{scope.label}</span>
+                  <span className="text-[var(--text-secondary)]">
+                    {scope.label}
+                    {!scope.enabled && " (em breve)"}
+                  </span>
                 </label>
               ))}
             </div>

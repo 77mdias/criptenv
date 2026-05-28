@@ -1190,3 +1190,26 @@ TOTP setup, QR code rendering, and backup-code persistence existed, but login st
 - ✅ Remembered devices avoid repeated 2FA prompts without exposing tokens to JavaScript.
 - ✅ OAuth and browser-based CLI authorization inherit the same enforcement.
 - ⚠️ Trusted devices are browser-cookie based; clearing cookies or changing browsers requires 2FA again.
+
+---
+
+## DEC-048 — Least-Privilege Programmatic Credential Alignment
+
+**Status:** Approved
+**Date:** 2026-05-28
+**Context:**
+The CLI moved from a mostly local vault workflow to the same remote API/web platform model used by the dashboard. That left ambiguous boundaries between human sessions, API Keys, CI Tokens, and temporary CI sessions.
+
+**Decision:**
+- Keep CI Token and API Key management behind normal human sessions.
+- Preserve credential metadata in backend auth context so API Keys and CI sessions can enforce scopes and environment restrictions.
+- Treat API Keys as public API read credentials for now, using `Authorization: Bearer cek_...`.
+- Treat CI Tokens as automation credentials: `ci_...` creates a temporary `ci_s_...` session, which may read, write vault blobs, or sync integrations only when its scopes allow it.
+- Keep GitHub Action ciphertext export compatible, while adding optional runner-local decryption via `vault-password`.
+
+**Consequences:**
+- ✅ CI pipelines can perform remote vault deploys without gaining token-management authority.
+- ✅ API Keys no longer behave like generic user sessions for vault reads.
+- ✅ Environment-restricted credentials are enforced consistently in backend reads/writes.
+- ✅ GitHub Action plaintext export is possible without weakening zero-knowledge server guarantees.
+- ⚠️ Public API write/admin scopes remain reserved until corresponding endpoints are intentionally exposed.

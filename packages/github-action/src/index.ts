@@ -7,6 +7,7 @@
 
 import * as core from "@actions/core";
 import * as httpClient from "@actions/http-client";
+import * as crypto from "crypto";
 
 const MAX_RETRIES = 3;
 const RETRY_DELAYS = [1000, 2000, 4000];
@@ -32,6 +33,19 @@ interface SecretsResponse {
   blobs: VaultBlob[];
   version: number;
   environment: string;
+  environment_id?: string;
+  vault_config?: VaultConfig;
+}
+
+interface VaultConfig {
+  version: number;
+  kdf: string;
+  iterations: number;
+  salt: string;
+  proof_salt: string;
+  verifier_iv: string;
+  verifier_ciphertext: string;
+  verifier_auth_tag: string;
 }
 
 export interface ActionInputs {
@@ -41,6 +55,7 @@ export interface ActionInputs {
   apiUrl: string;
   prefix: string;
   versionOutput: string;
+  vaultPassword: string;
 }
 
 type HttpClientFactory = () => httpClient.HttpClient;
@@ -77,6 +92,7 @@ export function getInputs(): ActionInputs {
     apiUrl: (core.getInput("api-url") || "https://criptenv-api.77mdevseven.tech/api/v1").replace(/\/$/, ""),
     prefix: core.getInput("prefix") || "SECRET_",
     versionOutput: core.getInput("version-output") || "version",
+    vaultPassword: core.getInput("vault-password") || "",
   };
 }
 
@@ -139,7 +155,113 @@ export async function getSecrets(
   return response.result;
 }
 
-export function decryptSecret(blob: VaultBlob): string {
+function fromBase64(value: string): Buffer {
+  return Buffer.from(value, "base64");
+}
+
+function deriveProjectMasterKey(password: string, vaultConfig: VaultConfig): Buffer {
+  return crypto.pbkdf2Sync(
+    password,
+    fromBase64(vaultConfig.salt),
+    vaultConfig.iterations || 100000,
+    32,
+    "sha256",
+  );
+}
+
+function deriveEnvironmentKey(
+  password: string,
+  vaultConfig: VaultConfig,
+  environmentId: string,
+): Buffer {
+  const masterKey = deriveProjectMasterKey(password, vaultConfig);
+  return Buffer.from(
+    crypto.hkdfSync(
+      "sha256",
+      masterKey,
+      Buffer.from(environmentId, "utf8"),
+      Buffer.from("criptenv-vault-v1"),
+      32,
+    ),
+  );
+}
+
+export function decryptSecret(
+  blob: VaultBlob,
+  vaultPassword?: string,
+  vaultConfig?: VaultConfig,
+  environmentId?: string,
+): string {
+  if (!vaultPassword) {
+    return blob.ciphertext;
+  }
+
+  if (!vaultConfig || !environmentId) {
+    throw new Error("vault-password requires vault_config and environment_id from the API");
+  }
+
+  const envKey = deriveEnvironmentKey(vaultPassword, vaultConfig, environmentId);
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    envKey,
+    fromBase64(blob.iv),
+  );
+  decipher.setAuthTag(fromBase64(blob.auth_tag));
+  return Buffer.concat([
+    decipher.update(fromBase64(blob.ciphertext)),
+    decipher.final(),
+  ]).toString("utf8");
+}
+
+function assertVaultPasswordCanDecrypt(
+  vaultPassword: string,
+  vaultConfig?: VaultConfig,
+): void {
+  if (!vaultPassword || !vaultConfig) {
+    return;
+  }
+
+  if (
+    vaultConfig.verifier_ciphertext === "unused" ||
+    vaultConfig.verifier_iv === "unused" ||
+    vaultConfig.verifier_auth_tag === "unused"
+  ) {
+    return;
+  }
+
+  const masterKey = deriveProjectMasterKey(vaultPassword, vaultConfig);
+  const decipher = crypto.createDecipheriv(
+    "aes-256-gcm",
+    masterKey,
+    fromBase64(vaultConfig.verifier_iv),
+  );
+  decipher.setAuthTag(fromBase64(vaultConfig.verifier_auth_tag));
+  const plaintext = Buffer.concat([
+    decipher.update(fromBase64(vaultConfig.verifier_ciphertext)),
+    decipher.final(),
+  ]);
+  if (plaintext.toString("utf8") !== "criptenv-vault-verifier-v1") {
+    throw new Error("Invalid vault password");
+  }
+}
+
+export function exportableSecretValue(
+  blob: VaultBlob,
+  secrets: SecretsResponse,
+  vaultPassword: string,
+): string {
+  if (vaultPassword) {
+    assertVaultPasswordCanDecrypt(vaultPassword, secrets.vault_config);
+  }
+  return decryptSecret(
+    blob,
+    vaultPassword,
+    secrets.vault_config,
+    secrets.environment_id,
+  );
+}
+
+export function legacyCiphertextSecret(blob: VaultBlob): string {
   return blob.ciphertext;
 }
 
@@ -181,7 +303,11 @@ export async function run(
 
     for (const blob of secrets.blobs) {
       try {
-        const secretValue = decryptSecret(blob);
+        const secretValue = exportableSecretValue(
+          blob,
+          secrets,
+          inputs.vaultPassword,
+        );
         const varName = `${inputs.prefix}${normalizeKeyName(blob.key_id)}`;
 
         core.setSecret(secretValue);

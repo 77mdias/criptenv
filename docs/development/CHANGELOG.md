@@ -9,6 +9,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Added
 
+#### CI/API Token Remote Auth Alignment (2026-05-28)
+
+- **Backend**: API Key authentication now preserves credential metadata for scope and environment checks. Vault reads require `read:secrets`/`admin:project`, and `environment_scope` is enforced for environment/vault reads.
+- **Backend**: CI sessions can now push vault blobs with `write:secrets` and sync integrations with `write:integrations`, while CI/API token management remains restricted to normal user sessions.
+- **CLI**: `criptenv ci tokens list/create/revoke` now uses the human CLI session. `ci deploy` validates CI scopes, environment restrictions, and `CRIPTENV_VAULT_PASSWORD` before writing remote vault data.
+- **GitHub Action**: Added optional `vault-password` input. Without it the action keeps exporting ciphertext; with it, secrets are decrypted locally in the runner.
+- **Docs/UI**: Project settings and API docs now clarify the API Key vs CI Token split and document `Authorization: Bearer cek_...` as the supported API Key header.
+- **Decision record**: Added DEC-048 for least-privilege programmatic credential alignment after the CLI remote migration.
+
 #### Enforced Login 2FA Challenges and Trusted Devices (2026-05-28)
 
 - **Backend**: Login now enforces TOTP 2FA for accounts with `two_factor_enabled=true` before issuing a session cookie. Challenges are stored server-side with hashed tokens and expire after 10 minutes.

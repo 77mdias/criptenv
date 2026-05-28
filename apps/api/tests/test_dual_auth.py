@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from main import app
-from app.middleware.auth import get_current_user, get_current_user_or_api_key
+from app.middleware.auth import get_current_user, get_current_user_or_api_key, get_current_auth_context, AuthContext
 
 
 @contextmanager
@@ -24,11 +24,19 @@ def override_dual_auth(user):
     async def _get_dual_auth():
         return user
 
+    async def _get_auth_context():
+        api_key = MagicMock()
+        api_key.scopes = ["read:secrets"]
+        api_key.environment_scope = None
+        return AuthContext(user=user, auth_type="api_key", api_key=api_key)
+
     app.dependency_overrides[get_current_user_or_api_key] = _get_dual_auth
+    app.dependency_overrides[get_current_auth_context] = _get_auth_context
     try:
         yield
     finally:
         app.dependency_overrides.pop(get_current_user_or_api_key, None)
+        app.dependency_overrides.pop(get_current_auth_context, None)
 
 
 @pytest.fixture
@@ -84,6 +92,17 @@ def transport():
 @pytest.mark.asyncio
 async def test_vault_pull_with_api_key(transport, mock_user, mock_project, mock_environment):
     """GET /api/v1/projects/:id/environments/:env/vault/pull must accept API key."""
+    from app.database import get_db
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_environment)
+    mock_session = MagicMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    async def _mock_get_db():
+        yield mock_session
+
+    app.dependency_overrides[get_db] = _mock_get_db
     with override_dual_auth(mock_user):
         with patch('app.services.project_service.ProjectService.check_user_access', new_callable=AsyncMock) as mock_access:
             mock_access.return_value = MagicMock(role="developer")
@@ -103,11 +122,23 @@ async def test_vault_pull_with_api_key(transport, mock_user, mock_project, mock_
                 assert "version" in data
                 # Rate limit headers should be present
                 assert "X-RateLimit-Limit" in response.headers
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.mark.asyncio
 async def test_vault_version_with_api_key(transport, mock_user, mock_project, mock_environment):
     """GET /api/v1/projects/:id/environments/:env/vault/version must accept API key."""
+    from app.database import get_db
+
+    mock_result = MagicMock()
+    mock_result.scalar_one_or_none = MagicMock(return_value=mock_environment)
+    mock_session = MagicMock()
+    mock_session.execute = AsyncMock(return_value=mock_result)
+
+    async def _mock_get_db():
+        yield mock_session
+
+    app.dependency_overrides[get_db] = _mock_get_db
     with override_dual_auth(mock_user):
         with patch('app.services.project_service.ProjectService.check_user_access', new_callable=AsyncMock) as mock_access:
             mock_access.return_value = MagicMock(role="developer")
@@ -127,6 +158,7 @@ async def test_vault_version_with_api_key(transport, mock_user, mock_project, mo
                     data = response.json()
                     assert data["version"] == 5
                     assert data["blob_count"] == 3
+    app.dependency_overrides.pop(get_db, None)
 
 
 @pytest.mark.asyncio

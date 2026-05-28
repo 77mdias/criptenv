@@ -304,3 +304,55 @@ def test_get_request_api_key_identifier_no_key():
     
     # CI tokens go to CI auth, not API key auth
     assert identifier is None
+
+
+@pytest.mark.asyncio
+async def test_validate_api_key_context_returns_user_and_key(mock_api_key, mock_user):
+    """Programmatic auth should keep API key metadata for scope/env checks."""
+    from app.middleware.api_key_auth import validate_api_key_context
+
+    mock_api_key.user = mock_user
+    mock_api_key.is_valid.return_value = True
+    mock_api_key.is_expired.return_value = False
+    mock_api_key.is_revoked.return_value = False
+
+    mock_session = AsyncMock()
+    mock_session.commit = AsyncMock()
+
+    mock_cm = AsyncMock()
+    mock_cm.__aenter__ = AsyncMock(return_value=mock_session)
+    mock_cm.__aexit__ = AsyncMock(return_value=None)
+
+    with patch('app.middleware.api_key_auth.async_session_factory', return_value=mock_cm):
+        with patch('app.middleware.api_key_auth.get_db_api_key', new_callable=AsyncMock) as mock_get:
+            mock_get.return_value = mock_api_key
+
+            context = await validate_api_key_context("cek_live_abc123")
+
+    assert context.user == mock_user
+    assert context.api_key == mock_api_key
+    assert context.auth_type == "api_key"
+
+
+def test_validate_api_key_scope_denies_missing_scope(mock_api_key):
+    """API keys without a required scope should raise 403."""
+    from app.middleware.api_key_auth import require_api_key_scope
+
+    mock_api_key.scopes = ["write:secrets"]
+
+    with pytest.raises(HTTPException) as exc_info:
+        require_api_key_scope(mock_api_key, "read:secrets")
+
+    assert exc_info.value.status_code == 403
+
+
+def test_validate_api_key_environment_denies_other_environment(mock_api_key):
+    """API keys restricted to one environment cannot access another."""
+    from app.middleware.api_key_auth import require_api_key_environment
+
+    mock_api_key.environment_scope = "production"
+
+    with pytest.raises(HTTPException) as exc_info:
+        require_api_key_environment(mock_api_key, "staging")
+
+    assert exc_info.value.status_code == 403

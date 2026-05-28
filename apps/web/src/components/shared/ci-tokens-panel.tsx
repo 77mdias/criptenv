@@ -207,6 +207,11 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
             Novo Token
           </Button>
         </div>
+        <p className="mb-4 text-xs text-[var(--text-muted)] font-mono">
+          Use CI Tokens para automações como deploy, escrita de secrets e sync
+          com providers. Gestão de tokens e API Keys continua restrita à sessão
+          humana do dashboard ou CLI.
+        </p>
 
         {error && (
           <div className="mb-4 p-3 rounded-lg border border-red-500/50 bg-red-500/5">

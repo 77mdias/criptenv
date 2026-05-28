@@ -17,6 +17,7 @@ from app.database import get_db
 from app.models.member import CIToken
 from app.models.vault import VaultBlob
 from app.models.environment import Environment
+from app.models.project import Project
 from app.middleware.ci_auth import (
     hash_token,
     create_persisted_ci_session,
@@ -43,12 +44,15 @@ class CILoginResponse(BaseModel):
     expires_in: int = Field(..., description="Seconds until session expires")
     project_id: str
     permissions: list[str]
+    environment_scope: Optional[str] = None
 
 
 class CISecretsResponse(BaseModel):
     blobs: list[VaultBlobPull]
     version: int
     environment: str
+    environment_id: str
+    vault_config: Optional[dict] = None
 
 
 class CIErrorResponse(BaseModel):
@@ -234,7 +238,8 @@ async def ci_login(
         session_token=session_token,
         expires_in=CI_SESSION_EXPIRE_SECONDS,
         project_id=str(ci_token.project_id),
-        permissions=permissions
+        permissions=permissions,
+        environment_scope=getattr(ci_token, "environment_scope", None),
     )
 
 
@@ -289,11 +294,27 @@ async def get_ci_secrets(
         .order_by(VaultBlob.created_at)
     )
     blobs = list(blobs_result.scalars().all())
+
+    project_result = await db.execute(
+        select(Project).where(Project.id == project_uuid)
+    )
+    project = project_result.scalar_one_or_none()
+    vault_config = None
+    if project:
+        settings = dict(getattr(project, "settings", None) or {})
+        vault_settings = settings.get("vault")
+        if isinstance(vault_settings, dict):
+            vault_config = {
+                key: value for key, value in vault_settings.items()
+                if key != "proof_hash"
+            }
     
     return CISecretsResponse(
         blobs=[VaultBlobPull.model_validate(_force_load_blob(b)) for b in blobs],
         version=env.secrets_version,
-        environment=environment
+        environment=environment,
+        environment_id=str(env.id),
+        vault_config=vault_config,
     )
 
 

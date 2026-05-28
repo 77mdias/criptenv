@@ -8,6 +8,7 @@ Implements M3.3 CI Tokens Enhancement specification:
 """
 
 import asyncio
+import os
 import time
 from typing import Optional
 
@@ -15,7 +16,7 @@ import click
 
 from criptenv.api.client import CriptEnvClient
 from criptenv.commands.import_export import _parse_env_file
-from criptenv.context import cli_context
+from criptenv.context import cli_context, resolve_project_id
 from criptenv.remote_vault import RemoteVault
 from criptenv.session import get_or_create_auth_key
 from criptenv.vault.models import CISession
@@ -70,6 +71,7 @@ class CISessionManager:
         project_name = response.get("project_name", "Unknown")
         scopes = response.get("permissions", ["read:secrets"])
         expires_in = response.get("expires_in", 3600)
+        environment_scope = response.get("environment_scope")
 
         token_encrypted = self._encrypt_token(session_token)
 
@@ -79,7 +81,7 @@ class CISessionManager:
             project_name=project_name,
             session_token_encrypted=token_encrypted,
             scopes=scopes,
-            environment_scope=None,
+            environment_scope=environment_scope,
             created_at=int(time.time()),
             expires_at=int(time.time()) + expires_in,
         )
@@ -93,6 +95,7 @@ class CISessionManager:
             "project_id": project_id,
             "project_name": project_name,
             "scopes": scopes,
+            "environment_scope": environment_scope,
             "expires_in": expires_in,
         }
 
@@ -208,21 +211,21 @@ def ci_secrets(environment: str):
             return
 
         try:
-            secrets_data = asyncio.run(client.get_ci_secrets(session.project_id, environment))
-            blobs = secrets_data.get("blobs", [])
+            secrets_data = asyncio.run(client.list_ci_secrets_keys(session.project_id, environment))
+            keys = secrets_data.get("keys", [])
 
-            if not blobs:
+            if not keys:
                 click.echo(f"No secrets found in {environment} environment.")
                 return
 
             click.echo(f"Secrets in {environment} (showing keys only for security):")
             click.echo(f"  Version: {secrets_data.get('version', 'unknown')}")
-            click.echo(f"  Count: {len(blobs)}")
+            click.echo(f"  Count: {len(keys)}")
             click.echo("")
 
-            for blob in blobs:
-                key_id = blob.get("key_id", "unknown")
-                version = blob.get("version", 1)
+            for item in keys:
+                key_id = item.get("key_id", "unknown")
+                version = item.get("version", 1)
                 click.echo(f"  {key_id:<40} v{version}")
 
         except Exception as e:
@@ -271,6 +274,17 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
             )
             return
 
+        if "write:secrets" not in session.scopes and "admin:project" not in session.scopes:
+            click.echo("Error: CI session requires write:secrets scope for deploy.", err=True)
+            return
+
+        if "CRIPTENV_VAULT_PASSWORD" not in os.environ:
+            click.echo(
+                "Error: ci deploy is non-interactive. Set CRIPTENV_VAULT_PASSWORD to encrypt secrets.",
+                err=True,
+            )
+            return
+
         if dry_run:
             click.echo(f"[DRY RUN] Would deploy {len(entries)} secret(s) from {file_path} to {environment}")
             for key, _value in entries:
@@ -310,6 +324,13 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
             return
 
         if provider:
+            if "write:integrations" not in session.scopes and "admin:project" not in session.scopes:
+                click.echo(
+                    "Error: --provider sync requires write:integrations scope.",
+                    err=True,
+                )
+                return
+
             click.echo(f"Syncing to {provider}...")
             try:
                 integrations = asyncio.run(client.list_integrations(session.project_id))
@@ -347,8 +368,9 @@ def ci_tokens():
 
 
 @ci_tokens.command("list")
+@click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--include-revoked", is_flag=True, help="Include revoked tokens")
-def ci_tokens_list(include_revoked: bool):
+def ci_tokens_list(project_id: Optional[str], include_revoked: bool):
     """List CI tokens for the current project.
 
     Shows token name, scopes, environment restriction, last used,
@@ -357,27 +379,18 @@ def ci_tokens_list(include_revoked: bool):
     Example:
         criptenv ci tokens list
     """
-    with cli_context(require_master_key=False) as (db, _master_key, _):
-        manager = _ci_manager(db)
-        session = asyncio.run(manager.get_active_session())
-
-        if not session:
-            click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
-            return
-
-        client = asyncio.run(manager.get_authenticated_client())
-        if not client:
-            click.echo("Error: Invalid CI session.", err=True)
-            return
+    with cli_context(require_auth=True) as (db, _master_key, client):
+        resolved_project_id = resolve_project_id(db, project_id)
 
         try:
-            tokens = asyncio.run(client.list_ci_tokens(session.project_id, include_revoked))
+            response = asyncio.run(client.list_ci_tokens(resolved_project_id, include_revoked))
+            tokens = response.get("tokens", response) if isinstance(response, dict) else response
 
             if not tokens:
                 click.echo("No CI tokens found.")
                 return
 
-            click.echo(f"CI Tokens for project {session.project_id}:")
+            click.echo(f"CI Tokens for project {resolved_project_id}:")
             click.echo("")
 
             for token in tokens:
@@ -402,11 +415,12 @@ def ci_tokens_list(include_revoked: bool):
 
 
 @ci_tokens.command("create")
+@click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--name", required=True, help="Token name (e.g., 'GitHub Actions Deploy')")
 @click.option("--scopes", default="read:secrets", help="Comma-separated scopes (default: read:secrets)")
 @click.option("--environment", "environment_scope", help="Restrict to environment (e.g., production)")
 @click.option("--expires-in", "expires_days", type=int, help="Days until expiration (default: no expiration)")
-def ci_tokens_create(name: str, scopes: str, environment_scope: Optional[str], expires_days: Optional[int]):
+def ci_tokens_create(project_id: Optional[str], name: str, scopes: str, environment_scope: Optional[str], expires_days: Optional[int]):
     """Create a new CI token.
 
     Generates a new CI token with specified scopes. The token value
@@ -415,24 +429,14 @@ def ci_tokens_create(name: str, scopes: str, environment_scope: Optional[str], e
     Example:
         criptenv ci tokens create --name "Deploy Bot" --scopes "read:secrets,write:secrets" --environment production
     """
-    with cli_context(require_master_key=False) as (db, _master_key, _):
-        manager = _ci_manager(db)
-        session = asyncio.run(manager.get_active_session())
-
-        if not session:
-            click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
-            return
-
-        client = asyncio.run(manager.get_authenticated_client())
-        if not client:
-            click.echo("Error: Invalid CI session.", err=True)
-            return
+    with cli_context(require_auth=True) as (db, _master_key, client):
+        resolved_project_id = resolve_project_id(db, project_id)
 
         scope_list = [s.strip() for s in scopes.split(",")]
 
         try:
             result = asyncio.run(client.create_ci_token(
-                project_id=session.project_id,
+                project_id=resolved_project_id,
                 name=name,
                 scopes=scope_list,
                 environment_scope=environment_scope,
@@ -455,8 +459,9 @@ def ci_tokens_create(name: str, scopes: str, environment_scope: Optional[str], e
 
 @ci_tokens.command("revoke")
 @click.argument("token_id")
+@click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--force", is_flag=True, help="Skip confirmation prompt")
-def ci_tokens_revoke(token_id: str, force: bool):
+def ci_tokens_revoke(token_id: str, project_id: Optional[str], force: bool):
     """Revoke a CI token.
 
     Revocation immediately invalidates the token. Any workflows
@@ -465,26 +470,16 @@ def ci_tokens_revoke(token_id: str, force: bool):
     Example:
         criptenv ci tokens revoke 550e8400-e29b-41d4-a716-446655440000
     """
-    with cli_context(require_master_key=False) as (db, _master_key, _):
-        manager = _ci_manager(db)
-        session = asyncio.run(manager.get_active_session())
-
-        if not session:
-            click.echo("Error: No active CI session.", err=True)
-            return
+    with cli_context(require_auth=True) as (db, _master_key, client):
+        resolved_project_id = resolve_project_id(db, project_id)
 
         if not force:
             if not click.confirm(f"Revoke token {token_id}? This cannot be undone."):
                 click.echo("Aborted.")
                 return
 
-        client = asyncio.run(manager.get_authenticated_client())
-        if not client:
-            click.echo("Error: Invalid CI session.", err=True)
-            return
-
         try:
-            asyncio.run(client.revoke_ci_token(session.project_id, token_id))
+            asyncio.run(client.revoke_ci_token(resolved_project_id, token_id))
             click.echo("✓ Token revoked successfully.")
 
         except Exception as e:

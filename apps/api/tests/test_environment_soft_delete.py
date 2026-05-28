@@ -6,6 +6,7 @@ from uuid import uuid4
 import pytest
 from fastapi import HTTPException
 
+from app.middleware.auth import AuthContext
 from app.routers.environments import delete_environment, get_environment, list_environments
 from app.services.audit_service import AuditService
 from app.services.project_service import ProjectService
@@ -59,6 +60,10 @@ def run(coro):
 
 def make_user():
     return SimpleNamespace(id=uuid4(), email="dev@example.com")
+
+
+def make_auth_context():
+    return AuthContext(user=make_user(), auth_type="session")
 
 
 def make_request():
@@ -123,7 +128,7 @@ def test_list_environments_hides_archived_entries():
     response = run(
         list_environments(
             project_id=str(active.project_id),
-            current_user=make_user(),
+            auth_context=make_auth_context(),
             db=db,
         )
     )
@@ -138,12 +143,12 @@ def test_get_environment_returns_404_for_archived_environment():
 
     with pytest.raises(HTTPException) as exc:
         run(
-            get_environment(
-                project_id=str(environment.project_id),
-                environment_id=str(environment.id),
-                current_user=make_user(),
-                db=db,
-            )
+                get_environment(
+                    project_id=str(environment.project_id),
+                    environment_id=str(environment.id),
+                    auth_context=make_auth_context(),
+                    db=db,
+                )
         )
 
     assert exc.value.status_code == 404

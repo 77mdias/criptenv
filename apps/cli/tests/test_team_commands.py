@@ -231,6 +231,88 @@ class TestApiKeysCommands:
         assert "Revoked API key" in result.output
 
 
+# ─── CI Tokens Management ─────────────────────────────────────────────────────
+
+class TestCITokensManagementCommands:
+    @patch("criptenv.commands.ci.resolve_project_id", return_value="prj_123")
+    @patch("criptenv.commands.ci.cli_context")
+    def test_ci_tokens_list_uses_human_session(self, mock_ctx, _resolve_project_id, runner):
+        mock_client = AsyncMock()
+        mock_client.list_ci_tokens = AsyncMock(return_value={
+            "tokens": [
+                {
+                    "id": "tok_1",
+                    "name": "GitHub Actions",
+                    "scopes": ["read:secrets"],
+                    "environment_scope": "production",
+                    "last_used_at": None,
+                    "revoked_at": None,
+                }
+            ],
+            "total": 1,
+        })
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(main, ["ci", "tokens", "list", "--project", "prj_123"])
+
+        assert result.exit_code == 0
+        mock_ctx.assert_called_once_with(require_auth=True)
+        mock_client.list_ci_tokens.assert_awaited_once_with("prj_123", False)
+        assert "GitHub Actions" in result.output
+
+    @patch("criptenv.commands.ci.resolve_project_id", return_value="prj_123")
+    @patch("criptenv.commands.ci.cli_context")
+    def test_ci_tokens_create_uses_human_session(self, mock_ctx, _resolve_project_id, runner):
+        mock_client = AsyncMock()
+        mock_client.create_ci_token = AsyncMock(return_value={
+            "token": "ci_plain",
+            "token_info": {
+                "name": "Deploy",
+                "scopes": ["read:secrets", "write:secrets"],
+                "environment_scope": "production",
+            },
+        })
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(
+            main,
+            [
+                "ci",
+                "tokens",
+                "create",
+                "--project",
+                "prj_123",
+                "--name",
+                "Deploy",
+                "--scopes",
+                "read:secrets,write:secrets",
+                "--environment",
+                "production",
+            ],
+        )
+
+        assert result.exit_code == 0
+        mock_ctx.assert_called_once_with(require_auth=True)
+        mock_client.create_ci_token.assert_awaited_once()
+        assert "ci_plain" in result.output
+
+    @patch("criptenv.commands.ci.resolve_project_id", return_value="prj_123")
+    @patch("criptenv.commands.ci.cli_context")
+    def test_ci_tokens_revoke_uses_human_session(self, mock_ctx, _resolve_project_id, runner):
+        mock_client = AsyncMock()
+        mock_client.revoke_ci_token = AsyncMock(return_value={})
+        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
+        mock_ctx.return_value.__exit__ = lambda s, *a: None
+
+        result = runner.invoke(main, ["ci", "tokens", "revoke", "tok_1", "--project", "prj_123", "--force"])
+
+        assert result.exit_code == 0
+        mock_ctx.assert_called_once_with(require_auth=True)
+        mock_client.revoke_ci_token.assert_awaited_once_with("prj_123", "tok_1")
+
+
 # ─── Projects (update/delete/info) ───────────────────────────────────────────
 
 class TestProjectExtraCommands:

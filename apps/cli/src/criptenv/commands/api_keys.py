@@ -60,7 +60,7 @@ def api_keys_list(project_id: str | None):
 @click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--name", "-n", required=True, help="Key name")
 @click.option("--scope", "-s", multiple=True, default=["read:secrets"],
-              type=click.Choice(VALID_SCOPES), help="Scopes (can be used multiple times)")
+              type=click.Choice(VALID_SCOPES), help="Scopes (read:secrets is the current public API scope; others are reserved)")
 @click.option("--env", default=None, help="Environment scope restriction")
 @click.option("--expires-days", type=int, default=None, help="Expiration in days (1-365)")
 def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], env: str | None, expires_days: int | None):
@@ -76,6 +76,13 @@ def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], e
     async def _do_create():
         with cli_context(require_auth=True) as (db, _mk, client):
             resolved_project_id = resolve_project_id(db, project_id)
+            reserved_scopes = sorted(set(scope) - {"read:secrets"})
+            if reserved_scopes:
+                click.echo(
+                    "Warning: only read:secrets is currently enforced on public API endpoints. "
+                    f"Reserved scope(s): {', '.join(reserved_scopes)}",
+                    err=True,
+                )
             result = await client.create_api_key(
                 project_id=resolved_project_id,
                 name=name,

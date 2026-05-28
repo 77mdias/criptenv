@@ -4,6 +4,7 @@ Provides authentication for API consumers using API keys.
 These keys are created by users and have limited scopes.
 """
 
+from dataclasses import dataclass
 from typing import Optional
 from uuid import UUID
 from datetime import datetime, timezone
@@ -20,6 +21,15 @@ from app.models.user import User
 
 # Security scheme for OpenAPI docs
 api_key_scheme = HTTPBearer(auto_error=False)
+
+
+@dataclass
+class APIKeyContext:
+    """Authenticated API key plus its owning user."""
+
+    user: User
+    api_key: APIKey
+    auth_type: str = "api_key"
 
 
 class APIKeyError(HTTPException):
@@ -98,8 +108,8 @@ async def get_db_api_key(key: str, db: AsyncSession) -> Optional[APIKey]:
     return result.scalar_one_or_none()
 
 
-async def validate_api_key(key: str) -> User:
-    """Validate an API key and return the associated user.
+async def validate_api_key_context(key: str) -> APIKeyContext:
+    """Validate an API key and return user plus key metadata.
     
     Raises:
         InvalidApiKeyError: Key not found or invalid
@@ -108,10 +118,10 @@ async def validate_api_key(key: str) -> User:
     """
     async with async_session_factory() as db:
         api_key = await get_db_api_key(key, db)
-        
+
         if not api_key:
             raise InvalidApiKeyError()
-        
+
         # Check if revoked
         if api_key.is_revoked():
             raise RevokedApiKeyError()
@@ -128,7 +138,19 @@ async def validate_api_key(key: str) -> User:
         api_key.last_used_at = datetime.now(timezone.utc)
         await db.commit()
         
-        return api_key.user
+        return APIKeyContext(user=api_key.user, api_key=api_key)
+
+
+async def validate_api_key(key: str) -> User:
+    """Validate an API key and return the associated user.
+
+    Raises:
+        InvalidApiKeyError: Key not found or invalid
+        ExpiredApiKeyError: Key has expired
+        RevokedApiKeyError: Key has been revoked
+    """
+    context = await validate_api_key_context(key)
+    return context.user
 
 
 def check_api_key_scope(scopes: list[str], required_scope: str) -> bool:
@@ -138,6 +160,37 @@ def check_api_key_scope(scopes: list[str], required_scope: str) -> bool:
     """
     validator = ScopeValidator()
     return validator.has_scope(scopes, required_scope)
+
+
+def require_api_key_scope(api_key: APIKey, required_scope: str) -> None:
+    """Raise 403 when an API key does not include the required scope."""
+    if not check_api_key_scope(api_key.scopes, required_scope):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "INSUFFICIENT_SCOPE",
+                "message": f"API key requires {required_scope} scope",
+                "required_scope": required_scope,
+            },
+        )
+
+
+def require_api_key_environment(api_key: APIKey, environment_name: str) -> None:
+    """Raise 403 when an API key is restricted to another environment."""
+    environment_scope = getattr(api_key, "environment_scope", None)
+    if environment_scope is None:
+        return
+    if environment_scope != environment_name:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ENVIRONMENT_ACCESS_DENIED",
+                "message": (
+                    f"API key is restricted to environment '{environment_scope}' "
+                    f"and cannot access '{environment_name}'"
+                ),
+            },
+        )
 
 
 def get_request_api_key_id(request: Request) -> Optional[str]:

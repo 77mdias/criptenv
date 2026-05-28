@@ -1,3 +1,5 @@
+from inspect import isawaitable, signature
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
@@ -7,8 +9,17 @@ from app.services.project_service import ProjectService
 from app.services.vault_service import VaultService, ConflictError
 from app.services.audit_service import AuditService
 from app.schemas.vault import VaultPushRequest, VaultPullResponse, VaultBlobPull
-from app.middleware.auth import get_current_user, get_current_user_or_api_key
+from app.middleware.auth import get_current_user, get_current_auth_context, AuthContext
+from app.middleware.ci_auth import (
+    CI_SESSION_PREFIX,
+    validate_ci_session,
+    require_ci_session_scope,
+    require_ci_session_environment,
+)
+from app.middleware.api_key_auth import require_api_key_scope, require_api_key_environment
 from app.models.user import User
+from app.models.environment import Environment
+from sqlalchemy import select
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/environments/{environment_id}/vault", tags=["Vault"])
 
@@ -29,13 +40,96 @@ def _force_load_vault_blob(blob):
     return blob
 
 
+def _extract_bearer_token(request: Request) -> str | None:
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:]
+    return None
+
+
+async def _resolve_current_user(request: Request, db: AsyncSession) -> User:
+    override = getattr(request.app, "dependency_overrides", {}).get(get_current_user)
+    if override is None:
+        return await get_current_user(request, db)
+
+    kwargs = {}
+    parameters = signature(override).parameters
+    if "request" in parameters:
+        kwargs["request"] = request
+    if "db" in parameters:
+        kwargs["db"] = db
+
+    result = override(**kwargs)
+    if isawaitable(result):
+        return await result
+    return result
+
+
+async def _get_environment_or_404(
+    db: AsyncSession,
+    project_uuid: UUID,
+    env_uuid: UUID,
+) -> Environment:
+    result = await db.execute(
+        select(Environment).where(
+            Environment.id == env_uuid,
+            Environment.project_id == project_uuid,
+        )
+    )
+    environment = result.scalar_one_or_none()
+    if not environment or getattr(environment, "archived", False):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Environment not found",
+        )
+    return environment
+
+
+async def _authenticate_vault_write(
+    project_service: ProjectService,
+    db: AsyncSession,
+    request: Request,
+    project_uuid: UUID,
+    env_uuid: UUID,
+) -> tuple[User | None, dict | None, Environment | None]:
+    token = _extract_bearer_token(request)
+
+    if token and token.startswith(CI_SESSION_PREFIX):
+        environment = await _get_environment_or_404(db, project_uuid, env_uuid)
+        ci_session = await validate_ci_session(token, project_uuid)
+        require_ci_session_scope(ci_session, "write:secrets")
+        require_ci_session_environment(ci_session, environment.name)
+        return None, ci_session, environment
+
+    current_user = await _resolve_current_user(request, db)
+    member = await project_service.check_user_access(current_user.id, project_uuid, "developer")
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or insufficient permissions",
+        )
+    return current_user, None, None
+
+
+async def _authenticate_vault_read(
+    auth_context: AuthContext,
+    db: AsyncSession,
+    project_uuid: UUID,
+    env_uuid: UUID,
+) -> tuple[User, Environment]:
+    environment = await _get_environment_or_404(db, project_uuid, env_uuid)
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        require_api_key_scope(auth_context.api_key, "read:secrets")
+        require_api_key_environment(auth_context.api_key, environment.name)
+    return auth_context.user, environment
+
+
 @router.post("/push", response_model=VaultPullResponse, status_code=status.HTTP_201_CREATED)
 async def push_vault(
     project_id: str,
     environment_id: str,
     request: Request,
     payload: VaultPushRequest,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -51,12 +145,13 @@ async def push_vault(
             detail="Invalid ID"
         )
 
-    member = await project_service.check_user_access(current_user.id, project_uuid, "developer")
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found or insufficient permissions"
-        )
+    current_user, ci_session, _environment = await _authenticate_vault_write(
+        project_service,
+        db,
+        request,
+        project_uuid,
+        env_uuid,
+    )
 
     project = await project_service.get_project(project_uuid)
     if not project:
@@ -98,9 +193,14 @@ async def push_vault(
         action="vault.pushed",
         resource_type="vault",
         resource_id=env_uuid,
-        user_id=current_user.id,
+        user_id=current_user.id if current_user else None,
         project_id=project_uuid,
-        metadata={"blob_count": len(created_blobs)},
+        metadata={
+            "blob_count": len(created_blobs),
+            "auth_type": "ci_session" if ci_session else "session",
+            "ci_session_id": ci_session.get("session_id") if ci_session else None,
+            "ci_token_id": ci_session.get("ci_token_id") if ci_session else None,
+        },
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent")
     )
@@ -117,7 +217,7 @@ async def push_vault(
 async def pull_vault(
     project_id: str,
     environment_id: str,
-    current_user: User = Depends(get_current_user_or_api_key),
+    auth_context: AuthContext = Depends(get_current_auth_context),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -131,6 +231,13 @@ async def pull_vault(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid ID"
         )
+
+    current_user, _environment = await _authenticate_vault_read(
+        auth_context,
+        db,
+        project_uuid,
+        env_uuid,
+    )
 
     member = await project_service.check_user_access(current_user.id, project_uuid)
     if not member:
@@ -160,7 +267,7 @@ async def pull_vault(
 async def get_vault_version(
     project_id: str,
     environment_id: str,
-    current_user: User = Depends(get_current_user_or_api_key),
+    auth_context: AuthContext = Depends(get_current_auth_context),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
@@ -174,6 +281,13 @@ async def get_vault_version(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid ID"
         )
+
+    current_user, _environment = await _authenticate_vault_read(
+        auth_context,
+        db,
+        project_uuid,
+        env_uuid,
+    )
 
     member = await project_service.check_user_access(current_user.id, project_uuid)
     if not member:

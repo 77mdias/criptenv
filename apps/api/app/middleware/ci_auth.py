@@ -226,6 +226,8 @@ async def validate_ci_session(session_token: str, project_id: UUID) -> dict:
         return {
             "session": ci_session,
             "session_token": session_token,
+            "session_id": str(ci_session.id),
+            "ci_token_id": str(ci_session.ci_token_id),
             "expires_in": CI_SESSION_EXPIRE_SECONDS,
             "project_id": str(ci_session.project_id),
             "permissions": scopes,
@@ -321,6 +323,35 @@ def require_ci_scope(required_scope: str):
         return ci_user
     
     return scope_checker
+
+
+def require_ci_session_scope(ci_session: dict, required_scope: str) -> None:
+    """Raise 403 when a CI session lacks the required scope."""
+    scopes = ci_session.get("scopes", [])
+    if not ScopeValidator().has_scope(scopes, required_scope):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "INSUFFICIENT_SCOPE",
+                "message": f"CI session requires {required_scope} scope",
+                "required_scope": required_scope,
+            },
+        )
+
+
+def require_ci_session_environment(ci_session: dict, environment: str) -> None:
+    """Raise 403 when a CI session is restricted to another environment."""
+    environment_scope = ci_session.get("environment_scope")
+    if environment_scope is None:
+        return
+    if environment_scope != environment:
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail={
+                "code": "ENVIRONMENT_ACCESS_DENIED",
+                "message": f"Token is restricted to environment '{environment_scope}' and cannot access '{environment}'",
+            },
+        )
 
 
 async def validate_environment_access(ci_token, environment: str) -> None:

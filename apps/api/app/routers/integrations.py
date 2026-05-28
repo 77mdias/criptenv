@@ -10,6 +10,11 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
+from app.middleware.ci_auth import (
+    CI_SESSION_PREFIX,
+    validate_ci_session,
+    require_ci_session_scope,
+)
 from app.models.user import User
 from app.models.project import Project
 from app.crypto.integration_config import IntegrationConfigEncryptionError
@@ -86,6 +91,57 @@ def _force_load_integration(i):
     return i
 
 
+def _extract_bearer_token(request: Request) -> str | None:
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:]
+    return None
+
+
+async def _authenticate_integration_read_or_ci(
+    project_service: ProjectService,
+    request: Request,
+    db: AsyncSession,
+    project_uuid: UUID,
+) -> tuple[User | None, dict | None]:
+    token = _extract_bearer_token(request)
+    if token and token.startswith(CI_SESSION_PREFIX):
+        ci_session = await validate_ci_session(token, project_uuid)
+        require_ci_session_scope(ci_session, "write:integrations")
+        return None, ci_session
+
+    current_user = await get_current_user(request, db)
+    member = await project_service.check_user_access(current_user.id, project_uuid)
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
+        )
+    return current_user, None
+
+
+async def _authenticate_integration_sync_or_ci(
+    project_service: ProjectService,
+    request: Request,
+    db: AsyncSession,
+    project_uuid: UUID,
+) -> tuple[User | None, dict | None]:
+    token = _extract_bearer_token(request)
+    if token and token.startswith(CI_SESSION_PREFIX):
+        ci_session = await validate_ci_session(token, project_uuid)
+        require_ci_session_scope(ci_session, "write:integrations")
+        return None, ci_session
+
+    current_user = await get_current_user(request, db)
+    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or insufficient permissions",
+        )
+    return current_user, None
+
+
 @router.post("", response_model=IntegrationResponse, status_code=status.HTTP_201_CREATED)
 async def create_integration(
     project_id: str,
@@ -156,7 +212,7 @@ async def create_integration(
 @router.get("", response_model=IntegrationListResponse)
 async def list_integrations(
     project_id: str,
-    current_user: User = Depends(get_current_user),
+    request: Request,
     db: AsyncSession = Depends(get_db)
 ):
     """List all integrations for a project.
@@ -175,13 +231,7 @@ async def list_integrations(
             detail="Invalid project ID"
         )
     
-    # Check access
-    member = await project_service.check_user_access(current_user.id, project_uuid)
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found"
-        )
+    await _authenticate_integration_read_or_ci(project_service, request, db, project_uuid)
     
     integrations = await integration_service.list_integrations(project_uuid)
     providers = integration_service.get_available_providers()
@@ -292,7 +342,6 @@ async def sync_integration(
     integration_id: str,
     request: Request,
     payload: SyncRequest,
-    current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     """Sync secrets with an integration.
@@ -318,13 +367,12 @@ async def sync_integration(
             detail="Invalid ID format"
         )
     
-    # Check access
-    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
-    if not member:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="Project not found or insufficient permissions"
-        )
+    current_user, ci_session = await _authenticate_integration_sync_or_ci(
+        project_service,
+        request,
+        db,
+        project_uuid,
+    )
     
     success, error = await integration_service.sync_integration(
         integration_id=integration_uuid,
@@ -338,9 +386,15 @@ async def sync_integration(
             action=f"integration.synced.{payload.direction}",
             resource_type="integration",
             resource_id=integration_uuid,
-            user_id=current_user.id,
+            user_id=current_user.id if current_user else None,
             project_id=project_uuid,
-            metadata={"direction": payload.direction, "environment": payload.environment},
+            metadata={
+                "direction": payload.direction,
+                "environment": payload.environment,
+                "auth_type": "ci_session" if ci_session else "session",
+                "ci_session_id": ci_session.get("session_id") if ci_session else None,
+                "ci_token_id": ci_session.get("ci_token_id") if ci_session else None,
+            },
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("User-Agent")
         )

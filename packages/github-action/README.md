@@ -26,6 +26,7 @@ jobs:
 | `api-url`        | No       | `https://criptenv-api.77mdevseven.tech/api/v1` | CriptEnv API URL, including the API version prefix |
 | `prefix`         | No       | `SECRET_`                  | Prefix for environment variables                 |
 | `version-output` | No       | `version`                  | Output name for secrets version                  |
+| `vault-password` | No       | —                          | Project vault password. When provided, secrets are exported as plaintext. Without it, ciphertext is exported for backwards compatibility. |
 
 ## Outputs
 
@@ -59,6 +60,7 @@ jobs:
           token: ${{ secrets.CRIPTENV_TOKEN }}
           project: ${{ secrets.CRIPTENV_PROJECT_ID }}
           environment: production
+          vault-password: ${{ secrets.CRIPTENV_VAULT_PASSWORD }}
           prefix: ""
 
       - name: Deploy
@@ -81,10 +83,11 @@ Store these values as GitHub repository or organization secrets:
 
 - `CRIPTENV_TOKEN`: the one-time CI token value that starts with `ci_`
 - `CRIPTENV_PROJECT_ID`: the CriptEnv project ID
+- `CRIPTENV_VAULT_PASSWORD`: optional project vault password for plaintext export
 
 ## Zero-Knowledge Limitation
 
-CriptEnv stores secrets as encrypted vault blobs. This action exports the encrypted blob payload returned by the API. It does not receive user master passwords or project decryption keys, so it cannot decrypt secrets to plaintext by itself. Workflows that need plaintext values must use an application-side CriptEnv client/decryption step with the appropriate key material.
+CriptEnv stores secrets as encrypted vault blobs. If `vault-password` is not provided, this action preserves the legacy behavior and exports the encrypted blob payload returned by the API. If `vault-password` is provided, decryption happens locally inside the GitHub Actions runner using PBKDF2/HKDF/AES-256-GCM; the API still never receives plaintext secrets or the vault password.
 
 ## Publishing Checklist
 
@@ -98,6 +101,7 @@ CriptEnv stores secrets as encrypted vault blobs. This action exports the encryp
 - Secrets are injected as environment variables which are automatically masked in logs
 - CI tokens are hashed before storage
 - Sessions expire after 1 hour
+- Plaintext export requires `vault-password`; store it as a GitHub Secret
 - The action requires `contents: read` permission only
 
 ## License

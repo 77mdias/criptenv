@@ -14,7 +14,7 @@ from criptenv.commands.environments import env_group
 from criptenv.commands.projects import projects_group
 from criptenv.commands.doctor import doctor_command
 from criptenv.commands.import_export import import_command, export_command
-from criptenv.commands.ci import ci_group, ci_login_command, ci_logout_command, ci_secrets_command, ci_deploy_command, ci_tokens_group, ci_tokens_list_command, ci_tokens_create_command, ci_tokens_revoke_command
+from criptenv.commands.ci import ci_group, ci_login_command, ci_logout_command, ci_secrets_command, ci_deploy_command, ci_tokens_list_command, ci_tokens_create_command, ci_tokens_revoke_command
 from criptenv.commands.integrations import integrations_group
 from criptenv.commands.members import members_group
 from criptenv.commands.invites import invites_group
@@ -55,7 +55,6 @@ main.add_command(doctor_command)
 main.add_command(import_command, name="import")
 main.add_command(export_command)
 main.add_command(ci_group)
-main.add_command(ci_tokens_group)
 main.add_command(rotation_group)  # M3.5: Rotation group
 main.add_command(secrets_group)  # M3.5: Extended secrets commands
 main.add_command(integrations_group)  # M3.2: Cloud integrations
