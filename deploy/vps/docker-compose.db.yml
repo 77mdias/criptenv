@@ -1,0 +1,62 @@
+version: "3.8"
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: criptenv-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER:-criptenv}
+      POSTGRES_PASSWORD: ${DB_PASSWORD:?DB_PASSWORD is required}
+      POSTGRES_DB: ${DB_NAME:-criptenv}
+      PGDATA: /var/lib/postgresql/data/pgdata
+      # Otimizações para 8GB RAM
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres-config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
+      - ./backups:/backups
+    ports:
+      # Bind apenas em localhost por segurança
+      - "127.0.0.1:5432:5432"
+    command: >
+      postgres
+      -c config_file=/etc/postgresql/postgresql.conf
+      -c listen_addresses='*'
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-criptenv} -d ${DB_NAME:-criptenv}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+    networks:
+      - criptenv-network
+    # Limites de recursos (ajuste conforme necessidade)
+    deploy:
+      resources:
+        limits:
+          cpus: '1.50'
+          memory: 3G
+        reservations:
+          cpus: '0.50'
+          memory: 512M
+
+  # Opcional: Adminer leve para emergências (descomente se precisar)
+  # adminer:
+  #   image: adminer:latest
+  #   container_name: criptenv-adminer
+  #   restart: unless-stopped
+  #   ports:
+  #     - "127.0.0.1:8080:8080"
+  #   networks:
+  #     - criptenv-network
+  #   depends_on:
+  #     - postgres
+
+volumes:
+  postgres_data:
+    driver: local
+
+networks:
+  criptenv-network:
+    driver: bridge
