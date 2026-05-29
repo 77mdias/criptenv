@@ -13,9 +13,11 @@ YELLOW='\033[1;33m'
 NC='\033[0m' # No Color
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-INSTALL_DIR="/opt/criptenv"
+INSTALL_DIR="${SCRIPT_DIR}"
 
 echo -e "${GREEN}=== CriptEnv PostgreSQL Setup ===${NC}"
+echo ""
+echo -e "${YELLOW}Diretório de instalação: ${INSTALL_DIR}${NC}"
 echo ""
 
 # 1. Verificar se Docker está instalado
@@ -38,7 +40,7 @@ fi
 
 echo -e "${GREEN}✓ Docker Compose disponível${NC}"
 
-# 3. Criar diretório de instalação
+# 3. Criar diretório de backups
 mkdir -p "${INSTALL_DIR}/backups"
 cd "${INSTALL_DIR}"
 
@@ -68,7 +70,7 @@ DB_PASSWORD=${DB_PASSWORD}
 DB_NAME=criptenv
 
 # Backup Configuration
-BACKUP_DIR=/opt/criptenv/backups
+BACKUP_DIR=${INSTALL_DIR}/backups
 RETENTION_DAYS=14
 EOF
     

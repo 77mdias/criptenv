@@ -1,16 +1,19 @@
 #!/bin/bash
 # ===========================================
 # CriptEnv — PostgreSQL Backup Script
-# Roda via cron: 0 3 * * * /opt/criptenv/backup.sh
+# Roda via cron: 0 3 * * * /caminho/do/projeto/deploy/vps/backup.sh
 # ===========================================
 
 set -euo pipefail
+
+# Detecta o diretório onde o script está
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
 # Configurações
 CONTAINER_NAME="criptenv-postgres"
 DB_NAME="${DB_NAME:-criptenv}"
 DB_USER="${DB_USER:-criptenv}"
-BACKUP_DIR="${BACKUP_DIR:-/opt/criptenv/backups}"
+BACKUP_DIR="${BACKUP_DIR:-${SCRIPT_DIR}/backups}"
 RETENTION_DAYS="${RETENTION_DAYS:-14}"
 TIMESTAMP=$(date +%Y%m%d_%H%M%S)
 BACKUP_FILE="${BACKUP_DIR}/criptenv_backup_${TIMESTAMP}.sql.gz"

@@ -37,7 +37,7 @@ bash setup-postgres.sh
 
 O script vai:
 - Instalar Docker (se não tiver)
-- Criar estrutura em `/opt/criptenv/`
+- Criar estrutura em `~/projects/criptenv/deploy/vps/`
 - Gerar senha segura automaticamente
 - Subir o PostgreSQL
 - Configurar backup automático (diário às 03:00)
@@ -75,7 +75,7 @@ Este passo migra **todos os dados** do seu banco no Supabase para o PostgreSQL l
 
 ```bash
 ssh usuario@sua-vps
-cd /opt/criptenv  # ou onde está o projeto
+cd ~/projects/criptenv/deploy/vps  # ou onde está o projeto
 bash deploy/vps/migrate-from-supabase.sh
 ```
 
@@ -130,18 +130,18 @@ docker stats criptenv-postgres
 
 ### Backup manual
 ```bash
-/opt/criptenv/backup.sh
+~/projects/criptenv/deploy/vps/backup.sh
 ```
 
 ### Listar backups
 ```bash
-ls -lah /opt/criptenv/backups/
+ls -lah ~/projects/criptenv/deploy/vps/backups/
 ```
 
 ### Restaurar de um backup
 ```bash
 # Descompactar
-gunzip -c /opt/criptenv/backups/criptenv_backup_20250115_030000.sql.gz > /tmp/restore.sql
+gunzip -c ~/projects/criptenv/deploy/vps/backups/criptenv_backup_20250115_030000.sql.gz > /tmp/restore.sql
 
 # Aplicar
 docker exec -i criptenv-postgres psql -U criptenv -d criptenv < /tmp/restore.sql
@@ -149,13 +149,13 @@ docker exec -i criptenv-postgres psql -U criptenv -d criptenv < /tmp/restore.sql
 
 ### Reiniciar o PostgreSQL
 ```bash
-cd /opt/criptenv
+cd ~/projects/criptenv/deploy/vps
 docker compose -f docker-compose.db.yml restart
 ```
 
 ### Parar completamente
 ```bash
-cd /opt/criptenv
+cd ~/projects/criptenv/deploy/vps
 docker compose -f docker-compose.db.yml down
 ```
 
@@ -194,7 +194,7 @@ docker volume prune -f          # Limpar volumes não usados
 
 ### Backup falhando
 ```bash
-cat /opt/criptenv/backups/backup.log
+cat ~/projects/criptenv/deploy/vps/backups/backup.log
 ```
 
 ### Resetar senha do PostgreSQL
