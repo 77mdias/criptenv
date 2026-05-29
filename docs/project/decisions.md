@@ -4,6 +4,28 @@ A record of significant architectural and technical decisions.
 
 ---
 
+## DEC-050 — Existing-User Scope for Invite Notifications
+
+**Date:** 2026-05-29
+**Status:** ✅ Accepted
+**Context:**
+Invite delivery now has two channels: email for every invite and in-app notifications for users who already exist. Supporting app notifications for emails without accounts would require a pending-by-email notification/outbox model and account-claim flow.
+
+**Decision:**
+Keep in-app invite notifications scoped to existing users only. Normalize invite emails before duplicate checks, email send, and existing-user lookup so registered users receive the notification reliably. Users without accounts continue to receive the invitation link by email only.
+
+**Rationale:**
+- The notification table is intentionally user-scoped by `user_id`.
+- The current product need is to make existing users see invites inside the app without adding a new pending-notification lifecycle.
+- Email remains the correct delivery channel for recipients who cannot yet access the app.
+
+**Consequences:**
+- Positive: Reliable invite notifications for registered users with no schema/API expansion.
+- Neutral: A future pending-by-email flow can be added as a separate feature.
+- Negative: Recipients without accounts still depend on email until they sign up and accept from the link.
+
+---
+
 ## DEC-049 — In-App Notification System
 
 **Date:** 2026-05-28

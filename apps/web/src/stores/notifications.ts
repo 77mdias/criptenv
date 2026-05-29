@@ -50,6 +50,9 @@ export const useNotificationsStore = create<NotificationsState>()((set, get) => 
     try {
       const data = await getUnreadCount();
       set({ unreadCount: data.unread_count });
+      if (get().isOpen) {
+        await get().fetchNotifications();
+      }
     } catch (e) {
       console.error("Failed to fetch unread count", e);
     }
@@ -87,14 +90,14 @@ export const useNotificationsStore = create<NotificationsState>()((set, get) => 
   toggleOpen: () => {
     const next = !get().isOpen;
     set({ isOpen: next });
-    if (next && !get().hasLoaded) {
+    if (next) {
       get().fetchNotifications();
     }
   },
 
   setOpen: (open: boolean) => {
     set({ isOpen: open });
-    if (open && !get().hasLoaded) {
+    if (open) {
       get().fetchNotifications();
     }
   },

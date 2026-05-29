@@ -21,7 +21,7 @@ from app.strategies.invite_transitions import (
     RevokeInviteStrategy,
 )
 
-from sqlalchemy import select
+from sqlalchemy import func, select
 
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/invites", tags=["Invites"])
@@ -68,10 +68,18 @@ async def create_invite(
             detail="Project not found or insufficient permissions"
         )
 
+    invite_email = str(payload.email).strip().lower()
+    project = await project_service.get_project(project_uuid)
+    if not project:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+
     existing = await db.execute(
         select(ProjectInvite).where(
             ProjectInvite.project_id == project_uuid,
-            ProjectInvite.email == payload.email,
+            func.lower(ProjectInvite.email) == invite_email,
             ProjectInvite.accepted_at.is_(None),
             ProjectInvite.revoked_at.is_(None)
         )
@@ -85,7 +93,7 @@ async def create_invite(
     invite = ProjectInvite(
         id=uuid4(),
         project_id=project_uuid,
-        email=payload.email,
+        email=invite_email,
         role=payload.role,
         invited_by=current_user.id,
         token=secrets.token_urlsafe(32),
@@ -101,30 +109,29 @@ async def create_invite(
         resource_id=invite.id,
         user_id=current_user.id,
         project_id=project_uuid,
-        metadata={"email": payload.email, "role": payload.role},
+        metadata={"email": invite_email, "role": payload.role},
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent")
     )
 
+    frontend_url = settings.FRONTEND_URL.rstrip("/")
+    invite_url = f"{frontend_url}/invites/accept?token={invite.token}"
+
     # Send invitation email
-    project = await project_service.get_project(project_uuid)
-    if project:
-        email_service = EmailService()
-        frontend_url = settings.FRONTEND_URL.rstrip("/")
-        invite_url = f"{frontend_url}/invites/accept?token={invite.token}"
-        email_service.send_project_invite(
-            to=payload.email,
-            invite_url=invite_url,
-            project_name=project.name,
-            role=payload.role,
-            invited_by_name=current_user.name or "",
-            expires_days=7
-        )
+    email_service = EmailService()
+    email_service.send_project_invite(
+        to=invite_email,
+        invite_url=invite_url,
+        project_name=project.name,
+        role=payload.role,
+        invited_by_name=current_user.name or "",
+        expires_days=7
+    )
 
     # Create in-app notification for the invited user if they have an account
     notification_service = NotificationService(db)
     invited_user_result = await db.execute(
-        select(User).where(User.email == payload.email)
+        select(User).where(func.lower(User.email) == invite_email)
     )
     invited_user = invited_user_result.scalar_one_or_none()
     if invited_user:

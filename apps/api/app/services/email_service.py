@@ -33,10 +33,9 @@ class EmailService:
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{title}</title>
-  <style>
+    <style>
     @media only screen and (max-width: 600px) {{
       .container {{ width: 100% !important; padding: 16px !important; }}
-      .btn {{ width: 100% !important; display: block !important; text-align: center !important; }}
     }}
   </style>
 </head>
@@ -90,10 +89,10 @@ class EmailService:
     def _cta_button(url: str, label: str) -> str:
         """Generate a styled call-to-action button."""
         return f"""
-        <table role="presentation" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0;">
+        <table role="presentation" width="100%" cellspacing="0" cellpadding="0" border="0" style="margin:28px 0;">
           <tr>
-            <td style="border-radius:8px;background:linear-gradient(135deg,#171717,#262626);" align="center">
-              <a href="{url}" class="btn" style="display:inline-block;padding:14px 32px;font-size:15px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;letter-spacing:0.3px;">
+            <td align="center" style="padding:0;text-align:center;">
+              <a href="{url}" style="display:block;width:100%;max-width:280px;box-sizing:border-box;margin:0 auto;padding:14px 24px;background-color:#171717;font-size:15px;line-height:20px;font-weight:600;color:#ffffff;text-decoration:none;border-radius:8px;letter-spacing:0.3px;text-align:center;">
                 {label}
               </a>
             </td>
