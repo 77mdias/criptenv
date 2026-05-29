@@ -30,7 +30,7 @@ services:
       retries: 5
       start_period: 10s
     networks:
-      - criptenv-network
+      - criptenv
     # Limites de recursos (ajuste conforme necessidade)
     deploy:
       resources:
@@ -41,22 +41,10 @@ services:
           cpus: '0.50'
           memory: 512M
 
-  # Opcional: Adminer leve para emergências (descomente se precisar)
-  # adminer:
-  #   image: adminer:latest
-  #   container_name: criptenv-adminer
-  #   restart: unless-stopped
-  #   ports:
-  #     - "127.0.0.1:8080:8080"
-  #   networks:
-  #     - criptenv-network
-  #   depends_on:
-  #     - postgres
-
 volumes:
   postgres_data:
     driver: local
 
 networks:
-  criptenv-network:
-    driver: bridge
+  criptenv:
+    external: true
