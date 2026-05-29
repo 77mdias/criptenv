@@ -62,31 +62,32 @@ DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_GERADA@criptenv-postgres:5432/c
 
 ---
 
-## Migração do Supabase (OPCIONAL)
+## Migração do Supabase
 
-> ⚠️ **IMPORTANTE**: Seu banco de **produção** no Supabase está funcionando e deve permanecer lá.  
-> Este passo serve apenas se você quiser trazer os dados do ambiente de **desenvolvimento** para a VPS.  
-> Se quiser começar do zero (banco vazio), **pule esta etapa**.
+Este passo migra **todos os dados** do seu banco no Supabase para o PostgreSQL local na VPS.
 
-### Opção A: Fazer dump DIRETO na VPS (recomendado)
+> ⚠️ **ATENÇÃO**: Se você está migrando o banco de **PRODUÇÃO**:
+> 1. Faça em horário de baixo tráfego
+> 2. Considere parar o backend temporariamente para evitar writes durante o dump
+> 3. O processo pode levar minutos dependendo do tamanho do banco
 
-O script de migração já está preparado para isso:
+### Opção A: Fazer dump DIRETO na VPS (recomendado — mais rápido)
 
 ```bash
 ssh usuario@sua-vps
-cd /opt/criptenv  # ou onde você copiou os arquivos
-bash migrate-from-supabase.sh
+cd /opt/criptenv  # ou onde está o projeto
+bash deploy/vps/migrate-from-supabase.sh
 ```
 
 O script vai perguntar:
-1. Se quer fazer dump direto na VPS ou na máquina local
-2. A connection string do banco que você quer migrar (use a do **dev**, não a de produção!)
+1. Se quer fazer dump direto na VPS ou transferir da máquina local
+2. A connection string do banco (produção ou desenvolvimento)
 
 ### Opção B: Fazer dump na máquina local e transferir
 
 ```bash
-# NA SUA MÁQUINA LOCAL — use a connection string do ambiente de DEV
-pg_dump "postgresql://postgres.xxx:SENHA_DEV@host.pooler.supabase.com:6543/postgres?pgbouncer=true" \
+# NA SUA MÁQUINA LOCAL
+pg_dump "postgresql://postgres.xxx:SENHA@host.pooler.supabase.com:6543/postgres?pgbouncer=true" \
   --clean --if-exists --create \
   > criptenv_dump.sql
 
@@ -96,7 +97,7 @@ scp criptenv_dump.sql usuario@sua-vps:/tmp/criptenv_supabase_dump.sql
 
 Na VPS:
 ```bash
-bash migrate-from-supabase.sh
+bash deploy/vps/migrate-from-supabase.sh
 # O script vai encontrar o dump e fazer o restore automaticamente
 ```
 

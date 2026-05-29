@@ -50,10 +50,11 @@ else
         echo ""
         echo -e "${YELLOW}Modo: Dump direto na VPS${NC}"
         echo ""
-        echo -e "${YELLOW}⚠️  ATENÇÃO: Use a connection string do ambiente de DESENVOLVIMENTO.${NC}"
-        echo -e "${YELLOW}    NÃO use a connection string de produção a menos que SAIBA o que está fazendo.${NC}"
+        echo -e "${YELLOW}⚠️  ATENÇÃO: Você está prestes a fazer dump de um banco de dados.${NC}"
+        echo -e "${YELLOW}    Se for PRODUÇÃO, recomendamos parar o backend temporariamente${NC}"
+        echo -e "${YELLOW}    ou fazer em horário de baixo tráfego para evitar inconsistências.${NC}"
         echo ""
-        read -p "Connection string do Supabase DEV (ex: postgresql://postgres.xxx:senha@host:6543/postgres?pgbouncer=true): " SUPABASE_URL
+        read -p "Connection string do Supabase (ex: postgresql://postgres.xxx:senha@host:6543/postgres?pgbouncer=true): " SUPABASE_URL
 
         if [ -z "$SUPABASE_URL" ]; then
             echo -e "${RED}ERRO: Connection string não pode ser vazia${NC}"
