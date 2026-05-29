@@ -44,16 +44,19 @@ echo -e "${GREEN}✓ Docker Compose disponível${NC}"
 mkdir -p "${INSTALL_DIR}/backups"
 cd "${INSTALL_DIR}"
 
-# 4. Copiar arquivos (assumindo que você enviou os arquivos da pasta deploy/vps/)
+# 4. Verificar arquivos necessários
 if [ -f "${SCRIPT_DIR}/docker-compose.db.yml" ]; then
-    cp "${SCRIPT_DIR}/docker-compose.db.yml" "${INSTALL_DIR}/docker-compose.db.yml"
-    cp -r "${SCRIPT_DIR}/postgres-config" "${INSTALL_DIR}/"
-    cp "${SCRIPT_DIR}/backup.sh" "${INSTALL_DIR}/backup.sh"
+    # Se SCRIPT_DIR != INSTALL_DIR, copia os arquivos. Se for o mesmo, só garante permissões
+    if [ "${SCRIPT_DIR}" != "${INSTALL_DIR}" ]; then
+        cp "${SCRIPT_DIR}/docker-compose.db.yml" "${INSTALL_DIR}/docker-compose.db.yml"
+        cp -r "${SCRIPT_DIR}/postgres-config" "${INSTALL_DIR}/"
+        cp "${SCRIPT_DIR}/backup.sh" "${INSTALL_DIR}/backup.sh"
+    fi
     chmod +x "${INSTALL_DIR}/backup.sh"
-    echo -e "${GREEN}✓ Arquivos copiados para ${INSTALL_DIR}${NC}"
+    echo -e "${GREEN}✓ Arquivos prontos em ${INSTALL_DIR}${NC}"
 else
     echo -e "${RED}ERRO: docker-compose.db.yml não encontrado!${NC}"
-    echo "Certifique-se de copiar a pasta deploy/vps/ para a VPS antes de rodar este script."
+    echo "Certifique-se de que a pasta deploy/vps/ está completa na VPS."
     exit 1
 fi
 
