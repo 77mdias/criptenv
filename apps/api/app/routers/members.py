@@ -11,21 +11,27 @@ from app.models.user import User
 from app.models.member import ProjectMember
 
 from sqlalchemy import select
-
+from sqlalchemy.orm import joinedload
+from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/members", tags=["Members"])
 
 
-def _force_load_member(m):
-    """Force-load all column attributes to avoid async lazy-loading errors."""
-    _ = m.id
-    _ = m.project_id
-    _ = m.user_id
-    _ = m.role
-    _ = m.invited_by
-    _ = m.created_at
-    _ = m.accepted_at
-    return m
+def _member_to_response(m):
+    """Convert ProjectMember (with eager-loaded user) to response dict."""
+    user = getattr(m, "user", None)
+    return {
+        "id": m.id,
+        "project_id": m.project_id,
+        "user_id": m.user_id,
+        "role": m.role,
+        "invited_by": m.invited_by,
+        "created_at": m.created_at,
+        "accepted_at": m.accepted_at,
+        "name": user.name if user else None,
+        "email": user.email if user else None,
+        "avatar_url": user.avatar_url if user else None,
+    }
 
 
 @router.post("", response_model=MemberResponse, status_code=status.HTTP_201_CREATED)
@@ -88,7 +94,7 @@ async def add_member(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return MemberResponse.model_validate(_force_load_member(new_member))
+    return MemberResponse.model_validate(_member_to_response(new_member))
 
 
 @router.get("", response_model=MemberListResponse)
@@ -116,13 +122,14 @@ async def list_members(
 
     result = await db.execute(
         select(ProjectMember)
+        .options(joinedload(ProjectMember.user))
         .where(ProjectMember.project_id == project_uuid)
         .order_by(ProjectMember.created_at)
     )
-    members = list(result.scalars().all())
+    members = list(result.unique().scalars().all())
 
     return MemberListResponse(
-        members=[MemberResponse.model_validate(_force_load_member(m)) for m in members],
+        members=[MemberResponse.model_validate(_member_to_response(m)) for m in members],
         total=len(members)
     )
 
@@ -166,7 +173,7 @@ async def get_member(
             detail="Member not found"
         )
 
-    return MemberResponse.model_validate(_force_load_member(target_member))
+    return MemberResponse.model_validate(_member_to_response(target_member))
 
 
 @router.patch("/{member_id}", response_model=MemberResponse)
@@ -232,7 +239,7 @@ async def update_member(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return MemberResponse.model_validate(_force_load_member(target_member))
+    return MemberResponse.model_validate(_member_to_response(target_member))
 
 
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -150,6 +150,9 @@ export interface Member {
   user_id: string;
   role: string;
   created_at: string;
+  name?: string;
+  email?: string;
+  avatar_url?: string | null;
 }
 
 export interface MemberListResponse {
@@ -168,6 +171,10 @@ export interface Invite {
   revoked_at?: string | null;
   status?: string;
   created_at: string;
+  invited_by_name?: string | null;
+  invited_by_avatar_url?: string | null;
+  invitee_name?: string | null;
+  invitee_avatar_url?: string | null;
 }
 
 export interface InviteListResponse {

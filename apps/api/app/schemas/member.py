@@ -21,6 +21,9 @@ class MemberResponse(BaseModel):
     invited_by: Optional[UUID] = None
     created_at: datetime
     accepted_at: Optional[datetime] = None
+    name: Optional[str] = None
+    email: Optional[str] = None
+    avatar_url: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -47,6 +50,10 @@ class InviteResponse(BaseModel):
     accepted_at: Optional[datetime] = None
     revoked_at: Optional[datetime] = None
     created_at: datetime
+    invited_by_name: Optional[str] = None
+    invited_by_avatar_url: Optional[str] = None
+    invitee_name: Optional[str] = None
+    invitee_avatar_url: Optional[str] = None
 
     class Config:
         from_attributes = True

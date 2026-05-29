@@ -29,19 +29,24 @@ router = APIRouter(prefix="/api/v1/projects/{project_id}/invites", tags=["Invite
 ADMIN_ROLES = {"admin", "owner"}
 
 
-def _force_load_invite(inv):
-    """Force-load all column attributes to avoid async lazy-loading errors."""
-    _ = inv.id
-    _ = inv.project_id
-    _ = inv.email
-    _ = inv.role
-    _ = inv.invited_by
-    _ = inv.token
-    _ = inv.expires_at
-    _ = inv.accepted_at
-    _ = inv.revoked_at
-    _ = inv.created_at
-    return inv
+def _invite_to_response(inv, invited_by_user=None, invitee_user=None):
+    """Convert ProjectInvite to response dict with user info."""
+    return {
+        "id": inv.id,
+        "project_id": inv.project_id,
+        "email": inv.email,
+        "role": inv.role,
+        "invited_by": inv.invited_by,
+        "token": inv.token,
+        "expires_at": inv.expires_at,
+        "accepted_at": inv.accepted_at,
+        "revoked_at": inv.revoked_at,
+        "created_at": inv.created_at,
+        "invited_by_name": invited_by_user.name if invited_by_user else None,
+        "invited_by_avatar_url": invited_by_user.avatar_url if invited_by_user else None,
+        "invitee_name": invitee_user.name if invitee_user else None,
+        "invitee_avatar_url": invitee_user.avatar_url if invitee_user else None,
+    }
 
 
 @router.post("", response_model=InviteResponse, status_code=status.HTTP_201_CREATED)
@@ -159,7 +164,7 @@ async def create_invite(
             }
         )
 
-    return InviteResponse.model_validate(_force_load_invite(invite))
+    return InviteResponse.model_validate(_invite_to_response(invite))
 
 
 @router.get("", response_model=InviteListResponse)
@@ -192,9 +197,32 @@ async def list_invites(
     )
     invites = list(result.scalars().all())
 
+    # Pre-load invited_by users and invitee users by email
+    invited_by_ids = {i.invited_by for i in invites if i.invited_by}
+    invitee_emails = {i.email.lower() for i in invites}
+
+    invited_by_users = {}
+    if invited_by_ids:
+        user_result = await db.execute(select(User).where(User.id.in_(invited_by_ids)))
+        invited_by_users = {u.id: u for u in user_result.scalars().all()}
+
+    invitee_users = {}
+    if invitee_emails:
+        invitee_result = await db.execute(select(User).where(func.lower(User.email).in_(invitee_emails)))
+        invitee_users = {u.email.lower(): u for u in invitee_result.scalars().all()}
+
     return InviteListResponse(
-        invites=[InviteResponse.model_validate(_force_load_invite(i)) for i in invites],
-        total=len(invites)
+        invites=[
+            InviteResponse.model_validate(
+                _invite_to_response(
+                    i,
+                    invited_by_user=invited_by_users.get(i.invited_by),
+                    invitee_user=invitee_users.get(i.email.lower()),
+                )
+            )
+            for i in invites
+        ],
+        total=len(invites),
     )
 
 
@@ -251,7 +279,7 @@ async def accept_invite(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return InviteResponse.model_validate(_force_load_invite(invite))
+    return InviteResponse.model_validate(_invite_to_response(invite))
 
 
 @router.post("/{invite_id}/revoke", response_model=InviteResponse)
@@ -307,7 +335,7 @@ async def revoke_invite(
             detail="Invite not found or insufficient permissions"
         )
 
-    response = InviteResponse.model_validate(_force_load_invite(invite))
+    response = InviteResponse.model_validate(_invite_to_response(invite))
 
     await audit_service.log(
         action="invite.revoked",

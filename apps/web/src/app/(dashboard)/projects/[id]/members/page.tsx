@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Check, Plus, Trash2, UserMinus, Users, X } from "lucide-react";
+import { Check, Clock, Plus, Trash2, UserMinus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,6 +18,7 @@ import {
 } from "@/lib/project-permissions";
 import { inviteMemberSchema } from "@/lib/validators/schemas";
 import { useAuthStore } from "@/stores/auth";
+import { cn } from "@/lib/utils";
 import type {
   Invite,
   InviteListResponse,
@@ -32,6 +33,104 @@ function inviteState(invite: Invite) {
   if (invite.accepted_at) return "accepted";
   if (new Date(invite.expires_at).getTime() < Date.now()) return "expired";
   return "pending";
+}
+
+function getInitials(nameOrEmail: string): string {
+  if (!nameOrEmail) return "?";
+  const parts = nameOrEmail.trim().split(/\s+/);
+  if (parts.length === 1) {
+    return parts[0].slice(0, 2).toUpperCase();
+  }
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+}
+
+function UserAvatar({
+  url,
+  fallback,
+  alt,
+  size = "md",
+  className,
+}: {
+  url?: string | null;
+  fallback: string;
+  alt: string;
+  size?: "sm" | "md" | "lg";
+  className?: string;
+}) {
+  const sizeClasses = {
+    sm: "h-8 w-8 text-[10px]",
+    md: "h-10 w-10 text-xs",
+    lg: "h-12 w-12 text-sm",
+  };
+
+  return (
+    <div
+      className={cn(
+        "relative inline-flex shrink-0 items-center justify-center rounded-full overflow-hidden bg-(--background-muted) ring-1 ring-(--border)",
+        sizeClasses[size],
+        className
+      )}
+      title={alt}
+    >
+      {url ? (
+        // eslint-disable-next-line @next/next/no-img-element
+        <img
+          src={url}
+          alt={alt}
+          className="h-full w-full object-cover"
+          onError={(e) => {
+            (e.target as HTMLImageElement).style.display = "none";
+          }}
+        />
+      ) : null}
+      <span className={cn("font-semibold text-(--text-secondary)", url ? "sr-only" : "")}>
+        {getInitials(fallback)}
+      </span>
+    </div>
+  );
+}
+
+function InviteStatusBadge({ state }: { state: ReturnType<typeof inviteState> }) {
+  const config = {
+    pending: {
+      icon: Clock,
+      label: "Pendente",
+      className:
+        "bg-amber-500/10 text-amber-500 border-amber-500/20 dark:bg-amber-400/10 dark:text-amber-400 dark:border-amber-400/20",
+    },
+    accepted: {
+      icon: Check,
+      label: "Aceito",
+      className:
+        "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-400/10 dark:text-emerald-400 dark:border-emerald-400/20",
+    },
+    revoked: {
+      icon: UserMinus,
+      label: "Revogado",
+      className:
+        "bg-red-500/10 text-red-500 border-red-500/20 dark:bg-red-400/10 dark:text-red-400 dark:border-red-400/20",
+    },
+    expired: {
+      icon: Clock,
+      label: "Expirado",
+      className:
+        "bg-neutral-500/10 text-neutral-500 border-neutral-500/20 dark:bg-neutral-400/10 dark:text-neutral-400 dark:border-neutral-400/20",
+    },
+  };
+
+  const { icon: Icon, label, className } = config[state];
+
+  return (
+    <span
+      className={cn(
+        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
+        className
+      )}
+    >
+      <Icon className="h-3 w-3" />
+      {label}
+    </span>
+  );
 }
 
 export default function MembersPage() {
@@ -181,7 +280,8 @@ export default function MembersPage() {
       setPermissionOpen(true);
       return;
     }
-    if (!window.confirm(`Remover membro ${member.user_id}?`)) return;
+    const displayName = member.name || member.email || member.user_id;
+    if (!window.confirm(`Remover ${displayName} do projeto?`)) return;
     setBusyId(member.id);
     setError(null);
     try {
@@ -197,7 +297,8 @@ export default function MembersPage() {
 
   const handleRevokeInvite = async (invite: Invite) => {
     const canRevoke =
-      canManageMembers || (currentRole === "developer" && invite.invited_by === user?.id);
+      canManageMembers ||
+      (currentRole === "developer" && invite.invited_by === user?.id);
     if (!canRevoke) {
       setPermissionOpen(true);
       return;
@@ -335,108 +436,122 @@ export default function MembersPage() {
       ) : (
         <Card className="overflow-hidden p-0">
           <div className="divide-y divide-(--border)">
-            {members.map((member) => (
-              <div
-                key={member.id}
-                className="grid grid-cols-1 gap-3 px-4 py-4 transition-colors hover:bg-(--background-subtle) md:grid-cols-[1fr_auto_auto] md:items-center md:px-6"
-              >
-                <div className="flex min-w-0 items-center gap-3">
-                  <div className="flex h-10 w-10 items-center justify-center rounded-full bg-(--accent)/10">
-                    <Users className="h-5 w-5 text-(--accent)" />
+            {members.map((member) => {
+              const displayName = member.name || member.email || member.user_id;
+              return (
+                <div
+                  key={member.id}
+                  className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-(--background-subtle) sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6"
+                >
+                  {/* Left: avatar + info */}
+                  <div className="flex min-w-0 items-center gap-3">
+                    <UserAvatar
+                      url={member.avatar_url}
+                      fallback={displayName}
+                      alt={displayName}
+                    />
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-medium text-(--text-primary)">
+                        {displayName}
+                      </p>
+                      <p className="truncate font-mono text-xs text-(--text-muted)">
+                        {member.email && member.name
+                          ? member.email
+                          : member.email || member.user_id}
+                        {" · "}
+                        Entrou em{" "}
+                        {new Date(member.created_at).toLocaleDateString(
+                          "pt-BR",
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="truncate font-mono text-sm font-medium text-(--text-primary)">
-                      {member.user_id}
-                    </p>
-                    <p className="font-mono text-xs text-(--text-muted)">
-                      Entrou em{" "}
-                      {new Date(member.created_at).toLocaleDateString("pt-BR")}
-                    </p>
+
+                  {/* Right: role + actions */}
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    {member.role === "owner" ? (
+                      <Badge variant="outline">owner</Badge>
+                    ) : canManageMembers ? (
+                      <RolePicker
+                        value={member.role}
+                        options={["viewer", "developer", "admin"]}
+                        disabled={busyId === member.id}
+                        onChange={(role) => handleRoleChange(member, role)}
+                      />
+                    ) : (
+                      <Badge variant="outline">{member.role}</Badge>
+                    )}
+                    {canManageMembers && (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-red-600"
+                        disabled={
+                          member.role === "owner" || busyId === member.id
+                        }
+                        onClick={() => handleRemove(member)}
+                        aria-label="Remover membro"
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
                   </div>
                 </div>
-                {member.role === "owner" ? (
-                  <Badge variant="outline">owner</Badge>
-                ) : canManageMembers ? (
-                  <RolePicker
-                    value={member.role}
-                    options={["viewer", "developer", "admin"]}
-                    disabled={busyId === member.id}
-                    onChange={(role) => handleRoleChange(member, role)}
-                  />
-                ) : (
-                  <Badge variant="outline">{member.role}</Badge>
-                )}
-                {canManageMembers && (
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 text-red-600"
-                    disabled={member.role === "owner" || busyId === member.id}
-                    onClick={() => handleRemove(member)}
-                    aria-label="Remover membro"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                )}
-              </div>
-            ))}
+              );
+            })}
 
             {invites.map((invite) => {
               const state = inviteState(invite);
+              const displayName =
+                invite.invitee_name || invite.email;
               return (
                 <div
                   key={invite.id}
-                  className="grid grid-cols-1 gap-3 px-4 py-4 transition-colors hover:bg-(--background-subtle) md:grid-cols-[1fr_auto_auto] md:items-center md:px-6"
+                  className="flex flex-col gap-3 px-4 py-4 transition-colors hover:bg-(--background-subtle) sm:flex-row sm:items-center sm:justify-between sm:gap-4 sm:px-6"
                 >
+                  {/* Left: avatar + info */}
                   <div className="flex min-w-0 items-center gap-3">
-                    <div className="flex h-10 w-10 items-center justify-center rounded-full bg-(--background-muted)">
-                      {state === "accepted" ? (
-                        <Check className="h-5 w-5 text-green-700" />
-                      ) : (
-                        <UserMinus className="h-5 w-5 text-(--text-muted)" />
-                      )}
-                    </div>
+                    <UserAvatar
+                      url={invite.invitee_avatar_url}
+                      fallback={displayName}
+                      alt={displayName}
+                    />
                     <div className="min-w-0">
-                      <p className="truncate font-mono text-sm font-medium text-(--text-primary)">
-                        {invite.email}
+                      <p className="truncate text-sm font-medium text-(--text-primary)">
+                        {displayName}
                       </p>
                       <p className="font-mono text-xs text-(--text-muted)">
-                        Expira em{" "}
+                        Convite · Expira em{" "}
                         {new Date(invite.expires_at).toLocaleDateString(
                           "pt-BR",
                         )}
                       </p>
                     </div>
                   </div>
-                  <div className="flex flex-wrap gap-2">
-                    <Badge
-                      variant={
-                        state === "pending"
-                          ? "warning"
-                          : state === "accepted"
-                            ? "success"
-                            : "danger"
-                      }
-                    >
-                      {state}
-                    </Badge>
+
+                  {/* Right: status + role + actions */}
+                  <div className="flex items-center gap-2 sm:gap-3">
+                    <InviteStatusBadge state={state} />
                     <Badge variant="outline">{invite.role}</Badge>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      className="h-9 w-9 text-red-600"
+                      disabled={
+                        state !== "pending" ||
+                        busyId === invite.id ||
+                        (!canManageMembers &&
+                          !(
+                            currentRole === "developer" &&
+                            invite.invited_by === user?.id
+                          ))
+                      }
+                      onClick={() => handleRevokeInvite(invite)}
+                      aria-label="Revogar convite"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
                   </div>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="h-9 w-9 text-red-600"
-                    disabled={
-                      state !== "pending" ||
-                      busyId === invite.id ||
-                      (!canManageMembers &&
-                        !(currentRole === "developer" && invite.invited_by === user?.id))
-                    }
-                    onClick={() => handleRevokeInvite(invite)}
-                    aria-label="Revogar convite"
-                  >
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
                 </div>
               );
             })}
