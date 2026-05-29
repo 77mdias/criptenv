@@ -42,10 +42,10 @@ def _invite_to_response(inv, invited_by_user=None, invitee_user=None):
         "accepted_at": inv.accepted_at,
         "revoked_at": inv.revoked_at,
         "created_at": inv.created_at,
-        "invited_by_name": invited_by_user.name if invited_by_user else None,
-        "invited_by_avatar_url": invited_by_user.avatar_url if invited_by_user else None,
-        "invitee_name": invitee_user.name if invitee_user else None,
-        "invitee_avatar_url": invitee_user.avatar_url if invitee_user else None,
+        "invited_by_name": getattr(invited_by_user, "name", None) if invited_by_user else None,
+        "invited_by_avatar_url": getattr(invited_by_user, "avatar_url", None) if invited_by_user else None,
+        "invitee_name": getattr(invitee_user, "name", None) if invitee_user else None,
+        "invitee_avatar_url": getattr(invitee_user, "avatar_url", None) if invitee_user else None,
     }
 
 
@@ -201,12 +201,12 @@ async def list_invites(
     invited_by_ids = {i.invited_by for i in invites if i.invited_by}
     invitee_emails = {i.email.lower() for i in invites}
 
-    invited_by_users = {}
+    invited_by_users: dict = {}
     if invited_by_ids:
         user_result = await db.execute(select(User).where(User.id.in_(invited_by_ids)))
         invited_by_users = {u.id: u for u in user_result.scalars().all()}
 
-    invitee_users = {}
+    invitee_users: dict = {}
     if invitee_emails:
         invitee_result = await db.execute(select(User).where(func.lower(User.email).in_(invitee_emails)))
         invitee_users = {u.email.lower(): u for u in invitee_result.scalars().all()}

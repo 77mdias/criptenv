@@ -11,15 +11,13 @@ from app.models.user import User
 from app.models.member import ProjectMember
 
 from sqlalchemy import select
-from sqlalchemy.orm import joinedload
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/members", tags=["Members"])
 
 
-def _member_to_response(m):
-    """Convert ProjectMember (with eager-loaded user) to response dict."""
-    user = getattr(m, "user", None)
+def _member_to_response(m: ProjectMember, user: User | None = None):
+    """Convert ProjectMember to response dict with optional user info."""
     return {
         "id": m.id,
         "project_id": m.project_id,
@@ -94,7 +92,10 @@ async def add_member(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return MemberResponse.model_validate(_member_to_response(new_member))
+    # Load user info for the new member
+    user_result = await db.execute(select(User).where(User.id == new_member.user_id))
+    user = user_result.scalar_one_or_none()
+    return MemberResponse.model_validate(_member_to_response(new_member, user))
 
 
 @router.get("", response_model=MemberListResponse)
@@ -120,17 +121,27 @@ async def list_members(
             detail="Project not found"
         )
 
+    # Load members
     result = await db.execute(
         select(ProjectMember)
-        .options(joinedload(ProjectMember.user))
         .where(ProjectMember.project_id == project_uuid)
         .order_by(ProjectMember.created_at)
     )
-    members = list(result.unique().scalars().all())
+    members = list(result.scalars().all())
+
+    # Load associated users in one batch
+    user_ids = {m.user_id for m in members}
+    users = {}
+    if user_ids:
+        user_result = await db.execute(select(User).where(User.id.in_(user_ids)))
+        users = {u.id: u for u in user_result.scalars().all()}
 
     return MemberListResponse(
-        members=[MemberResponse.model_validate(_member_to_response(m)) for m in members],
-        total=len(members)
+        members=[
+            MemberResponse.model_validate(_member_to_response(m, users.get(m.user_id)))
+            for m in members
+        ],
+        total=len(members),
     )
 
 
@@ -173,7 +184,10 @@ async def get_member(
             detail="Member not found"
         )
 
-    return MemberResponse.model_validate(_member_to_response(target_member))
+    # Load user info for the target member
+    user_result = await db.execute(select(User).where(User.id == target_member.user_id))
+    user = user_result.scalar_one_or_none()
+    return MemberResponse.model_validate(_member_to_response(target_member, user))
 
 
 @router.patch("/{member_id}", response_model=MemberResponse)
@@ -239,7 +253,10 @@ async def update_member(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return MemberResponse.model_validate(_member_to_response(target_member))
+    # Load user info for the target member
+    user_result = await db.execute(select(User).where(User.id == target_member.user_id))
+    user = user_result.scalar_one_or_none()
+    return MemberResponse.model_validate(_member_to_response(target_member, user))
 
 
 @router.delete("/{member_id}", status_code=status.HTTP_204_NO_CONTENT)

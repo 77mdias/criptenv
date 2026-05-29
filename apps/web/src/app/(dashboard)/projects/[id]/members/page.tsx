@@ -96,7 +96,7 @@ function InviteStatusBadge({ state }: { state: ReturnType<typeof inviteState> })
       icon: Clock,
       label: "Pendente",
       className:
-        "bg-amber-500/10 text-amber-500 border-amber-500/20 dark:bg-amber-400/10 dark:text-amber-400 dark:border-amber-400/20",
+        "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-400/10 dark:text-amber-400 dark:border-amber-400/20",
     },
     accepted: {
       icon: Check,
@@ -123,11 +123,11 @@ function InviteStatusBadge({ state }: { state: ReturnType<typeof inviteState> })
   return (
     <span
       className={cn(
-        "inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-xs font-medium",
+        "inline-flex items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium min-w-[88px]",
         className
       )}
     >
-      <Icon className="h-3 w-3" />
+      <Icon className="h-3 w-3 shrink-0" />
       {label}
     </span>
   );
