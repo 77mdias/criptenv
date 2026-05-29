@@ -9,18 +9,19 @@ This file records completed tasks and major project milestones.
 ## 2026-05-29 — Invite Notification UX Fix
 
 **Resumo:**
-Corrigida a experiência de convites no sistema de notificações. Convites agora normalizam email antes do envio e da busca por usuário existente, o sino busca a lista novamente ao abrir e usa painel sólido/acessível, e o botão do email foi trocado para markup compatível com Gmail mobile.
+Corrigida a experiência de convites no sistema de notificações. Convites agora normalizam email antes do envio e da busca por usuário existente, o sino busca a lista novamente ao abrir e usa painel sólido/acessível, o botão do email foi trocado para markup compatível com Gmail mobile, e a página de aceite foi compactada para caber em uma dobra no layout auth.
 
 **Arquivos alterados:**
 - `apps/api/app/routers/invites.py`, `apps/api/app/services/email_service.py`
-- `apps/web/src/components/layout/notification-bell.tsx`, `apps/web/src/stores/notifications.ts`
+- `apps/web/src/components/layout/notification-bell.tsx`, `apps/web/src/stores/notifications.ts`, `apps/web/src/app/(auth)/invites/accept/page.tsx`
 - `docs/project/decisions.md`, `docs/development/CHANGELOG.md`, `docs/tasks/current-task.md`, `docs/tasks/task-history.md`
 
 **Testes:**
 - `apps/api/.venv/bin/python -m pytest apps/api/tests/test_invite_notifications.py apps/api/tests/test_email_service.py -q` — 3 passed.
 - `cd apps/web && npm run test:unit -- src/components/layout/__tests__/notification-bell.test.tsx --runInBand` — 2 passed.
+- `cd apps/web && npm run test:unit -- --runTestsByPath 'src/app/(auth)/invites/accept/__tests__/page.test.tsx' --runInBand` — 2 passed.
 - `make api-test` — 407 passed, 2 skipped.
-- `cd apps/web && npm run test:unit -- --runInBand` — 71 passed.
+- `cd apps/web && npm run test:unit -- --runInBand` — 73 passed.
 - `cd apps/web && npm run lint` — 0 errors, 3 pre-existing warnings.
 - `make web-build` — passed.
 
