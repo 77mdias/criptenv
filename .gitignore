@@ -28,6 +28,12 @@ out/
 .idea/
 *.swp
 *.swo
+
+# VPS deployment secrets
+deploy/vps/.env.db
+deploy/vps/backups/
+*.sql
+criptenv_dump.sql
 *~
 
 # OS files

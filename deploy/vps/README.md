@@ -62,38 +62,42 @@ DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_GERADA@criptenv-postgres:5432/c
 
 ---
 
-## Migração do Supabase
+## Migração do Supabase (OPCIONAL)
 
-### 1. Faça o dump do Supabase
+> ⚠️ **IMPORTANTE**: Seu banco de **produção** no Supabase está funcionando e deve permanecer lá.  
+> Este passo serve apenas se você quiser trazer os dados do ambiente de **desenvolvimento** para a VPS.  
+> Se quiser começar do zero (banco vazio), **pule esta etapa**.
 
-```bash
-# Na sua máquina local
-pg_dump "postgresql://postgres.yrsahoovswjlgrnmhghs:77mdevOpsCMD@aws-1-us-west-2.pooler.supabase.com:6543/postgres?pgbouncer=true" \
-  --clean --if-exists --create \
-  > criptenv_dump.sql
-```
+### Opção A: Fazer dump DIRETO na VPS (recomendado)
 
-### 2. Transfira para a VPS
-
-```bash
-scp criptenv_dump.sql usuario@sua-vps:/tmp/
-```
-
-### 3. Restaure no PostgreSQL local
+O script de migração já está preparado para isso:
 
 ```bash
 ssh usuario@sua-vps
+cd /opt/criptenv  # ou onde você copiou os arquivos
+bash migrate-from-supabase.sh
+```
 
-# Copiar dump para dentro do container
-docker cp /tmp/criptenv_dump.sql criptenv-postgres:/tmp/criptenv_dump.sql
+O script vai perguntar:
+1. Se quer fazer dump direto na VPS ou na máquina local
+2. A connection string do banco que você quer migrar (use a do **dev**, não a de produção!)
 
-# Executar restore
-docker exec -i criptenv-postgres psql -U criptenv -d criptenv -f /tmp/criptenv_dump.sql
+### Opção B: Fazer dump na máquina local e transferir
 
-# Ou se quiser dropar e recriar o banco primeiro:
-docker exec criptenv-postgres dropdb -U criptenv --if-exists criptenv
-docker exec criptenv-postgres createdb -U criptenv criptenv
-docker exec -i criptenv-postgres psql -U criptenv -d criptenv -f /tmp/criptenv_dump.sql
+```bash
+# NA SUA MÁQUINA LOCAL — use a connection string do ambiente de DEV
+pg_dump "postgresql://postgres.xxx:SENHA_DEV@host.pooler.supabase.com:6543/postgres?pgbouncer=true" \
+  --clean --if-exists --create \
+  > criptenv_dump.sql
+
+# Transferir para a VPS
+scp criptenv_dump.sql usuario@sua-vps:/tmp/criptenv_supabase_dump.sql
+```
+
+Na VPS:
+```bash
+bash migrate-from-supabase.sh
+# O script vai encontrar o dump e fazer o restore automaticamente
 ```
 
 ### 4. Rode as migrations do Alembic (se necessário)
