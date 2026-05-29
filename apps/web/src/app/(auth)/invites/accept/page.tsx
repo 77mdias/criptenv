@@ -2,9 +2,8 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams, useRouter } from "next/navigation"
-import { Mail, Check, AlertTriangle, Loader2 } from "lucide-react"
+import { Mail, Check, AlertTriangle, Loader2, ArrowRight, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
 
 function AcceptInviteForm() {
   const searchParams = useSearchParams()
@@ -61,82 +60,86 @@ function AcceptInviteForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-        <Card className="w-full max-w-md p-8 text-center">
-          <Loader2 className="h-8 w-8 animate-spin mx-auto text-[var(--accent)]" />
-          <p className="mt-4 text-[var(--text-tertiary)] font-mono">Verificando convite...</p>
-        </Card>
+      <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
+        <Loader2 className="h-7 w-7 animate-spin text-[var(--accent)]" />
+        <p className="mt-4 text-sm font-mono text-[var(--text-tertiary)]">Verificando convite...</p>
       </div>
     )
   }
 
   if (accepted) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-        <Card className="w-full max-w-md p-8">
-          <div className="text-center space-y-4">
-            <div className="mx-auto w-16 h-16 rounded-2xl bg-green-500/10 flex items-center justify-center">
-              <Check className="h-8 w-8 text-green-500" />
-            </div>
-            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Convite aceito!</h2>
-            <p className="text-[var(--text-tertiary)] font-mono text-sm">
-              Você agora é membro do projeto.
-            </p>
-            <Button variant="secondary" className="w-full mt-4" onClick={() => router.push("/projects")}>
-              Ver projetos
-            </Button>
-          </div>
-        </Card>
+      <div className="space-y-6 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--success-border)] bg-[var(--success-bg)]">
+          <Check className="h-6 w-6 text-[var(--success)]" />
+        </div>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Convite aceito</h1>
+          <p className="mx-auto max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
+            Seu acesso foi liberado. Você já pode abrir o projeto e sincronizar os secrets com segurança.
+          </p>
+        </div>
+        <Button className="w-full" onClick={() => router.push("/projects")} icon={ArrowRight} iconPosition="right">
+          Ver projetos
+        </Button>
       </div>
     )
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-      <Card className="w-full max-w-md p-8">
-        <div className="text-center space-y-4">
-          <div className="mx-auto w-16 h-16 rounded-2xl bg-[var(--accent)]/10 flex items-center justify-center">
-            <Mail className="h-8 w-8 text-[var(--accent)]" />
-          </div>
-          <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Convite para projeto</h2>
-
-          {error && (
-            <div className="flex items-center gap-2 p-3 bg-red-500/10 rounded-lg text-red-500 text-sm font-mono">
-              <AlertTriangle className="h-4 w-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          {inviteInfo && (
-            <div className="text-left space-y-2 p-4 bg-[var(--background-subtle)] rounded-lg">
-              <p className="text-sm text-[var(--text-tertiary)] font-mono">
-                Email: <span className="text-[var(--text-primary)]">{inviteInfo.email}</span>
-              </p>
-              <p className="text-sm text-[var(--text-tertiary)] font-mono">
-                Função: <span className="text-[var(--text-primary)] capitalize">{inviteInfo.role}</span>
-              </p>
-            </div>
-          )}
-
-          <Button
-            className="w-full"
-            onClick={handleAccept}
-            loading={accepting}
-            disabled={!inviteInfo || !!error}
-          >
-            Aceitar convite
-          </Button>
-
-          <div className="text-center">
-            <a
-              href="/login"
-              className="text-sm text-[var(--text-tertiary)] hover:text-[var(--text-primary)] font-mono transition-colors"
-            >
-              Voltar para login
-            </a>
-          </div>
+    <div className="space-y-6">
+      <div className="space-y-4 text-center">
+        <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-xl border border-[var(--border)] bg-[var(--background-muted)]">
+          <Mail className="h-5 w-5 text-[var(--text-primary)]" />
         </div>
-      </Card>
+        <div className="space-y-2">
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Convite para projeto</h1>
+          <p className="text-sm leading-6 text-[var(--text-secondary)]">
+            Revise os detalhes e aceite para entrar no workspace criptografado da equipe.
+          </p>
+        </div>
+      </div>
+
+      {error && (
+        <div className="flex items-start gap-3 rounded-lg border border-red-500/20 bg-red-500/10 p-3 text-sm text-red-500">
+          <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+          <span>{error}</span>
+        </div>
+      )}
+
+      {inviteInfo && (
+        <dl className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]">
+          <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-3">
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Email</dt>
+            <dd className="min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)]">{inviteInfo.email}</dd>
+          </div>
+          <div className="flex items-center justify-between gap-4 px-4 py-3">
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Função</dt>
+            <dd className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs font-semibold capitalize text-[var(--text-primary)]">
+              {inviteInfo.role}
+            </dd>
+          </div>
+        </dl>
+      )}
+
+      <Button
+        className="w-full"
+        onClick={handleAccept}
+        loading={accepting}
+        disabled={!inviteInfo || !!error}
+        icon={ShieldCheck}
+      >
+        Aceitar convite
+      </Button>
+
+      <div className="text-center">
+        <a
+          href="/login"
+          className="text-sm font-medium text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
+        >
+          Entrar com outra conta
+        </a>
+      </div>
     </div>
   )
 }
@@ -144,10 +147,8 @@ function AcceptInviteForm() {
 export default function AcceptInvitePage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
-        <Card className="w-full max-w-md p-8">
-          <p className="text-center text-[var(--text-tertiary)] font-mono">Carregando...</p>
-        </Card>
+      <div className="flex min-h-[280px] items-center justify-center">
+        <p className="text-center text-[var(--text-tertiary)] font-mono">Carregando...</p>
       </div>
     }>
       <AcceptInviteForm />

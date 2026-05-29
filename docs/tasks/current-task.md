@@ -38,6 +38,7 @@ Corrigir confiabilidade e UX do sistema de notificações in-app para convites d
   - Click-through para `action_url`
   - Polling automático a cada 30 segundos
 - **Correção 2026-05-29**: Dropdown agora usa tokens existentes, painel sólido/acessível e refaz fetch ao abrir para evitar lista vazia stale com badge não lido.
+- **Correção 2026-05-29**: Página `/invites/accept` agora usa apenas o card do layout auth, com conteúdo compacto de uma dobra e sem wrapper `min-h-screen` aninhado.
 - **`src/components/layout/top-nav.tsx`**: Substituído botão estático pelo `<NotificationBell />`.
 
 ### Email — Ajuste de Cores ✅
@@ -51,8 +52,9 @@ Corrigir confiabilidade e UX do sistema de notificações in-app para convites d
 - `tests/test_invite_notifications.py`: cobre notificação para usuário existente e ausência de notificação para email sem conta.
 - `tests/test_email_service.py`: cobre markup mobile-safe do CTA.
 - `src/components/layout/__tests__/notification-bell.test.tsx`: cobre refresh ao abrir e painel vazio acessível/sólido.
+- `src/app/(auth)/invites/accept/__tests__/page.test.tsx`: cobre detalhes do convite, aceite e ausência de shell full-screen aninhado.
 - Suite completa API: **407 testes passando, 2 skipped**
-- Suite completa Web unit: **71 testes passando**
+- Suite completa Web unit: **73 testes passando**
 
 ### Documentação ✅
 - `docs/development/CHANGELOG.md`: Entrada adicionada em [Unreleased]
