@@ -1,11 +1,16 @@
 "use client"
 
+import { useEffect, useState } from "react"
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { EnvSelector } from "@/components/shared/env-selector"
 import { ExportModal } from "@/components/shared/export-modal"
 import { ImportModal } from "@/components/shared/import-modal"
+import { PermissionDialog } from "@/components/shared/permission-dialog"
 import { SecretForm } from "@/components/shared/secret-form"
 import { ExpirationModal } from "@/components/shared/expiration-modal"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
+import type { DecryptedSecret } from "@/components/shared/secret-row"
+import { canWriteProjectSecrets } from "@/lib/project-permissions"
 import { SecretsEmptyState } from "./_components/secrets-empty-state"
 import { SecretsErrorBanner } from "./_components/secrets-error-banner"
 import { SecretsHeader } from "./_components/secrets-header"
@@ -19,6 +24,39 @@ interface SecretsClientProps {
 
 export function SecretsClient({ projectId }: SecretsClientProps) {
   const { state, actions } = useProjectSecrets(projectId)
+  const canManageSecrets = canWriteProjectSecrets(state.project?.current_user_role)
+  const [permissionOpen, setPermissionOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState<DecryptedSecret | null>(null)
+  const [rotateTarget, setRotateTarget] = useState<DecryptedSecret | null>(null)
+
+  const showPermission = () => setPermissionOpen(true)
+  const guardedCreate = () => {
+    if (!canManageSecrets) {
+      showPermission()
+      return
+    }
+    actions.openCreateForm()
+  }
+  const guardedImport = () => {
+    if (!canManageSecrets) {
+      showPermission()
+      return
+    }
+    actions.setImportOpen(true)
+  }
+
+  useEffect(() => {
+    const openNewSecret = () => {
+      if (!canManageSecrets) {
+        showPermission()
+        return
+      }
+      actions.openCreateForm()
+    }
+
+    window.addEventListener("criptenv:new-secret", openNewSecret)
+    return () => window.removeEventListener("criptenv:new-secret", openNewSecret)
+  }, [actions, canManageSecrets])
 
   if (state.loading) {
     return <SecretsLoadingState />
@@ -35,10 +73,10 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         activeSecretCount={state.activeSecretCount}
         vaultVersion={state.vaultVersion}
         isProjectUnlocked={state.isProjectUnlocked}
-        onImport={() => actions.setImportOpen(true)}
+        onImport={guardedImport}
         onExport={() => actions.setExportOpen(true)}
         onRefresh={actions.refreshVault}
-        onCreate={actions.openCreateForm}
+        onCreate={guardedCreate}
       />
 
       {state.error && <SecretsErrorBanner message={state.error} />}
@@ -61,11 +99,12 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
           environmentName={state.activeEnvName}
           copiedKey={state.copiedKey}
           busy={state.vaultLoading || state.saving}
+          canManageSecrets={canManageSecrets}
           onCopy={actions.copySecret}
           onEdit={actions.openEditForm}
-          onDelete={actions.deleteSecret}
-          onCreate={actions.openCreateForm}
-          onRotate={actions.rotateSecret}
+          onDelete={setDeleteTarget}
+          onCreate={guardedCreate}
+          onRotate={setRotateTarget}
           onSetExpiration={actions.openExpirationModal}
           onLock={actions.lockVault}
         />
@@ -88,6 +127,46 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
           onDelete={actions.deleteExpiration}
         />
       )}
+      <ConfirmActionDialog
+        open={Boolean(deleteTarget)}
+        title="Remover secret"
+        description={
+          deleteTarget
+            ? `Remover ${deleteTarget.key} deste ambiente? Esta ação atualizará o vault criptografado.`
+            : ""
+        }
+        confirmLabel="Remover"
+        destructive
+        loading={state.saving}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        onConfirm={async () => {
+          if (!deleteTarget) return
+          await actions.deleteSecret(deleteTarget)
+          setDeleteTarget(null)
+        }}
+      />
+      <ConfirmActionDialog
+        open={Boolean(rotateTarget)}
+        title="Rotacionar secret"
+        description={
+          rotateTarget
+            ? `Rotacionar ${rotateTarget.key}? Um novo valor aleatório será gerado e salvo no vault.`
+            : ""
+        }
+        confirmLabel="Rotacionar"
+        loading={state.saving}
+        onOpenChange={(open) => {
+          if (!open) setRotateTarget(null)
+        }}
+        onConfirm={async () => {
+          if (!rotateTarget) return
+          await actions.rotateSecret(rotateTarget)
+          setRotateTarget(null)
+        }}
+      />
+      <PermissionDialog open={permissionOpen} onOpenChange={setPermissionOpen} />
       <ImportModal
         open={state.importOpen}
         onOpenChange={actions.setImportOpen}

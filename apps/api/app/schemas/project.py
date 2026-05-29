@@ -41,12 +41,13 @@ class ProjectResponse(BaseModel):
     encryption_key_id: Optional[str] = None
     settings: Optional[Dict[str, Any]] = None
     vault_config: Optional[ProjectVaultConfig] = None
+    current_user_role: Optional[str] = None
     archived: bool
     created_at: datetime
     updated_at: datetime
 
     @classmethod
-    def from_project(cls, project):
+    def from_project(cls, project, current_user_role: Optional[str] = None):
         settings = dict(getattr(project, "settings", None) or {})
         vault_settings = settings.pop("vault", None)
         vault_config = None
@@ -69,6 +70,7 @@ class ProjectResponse(BaseModel):
             encryption_key_id=project.encryption_key_id,
             settings=settings or None,
             vault_config=vault_config,
+            current_user_role=current_user_role,
             archived=project.archived,
             created_at=project.created_at,
             updated_at=project.updated_at,

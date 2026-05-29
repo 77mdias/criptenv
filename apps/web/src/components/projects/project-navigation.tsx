@@ -12,7 +12,10 @@ import {
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
+import { peekCached } from "@/lib/api"
+import { canManageProject, type ProjectRole } from "@/lib/project-permissions"
 import { cn } from "@/lib/utils"
+import type { Project } from "@/lib/api"
 
 type ProjectNavKey = "overview" | "secrets" | "members" | "audit" | "settings"
 
@@ -66,15 +69,23 @@ const projectNavDefinitions: ProjectNavDefinition[] = [
   },
 ]
 
-export function getProjectNavigationItems(projectId: string): ProjectNavigationItem[] {
-  return projectNavDefinitions.map((item) => ({
-    ...item,
-    href: item.segment ? `/projects/${projectId}/${item.segment}` : `/projects/${projectId}`,
-  }))
+export function getProjectNavigationItems(
+  projectId: string,
+  currentUserRole?: ProjectRole | null
+): ProjectNavigationItem[] {
+  return projectNavDefinitions
+    .filter((item) => item.key !== "settings" || canManageProject(currentUserRole))
+    .map((item) => ({
+      ...item,
+      href: item.segment ? `/projects/${projectId}/${item.segment}` : `/projects/${projectId}`,
+    }))
 }
 
-export function getProjectSectionItems(projectId: string): ProjectNavigationItem[] {
-  return getProjectNavigationItems(projectId).filter((item) => item.key !== "overview")
+export function getProjectSectionItems(
+  projectId: string,
+  currentUserRole?: ProjectRole | null
+): ProjectNavigationItem[] {
+  return getProjectNavigationItems(projectId, currentUserRole).filter((item) => item.key !== "overview")
 }
 
 function isProjectNavItemActive(pathname: string, item: ProjectNavigationItem) {
@@ -85,9 +96,15 @@ function isProjectNavItemActive(pathname: string, item: ProjectNavigationItem) {
   return pathname === item.href || pathname.startsWith(`${item.href}/`)
 }
 
-export function ProjectTabs({ projectId }: { projectId: string }) {
+export function ProjectTabs({
+  projectId,
+  currentUserRole,
+}: {
+  projectId: string
+  currentUserRole?: ProjectRole | null
+}) {
   const pathname = usePathname()
-  const items = getProjectNavigationItems(projectId)
+  const items = getProjectNavigationItems(projectId, currentUserRole)
 
   return (
     <div className="-mx-1 overflow-x-auto px-1 pb-1">
@@ -121,8 +138,16 @@ export function ProjectTabs({ projectId }: { projectId: string }) {
   )
 }
 
-export function ProjectSectionCards({ projectId }: { projectId: string }) {
-  const items = getProjectSectionItems(projectId)
+export function ProjectSectionCards({
+  projectId,
+  currentUserRole,
+}: {
+  projectId: string
+  currentUserRole?: ProjectRole | null
+}) {
+  const cachedProject = peekCached<Project>(`/api/v1/projects/${projectId}`)
+  const role = currentUserRole ?? cachedProject?.current_user_role ?? null
+  const items = getProjectSectionItems(projectId, role)
 
   return (
     <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">

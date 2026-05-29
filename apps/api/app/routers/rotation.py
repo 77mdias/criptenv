@@ -50,7 +50,7 @@ async def _check_access(
     project_id: UUID, 
     environment_id: UUID,
     project_service: ProjectService, 
-    required_role: str = "developer"
+    required_role: str | None = None
 ):
     """Verify user has access to project/environment."""
     member = await project_service.check_user_access(user.id, project_id, required_role)
@@ -80,7 +80,7 @@ async def rotate_secret(
     rotation_service = RotationService(db)
     audit_service = AuditService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service)
+    await _check_access(current_user, project_id, environment_id, project_service, "admin")
 
     try:
         rotation, new_version = await rotation_service.rotate_secret(
@@ -135,7 +135,7 @@ async def set_expiration(
     rotation_service = RotationService(db)
     audit_service = AuditService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service)
+    await _check_access(current_user, project_id, environment_id, project_service, "admin")
 
     # Check if expiration already exists
     existing = await rotation_service.get_expiration(project_id, environment_id, secret_key)
@@ -333,7 +333,7 @@ async def delete_expiration(
     rotation_service = RotationService(db)
     audit_service = AuditService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service)
+    await _check_access(current_user, project_id, environment_id, project_service, "admin")
 
     deleted = await rotation_service.delete_expiration(
         project_id, environment_id, secret_key

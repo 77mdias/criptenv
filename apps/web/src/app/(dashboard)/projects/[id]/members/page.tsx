@@ -2,14 +2,22 @@
 
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Check, Plus, Shield, Trash2, UserMinus, Users, X } from "lucide-react";
+import { Check, Plus, Trash2, UserMinus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { PermissionDialog } from "@/components/shared/permission-dialog";
+import { RolePicker } from "@/components/shared/role-picker";
 import { membersApi, peekCached } from "@/lib/api";
+import {
+  canInviteProjectMembers,
+  canManageProject,
+  getInviteRoleOptions,
+} from "@/lib/project-permissions";
 import { inviteMemberSchema } from "@/lib/validators/schemas";
+import { useAuthStore } from "@/stores/auth";
 import type {
   Invite,
   InviteListResponse,
@@ -29,6 +37,7 @@ function inviteState(invite: Invite) {
 export default function MembersPage() {
   const params = useParams();
   const projectId = params.id as string;
+  const user = useAuthStore((state) => state.user);
   const cachedMembers = peekCached<MemberListResponse>(
     `/api/v1/projects/${projectId}/members`,
   );
@@ -51,6 +60,24 @@ export default function MembersPage() {
   const [inviteRole, setInviteRole] =
     useState<(typeof roles)[number]>("developer");
   const [inviting, setInviting] = useState(false);
+  const [permissionOpen, setPermissionOpen] = useState(false);
+
+  const currentMember = useMemo(
+    () => members.find((member) => member.user_id === user?.id) ?? null,
+    [members, user?.id],
+  );
+  const currentRole = currentMember?.role ?? null;
+  const canManageMembers = canManageProject(currentRole);
+  const canInviteMembers = canInviteProjectMembers(currentRole);
+  const inviteRoleOptions = getInviteRoleOptions(currentRole);
+
+  const openInviteDialog = useCallback(() => {
+    if (!canInviteMembers) {
+      setPermissionOpen(true);
+      return;
+    }
+    setInviteOpen(true);
+  }, [canInviteMembers]);
 
   useEffect(() => {
     let cancelled = false;
@@ -80,11 +107,11 @@ export default function MembersPage() {
   }, [projectId]);
 
   useEffect(() => {
-    const openInvite = () => setInviteOpen(true);
+    const openInvite = () => openInviteDialog();
     window.addEventListener("criptenv:invite-member", openInvite);
     return () =>
       window.removeEventListener("criptenv:invite-member", openInvite);
-  }, []);
+  }, [openInviteDialog]);
 
   const refreshData = useCallback(async () => {
     const [membersData, invitesData] = await Promise.all([
@@ -128,6 +155,10 @@ export default function MembersPage() {
   };
 
   const handleRoleChange = async (member: Member, role: string) => {
+    if (!canManageMembers) {
+      setPermissionOpen(true);
+      return;
+    }
     setBusyId(member.id);
     setError(null);
     try {
@@ -146,6 +177,10 @@ export default function MembersPage() {
   };
 
   const handleRemove = async (member: Member) => {
+    if (!canManageMembers) {
+      setPermissionOpen(true);
+      return;
+    }
     if (!window.confirm(`Remover membro ${member.user_id}?`)) return;
     setBusyId(member.id);
     setError(null);
@@ -161,13 +196,18 @@ export default function MembersPage() {
   };
 
   const handleRevokeInvite = async (invite: Invite) => {
+    const canRevoke =
+      canManageMembers || (currentRole === "developer" && invite.invited_by === user?.id);
+    if (!canRevoke) {
+      setPermissionOpen(true);
+      return;
+    }
+
     setBusyId(invite.id);
     setError(null);
     try {
-      const updated = await membersApi.revokeInvite(projectId, invite.id);
-      setInvites((current) =>
-        current.map((item) => (item.id === updated.id ? updated : item)),
-      );
+      await membersApi.revokeInvite(projectId, invite.id);
+      setInvites((current) => current.filter((item) => item.id !== invite.id));
       setNotice("Convite revogado");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Erro ao revogar convite");
@@ -211,7 +251,7 @@ export default function MembersPage() {
             pendentes
           </p>
         </div>
-        <Button icon={Plus} onClick={() => setInviteOpen(true)}>
+        <Button icon={Plus} onClick={openInviteDialog}>
           Convidar
         </Button>
       </div>
@@ -263,19 +303,11 @@ export default function MembersPage() {
               <span className="block font-mono text-xs font-bold uppercase tracking-wider text-(--text-muted)">
                 Role
               </span>
-              <select
-                className="h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 text-sm text-(--text-primary)"
+              <RolePicker
                 value={inviteRole}
-                onChange={(event) =>
-                  setInviteRole(event.target.value as (typeof roles)[number])
-                }
-              >
-                {roles.map((role) => (
-                  <option key={role} value={role}>
-                    {role}
-                  </option>
-                ))}
-              </select>
+                options={inviteRoleOptions}
+                onChange={(role) => setInviteRole(role as (typeof roles)[number])}
+              />
             </label>
           </div>
           <div className="mt-4 flex justify-end gap-3">
@@ -296,7 +328,7 @@ export default function MembersPage() {
           description="Convide membros para este projeto."
           action={{
             label: "Convidar membro",
-            onClick: () => setInviteOpen(true),
+            onClick: openInviteDialog,
             icon: Plus,
           }}
         />
@@ -322,36 +354,30 @@ export default function MembersPage() {
                     </p>
                   </div>
                 </div>
-                <label className="flex items-center gap-2">
-                  <Shield className="h-4 w-4 text-(--text-muted)" />
-                  <select
-                    className="h-9 rounded-lg border border-(--border) bg-(--surface) px-3 text-sm text-(--text-primary)"
+                {member.role === "owner" ? (
+                  <Badge variant="outline">owner</Badge>
+                ) : canManageMembers ? (
+                  <RolePicker
                     value={member.role}
+                    options={["viewer", "developer", "admin"]}
+                    disabled={busyId === member.id}
+                    onChange={(role) => handleRoleChange(member, role)}
+                  />
+                ) : (
+                  <Badge variant="outline">{member.role}</Badge>
+                )}
+                {canManageMembers && (
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-9 w-9 text-red-600"
                     disabled={member.role === "owner" || busyId === member.id}
-                    onChange={(event) =>
-                      handleRoleChange(member, event.target.value)
-                    }
+                    onClick={() => handleRemove(member)}
+                    aria-label="Remover membro"
                   >
-                    {member.role === "owner" && (
-                      <option value="owner">owner</option>
-                    )}
-                    {roles.map((role) => (
-                      <option key={role} value={role}>
-                        {role}
-                      </option>
-                    ))}
-                  </select>
-                </label>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-9 w-9 text-red-600"
-                  disabled={member.role === "owner" || busyId === member.id}
-                  onClick={() => handleRemove(member)}
-                  aria-label="Remover membro"
-                >
-                  <Trash2 className="h-4 w-4" />
-                </Button>
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                )}
               </div>
             ))}
 
@@ -400,7 +426,12 @@ export default function MembersPage() {
                     variant="ghost"
                     size="icon"
                     className="h-9 w-9 text-red-600"
-                    disabled={state !== "pending" || busyId === invite.id}
+                    disabled={
+                      state !== "pending" ||
+                      busyId === invite.id ||
+                      (!canManageMembers &&
+                        !(currentRole === "developer" && invite.invited_by === user?.id))
+                    }
                     onClick={() => handleRevokeInvite(invite)}
                     aria-label="Revogar convite"
                   >
@@ -412,6 +443,7 @@ export default function MembersPage() {
           </div>
         </Card>
       )}
+      <PermissionDialog open={permissionOpen} onOpenChange={setPermissionOpen} />
     </div>
   );
 }

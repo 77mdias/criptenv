@@ -4,6 +4,28 @@ A record of significant architectural and technical decisions.
 
 ---
 
+## DEC-051 — Project RBAC for Settings, Secrets, and Invites
+
+**Date:** 2026-05-29
+**Status:** ✅ Accepted
+**Context:**
+Project-level actions were too permissive for developers: settings links were visible to every member, developers could write vault blobs through the web session, and invite revocation kept stale invite links in the database/UI.
+
+**Decision:**
+Restrict project settings and all human-session secret writes to `owner` and `admin`. Developers can still read/use project secrets and can invite only `developer` or `viewer` roles. Developers may revoke only their own pending invites; revocation now hard-deletes the invite and associated invite notifications. CI sessions with explicit `write:secrets` scope keep programmatic vault write access.
+
+**Rationale:**
+- Settings, vault writes, rotation, and expiration changes are administrative actions.
+- Developers still need collaboration flow without being able to grant admin access.
+- Hard-deleting revoked invites removes dead links from both persistence and UI.
+
+**Consequences:**
+- Positive: Least-privilege defaults for project administration and secret mutation.
+- Positive: Cleaner invite UI with no revoked stale links.
+- Neutral: Developer write workflows now require an admin or scoped CI credential.
+
+---
+
 ## DEC-050 — Existing-User Scope for Invite Notifications
 
 **Date:** 2026-05-29

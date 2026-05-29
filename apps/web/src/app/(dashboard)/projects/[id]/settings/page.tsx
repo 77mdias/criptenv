@@ -6,9 +6,11 @@ import { Settings, Trash2, AlertTriangle, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
+import { PermissionDialog } from "@/components/shared/permission-dialog";
 import { environmentsApi, peekCached, projectsApi, vaultApi } from "@/lib/api";
 import { CITokensPanel } from "@/components/shared/ci-tokens-panel";
 import { ApiKeysPanel } from "@/components/shared/api-keys-panel";
+import { canManageProject } from "@/lib/project-permissions";
 import {
   buildProjectVaultConfig,
   checksum,
@@ -75,6 +77,7 @@ export default function SettingsPage() {
   const [confirmNewVaultPassword, setConfirmNewVaultPassword] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState("");
   const [deleting, setDeleting] = useState(false);
+  const [permissionOpen, setPermissionOpen] = useState(true);
 
   useEffect(() => {
     let cancelled = false;
@@ -250,6 +253,30 @@ export default function SettingsPage() {
           <Skeleton className="h-10 w-full" />
           <Skeleton className="h-10 w-32" />
         </Card>
+      </div>
+    );
+  }
+
+  if (!canManageProject(project?.current_user_role)) {
+    return (
+      <div className="space-y-6">
+        <Card className="p-6">
+          <h1 className="text-xl font-semibold tracking-tight text-(--text-primary)">
+            Configurações restritas
+          </h1>
+          <p className="mt-2 font-mono text-sm leading-relaxed text-(--text-tertiary)">
+            Apenas owners e admins podem acessar as configurações deste projeto.
+          </p>
+          <Button className="mt-6" variant="secondary" onClick={() => router.push(`/projects/${projectId}`)}>
+            Voltar ao projeto
+          </Button>
+        </Card>
+        <PermissionDialog
+          open={permissionOpen}
+          onOpenChange={setPermissionOpen}
+          actionLabel="Voltar ao projeto"
+          onAction={() => router.push(`/projects/${projectId}`)}
+        />
       </div>
     );
   }

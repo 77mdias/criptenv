@@ -42,4 +42,25 @@ describe("SecretRow", () => {
     expect(onEdit).toHaveBeenCalledWith(secret)
     expect(onDelete).toHaveBeenCalledWith(secret)
   })
+
+  it("hides admin-only actions for non-admin project roles", () => {
+    render(
+      <SecretRow
+        secret={secret}
+        environmentName="Production"
+        canManageSecrets={false}
+        onCopy={jest.fn()}
+        onEdit={jest.fn()}
+        onDelete={jest.fn()}
+        onRotate={jest.fn()}
+        onSetExpiration={jest.fn()}
+      />
+    )
+
+    expect(screen.getByRole("button", { name: "Copiar valor" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Editar secret" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Rotacionar secret" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Configurar expiração" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Remover secret" })).not.toBeInTheDocument()
+  })
 })

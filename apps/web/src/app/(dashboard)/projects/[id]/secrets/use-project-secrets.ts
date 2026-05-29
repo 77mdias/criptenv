@@ -269,16 +269,6 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   }, [activeEnv, loadVault])
 
   useEffect(() => {
-    const openNewSecret = () => {
-      setEditingSecret(null)
-      setFormOpenState(true)
-    }
-
-    window.addEventListener("criptenv:new-secret", openNewSecret)
-    return () => window.removeEventListener("criptenv:new-secret", openNewSecret)
-  }, [])
-
-  useEffect(() => {
     return () => {
       for (const timer of copyTimersRef.current) {
         window.clearTimeout(timer)
@@ -368,7 +358,6 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
 
   const deleteSecret = useCallback(
     async (secret: DecryptedSecret) => {
-      if (!window.confirm(`Remover ${secret.key}?`)) return
       await pushSecrets(secrets.filter((item) => item.key !== secret.key))
     },
     [pushSecrets, secrets]
@@ -404,7 +393,6 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   const rotateSecret = useCallback(
     async (secret: DecryptedSecret) => {
       if (!activeEnv || !keyMaterial || !vaultProof) return
-      if (!window.confirm(`Rotacionar ${secret.key}? Isso gerará um novo valor aleatório.`)) return
 
       setSaving(true)
       setError(null)

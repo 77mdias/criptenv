@@ -18,13 +18,15 @@ from app.strategies.exceptions import DomainError
 from app.strategies.invite_transitions import (
     AcceptInviteStrategy,
     DeleteInviteStrategy,
-    RevokeInviteStrategy,
 )
 
 from sqlalchemy import func, select
 
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/invites", tags=["Invites"])
+
+
+ADMIN_ROLES = {"admin", "owner"}
 
 
 def _force_load_invite(inv):
@@ -61,11 +63,17 @@ async def create_invite(
             detail="Invalid project ID"
         )
 
-    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
+    member = await project_service.check_user_access(current_user.id, project_uuid, "developer")
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found or insufficient permissions"
+        )
+
+    if member.role not in ADMIN_ROLES and payload.role == "admin":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Developers can only invite developer or viewer roles"
         )
 
     invite_email = str(payload.email).strip().lower()
@@ -266,7 +274,7 @@ async def revoke_invite(
             detail="Invalid ID"
         )
 
-    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
+    member = await project_service.check_user_access(current_user.id, project_uuid, "developer")
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -287,15 +295,19 @@ async def revoke_invite(
             detail="Invite not found"
         )
 
-    try:
-        invite = await RevokeInviteStrategy().execute(
-            db=db,
-            invite=invite,
-            project_id=project_uuid,
-            current_user=current_user
+    if invite.accepted_at or invite.revoked_at:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Only pending invites can be revoked"
         )
-    except DomainError as e:
-        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+    if member.role not in ADMIN_ROLES and invite.invited_by != current_user.id:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Invite not found or insufficient permissions"
+        )
+
+    response = InviteResponse.model_validate(_force_load_invite(invite))
 
     await audit_service.log(
         action="invite.revoked",
@@ -308,7 +320,16 @@ async def revoke_invite(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return InviteResponse.model_validate(_force_load_invite(invite))
+    notification_service = NotificationService(db)
+    await notification_service.delete_invite_notifications(invite.id)
+    await DeleteInviteStrategy().execute(
+        db=db,
+        invite=invite,
+        project_id=project_uuid,
+        current_user=current_user
+    )
+
+    return response
 
 
 @router.delete("/{invite_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -363,6 +384,8 @@ async def delete_invite(
         user_agent=request.headers.get("User-Agent")
     )
 
+    notification_service = NotificationService(db)
+    await notification_service.delete_invite_notifications(invite.id)
     await DeleteInviteStrategy().execute(
         db=db,
         invite=invite,

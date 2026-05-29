@@ -20,6 +20,7 @@ interface SecretRowProps {
   secret: DecryptedSecret
   environmentName: string
   copied?: boolean
+  canManageSecrets?: boolean
   onCopy: (secret: DecryptedSecret) => void
   onEdit: (secret: DecryptedSecret) => void
   onDelete: (secret: DecryptedSecret) => void
@@ -31,6 +32,7 @@ export function SecretRow({
   secret,
   environmentName,
   copied = false,
+  canManageSecrets = true,
   onCopy,
   onEdit,
   onDelete,
@@ -95,16 +97,18 @@ export function SecretRow({
         >
           <Clipboard className="h-3.5 w-3.5" />
         </Button>
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8"
-          aria-label="Editar secret"
-          onClick={() => onEdit(secret)}
-        >
-          <Pencil className="h-3.5 w-3.5" />
-        </Button>
-        {onRotate && (
+        {canManageSecrets && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8"
+            aria-label="Editar secret"
+            onClick={() => onEdit(secret)}
+          >
+            <Pencil className="h-3.5 w-3.5" />
+          </Button>
+        )}
+        {canManageSecrets && onRotate && (
           <Button
             variant="ghost"
             size="icon"
@@ -115,7 +119,7 @@ export function SecretRow({
             <RotateCcw className="h-3.5 w-3.5" />
           </Button>
         )}
-        {onSetExpiration && (
+        {canManageSecrets && onSetExpiration && (
           <Button
             variant="ghost"
             size="icon"
@@ -126,15 +130,17 @@ export function SecretRow({
             <Clock className="h-3.5 w-3.5" />
           </Button>
         )}
-        <Button
-          variant="ghost"
-          size="icon"
-          className="h-8 w-8 text-red-600"
-          aria-label="Remover secret"
-          onClick={() => onDelete(secret)}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </Button>
+        {canManageSecrets && (
+          <Button
+            variant="ghost"
+            size="icon"
+            className="h-8 w-8 text-red-600"
+            aria-label="Remover secret"
+            onClick={() => onDelete(secret)}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </Button>
+        )}
         {copied && (
           <span className="ml-2 font-mono text-xs text-green-700">copiado</span>
         )}

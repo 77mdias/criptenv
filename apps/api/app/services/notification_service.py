@@ -2,7 +2,7 @@ from typing import Optional
 from uuid import UUID
 from datetime import datetime, timezone
 
-from sqlalchemy import select, func, update
+from sqlalchemy import delete, select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.notification import Notification
@@ -93,6 +93,16 @@ class NotificationService:
                 Notification.read_at.is_(None)
             )
             .values(read_at=datetime.now(timezone.utc))
+        )
+        await self.db.flush()
+        return result.rowcount or 0
+
+    async def delete_invite_notifications(self, invite_id: UUID | str) -> int:
+        result = await self.db.execute(
+            delete(Notification).where(
+                Notification.type == "invite",
+                Notification.meta["invite_id"].as_string() == str(invite_id),
+            )
         )
         await self.db.flush()
         return result.rowcount or 0

@@ -32,7 +32,8 @@ export default function InvitesPage() {
         <code className="bg-muted px-1 rounded text-sm">
           /api/v1/projects/{'{pid}'}/invites
         </code>
-        .
+        . Admins e owners podem convidar qualquer papel permitido; developers
+        podem convidar apenas developers ou viewers.
       </Callout>
 
       {/* POST /invites */}
@@ -57,7 +58,7 @@ export default function InvitesPage() {
               name: 'role',
               type: 'string',
               required: true,
-              description: 'Papel do membro: viewer, editor, admin',
+              description: 'Papel do membro: viewer, developer ou admin',
             },
           ]}
         />
@@ -69,7 +70,7 @@ export default function InvitesPage() {
   -H "Content-Type: application/json" \\
   -d '{
     "email": "dev@example.com",
-    "role": "editor"
+    "role": "developer"
   }'`}
         />
 
@@ -77,7 +78,7 @@ export default function InvitesPage() {
           code={`{
   "id": "inv_abc123",
   "email": "dev@example.com",
-  "role": "editor",
+  "role": "developer",
   "status": "pending",
   "expires_at": "2025-02-07T12:00:00Z",
   "created_at": "2025-01-31T12:00:00Z"
@@ -91,8 +92,8 @@ export default function InvitesPage() {
           <EndpointBadge method="get" /> Listar convites
         </h2>
         <p className="text-muted-foreground mb-4">
-          Retorna todos os convites do projeto, incluindo pendentes, aceitos e
-          revogados.
+          Retorna os convites do projeto. Convites revogados pelo endpoint de
+          revoke são removidos permanentemente.
         </p>
 
         <CodeBlock
@@ -107,7 +108,7 @@ export default function InvitesPage() {
     {
       "id": "inv_abc123",
       "email": "dev@example.com",
-      "role": "editor",
+      "role": "developer",
       "status": "pending",
       "expires_at": "2025-02-07T12:00:00Z",
       "created_at": "2025-01-31T12:00:00Z"
@@ -148,7 +149,8 @@ export default function InvitesPage() {
           <EndpointBadge method="post" /> Revogar convite
         </h2>
         <p className="text-muted-foreground mb-4">
-          Revoga um convite pendente. Convites aceitos não podem ser revogados.
+          Revoga um convite pendente e remove o link permanentemente do banco.
+          Developers só podem revogar convites pendentes criados por eles.
         </p>
 
         <CodeBlock
@@ -160,7 +162,8 @@ export default function InvitesPage() {
         <ResponseBlock
           code={`{
   "id": "inv_abc123",
-  "status": "revoked"
+  "email": "dev@example.com",
+  "role": "developer"
 }`}
         />
       </section>

@@ -102,7 +102,7 @@ async def _authenticate_vault_write(
         return None, ci_session, environment
 
     current_user = await _resolve_current_user(request, db)
-    member = await project_service.check_user_access(current_user.id, project_uuid, "developer")
+    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,

@@ -299,6 +299,24 @@ class TestRotationRouterIntegration:
             assert len(history) == 1
             assert history[0].new_version == 2
 
+    @pytest.mark.asyncio
+    async def test_rotation_mutations_request_admin_access(self, mock_user):
+        """Mutation paths must ask ProjectService for admin access."""
+        from app.routers.rotation import _check_access
+
+        service = MagicMock()
+        service.check_user_access = AsyncMock(return_value=MagicMock(role="admin"))
+        project_id = uuid4()
+        environment_id = uuid4()
+
+        await _check_access(mock_user, project_id, environment_id, service, "admin")
+
+        service.check_user_access.assert_awaited_once_with(
+            mock_user.id,
+            project_id,
+            "admin",
+        )
+
 
 class TestRotationRouterSecurity:
     """Security tests for rotation endpoints."""

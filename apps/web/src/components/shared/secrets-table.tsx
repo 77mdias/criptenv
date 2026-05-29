@@ -8,6 +8,7 @@ interface SecretsTableProps {
   secrets: DecryptedSecret[]
   environmentName: string
   copiedKey?: string | null
+  canManageSecrets?: boolean
   onCopy: (secret: DecryptedSecret) => void
   onEdit: (secret: DecryptedSecret) => void
   onDelete: (secret: DecryptedSecret) => void
@@ -20,6 +21,7 @@ export function SecretsTable({
   secrets,
   environmentName,
   copiedKey,
+  canManageSecrets = true,
   onCopy,
   onEdit,
   onDelete,
@@ -50,6 +52,7 @@ export function SecretsTable({
           secret={secret}
           environmentName={environmentName}
           copied={copiedKey === secret.key}
+          canManageSecrets={canManageSecrets}
           onCopy={onCopy}
           onEdit={onEdit}
           onDelete={onDelete}

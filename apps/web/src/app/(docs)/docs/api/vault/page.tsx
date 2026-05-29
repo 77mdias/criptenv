@@ -53,6 +53,8 @@ export default function ApiVaultPage() {
         O servidor armazena apenas dados opacos (ciphertext). Sem a Vault password
         do projeto, é impossível recuperar os valores originais — nem o CriptEnv, nem
         qualquer pessoa com acesso ao banco de dados, consegue ler os segredos.
+        Escritas de vault por sessão humana exigem papel de admin/owner; CI sessions
+        continuam podendo escrever quando possuem escopo explícito <InlineCode>write:secrets</InlineCode>.
       </Callout>
 
       <CodeBlock language="text">
@@ -67,7 +69,8 @@ export default function ApiVaultPage() {
       <p className="text-muted-foreground mb-4">
         Envia segredos criptografados para um ambiente. Suporta detecção de conflitos
         via versionamento otimista — se os segredos foram alterados por outro usuário
-        desde a última sincronização, a API retorna um conflito.
+        desde a última sincronização, a API retorna um conflito. Requer admin/owner
+        em sessões humanas.
       </p>
 
       <CodeBlock language="text">

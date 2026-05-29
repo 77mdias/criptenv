@@ -9,6 +9,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
+#### Project RBAC, Invite Revocation, and Secret Modals (2026-05-29)
+
+- **Backend**: Project responses now include the current user's project role for UI permission gating.
+- **Backend**: Human-session vault writes and secret rotation/expiration mutations now require `admin`/`owner`; scoped CI writes continue to work.
+- **Backend**: Developers can invite only `developer` or `viewer` roles and can revoke only their own pending invites.
+- **Backend**: Revoking an invite now hard-deletes the invite and associated invite notifications.
+- **Frontend**: Project Settings navigation is hidden from non-admin roles, with a permission modal on direct access.
+- **Frontend**: Secret create/import/edit/delete/rotate/expiration actions are admin-only and use app modals instead of browser confirms.
+- **Frontend**: Role selection now uses a black segmented role picker instead of native select highlighting.
+- **Tests**: Added focused backend and frontend coverage for RBAC, invite deletion, role picking, permission dialogs, and hidden secret actions.
+
 #### Invite Notifications and Mobile Email CTA (2026-05-29)
 
 - **Backend**: Project invite creation now normalizes invited emails before duplicate checks, email delivery, and existing-user notification lookup.

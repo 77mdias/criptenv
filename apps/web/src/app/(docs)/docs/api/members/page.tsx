@@ -43,20 +43,21 @@ export default function ApiMembersPage() {
             <tr className="border-b border-[var(--border)]">
               <td className="px-4 py-3"><InlineCode>admin</InlineCode></td>
               <td className="px-4 py-3">
-                Acesso total: gerenciar projeto, ambientes, membros, push/pull de segredos,
-                re-key do vault
+                Acesso total: settings, ambientes, membros, push/pull de segredos,
+                rotação, expiração e re-key do vault
               </td>
             </tr>
             <tr className="border-b border-[var(--border)] bg-[var(--background-subtle)]">
               <td className="px-4 py-3"><InlineCode>developer</InlineCode></td>
               <td className="px-4 py-3">
-                Push/pull de segredos, criar e editar ambientes. Sem acesso a gerenciamento de membros
+                Leitura/uso de segredos e convites limitados para developer/viewer.
+                Sem settings, escrita de secrets ou promoção para admin
               </td>
             </tr>
             <tr className="border-b border-[var(--border)]">
               <td className="px-4 py-3"><InlineCode>viewer</InlineCode></td>
               <td className="px-4 py-3">
-                Apenas leitura: listar projetos, ambientes e nomes de segredos (sem valores)
+                Leitura do projeto sem ações administrativas
               </td>
             </tr>
           </tbody>
@@ -75,7 +76,8 @@ export default function ApiMembersPage() {
       <p className="text-muted-foreground mb-4">
         Envia um convite para um usuário participar do projeto. Se o usuário ainda não
         possui conta no CriptEnv, ele receberá um email de convite. Requer papel de{' '}
-        <InlineCode>admin</InlineCode>.
+        <InlineCode>developer</InlineCode> ou superior; developers só podem convidar
+        <InlineCode>developer</InlineCode> ou <InlineCode>viewer</InlineCode>.
       </p>
 
       <CodeBlock language="text">
@@ -209,7 +211,7 @@ export default function ApiMembersPage() {
       </h2>
 
       <p className="text-muted-foreground mb-4">
-        Altera o papel de um membro existente. Requer papel de <InlineCode>admin</InlineCode>.
+        Altera o papel de um membro existente. Requer papel de <InlineCode>admin</InlineCode> ou <InlineCode>owner</InlineCode>.
         O último admin do projeto não pode ter seu papel rebaixado.
       </p>
 
@@ -265,7 +267,7 @@ export default function ApiMembersPage() {
       </h2>
 
       <p className="text-muted-foreground mb-4">
-        Remove um membro do projeto. Requer papel de <InlineCode>admin</InlineCode>.
+        Remove um membro do projeto. Requer papel de <InlineCode>admin</InlineCode> ou <InlineCode>owner</InlineCode>.
         Após remover um membro, considere executar um <InlineCode>re-key</InlineCode> no
         vault para garantir forward secrecy.
       </p>

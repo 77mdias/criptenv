@@ -165,7 +165,7 @@ async def test_vault_version_with_api_key(transport, mock_user, mock_project, mo
 async def test_projects_list_with_api_key(transport, mock_user):
     """GET /api/v1/projects must accept API key."""
     with override_dual_auth(mock_user):
-        with patch('app.services.project_service.ProjectService.list_user_projects', new_callable=AsyncMock) as mock_list:
+        with patch('app.services.project_service.ProjectService.list_user_projects_with_roles', new_callable=AsyncMock) as mock_list:
             mock_list.return_value = []
             
             async with AsyncClient(transport=transport, base_url="http://test") as client:
@@ -251,7 +251,7 @@ async def test_unauthorized_without_auth(transport):
 async def test_rate_limit_middleware_registered(transport):
     """Rate limit middleware must be active and add headers."""
     with override_dual_auth(MagicMock(id=uuid4(), email="test@example.com")):
-        with patch('app.services.project_service.ProjectService.list_user_projects', new_callable=AsyncMock) as mock_list:
+        with patch('app.services.project_service.ProjectService.list_user_projects_with_roles', new_callable=AsyncMock) as mock_list:
             mock_list.return_value = []
             
             async with AsyncClient(transport=transport, base_url="http://test") as client:

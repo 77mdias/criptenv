@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Clock, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 
 interface ExpirationModalProps {
   secretKey: string;
@@ -23,6 +24,7 @@ export function ExpirationModal({
   const [policy, setPolicy] = useState("notify");
   const [notifyDays, setNotifyDays] = useState("7");
   const [loading, setLoading] = useState(false);
+  const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
 
   const handleSave = async () => {
     const d = parseInt(days);
@@ -37,7 +39,6 @@ export function ExpirationModal({
   };
 
   const handleDelete = async () => {
-    if (!window.confirm("Remover configuração de expiração deste secret?")) return;
     setLoading(true);
     try {
       await onDelete();
@@ -48,8 +49,9 @@ export function ExpirationModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-      <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--background)] p-6 shadow-lg">
+    <>
+      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
+        <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--background)] p-6 shadow-lg">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[var(--accent)]" />
@@ -114,7 +116,7 @@ export function ExpirationModal({
             Salvar
           </Button>
           {hasExpiration && (
-            <Button variant="danger" onClick={handleDelete} loading={loading}>
+            <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} loading={loading}>
               Remover expiração
             </Button>
           )}
@@ -122,7 +124,18 @@ export function ExpirationModal({
             Cancelar
           </Button>
         </div>
+        </div>
       </div>
-    </div>
+      <ConfirmActionDialog
+        open={confirmDeleteOpen}
+        title="Remover expiração"
+        description={`Remover a configuração de expiração de ${secretKey}? O valor da secret não será alterado.`}
+        confirmLabel="Remover"
+        destructive
+        loading={loading}
+        onOpenChange={setConfirmDeleteOpen}
+        onConfirm={handleDelete}
+      />
+    </>
   );
 }

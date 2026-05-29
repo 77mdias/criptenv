@@ -67,6 +67,7 @@ export interface Project {
   slug?: string;
   description: string | null;
   vault_config?: ProjectVaultConfig | null;
+  current_user_role?: "owner" | "admin" | "developer" | "viewer" | null;
   created_at: string;
   updated_at: string;
 }

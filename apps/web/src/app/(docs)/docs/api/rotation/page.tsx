@@ -32,6 +32,8 @@ export default function RotationPage() {
         <br />• <strong>manual</strong> — você rotaciona quando quiser
         <br />• <strong>notify</strong> — alerta quando o segredo expira
         <br />• <strong>auto</strong> — rotação automática na data de expiração
+        <br />Mutações de rotação/expiração exigem admin ou owner; consultas
+        continuam disponíveis para membros do projeto.
       </Callout>
 
       {/* POST /secrets/:id/rotate */}
@@ -41,7 +43,7 @@ export default function RotationPage() {
         </h2>
         <p className="text-muted-foreground mb-4">
           Rotaciona o valor de um segredo imediatamente. O valor anterior é
-          mantido no histórico.
+          mantido no histórico. Requer admin/owner.
         </p>
 
         <ParamTable
@@ -80,6 +82,7 @@ export default function RotationPage() {
         </h2>
         <p className="text-muted-foreground mb-4">
           Configura a data de expiração e a política de rotação para um segredo.
+          Requer admin/owner.
         </p>
 
         <ParamTable
@@ -188,7 +191,7 @@ export default function RotationPage() {
           <EndpointBadge method="delete" /> Remover expiração
         </h2>
         <p className="text-muted-foreground mb-4">
-          Remove a política de expiração e rotação de um segredo.
+          Remove a política de expiração e rotação de um segredo. Requer admin/owner.
         </p>
 
         <CodeBlock

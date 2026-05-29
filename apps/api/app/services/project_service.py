@@ -195,6 +195,25 @@ class ProjectService:
         result = await self.db.execute(query)
         return list(result.scalars().all())
 
+    async def list_user_projects_with_roles(
+        self,
+        user_id: UUID,
+        include_archived: bool = False
+    ) -> list[tuple[Project, str]]:
+        query = (
+            select(Project, ProjectMember.role)
+            .join(ProjectMember, ProjectMember.project_id == Project.id)
+            .where(ProjectMember.user_id == user_id)
+        )
+
+        if not include_archived:
+            query = query.where(Project.archived == False)
+
+        query = query.order_by(Project.updated_at.desc())
+
+        result = await self.db.execute(query)
+        return [(project, role) for project, role in result.all()]
+
     async def update_project(
         self,
         project_id: UUID,

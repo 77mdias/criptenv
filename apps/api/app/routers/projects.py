@@ -78,7 +78,7 @@ async def create_project(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return ProjectResponse.from_project(project)
+    return ProjectResponse.from_project(project, current_user_role="owner")
 
 
 @router.get("", response_model=ProjectListResponse)
@@ -88,14 +88,17 @@ async def list_projects(
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
-    projects = await project_service.list_user_projects(
+    project_rows = await project_service.list_user_projects_with_roles(
         user_id=current_user.id,
         include_archived=include_archived
     )
 
     return ProjectListResponse(
-        projects=[ProjectResponse.from_project(p) for p in projects],
-        total=len(projects)
+        projects=[
+            ProjectResponse.from_project(project, current_user_role=role)
+            for project, role in project_rows
+        ],
+        total=len(project_rows)
     )
 
 
@@ -131,7 +134,7 @@ async def get_project(
             detail="Project not found"
         )
 
-    return ProjectResponse.from_project(project)
+    return ProjectResponse.from_project(project, current_user_role=member.role)
 
 
 @router.patch("/{project_id}", response_model=ProjectResponse)
@@ -186,7 +189,7 @@ async def update_project(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return ProjectResponse.from_project(project)
+    return ProjectResponse.from_project(project, current_user_role=member.role)
 
 
 @router.post("/{project_id}/vault/rekey", response_model=ProjectResponse)
@@ -261,7 +264,7 @@ async def rekey_project_vault(
         user_agent=request.headers.get("User-Agent")
     )
 
-    return ProjectResponse.from_project(project)
+    return ProjectResponse.from_project(project, current_user_role=member.role)
 
 
 @router.delete("/{project_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -16,7 +16,10 @@ import {
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useUIStore } from "@/stores/ui"
+import { peekCached } from "@/lib/api"
+import { canInviteProjectMembers, canManageProject, canWriteProjectSecrets } from "@/lib/project-permissions"
 import { cn } from "@/lib/utils"
+import type { Project } from "@/lib/api"
 
 interface CommandItem {
   label: string
@@ -32,6 +35,8 @@ export function CommandPalette() {
   const [query, setQuery] = useState("")
 
   const projectId = pathname.match(/\/projects\/([^/]+)/)?.[1]
+  const cachedProject = projectId ? peekCached<Project>(`/api/v1/projects/${projectId}`) : null
+  const projectRole = cachedProject?.current_user_role ?? null
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -81,40 +86,52 @@ export function CommandPalette() {
               icon: KeyRound,
               run: runRoute(`/projects/${projectId}/secrets`),
             },
-            {
-              label: "Novo secret",
-              hint: "Criar secret no projeto atual",
-              icon: Plus,
-              run: runEvent("criptenv:new-secret", `/projects/${projectId}/secrets`),
-            },
+            ...(canWriteProjectSecrets(projectRole)
+              ? [
+                  {
+                    label: "Novo secret",
+                    hint: "Criar secret no projeto atual",
+                    icon: Plus,
+                    run: runEvent("criptenv:new-secret", `/projects/${projectId}/secrets`),
+                  },
+                ]
+              : []),
             {
               label: "Team",
               hint: `/projects/${projectId}/members`,
               icon: Users,
               run: runRoute(`/projects/${projectId}/members`),
             },
-            {
-              label: "Convidar membro",
-              hint: "Enviar convite",
-              icon: Plus,
-              run: runEvent("criptenv:invite-member", `/projects/${projectId}/members`),
-            },
+            ...(canInviteProjectMembers(projectRole)
+              ? [
+                  {
+                    label: "Convidar membro",
+                    hint: "Enviar convite",
+                    icon: Plus,
+                    run: runEvent("criptenv:invite-member", `/projects/${projectId}/members`),
+                  },
+                ]
+              : []),
             {
               label: "Audit Log",
               hint: `/projects/${projectId}/audit`,
               icon: ScrollText,
               run: runRoute(`/projects/${projectId}/audit`),
             },
-            {
-              label: "Settings",
-              hint: `/projects/${projectId}/settings`,
-              icon: Settings,
-              run: runRoute(`/projects/${projectId}/settings`),
-            },
+            ...(canManageProject(projectRole)
+              ? [
+                  {
+                    label: "Settings",
+                    hint: `/projects/${projectId}/settings`,
+                    icon: Settings,
+                    run: runRoute(`/projects/${projectId}/settings`),
+                  },
+                ]
+              : []),
           ]
         : []),
     ]
-  }, [close, pathname, projectId, router])
+  }, [close, pathname, projectId, projectRole, router])
 
   const filtered = commands.filter((command) => {
     const haystack = `${command.label} ${command.hint}`.toLowerCase()

@@ -6,7 +6,8 @@ from uuid import uuid4
 import pytest
 
 from app.routers import invites as invites_router
-from app.routers.invites import create_invite
+from app.routers.invites import create_invite, revoke_invite
+from app.models.member import ProjectInvite
 from app.schemas.member import InviteCreate
 
 
@@ -46,6 +47,21 @@ class _FakeDb:
             return _ScalarResult(self.invited_user)
 
         return _ScalarResult(None)
+
+
+class _InviteDb:
+    def __init__(self, invite):
+        self.invite = invite
+        self.deleted = []
+
+    async def execute(self, statement):
+        return _ScalarResult(self.invite)
+
+    async def delete(self, value):
+        self.deleted.append(value)
+
+    async def flush(self):
+        return None
 
 
 def _request():
@@ -161,3 +177,140 @@ async def test_create_invite_without_existing_user_does_not_create_notification(
     )
 
     assert notifications == []
+
+
+@pytest.mark.asyncio
+async def test_developer_can_invite_developer_or_viewer(monkeypatch):
+    project_id = uuid4()
+    db = _FakeDb(invited_user=None)
+
+    async def fake_check_access(self, user_id, pid, role=None):
+        assert role == "developer"
+        return SimpleNamespace(role="developer")
+
+    async def fake_get_project(self, pid):
+        return SimpleNamespace(id=pid, name="Core API")
+
+    async def fake_log(self, **kwargs):
+        return None
+
+    monkeypatch.setattr(invites_router.ProjectService, "check_user_access", fake_check_access)
+    monkeypatch.setattr(invites_router.ProjectService, "get_project", fake_get_project)
+    monkeypatch.setattr(invites_router.AuditService, "log", fake_log)
+    monkeypatch.setattr(invites_router.EmailService, "send_project_invite", lambda self, **kwargs: None)
+    monkeypatch.setattr(invites_router.NotificationService, "create_notification", lambda self, **kwargs: None)
+
+    response = await create_invite(
+        project_id=str(project_id),
+        request=_request(),
+        payload=InviteCreate(email="viewer@example.com", role="viewer"),
+        current_user=_user(),
+        db=db,
+    )
+
+    assert response.role == "viewer"
+
+
+@pytest.mark.asyncio
+async def test_developer_cannot_invite_admin(monkeypatch):
+    project_id = uuid4()
+    db = _FakeDb(invited_user=None)
+
+    async def fake_check_access(self, user_id, pid, role=None):
+        return SimpleNamespace(role="developer")
+
+    monkeypatch.setattr(invites_router.ProjectService, "check_user_access", fake_check_access)
+
+    with pytest.raises(invites_router.HTTPException) as exc:
+        await create_invite(
+            project_id=str(project_id),
+            request=_request(),
+            payload=InviteCreate(email="admin@example.com", role="admin"),
+            current_user=_user(),
+            db=db,
+        )
+
+    assert exc.value.status_code == 403
+
+
+@pytest.mark.asyncio
+async def test_developer_can_revoke_own_pending_invite_with_hard_delete(monkeypatch):
+    project_id = uuid4()
+    actor = _user()
+    invite = ProjectInvite(
+        id=uuid4(),
+        project_id=project_id,
+        email="dev@example.com",
+        role="developer",
+        invited_by=actor.id,
+        token="token",
+        expires_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc),
+    )
+    db = _InviteDb(invite)
+    deleted_notifications = []
+
+    async def fake_check_access(self, user_id, pid, role=None):
+        assert role == "developer"
+        return SimpleNamespace(role="developer")
+
+    async def fake_log(self, **kwargs):
+        return None
+
+    async def fake_delete_notifications(self, invite_id):
+        deleted_notifications.append(str(invite_id))
+        return 1
+
+    monkeypatch.setattr(invites_router.ProjectService, "check_user_access", fake_check_access)
+    monkeypatch.setattr(invites_router.AuditService, "log", fake_log)
+    monkeypatch.setattr(
+        invites_router.NotificationService,
+        "delete_invite_notifications",
+        fake_delete_notifications,
+    )
+
+    response = await revoke_invite(
+        project_id=str(project_id),
+        invite_id=str(invite.id),
+        request=_request(),
+        current_user=actor,
+        db=db,
+    )
+
+    assert response.id == invite.id
+    assert db.deleted == [invite]
+    assert deleted_notifications == [str(invite.id)]
+
+
+@pytest.mark.asyncio
+async def test_developer_cannot_revoke_other_users_invite(monkeypatch):
+    project_id = uuid4()
+    actor = _user()
+    invite = ProjectInvite(
+        id=uuid4(),
+        project_id=project_id,
+        email="dev@example.com",
+        role="developer",
+        invited_by=uuid4(),
+        token="token",
+        expires_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc),
+    )
+    db = _InviteDb(invite)
+
+    async def fake_check_access(self, user_id, pid, role=None):
+        return SimpleNamespace(role="developer")
+
+    monkeypatch.setattr(invites_router.ProjectService, "check_user_access", fake_check_access)
+
+    with pytest.raises(invites_router.HTTPException) as exc:
+        await revoke_invite(
+            project_id=str(project_id),
+            invite_id=str(invite.id),
+            request=_request(),
+            current_user=actor,
+            db=db,
+        )
+
+    assert exc.value.status_code == 404
+    assert db.deleted == []

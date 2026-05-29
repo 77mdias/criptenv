@@ -151,7 +151,7 @@ export default function ProjectDetailLayout({
           </div>
         </Card>
 
-        <ProjectTabs projectId={projectId} />
+        <ProjectTabs projectId={projectId} currentUserRole={project.current_user_role} />
       </div>
 
       {children}

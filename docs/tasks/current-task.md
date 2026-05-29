@@ -2,15 +2,35 @@
 
 ## Status atual
 
-**Correção do sistema de notificações de convite em andamento em 2026-05-29. O fluxo mantém email para todos os convites e notificação in-app apenas para usuários já cadastrados, com normalização de email, dropdown visualmente sólido e CTA de email compatível com Gmail mobile.**
+**Ajuste de RBAC de projetos em andamento em 2026-05-29. Owners/admins ficam responsáveis por settings e escrita de secrets; developers mantêm leitura/uso e convites limitados; revogação de convite passa a remover links pendentes do banco/UI.**
 
 ---
 
 ## Tarefa em foco
 
-Corrigir confiabilidade e UX do sistema de notificações in-app para convites de projeto e o botão de aceite no email em mobile.
+Aplicar permissões consistentes no dashboard/API para settings, secrets e convites, substituindo confirmações nativas por modais do app.
 
 ## O que foi implementado nesta sessão
+
+### Backend — RBAC de Projeto ✅
+- `ProjectResponse` agora inclui `current_user_role`.
+- Escritas de vault via sessão humana exigem `admin`/`owner`; CI com `write:secrets` permanece permitido.
+- Rotação e configuração/remoção de expiração de secrets exigem `admin`/`owner`.
+- Developers podem convidar apenas `developer` ou `viewer`.
+- Revogação de convite apaga o convite e notificações associadas.
+
+### Frontend — Permissões e UX ✅
+- Settings fica oculta para não-admins e acesso direto mostra modal de permissão.
+- Ações administrativas de secrets são bloqueadas/ocultas para não-admins.
+- Exclusão, rotação e remoção de expiração usam modais do app.
+- Seleção de role usa controle segmentado preto, sem highlight azul nativo.
+
+### Testes ✅
+- Testes alvo API e Web adicionados/atualizados para permissões, convites, modais e role picker.
+
+---
+
+## Histórico anterior — Invite Notifications
 
 ### Backend — Sistema de Notificações ✅
 - **`app/models/notification.py`**: Modelo `Notification` com `user_id`, `type`, `title`, `message`, `read_at`, `action_url`, `meta` (JSONB), timestamps.
@@ -65,12 +85,12 @@ Corrigir confiabilidade e UX do sistema de notificações in-app para convites d
 
 ## Próximos passos recomendados
 
-1. **Aplicar migration Alembic** `20260528_0009_create_notifications_table` no ambiente de produção.
-2. **Smoke test**: Criar um convite para um usuário existente e verificar se a notificação aparece no bell icon com badge.
-3. **Futuro**: Expandir notificações para outros eventos (secret expirations, member removed, etc.).
+1. **Smoke test RBAC**: Entrar como developer e confirmar que Settings não aparece, secret write abre modal de permissão e convite admin é bloqueado.
+2. **Smoke test admin**: Entrar como admin/owner e confirmar que settings, rotação, exclusão e expiração continuam funcionais com modais.
+3. **Produção**: Garantir que a migration de notificações já esteja aplicada antes de depender da limpeza de notificações de convites.
 
 ---
 
-**Document Version**: 1.1
+**Document Version**: 1.2
 **Last Updated**: 2026-05-29
-**Status**: Invite notification UX fix implemented and verified
+**Status**: Project RBAC and invite revocation implemented; verification in progress
