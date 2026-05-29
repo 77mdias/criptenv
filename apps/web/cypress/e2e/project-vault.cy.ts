@@ -51,8 +51,8 @@ describe("project vault and secrets", () => {
       cy.get('[aria-label="Revelar secret"]').click()
       cy.contains("postgres://updated").should("be.visible")
 
-      cy.on("window:confirm", () => true)
       cy.get('[aria-label="Remover secret"]').click()
+      cy.contains("button", "Remover").click()
       cy.contains("DATABASE_URL").should("not.exist")
       cy.contains("Nenhum secret neste ambiente", { timeout: 15000 }).should("be.visible")
     })
