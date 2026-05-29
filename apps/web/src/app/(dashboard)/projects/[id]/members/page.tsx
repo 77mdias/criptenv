@@ -123,7 +123,7 @@ function InviteStatusBadge({ state }: { state: ReturnType<typeof inviteState> })
   return (
     <span
       className={cn(
-        "inline-flex items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium min-w-[88px]",
+        "inline-flex items-center justify-center gap-1.5 rounded-full border px-2.5 py-1 text-xs font-medium w-[92px]",
         className
       )}
     >
