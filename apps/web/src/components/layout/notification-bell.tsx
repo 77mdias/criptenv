@@ -8,7 +8,7 @@ import { useNotificationsStore } from "@/stores/notifications";
 import { cn } from "@/lib/utils";
 
 const typeIcons: Record<string, React.ReactNode> = {
-  invite: <UserPlus className="h-4 w-4 text-indigo-500" />,
+  invite: <UserPlus className="h-4 w-4 text-(--accent)" />,
   alert: <AlertTriangle className="h-4 w-4 text-amber-500" />,
   system: <Info className="h-4 w-4 text-blue-500" />,
   email: <Mail className="h-4 w-4 text-emerald-500" />,
@@ -85,65 +85,76 @@ export function NotificationBell() {
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Notifications"
+        aria-label="Notificações"
+        aria-expanded={isOpen}
         className="relative h-8 w-8 sm:h-10 sm:w-10"
         onClick={toggleOpen}
       >
-        <Bell className="h-4 w-4 text-(--text-muted)" />
+        <Bell className="h-4 w-4 text-(--text-tertiary)" />
         {unreadCount > 0 && (
-          <span className="absolute top-1.5 right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-red-500 px-1 text-[10px] font-bold text-white">
+          <span className="absolute right-1 top-1 flex h-4 min-w-4 items-center justify-center rounded-full bg-(--danger) px-1 text-[10px] font-bold leading-none text-white ring-2 ring-(--background)">
             {unreadCount > 99 ? "99+" : unreadCount}
           </span>
         )}
       </Button>
 
       {isOpen && (
-        <div className="absolute right-0 top-full mt-2 w-[360px] max-w-[calc(100vw-1rem)] rounded-xl border border-(--border) bg-(--card) shadow-xl z-50 overflow-hidden">
+        <div
+          role="dialog"
+          aria-label="Notificações"
+          className="absolute right-0 top-full z-50 mt-2 w-[380px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-lg border border-(--border) bg-(--surface-elevated) shadow-[var(--shadow-xl)]"
+        >
           {/* Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-(--border)">
+          <div className="flex items-center justify-between gap-3 border-b border-(--border) bg-(--surface-elevated) px-4 py-3">
             <h3 className="text-sm font-semibold text-(--text-primary)">
               Notificações
             </h3>
             {unreadCount > 0 && (
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   markAllAsRead();
                 }}
-                className="text-xs text-(--text-muted) hover:text-(--text-primary) transition-colors flex items-center gap-1"
+                className="flex shrink-0 items-center gap-1 text-xs font-medium text-(--text-tertiary) transition-colors hover:text-(--text-primary)"
               >
                 <Check className="h-3 w-3" />
-                Marcar todas como lidas
+                Marcar todas
               </button>
             )}
           </div>
 
           {/* List */}
-          <div className="max-h-[400px] overflow-y-auto">
+          <div className="max-h-[420px] overflow-y-auto">
             {isLoading && notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-(--text-muted)">
+              <div className="px-4 py-10 text-center text-sm text-(--text-tertiary)">
                 Carregando...
               </div>
             ) : notifications.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-(--text-muted)">
-                <Bell className="h-8 w-8 mx-auto mb-2 opacity-40" />
-                Nenhuma notificação ainda
+              <div className="px-6 py-10 text-center">
+                <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-full border border-(--border) bg-(--background-muted)">
+                  <Bell className="h-5 w-5 text-(--text-muted)" />
+                </div>
+                <p className="text-sm font-medium text-(--text-secondary)">
+                  Nenhuma notificação ainda
+                </p>
               </div>
             ) : (
               notifications.map((notification) => {
                 const isUnread = !notification.read_at;
                 return (
-                  <div
+                  <button
+                    type="button"
                     key={notification.id}
                     onClick={() => handleNotificationClick(notification)}
                     className={cn(
-                      "flex items-start gap-3 px-4 py-3 cursor-pointer transition-colors border-b border-(--border) last:border-b-0",
+                      "flex w-full cursor-pointer items-start gap-3 border-b border-(--border) px-4 py-3.5 text-left transition-colors last:border-b-0",
                       isUnread
-                        ? "bg-(--accent)/5 hover:bg-(--accent)/10"
-                        : "hover:bg-(--muted)"
+                        ? "bg-(--background-muted) hover:bg-(--background-subtle)"
+                        : "hover:bg-(--background-muted)"
                     )}
                   >
-                    <div className="mt-0.5 shrink-0">
+                    <div className="mt-0.5 flex h-8 w-8 shrink-0 items-center justify-center rounded-md border border-(--border) bg-(--surface)">
                       {typeIcons[notification.type] || typeIcons.system}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -165,9 +176,9 @@ export function NotificationBell() {
                       </p>
                     </div>
                     {isUnread && (
-                      <span className="mt-1.5 h-2 w-2 rounded-full bg-indigo-500 shrink-0" />
+                      <span className="mt-2 h-2 w-2 rounded-full bg-(--accent) shrink-0" />
                     )}
-                  </div>
+                  </button>
                 );
               })
             )}

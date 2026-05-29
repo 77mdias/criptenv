@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fixed
+
+#### Invite Notifications and Mobile Email CTA (2026-05-29)
+
+- **Backend**: Project invite creation now normalizes invited emails before duplicate checks, email delivery, and existing-user notification lookup.
+- **Backend**: Invite notifications remain scoped to users who already have a CriptEnv account; unknown emails continue to receive only the email invite.
+- **Frontend**: Notification dropdown now uses existing dashboard surface tokens, a solid accessible panel, and refreshes the list every time it opens so unread badges cannot point at a stale empty list.
+- **Email**: CTA buttons now use centered, width-stable table markup without relying on the old `.btn` mobile media query, improving alignment in Gmail mobile.
+- **Tests**: Added focused coverage for invite-triggered notifications, no-account invite behavior, mobile-safe email CTA markup, and notification bell refresh/accessibility.
+
 ### Added
 
 #### In-App Notification System (2026-05-28)
