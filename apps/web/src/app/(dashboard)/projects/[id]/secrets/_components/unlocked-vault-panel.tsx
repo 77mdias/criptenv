@@ -11,6 +11,11 @@ interface UnlockedVaultPanelProps {
   copiedKey: string | null;
   busy: boolean;
   canManageSecrets: boolean;
+  selectedKeys?: string[];
+  onSelectChange?: (secret: DecryptedSecret, selected: boolean) => void;
+  onSelectAllChange?: (selected: boolean) => void;
+  onClearSelection?: () => void;
+  onBulkDelete?: () => void;
   onCopy: (secret: DecryptedSecret) => void;
   onEdit: (secret: DecryptedSecret) => void;
   onDelete: (secret: DecryptedSecret) => void;
@@ -26,6 +31,11 @@ export function UnlockedVaultPanel({
   copiedKey,
   busy,
   canManageSecrets,
+  selectedKeys,
+  onSelectChange,
+  onSelectAllChange,
+  onClearSelection,
+  onBulkDelete,
   onCopy,
   onEdit,
   onDelete,
@@ -63,6 +73,11 @@ export function UnlockedVaultPanel({
           environmentName={environmentName}
           copiedKey={copiedKey}
           canManageSecrets={canManageSecrets}
+          selectedKeys={selectedKeys}
+          onSelectChange={onSelectChange}
+          onSelectAllChange={onSelectAllChange}
+          onClearSelection={onClearSelection}
+          onBulkDelete={onBulkDelete}
           onCopy={onCopy}
           onEdit={onEdit}
           onDelete={onDelete}

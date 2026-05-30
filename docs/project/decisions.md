@@ -1331,7 +1331,7 @@ The production database moved from Supabase PostgreSQL to local VPS PostgreSQL. 
 
 ## DEC-051 — Mobile-Safe Notifications and Admin Bulk Secret Actions
 
-**Status:** Proposed
+**Status:** Approved
 **Date:** 2026-05-30
 **Context:**
 The notification menu is currently rendered as a desktop-width dropdown anchored to the bell, which can break on narrow mobile dashboard layouts. The secrets table also supports only per-row deletion, forcing admins/owners to repeat destructive actions and leaving no select-all workflow for environment-scoped cleanup.

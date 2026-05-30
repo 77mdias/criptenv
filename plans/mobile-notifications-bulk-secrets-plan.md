@@ -1,7 +1,7 @@
 # Plan — Mobile Notification Dropdown Fix and Admin Bulk Secret Selection
 
 **Date:** 2026-05-30  
-**Status:** Proposed  
+**Status:** Implemented
 **Scope:** `apps/web` dashboard UX only; backend RBAC already guards human-session vault writes for `admin`/`owner`.
 
 ## Context
