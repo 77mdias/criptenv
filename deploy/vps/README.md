@@ -87,6 +87,64 @@ Não é necessário instalar Python ou Alembic diretamente na VPS. O bootstrap e
 
 ---
 
+## Migrar avatares para Cloudflare R2
+
+Use R2 para remover a dependência do Supabase Storage. O backend faz upload server-side usando a API S3-compatible do R2; o frontend continua chamando `/api/auth/me/avatar`.
+
+### 1. Criar bucket
+
+No Cloudflare Dashboard:
+
+1. Acesse **Storage & databases > R2 > Overview**.
+2. Clique em **Create bucket**.
+3. Nome sugerido: `criptenv-avatars`.
+4. Use **Standard storage** para permanecer no free tier.
+
+### 2. Criar credenciais
+
+No Cloudflare Dashboard:
+
+1. Acesse **Storage & databases > R2 > Overview**.
+2. Em **API Tokens**, clique em **Manage**.
+3. Crie um token com permissão **Object Read & Write**.
+4. Restrinja para o bucket `criptenv-avatars`.
+5. Copie o **Access Key ID**, **Secret Access Key** e o endpoint/account id. A secret key não aparece de novo.
+
+### 3. Expor URL pública dos avatares
+
+Preferencialmente conecte um domínio do próprio Cloudflare ao bucket:
+
+1. Abra o bucket `criptenv-avatars`.
+2. Vá em **Settings > Public access**.
+3. Conecte um custom domain, por exemplo `avatars.77mdevseven.tech`.
+4. Use esse domínio como `R2_PUBLIC_URL`.
+
+### 4. Atualizar `.env` da VPS
+
+```env
+AVATAR_STORAGE_BACKEND=r2
+R2_ACCOUNT_ID=seu-account-id
+R2_ACCESS_KEY_ID=sua-access-key-id
+R2_SECRET_ACCESS_KEY=sua-secret-access-key
+R2_BUCKET=criptenv-avatars
+R2_PUBLIC_URL=https://avatars.77mdevseven.tech
+```
+
+Remova ou ignore as variáveis `SUPABASE_*` quando `AVATAR_STORAGE_BACKEND=r2`.
+
+### 5. Reiniciar e testar
+
+```bash
+cd ~/projects/criptenv/deploy/vps
+docker compose up -d api scheduler
+docker compose logs --tail=80 api
+curl -fsS http://127.0.0.1:8000/health
+```
+
+Depois, teste em `/account` fazendo upload de um avatar PNG/JPG. A URL salva no usuário deve começar com `R2_PUBLIC_URL`.
+
+---
+
 ## Migração do Supabase
 
 Este passo migra **todos os dados** do seu banco no Supabase para o PostgreSQL local na VPS.

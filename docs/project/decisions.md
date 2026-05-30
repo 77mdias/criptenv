@@ -1307,3 +1307,24 @@ When recreating a PostgreSQL container on the VPS, changing `DB_PASSWORD` in `.e
 - ✅ Empty VPS databases no longer fail on the first post-baseline Alembic migration referencing core tables.
 - ✅ The API connects through the Docker service name `postgres`, matching the Compose network.
 - ⚠️ This flow is destructive and must not be used for a database with data that needs preservation.
+
+---
+
+## DEC-050 — Cloudflare R2 for Avatar Object Storage
+
+**Status:** Approved
+**Date:** 2026-05-29
+**Context:**
+The production database moved from Supabase PostgreSQL to local VPS PostgreSQL. Keeping Supabase active only for avatar Storage would leave an unnecessary external dependency.
+
+**Decision:**
+- Add `AVATAR_STORAGE_BACKEND=r2` for Cloudflare R2 avatar uploads.
+- Use R2's S3-compatible API with server-side AWS SigV4 request signing via `httpx`.
+- Keep the existing Supabase Storage path behind `AVATAR_STORAGE_BACKEND=supabase` as a rollback option.
+- Store public avatar URLs using `R2_PUBLIC_URL`, preferably a Cloudflare custom domain attached to the bucket.
+
+**Consequences:**
+- ✅ Avatar uploads no longer require an active Supabase project when R2 is configured.
+- ✅ No browser-side R2 credentials are needed; uploads remain server-side.
+- ✅ Existing frontend avatar flows keep using `/api/auth/me/avatar`.
+- ⚠️ Operators must configure public bucket access or a custom R2 domain before uploaded avatars can render publicly.

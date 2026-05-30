@@ -636,6 +636,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Changed
 
+- **api(avatar):** added Cloudflare R2 avatar storage support with signed S3-compatible uploads/deletes and R2 environment configuration.
 - **deploy(vps):** added a guarded PostgreSQL reset script for blank VPS databases, validating `.env` database credentials, bootstrapping the current schema, stamping Alembic, and bounding API health probes.
 - **web(contribute):** improved mobile responsiveness on `/contribute` by reducing base paddings/text scale and enforcing safer width behavior in marketing grid cards to prevent horizontal overflow.
 - **web(contribute):** Pix countdown UI now shows a 2-minute maximum payment window with a visual progress bar that decreases in real-time until expiration.

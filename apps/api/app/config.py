@@ -57,12 +57,18 @@ class Settings(BaseSettings):
     EMAIL_FROM: str = "admin@77mdevseven.tech"
     
     # ===========================================
-    # SUPABASE STORAGE
+    # AVATAR STORAGE
     # ===========================================
+    AVATAR_STORAGE_BACKEND: str = "supabase"
     SUPABASE_URL: str = ""
     SUPABASE_SERVICE_KEY: str = ""
     SUPABASE_ANON_KEY: str = ""
     SUPABASE_AVATAR_BUCKET: str = "avatars"
+    R2_ACCOUNT_ID: str = ""
+    R2_ACCESS_KEY_ID: str = ""
+    R2_SECRET_ACCESS_KEY: str = ""
+    R2_BUCKET: str = "criptenv-avatars"
+    R2_PUBLIC_URL: str = ""
 
     @field_validator("DEBUG", mode="before")
     @classmethod

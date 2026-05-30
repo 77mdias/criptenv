@@ -389,7 +389,8 @@ async def upload_avatar(
 ):
     """Upload or replace the current user's avatar image.
 
-    Accepts PNG or JPG images up to 5MB. The file is stored in Supabase Storage
+    Accepts PNG or JPG images up to 5MB. The file is stored in the configured
+    object storage backend
     with the filename set to the user's ID (e.g., '<uuid>.png'), using upsert
     to overwrite any previous avatar and keep storage clean.
     """
@@ -453,7 +454,7 @@ async def delete_avatar(
 ):
     """Remove the current user's avatar.
 
-    Deletes the image from Supabase Storage and clears the avatar_url
+    Deletes the image from the configured object storage backend and clears the avatar_url
     column in the database.
     """
     avatar_service = AvatarService()
