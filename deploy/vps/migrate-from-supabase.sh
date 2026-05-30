@@ -22,8 +22,8 @@ echo ""
 
 # Verificar se PostgreSQL local está rodando
 if ! docker ps --format '{{.Names}}' | grep -q "^${CONTAINER_NAME}$"; then
-    echo -e "${RED}ERRO: Container ${CONTAINER_NAME} não está rodando na VPS.${NC}"
-    echo "Execute o setup-postgres.sh primeiro."
+    echo -e "${RED}ERRO: Container ${CONTAINER_NAME} não está rodando.${NC}"
+    echo "Execute: cd deploy/vps && bash setup-postgres.sh"
     exit 1
 fi
 
