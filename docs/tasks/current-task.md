@@ -81,6 +81,23 @@ Aplicar permissões consistentes no dashboard/API para settings, secrets e convi
 - `docs/project/decisions.md`: DEC-049 e DEC-050 registrados
 - `docs/project/current-state.md`: Atualizado para ~95% e marca notificações como implementadas
 
+
+---
+
+## Planejamento novo — Mobile notifications e bulk secrets (2026-05-30)
+
+Foi criado o plano `plans/mobile-notifications-bulk-secrets-plan.md` para guiar duas entregas no dashboard web:
+
+1. Corrigir o dropdown de notificações em mobile usando um painel viewport-safe, sem quebrar o dropdown desktop atual.
+2. Adicionar seleção individual, seleção total e exclusão em lote de secrets no ambiente ativo, visível e acionável apenas para usuários `admin` e `owner`.
+
+### Critérios principais planejados
+
+- Developers/viewers continuam sem controles destrutivos ou checkboxes de seleção.
+- A seleção é baseada em `secret.key`, limitada ao ambiente ativo e limpa ao trocar de ambiente ou bloquear o vault.
+- A exclusão em lote recalcula o vault uma única vez e envia um único `pushSecrets`, preservando a arquitetura zero-knowledge.
+- O dropdown mobile de notificações deve caber em larguras de 320px, 375px e 430px sem overflow horizontal.
+
 ---
 
 ## Próximos passos recomendados

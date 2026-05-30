@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Mobile Notifications and Bulk Secret Selection Plan (2026-05-30)
+
+- **Planning**: Added an implementation plan for the mobile notification dropdown fix and admin/owner-only bulk secret selection/deletion workflow.
+- **Frontend**: Planned a viewport-safe mobile notification sheet while preserving the existing desktop dropdown.
+- **Frontend**: Planned key-based selection state, select-all, clear-selection, and single-write bulk deletion for unlocked environment secrets.
+- **RBAC**: Planned to keep all bulk controls hidden from developers/viewers and guarded by existing `admin`/`owner` project role checks.
+
 ### Fixed
 
 #### Project RBAC, Invite Revocation, and Secret Modals (2026-05-29)
