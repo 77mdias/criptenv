@@ -1283,3 +1283,25 @@ The CLI moved from a mostly local vault workflow to the same remote API/web plat
 - ✅ Environment-restricted credentials are enforced consistently in backend reads/writes.
 - ✅ GitHub Action plaintext export is possible without weakening zero-knowledge server guarantees.
 - ⚠️ Public API write/admin scopes remain reserved until corresponding endpoints are intentionally exposed.
+
+---
+
+## DEC-049 — Guarded Blank PostgreSQL Reset for VPS Deploys
+
+**Status:** Approved
+**Date:** 2026-05-29
+**Context:**
+When recreating a PostgreSQL container on the VPS, changing `DB_PASSWORD` in `.env` does not update an existing Docker volume because the official Postgres image applies `POSTGRES_PASSWORD` only during first initialization. This can leave API containers restarting with `InvalidPasswordError` even when the visible `.env` appears correct.
+
+**Decision:**
+- Provide a dedicated `deploy/vps/reset-postgres-new-db.sh` script for cases where the VPS database can be discarded.
+- Require an explicit `--yes` flag before deleting the Compose PostgreSQL volume.
+- Validate that `DATABASE_URL` exactly matches `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and the Compose service host `postgres`.
+- Require an alphanumeric password for this reset flow to avoid URL parsing mistakes.
+- Verify a real `psql` login and the API `/health` endpoint after recreating the database.
+
+**Consequences:**
+- ✅ Operators get a repeatable recovery path for blank VPS databases with fewer manual Docker mistakes.
+- ✅ The script refuses inconsistent `.env` credentials before deleting the volume.
+- ✅ The API connects through the Docker service name `postgres`, matching the Compose network.
+- ⚠️ This flow is destructive and must not be used for a database with data that needs preservation.

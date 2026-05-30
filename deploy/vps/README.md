@@ -13,10 +13,9 @@ Stack otimizada para rodar PostgreSQL 15 em uma VPS com Docker.
 
 | Arquivo | Descrição |
 |---------|-----------|
-| `docker-compose.db.yml` | Stack do PostgreSQL + volumes + rede |
+| `docker-compose.yml` | Stack completa da API, scheduler, Redis, PostgreSQL, Cloudflare Tunnel e Watchtower |
 | `postgres-config/postgresql.conf` | Configurações otimizadas para 8GB RAM |
-| `backup.sh` | Script de backup diário com retenção |
-| `setup-postgres.sh` | Script completo de instalação automatizada |
+| `reset-postgres-new-db.sh` | Reset operacional para recriar um banco PostgreSQL vazio quando não houver dados a preservar |
 
 ## Instalação Rápida
 
@@ -54,11 +53,35 @@ Edite o `.env` do seu backend (`apps/api/.env`):
 DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_GERADA@localhost:5432/criptenv
 ```
 
-Ou se o backend também roda em Docker na mesma VPS, use o nome do serviço:
+Ou se o backend também roda em Docker na mesma VPS, use o nome do serviço `postgres`:
 
 ```env
-DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_GERADA@criptenv-postgres:5432/criptenv
+DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_GERADA@postgres:5432/criptenv
 ```
+
+---
+
+## Resetar banco novo
+
+Use este fluxo apenas quando o banco local da VPS pode ser apagado. O script valida que `DATABASE_URL`, `DB_USER`, `DB_PASSWORD` e `DB_NAME` estão consistentes antes de remover o volume do PostgreSQL.
+
+No `deploy/vps/.env`, use uma senha alfanumérica sem caracteres especiais:
+
+```env
+DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_NOVA_AQUI@postgres:5432/criptenv
+DB_USER=criptenv
+DB_PASSWORD=SENHA_NOVA_AQUI
+DB_NAME=criptenv
+```
+
+Depois rode na VPS:
+
+```bash
+cd ~/projects/criptenv/deploy/vps
+./reset-postgres-new-db.sh --yes
+```
+
+O script para a stack, remove somente o volume PostgreSQL do projeto Compose atual (por exemplo, `vps_postgres_data`), recria o Postgres, testa login real com `psql`, sobe API/scheduler/serviços auxiliares e valida `/health`.
 
 ---
 
@@ -150,13 +173,13 @@ docker exec -i criptenv-postgres psql -U criptenv -d criptenv < /tmp/restore.sql
 ### Reiniciar o PostgreSQL
 ```bash
 cd ~/projects/criptenv/deploy/vps
-docker compose -f docker-compose.db.yml restart
+docker compose restart postgres
 ```
 
 ### Parar completamente
 ```bash
 cd ~/projects/criptenv/deploy/vps
-docker compose -f docker-compose.db.yml down
+docker compose down
 ```
 
 ---
