@@ -81,7 +81,9 @@ cd ~/projects/criptenv/deploy/vps
 ./reset-postgres-new-db.sh --yes
 ```
 
-O script para a stack, remove somente o volume PostgreSQL do projeto Compose atual (por exemplo, `vps_postgres_data`), recria o Postgres, testa login real com `psql`, sobe API/scheduler/serviços auxiliares e valida `/health`.
+O script para a stack, remove somente o volume PostgreSQL do projeto Compose atual (por exemplo, `vps_postgres_data`), recria o Postgres, testa login real com `psql`, cria o schema inicial a partir dos modelos atuais, marca Alembic como aplicado para esse banco vazio, sobe API/scheduler/serviços auxiliares e valida `/health`.
+
+Não é necessário instalar Python ou Alembic diretamente na VPS. O bootstrap e o `alembic stamp head` rodam dentro da imagem Docker da API via `docker compose run`.
 
 ---
 

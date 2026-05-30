@@ -1298,10 +1298,12 @@ When recreating a PostgreSQL container on the VPS, changing `DB_PASSWORD` in `.e
 - Require an explicit `--yes` flag before deleting the Compose PostgreSQL volume.
 - Validate that `DATABASE_URL` exactly matches `DB_USER`, `DB_PASSWORD`, `DB_NAME`, and the Compose service host `postgres`.
 - Require an alphanumeric password for this reset flow to avoid URL parsing mistakes.
+- Bootstrap the current SQLAlchemy schema and stamp Alembic `head` after recreating the empty database, because the existing migration history starts after the original core tables.
 - Verify a real `psql` login and the API `/health` endpoint after recreating the database.
 
 **Consequences:**
 - ✅ Operators get a repeatable recovery path for blank VPS databases with fewer manual Docker mistakes.
 - ✅ The script refuses inconsistent `.env` credentials before deleting the volume.
+- ✅ Empty VPS databases no longer fail on the first post-baseline Alembic migration referencing core tables.
 - ✅ The API connects through the Docker service name `postgres`, matching the Compose network.
 - ⚠️ This flow is destructive and must not be used for a database with data that needs preservation.
