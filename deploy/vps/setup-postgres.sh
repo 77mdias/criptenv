@@ -40,18 +40,19 @@ else
     echo -e "${GREEN}✓ .env.db já existe${NC}"
 fi
 
-# 3. Carregar variáveis
-export $(grep -v '^#' "${ENV_FILE}" | xargs)
-
-# 4. Criar diretório de backups
+# 3. Criar diretório de backups
 mkdir -p backups
 
-# 5. Subir PostgreSQL (usa o docker-compose.yml principal)
+# 4. Subir PostgreSQL (usa o docker-compose.yml principal)
+#    NÃO exportamos variáveis para o shell para evitar conflito com o .env
 echo -e "${YELLOW}Subindo PostgreSQL...${NC}"
 docker compose --env-file "${ENV_FILE}" up -d postgres
 
-# 6. Aguardar saúde
+# 5. Aguardar saúde (lê credenciais direto do arquivo, não do shell)
 echo -e "${YELLOW}Aguardando PostgreSQL...${NC}"
+DB_USER=$(grep '^DB_USER=' "${ENV_FILE}" | cut -d= -f2)
+DB_NAME=$(grep '^DB_NAME=' "${ENV_FILE}" | cut -d= -f2)
+
 for i in {1..12}; do
     if docker exec criptenv-postgres pg_isready -U "${DB_USER}" -d "${DB_NAME}" > /dev/null 2>&1; then
         echo -e "${GREEN}✓ PostgreSQL rodando!${NC}"
@@ -61,7 +62,7 @@ for i in {1..12}; do
     [ "$i" -eq 12 ] && { echo "ERRO: PostgreSQL não iniciou"; docker logs criptenv-postgres --tail 20; exit 1; }
 done
 
-# 7. Backup automático
+# 6. Backup automático
 CRON_JOB="0 3 * * * cd ${SCRIPT_DIR} && bash backup.sh >> ${SCRIPT_DIR}/backups/backup.log 2>&1"
 (crontab -l 2>/dev/null | grep -v "backup.sh" || true) | crontab -
 (crontab -l 2>/dev/null; echo "${CRON_JOB}") | crontab -
