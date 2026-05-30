@@ -58,6 +58,7 @@ interface UseProjectSecretsResult {
     lockVault: () => void
     saveSecret: (secret: SecretFormValue) => Promise<void>
     deleteSecret: (secret: DecryptedSecret) => Promise<void>
+    deleteSecrets: (keys: string[]) => Promise<void>
     importSecrets: (importedSecrets: DecryptedSecret[]) => Promise<void>
     copySecret: (secret: DecryptedSecret) => Promise<void>
     rotateSecret: (secret: DecryptedSecret) => Promise<void>
@@ -356,11 +357,20 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     [pushSecrets, secrets]
   )
 
-  const deleteSecret = useCallback(
-    async (secret: DecryptedSecret) => {
-      await pushSecrets(secrets.filter((item) => item.key !== secret.key))
+  const deleteSecrets = useCallback(
+    async (keys: string[]) => {
+      if (keys.length === 0) return
+      const keysToDelete = new Set(keys)
+      await pushSecrets(secrets.filter((item) => !keysToDelete.has(item.key)))
     },
     [pushSecrets, secrets]
+  )
+
+  const deleteSecret = useCallback(
+    async (secret: DecryptedSecret) => {
+      await deleteSecrets([secret.key])
+    },
+    [deleteSecrets]
   )
 
   const importSecrets = useCallback(
@@ -510,6 +520,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       lockVault,
       saveSecret,
       deleteSecret,
+      deleteSecrets,
       importSecrets,
       copySecret,
       rotateSecret,

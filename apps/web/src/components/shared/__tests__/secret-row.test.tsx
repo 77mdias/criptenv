@@ -63,4 +63,44 @@ describe("SecretRow", () => {
     expect(screen.queryByRole("button", { name: "Configurar expiração" })).not.toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Remover secret" })).not.toBeInTheDocument()
   })
+  it("renders selectable checkbox for admin bulk actions", async () => {
+    const onSelectChange = jest.fn()
+
+    render(
+      <SecretRow
+        secret={secret}
+        environmentName="Production"
+        canManageSecrets
+        selectable
+        selected={false}
+        onSelectChange={onSelectChange}
+        onCopy={jest.fn()}
+        onEdit={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    )
+
+    await userEvent.click(screen.getByRole("checkbox", { name: "Selecionar secret DATABASE_URL" }))
+
+    expect(onSelectChange).toHaveBeenCalledWith(secret, true)
+  })
+
+  it("does not render selectable checkbox for non-admin roles", () => {
+    render(
+      <SecretRow
+        secret={secret}
+        environmentName="Production"
+        canManageSecrets={false}
+        selectable
+        selected
+        onSelectChange={jest.fn()}
+        onCopy={jest.fn()}
+        onEdit={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.queryByRole("checkbox", { name: "Selecionar secret DATABASE_URL" })).not.toBeInTheDocument()
+  })
+
 })

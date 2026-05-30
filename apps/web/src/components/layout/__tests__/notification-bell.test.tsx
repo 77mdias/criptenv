@@ -89,6 +89,7 @@ describe("NotificationBell", () => {
 
     const panel = await screen.findByRole("dialog", { name: /notificações/i })
     expect(panel).toHaveClass("bg-(--surface-elevated)")
+    expect(panel).toHaveClass("fixed", "inset-x-3", "sm:absolute")
     expect(screen.getByText("Nenhuma notificação ainda")).toBeInTheDocument()
   })
 })

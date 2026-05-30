@@ -102,7 +102,7 @@ export function NotificationBell() {
         <div
           role="dialog"
           aria-label="Notificações"
-          className="absolute right-0 top-full z-50 mt-2 w-[380px] max-w-[calc(100vw-1rem)] overflow-hidden rounded-lg border border-(--border) bg-(--surface-elevated) shadow-[var(--shadow-xl)]"
+          className="fixed inset-x-3 top-16 z-50 mt-0 w-auto overflow-hidden rounded-lg border border-(--border) bg-(--surface-elevated) shadow-[var(--shadow-xl)] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px] sm:max-w-[calc(100vw-1rem)]"
         >
           {/* Header */}
           <div className="flex items-center justify-between gap-3 border-b border-(--border) bg-(--surface-elevated) px-4 py-3">
@@ -125,7 +125,7 @@ export function NotificationBell() {
           </div>
 
           {/* List */}
-          <div className="max-h-[420px] overflow-y-auto">
+          <div className="max-h-[min(70vh,480px)] overflow-y-auto sm:max-h-[420px]">
             {isLoading && notifications.length === 0 ? (
               <div className="px-4 py-10 text-center text-sm text-(--text-tertiary)">
                 Carregando...

@@ -7,7 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Added
+
+#### Mobile Notifications and Bulk Secret Selection Plan (2026-05-30)
+
+- **Planning**: Added an implementation plan for the mobile notification dropdown fix and admin/owner-only bulk secret selection/deletion workflow.
+- **Frontend**: Planned a viewport-safe mobile notification sheet while preserving the existing desktop dropdown.
+- **Frontend**: Planned key-based selection state, select-all, clear-selection, and single-write bulk deletion for unlocked environment secrets.
+- **RBAC**: Planned to keep all bulk controls hidden from developers/viewers and guarded by existing `admin`/`owner` project role checks.
+
 ### Fixed
+
+
+#### Mobile Notifications and Bulk Secret Selection (2026-05-30)
+
+- **Frontend**: Notification dropdown now uses a viewport-safe fixed panel on mobile and keeps the anchored dropdown layout on larger screens.
+- **Frontend**: Added admin/owner-only secret row selection, select-all, clear-selection, and bulk delete controls for unlocked vaults.
+- **Frontend**: Bulk deletion filters selected secret keys client-side and pushes the encrypted vault once, preserving the zero-knowledge flow.
+- **Tests**: Added coverage for mobile notification panel classes, admin-only secret row checkboxes, and bulk selection toolbar behavior.
 
 #### Project RBAC, Invite Revocation, and Secret Modals (2026-05-29)
 

@@ -1328,3 +1328,24 @@ The production database moved from Supabase PostgreSQL to local VPS PostgreSQL. 
 - ✅ No browser-side R2 credentials are needed; uploads remain server-side.
 - ✅ Existing frontend avatar flows keep using `/api/auth/me/avatar`.
 - ⚠️ Operators must configure public bucket access or a custom R2 domain before uploaded avatars can render publicly.
+
+## DEC-051 — Mobile-Safe Notifications and Admin Bulk Secret Actions
+
+**Status:** Approved
+**Date:** 2026-05-30
+**Context:**
+The notification menu is currently rendered as a desktop-width dropdown anchored to the bell, which can break on narrow mobile dashboard layouts. The secrets table also supports only per-row deletion, forcing admins/owners to repeat destructive actions and leaving no select-all workflow for environment-scoped cleanup.
+
+**Decision:**
+- Treat the notification menu as a viewport-safe fixed sheet/popover on mobile while keeping the existing anchored dropdown behavior on larger screens.
+- Scope bulk secret selection to the active environment and store selected items by secret key, not object identity.
+- Expose row checkboxes, select-all, clear-selection, and bulk delete only when `canWriteProjectSecrets(current_user_role)` is true (`owner`/`admin`).
+- Implement bulk deletion by filtering selected keys from the decrypted in-memory vault and pushing the encrypted vault once.
+- Use the existing app confirmation dialog for destructive bulk actions; do not use native browser confirmations.
+
+**Consequences:**
+- ✅ Mobile users get a notification panel that is not clipped by desktop dropdown sizing or ancestor layout constraints.
+- ✅ Admins/owners can clean up multiple secrets efficiently while keeping selection limited to the current environment.
+- ✅ Developers/viewers keep the same read-only experience without destructive selection controls.
+- ✅ The zero-knowledge model remains intact because plaintext handling stays client-side and the server still receives only encrypted vault blobs.
+- ⚠️ The bulk delete UX must carefully clear selection on environment changes, vault lock, and post-delete refreshes to avoid stale selections.

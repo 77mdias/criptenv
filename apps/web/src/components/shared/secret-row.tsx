@@ -4,7 +4,7 @@ import { useState } from "react"
 import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2, RotateCcw, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
-import { formatRelativeTime } from "@/lib/utils"
+import { cn, formatRelativeTime } from "@/lib/utils"
 import { ExpirationBadge } from "./expiration-badge"
 
 export interface DecryptedSecret {
@@ -25,6 +25,9 @@ interface SecretRowProps {
   onEdit: (secret: DecryptedSecret) => void
   onDelete: (secret: DecryptedSecret) => void
   onRotate?: (secret: DecryptedSecret) => void
+  selectable?: boolean
+  selected?: boolean
+  onSelectChange?: (secret: DecryptedSecret, selected: boolean) => void
   onSetExpiration?: (secret: DecryptedSecret) => void
 }
 
@@ -37,13 +40,37 @@ export function SecretRow({
   onEdit,
   onDelete,
   onRotate,
+  selectable = false,
+  selected = false,
+  onSelectChange,
   onSetExpiration,
 }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
   const masked = "••••••••••••••••"
 
+  const showSelection = Boolean(canManageSecrets && selectable && onSelectChange)
+
   return (
-    <div className="grid grid-cols-1 gap-3 px-4 py-4 transition-colors hover:bg-[var(--background-subtle)] md:grid-cols-[40px_1.2fr_1.8fr_auto] md:items-center md:px-6">
+    <div
+      className={cn(
+        "grid grid-cols-1 gap-3 px-4 py-4 transition-colors hover:bg-[var(--background-subtle)] md:items-center md:px-6",
+        showSelection
+          ? "md:grid-cols-[32px_40px_1.2fr_1.8fr_auto]"
+          : "md:grid-cols-[40px_1.2fr_1.8fr_auto]"
+      )}
+    >
+      {showSelection && (
+        <div className="flex items-center md:justify-center">
+          <input
+            type="checkbox"
+            aria-label={`Selecionar secret ${secret.key}`}
+            checked={selected}
+            onChange={(event) => onSelectChange?.(secret, event.target.checked)}
+            className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] accent-[var(--text-primary)]"
+          />
+        </div>
+      )}
+
       <div className="hidden h-10 w-10 items-center justify-center rounded-full bg-[var(--background-muted)] text-[var(--text-tertiary)] md:flex">
         <KeyRound className="h-4 w-4" />
       </div>
