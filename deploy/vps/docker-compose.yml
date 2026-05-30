@@ -135,12 +135,18 @@ services:
       - postgres_data:/var/lib/postgresql/data
       - ./postgres-config/postgresql.conf:/etc/postgresql/postgresql.conf:ro
       - ./backups:/backups
+    ports:
+      - "127.0.0.1:5432:5432"
     command: >
       postgres
       -c config_file=/etc/postgresql/postgresql.conf
       -c listen_addresses='*'
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${DB_USER:-criptenv} -d ${DB_NAME:-criptenv}"]
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${DB_USER:-criptenv} -d ${DB_NAME:-criptenv}",
+        ]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -150,10 +156,10 @@ services:
     deploy:
       resources:
         limits:
-          cpus: '1.50'
+          cpus: "1.50"
           memory: 3G
         reservations:
-          cpus: '0.50'
+          cpus: "0.50"
           memory: 512M
 
   # -------------------------------------------
