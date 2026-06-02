@@ -280,17 +280,19 @@ class OAuthService:
         return secrets.token_urlsafe(32)
     
     @staticmethod
-    def encode_state(provider: str, state: str) -> str:
-        """Encode state with provider for storage."""
-        combined = f"{provider}:{state}"
+    def encode_state(provider: str, state: str, action: str = "login") -> str:
+        """Encode state with provider and action for storage."""
+        combined = f"{provider}:{state}:{action}"
         return base64.urlsafe_b64encode(combined.encode()).decode()
     
     @staticmethod
-    def decode_state(encoded: str) -> tuple[str, str]:
-        """Decode state to get provider and original state."""
+    def decode_state(encoded: str) -> tuple[str, str, str]:
+        """Decode state to get provider, original state, and action."""
         combined = base64.urlsafe_b64decode(encoded.encode()).decode()
-        provider, state = combined.split(":", 1)
-        return provider, state
+        parts = combined.split(":", 2)
+        if len(parts) == 3:
+            return parts[0], parts[1], parts[2]
+        return parts[0], parts[1], "login"
     
     async def get_authorization_url(self, provider: str, base_url: Optional[str] = None) -> str:
         """Get authorization URL for the given provider."""
@@ -308,12 +310,14 @@ class OAuthService:
         base_url: Optional[str] = None,
         ip_address: Optional[str] = None,
         user_agent: Optional[str] = None,
+        link_to_user: Optional[User] = None,
     ) -> tuple[User, Optional[Session]]:
         """
         Authenticate or create user via OAuth.
         
         Returns (user, session) tuple. Session is None when 2FA must be
-        completed before issuing an authenticated session.
+        completed before issuing an authenticated session, or when
+        linking to an existing user.
         """
         oauth_provider = self.get_provider(provider, base_url)
         
@@ -336,6 +340,9 @@ class OAuthService:
         oauth_account = result.scalar_one_or_none()
         
         if oauth_account:
+            if link_to_user and oauth_account.user_id != link_to_user.id:
+                raise ValueError(f"This {provider.title()} account is already linked to another Criptenv user.")
+            
             # Existing user - update tokens and fetch fresh user
             user_id = oauth_account.user_id
             oauth_account.access_token = access_token.encode() if access_token else None
@@ -355,21 +362,26 @@ class OAuthService:
             existing_user = result.scalar_one_or_none()
             
             if existing_user:
+                if link_to_user and existing_user.id != link_to_user.id:
+                     raise ValueError(f"An account with email {user_info['email']} already exists and is linked to another user.")
                 # Link OAuth account to existing user
                 user = existing_user
             else:
-                # Create new user
-                user = User(
-                    id=uuid4(),
-                    email=user_info["email"],
-                    name=user_info["name"] or user_info["email"].split("@")[0],
-                    password_hash="",  # OAuth users have no password
-                    kdf_salt=self.generate_kdf_salt(),  # Required for OAuth users
-                    avatar_url=user_info.get("avatar_url"),
-                    email_verified=True,  # OAuth emails are verified by provider
-                )
-                self.db.add(user)
-                await self.db.flush()
+                if link_to_user:
+                    user = link_to_user
+                else:
+                    # Create new user
+                    user = User(
+                        id=uuid4(),
+                        email=user_info["email"],
+                        name=user_info["name"] or user_info["email"].split("@")[0],
+                        password_hash="",  # OAuth users have no password
+                        kdf_salt=self.generate_kdf_salt(),  # Required for OAuth users
+                        avatar_url=user_info.get("avatar_url"),
+                        email_verified=True,  # OAuth emails are verified by provider
+                    )
+                    self.db.add(user)
+                    await self.db.flush()
             
             # Create OAuth account link
             oauth_account = OAuthAccount(
@@ -389,6 +401,10 @@ class OAuthService:
         # Update last login
         user.last_login_at = datetime.now(timezone.utc)
         
+        if link_to_user:
+            await self.db.refresh(user)
+            return user, None
+
         if user.two_factor_enabled:
             await self.db.flush()
             await self.db.refresh(user)

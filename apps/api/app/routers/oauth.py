@@ -87,6 +87,7 @@ async def oauth_initiate(
     provider: str,
     request: Request,
     response: Response,
+    action: str = "login",
     db: AsyncSession = Depends(get_db),
 ):
     """
@@ -112,7 +113,7 @@ async def oauth_initiate(
         )
     
     # Encode state for cookie
-    encoded_state = OAuthService.encode_state(provider, state)
+    encoded_state = OAuthService.encode_state(provider, state, action)
     
     # Create redirect response with state cookie
     redirect_response = RedirectResponse(url=auth_url, status_code=307)
@@ -156,7 +157,7 @@ async def oauth_callback(
         )
     
     try:
-        stored_provider, stored_state_value = OAuthService.decode_state(stored_state)
+        stored_provider, stored_state_value, action = OAuthService.decode_state(stored_state)
     except Exception:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -169,6 +170,20 @@ async def oauth_callback(
             detail="OAuth state mismatch. Please try again."
         )
     
+    current_user = None
+    if action == "link":
+        from app.middleware.auth import get_optional_user
+        current_user = await get_optional_user(request, db)
+        if not current_user:
+            # If linking, we MUST be authenticated.
+            # Redirect to login with error if session is missing
+            from urllib.parse import quote
+            err_msg = quote("You must be logged in to link accounts")
+            return RedirectResponse(
+                url=f"{settings.FRONTEND_URL.rstrip('/')}/login?error={err_msg}",
+                status_code=307
+            )
+
     oauth_service = OAuthService(db)
     
     try:
@@ -178,15 +193,31 @@ async def oauth_callback(
             base_url=_get_public_request_base_url(request),
             ip_address=request.client.host if request.client else None,
             user_agent=request.headers.get("User-Agent"),
+            link_to_user=current_user,
         )
     except Exception as e:
         import traceback
         traceback.print_exc()
+        if action == "link":
+            from urllib.parse import quote
+            err_msg = quote(str(e) or 'Authentication failed')
+            return RedirectResponse(
+                url=f"{settings.FRONTEND_URL.rstrip('/')}/account?oauth_error={err_msg}",
+                status_code=307
+            )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"OAuth authentication failed: {type(e).__name__}: {str(e) or 'No details'}"
         )
     
+    if action == "link":
+        redirect_response = RedirectResponse(
+            url=f"{settings.FRONTEND_URL.rstrip('/')}/account?oauth_linked={provider}",
+            status_code=307
+        )
+        redirect_response.delete_cookie("oauth_state")
+        return redirect_response
+
     auth_service = AuthService(db)
     if user.two_factor_enabled:
         trusted = await auth_service.is_trusted_two_factor_device(

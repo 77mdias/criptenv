@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState } from "react"
-import { useRouter } from "next/navigation"
-import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail } from "lucide-react"
+import { useRouter, useSearchParams } from "next/navigation"
+import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail, Plus } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -16,6 +16,7 @@ import { AvatarUpload } from "@/components/shared/avatar-upload"
 
 export default function AccountPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const authUser = useAuthStore((state) => state.user)
   const clearAuth = useAuthStore((state) => state.clearAuth)
   const cachedSessions = peekCached<SessionResponse[]>("/api/auth/sessions")
@@ -45,6 +46,25 @@ export default function AccountPage() {
   // OAuth accounts
   const [oauthAccounts, setOauthAccounts] = useState<{ provider: string; provider_email: string }[]>([])
   const [loadingOAuth, setLoadingOAuth] = useState(false)
+
+  // Available OAuth providers
+  const availableProviders = ["github", "google", "discord"]
+  const unlinkedProviders = availableProviders.filter(
+    (p) => !oauthAccounts.some((a) => a.provider === p)
+  )
+
+  useEffect(() => {
+    const oauthLinked = searchParams?.get("oauth_linked")
+    const oauthError = searchParams?.get("oauth_error")
+
+    if (oauthLinked) {
+      showMessage(`Conta ${oauthLinked} vinculada com sucesso.`)
+      router.replace("/account")
+    } else if (oauthError) {
+      showMessage(decodeURIComponent(oauthError), true)
+      router.replace("/account")
+    }
+  }, [searchParams, router])
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -208,6 +228,11 @@ export default function AccountPage() {
     } catch (err) {
       showMessage(err instanceof Error ? err.message : "Erro ao desvincular", true)
     }
+  }
+
+  const handleLinkOAuth = (provider: string) => {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
+    window.location.href = `${apiUrl}/api/auth/oauth/${provider}?action=link`
   }
 
   const handleDeleteAccount = async () => {
@@ -491,6 +516,19 @@ export default function AccountPage() {
                 </Button>
               </div>
             ))}
+          </div>
+        )}
+
+        {unlinkedProviders.length > 0 && (
+          <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
+            <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">Vincular nova conta</p>
+            <div className="flex flex-wrap gap-2">
+              {unlinkedProviders.map((provider) => (
+                <Button key={provider} variant="secondary" size="sm" onClick={() => handleLinkOAuth(provider)}>
+                  <Plus className="h-4 w-4 mr-1" /> {provider.charAt(0).toUpperCase() + provider.slice(1)}
+                </Button>
+              ))}
+            </div>
           </div>
         )}
       </Card>
