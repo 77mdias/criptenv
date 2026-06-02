@@ -122,10 +122,11 @@ def test_oauth_state_encoding():
     state = "random_state_123"
     
     encoded = OAuthService.encode_state(provider, state)
-    decoded_provider, decoded_state = OAuthService.decode_state(encoded)
+    decoded_provider, decoded_state, action = OAuthService.decode_state(encoded)
     
     assert decoded_provider == provider
     assert decoded_state == state
+    assert action == "login"
 
 
 def test_oauth_state_encoding_different_providers():
@@ -161,6 +162,7 @@ def test_oauth_callback_sets_session_cookie_and_redirects(monkeypatch):
         base_url=None,
         ip_address=None,
         user_agent=None,
+        link_to_user=None,
     ):
         return make_user(), make_session()
 
@@ -195,6 +197,7 @@ def test_oauth_callback_with_2fa_redirects_to_challenge_without_session(monkeypa
         base_url=None,
         ip_address=None,
         user_agent=None,
+        link_to_user=None,
     ):
         return two_factor_user, None
 
