@@ -4,8 +4,6 @@ import {
   Breadcrumb,
   CodeBlock,
   Callout,
-  Steps,
-  Step,
   Tabs,
   Tab,
 } from '@/components/docs';

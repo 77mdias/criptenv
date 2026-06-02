@@ -474,7 +474,7 @@ export default function MembersPage() {
                     ) : canManageMembers ? (
                       <RolePicker
                         value={member.role}
-                        options={["viewer", "developer", "admin"]}
+                        options={roles as unknown as string[]}
                         disabled={busyId === member.id}
                         onChange={(role) => handleRoleChange(member, role)}
                       />

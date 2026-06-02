@@ -64,7 +64,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     // Radix Slot uses React.Children.only which rejects arrays/fragments.
     if (asChild) {
       return (
-        <Slot
+        <Comp
           className={cn(
             buttonVariants({ variant, size }),
             fullWidth && "w-full",
@@ -74,12 +74,12 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
           {...props}
         >
           {children}
-        </Slot>
+        </Comp>
       )
     }
 
     return (
-      <button
+      <Comp
         className={cn(
           buttonVariants({ variant, size }),
           fullWidth && "w-full",
@@ -97,7 +97,7 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
         )}
         {children}
         {!loading && Icon && iconPosition === "right" && <Icon className="h-4 w-4" />}
-      </button>
+      </Comp>
     )
   }
 )

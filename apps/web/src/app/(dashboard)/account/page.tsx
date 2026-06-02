@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useState } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail, Plus } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
@@ -53,18 +53,37 @@ export default function AccountPage() {
     (p) => !oauthAccounts.some((a) => a.provider === p)
   )
 
+  const showMessage = useCallback((msg: string, isError = false) => {
+    if (isError) {
+      setError(msg)
+      setSuccess(null)
+    } else {
+      setSuccess(msg)
+      setError(null)
+    }
+    setTimeout(() => {
+      setError(null)
+      setSuccess(null)
+    }, 5000)
+  }, [])
+
   useEffect(() => {
     const oauthLinked = searchParams?.get("oauth_linked")
     const oauthError = searchParams?.get("oauth_error")
 
-    if (oauthLinked) {
-      showMessage(`Conta ${oauthLinked} vinculada com sucesso.`)
-      router.replace("/account")
-    } else if (oauthError) {
-      showMessage(decodeURIComponent(oauthError), true)
-      router.replace("/account")
+    if (oauthLinked || oauthError) {
+      // Use a small timeout to avoid calling setState synchronously in effect
+      const timer = setTimeout(() => {
+        if (oauthLinked) {
+          showMessage(`Conta ${oauthLinked} vinculada com sucesso.`)
+        } else if (oauthError) {
+          showMessage(decodeURIComponent(oauthError), true)
+        }
+        router.replace("/account")
+      }, 0)
+      return () => clearTimeout(timer)
     }
-  }, [searchParams, router])
+  }, [searchParams, router, showMessage])
 
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
@@ -118,20 +137,6 @@ export default function AccountPage() {
     void loadOAuth()
     return () => { cancelled = true }
   }, [])
-
-  const showMessage = (msg: string, isError = false) => {
-    if (isError) {
-      setError(msg)
-      setSuccess(null)
-    } else {
-      setSuccess(msg)
-      setError(null)
-    }
-    setTimeout(() => {
-      setError(null)
-      setSuccess(null)
-    }, 5000)
-  }
 
   const handleSignOutAll = async () => {
     try {
@@ -232,7 +237,7 @@ export default function AccountPage() {
 
   const handleLinkOAuth = (provider: string) => {
     const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-    window.location.href = `${apiUrl}/api/auth/oauth/${provider}?action=link`
+    window.location.assign(`${apiUrl}/api/auth/oauth/${provider}?action=link`)
   }
 
   const handleDeleteAccount = async () => {
