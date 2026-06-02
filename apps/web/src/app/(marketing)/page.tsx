@@ -38,6 +38,14 @@ const SecurityScrollytelling = dynamic(
     ),
   { ssr: false },
 );
+
+const PlatformPreviewSection = dynamic(
+  () =>
+    import("@/components/marketing/platform-preview-section").then(
+      (mod) => mod.PlatformPreviewSection,
+    ),
+  { ssr: false },
+);
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -478,6 +486,8 @@ export default function LandingPage() {
           </div>
         </div>
       </section>
+
+      <PlatformPreviewSection />
 
       <SecurityScrollytelling />
 
