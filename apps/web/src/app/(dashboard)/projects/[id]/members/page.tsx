@@ -15,6 +15,7 @@ import {
   canInviteProjectMembers,
   canManageProject,
   getInviteRoleOptions,
+  type ProjectRole,
 } from "@/lib/project-permissions";
 import { inviteMemberSchema } from "@/lib/validators/schemas";
 import { useAuthStore } from "@/stores/auth";
@@ -474,7 +475,7 @@ export default function MembersPage() {
                     ) : canManageMembers ? (
                       <RolePicker
                         value={member.role}
-                        options={roles as unknown as string[]}
+                        options={roles as unknown as readonly ProjectRole[]}
                         disabled={busyId === member.id}
                         onChange={(role) => handleRoleChange(member, role)}
                       />

@@ -2,16 +2,18 @@
 
 import { useEffect, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail, Plus } from "lucide-react"
+import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail } from "lucide-react"
 import { QRCodeSVG } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
+import { OAuthButton, type OAuthProvider } from "@/components/ui/oauth-button"
 import { authApi, peekCached } from "@/lib/api"
 import { useAuthStore } from "@/stores/auth"
 import type { SessionResponse, User as UserType } from "@/lib/api"
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { AvatarUpload } from "@/components/shared/avatar-upload"
 
 export default function AccountPage() {
@@ -46,6 +48,8 @@ export default function AccountPage() {
   // OAuth accounts
   const [oauthAccounts, setOauthAccounts] = useState<{ provider: string; provider_email: string }[]>([])
   const [loadingOAuth, setLoadingOAuth] = useState(false)
+  const [unlinkProvider, setUnlinkProvider] = useState<string | null>(null)
+  const [isUnlinking, setIsUnlinking] = useState(false)
 
   // Available OAuth providers
   const availableProviders = ["github", "google", "discord"]
@@ -224,20 +228,19 @@ export default function AccountPage() {
     }
   }
 
-  const handleUnlinkOAuth = async (provider: string) => {
-    if (!window.confirm(`Desvincular conta ${provider}?`)) return
+  const handleUnlinkOAuth = async () => {
+    if (!unlinkProvider) return
+    setIsUnlinking(true)
     try {
-      await authApi.unlinkOAuthAccount(provider)
-      setOauthAccounts(oauthAccounts.filter((a) => a.provider !== provider))
-      showMessage(`Conta ${provider} desvinculada.`)
+      await authApi.unlinkOAuthAccount(unlinkProvider)
+      setOauthAccounts(oauthAccounts.filter((a) => a.provider !== unlinkProvider))
+      showMessage(`Conta ${unlinkProvider} desvinculada.`)
+      setUnlinkProvider(null)
     } catch (err) {
       showMessage(err instanceof Error ? err.message : "Erro ao desvincular", true)
+    } finally {
+      setIsUnlinking(false)
     }
-  }
-
-  const handleLinkOAuth = (provider: string) => {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || "http://localhost:8000"
-    window.location.assign(`${apiUrl}/api/auth/oauth/${provider}?action=link`)
   }
 
   const handleDeleteAccount = async () => {
@@ -506,17 +509,17 @@ export default function AccountPage() {
         ) : (
           <div className="space-y-2">
             {oauthAccounts.map((account) => (
-              <div key={account.provider} className="flex items-center justify-between p-3 rounded-lg bg-[var(--background-subtle)]">
-                <div className="flex items-center gap-3">
-                  <div className="h-8 w-8 rounded-full bg-[var(--background-muted)] flex items-center justify-center">
+              <div key={account.provider} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[var(--background-subtle)]">
+                <div className="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                  <div className="h-8 w-8 shrink-0 rounded-full bg-[var(--background-muted)] flex items-center justify-center">
                     <span className="text-xs font-bold uppercase">{account.provider[0]}</span>
                   </div>
-                  <div>
+                  <div className="min-w-0 flex-1">
                     <p className="text-sm font-semibold text-[var(--text-primary)] capitalize">{account.provider}</p>
-                    <p className="text-xs text-[var(--text-muted)] font-mono">{account.provider_email}</p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono truncate">{account.provider_email}</p>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" className="text-red-600" onClick={() => handleUnlinkOAuth(account.provider)}>
+                <Button variant="ghost" size="sm" className="text-red-600 w-full sm:w-auto shrink-0 justify-start sm:justify-center" onClick={() => setUnlinkProvider(account.provider)}>
                   <Unlink className="h-4 w-4 mr-1" /> Desvincular
                 </Button>
               </div>
@@ -527,11 +530,9 @@ export default function AccountPage() {
         {unlinkedProviders.length > 0 && (
           <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
             <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">Vincular nova conta</p>
-            <div className="flex flex-wrap gap-2">
+            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
               {unlinkedProviders.map((provider) => (
-                <Button key={provider} variant="secondary" size="sm" onClick={() => handleLinkOAuth(provider)}>
-                  <Plus className="h-4 w-4 mr-1" /> {provider.charAt(0).toUpperCase() + provider.slice(1)}
-                </Button>
+                <OAuthButton key={provider} provider={provider as OAuthProvider} action="link" className="w-full sm:w-auto justify-start sm:justify-center" />
               ))}
             </div>
           </div>
@@ -608,6 +609,17 @@ export default function AccountPage() {
           </Button>
         )}
       </Card>
+
+      <ConfirmActionDialog
+        open={!!unlinkProvider}
+        onOpenChange={(open) => !open && setUnlinkProvider(null)}
+        title="Desvincular conta?"
+        description={`Tem certeza que deseja desvincular sua conta ${unlinkProvider}? Você não poderá mais usá-la para fazer login.`}
+        confirmLabel="Desvincular"
+        destructive
+        loading={isUnlinking}
+        onConfirm={handleUnlinkOAuth}
+      />
     </div>
   )
 }

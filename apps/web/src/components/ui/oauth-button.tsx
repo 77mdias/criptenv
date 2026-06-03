@@ -28,10 +28,11 @@ const OAUTH_PROVIDERS = {
 
 export type OAuthProvider = keyof typeof OAUTH_PROVIDERS
 
-interface OAuthButtonProps extends Omit<ButtonProps, "variant" | "children"> {
+interface OAuthButtonProps extends Omit<ButtonProps, "variant" | "children" | "onClick"> {
   provider: OAuthProvider
-  onClick?: () => void
+  onClick?: (e: React.MouseEvent<HTMLButtonElement>) => void
   redirectUri?: string
+  action?: "login" | "link"
 }
 
 export function OAuthButton({
@@ -39,15 +40,26 @@ export function OAuthButton({
   className,
   disabled,
   loading,
+  onClick,
+  action = "login",
   ...props
 }: OAuthButtonProps) {
   const providerConfig = OAUTH_PROVIDERS[provider]
 
-  const handleClick = () => {
+  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
     if (disabled || loading) return
     
+    if (onClick) {
+      onClick(e)
+      return
+    }
+
     // Redirect to backend OAuth initiation endpoint
-    window.location.href = buildApiUrl(`/api/auth/oauth/${provider}`)
+    const queryParams = new URLSearchParams()
+    if (action && action !== 'login') queryParams.set('action', action)
+    const queryString = queryParams.toString() ? `?${queryParams.toString()}` : ''
+    
+    window.location.assign(buildApiUrl(`/api/auth/oauth/${provider}${queryString}`))
   }
 
   return (
@@ -61,11 +73,11 @@ export function OAuthButton({
       onClick={handleClick}
       disabled={disabled || loading}
       loading={loading}
-      aria-label={`Continuar com ${providerConfig.name}`}
+      aria-label={`${action === 'link' ? 'Vincular com' : 'Continuar com'} ${providerConfig.name}`}
       {...props}
     >
       <FontAwesomeIcon icon={providerConfig.icon} className="h-4 w-4 shrink-0" />
-      <span className="whitespace-nowrap max-[360px]:sr-only">{providerConfig.name}</span>
+      <span className="whitespace-nowrap max-[360px]:sr-only">{action === 'link' ? 'Vincular ' : ''}{providerConfig.name}</span>
     </Button>
   )
 }

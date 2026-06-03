@@ -82,6 +82,26 @@ def _session_to_response(session) -> SessionResponse:
     )
 
 
+@router.get("/accounts", response_model=list)
+async def list_oauth_accounts(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """List all OAuth accounts linked to the current user."""
+    oauth_service = OAuthService(db)
+    accounts = await oauth_service.get_user_oauth_accounts(current_user.id)
+    
+    return [
+        {
+            "id": str(acc.id),
+            "provider": acc.provider,
+            "provider_email": acc.provider_email,
+            "created_at": acc.created_at.isoformat() if acc.created_at else None,
+        }
+        for acc in accounts
+    ]
+
+
 @router.get("/{provider}")
 async def oauth_initiate(
     provider: str,
@@ -258,26 +278,6 @@ async def oauth_callback(
     redirect_response.delete_cookie("oauth_state")
     _set_session_cookie(redirect_response, session.token)
     return redirect_response
-
-
-@router.get("/accounts", response_model=list)
-async def list_oauth_accounts(
-    current_user: User = Depends(get_current_user),
-    db: AsyncSession = Depends(get_db),
-):
-    """List all OAuth accounts linked to the current user."""
-    oauth_service = OAuthService(db)
-    accounts = await oauth_service.get_user_oauth_accounts(current_user.id)
-    
-    return [
-        {
-            "id": str(acc.id),
-            "provider": acc.provider,
-            "provider_email": acc.provider_email,
-            "created_at": acc.created_at.isoformat() if acc.created_at else None,
-        }
-        for acc in accounts
-    ]
 
 
 @router.delete("/{provider}")
