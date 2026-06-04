@@ -438,8 +438,8 @@ export default function AccountPage() {
               </div>
             </div>
           ) : (
-            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px]" onClick={() => setShowChangePassword(true)}>
-              <KeyRound className="h-4 w-4 mr-1" /> Alterar senha
+            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px] justify-start" onClick={() => setShowChangePassword(true)}>
+              <KeyRound className="h-4 w-4 shrink-0" /> Alterar senha
             </Button>
           )}
         </div>
@@ -486,12 +486,12 @@ export default function AccountPage() {
               </div>
             </div>
           ) : currentUser?.two_factor_enabled ? (
-            <Button size="sm" variant="danger" className="w-full sm:w-auto sm:min-w-[180px]" onClick={handleDisable2FA}>
-              <Shield className="h-4 w-4 mr-1" /> Desativar 2FA
+            <Button size="sm" variant="danger" className="w-full sm:w-auto sm:min-w-[180px] justify-start" onClick={handleDisable2FA}>
+              <Shield className="h-4 w-4 shrink-0" /> Desativar 2FA
             </Button>
           ) : (
-            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px]" onClick={handleSetup2FA}>
-              <Shield className="h-4 w-4 mr-1" /> Ativar 2FA
+            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px] justify-start" onClick={handleSetup2FA}>
+              <Shield className="h-4 w-4 shrink-0" /> Ativar 2FA
             </Button>
           )}
         </div>
