@@ -16,9 +16,9 @@ import {
 } from "lucide-react";
 
 import aesImage from "../../../assets/images/AES.webp";
-import auditImage from "../../../assets/images/9b69b392298ba29491396a327328fd3d.jpg";
+import auditImage from "../../../assets/images/Wer haben vergessen.jpeg";
 import keyholeImage from "../../../assets/images/zero-knowledge-proofs-main-1600.jpg";
-import masterKeysImage from "../../../assets/images/master-keys_1200x1200-removebg-preview.png";
+import masterKeysImage from "../../../assets/images/fad0f89c8d6a92fc48b19560eef69626.jpg";
 
 gsap.registerPlugin(ScrollTrigger, useGSAP);
 

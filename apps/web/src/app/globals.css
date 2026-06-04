@@ -162,6 +162,16 @@ html.dark {
   animation: float 4s ease-in-out infinite;
 }
 
+/* Float badge — preview section floating stickers */
+@keyframes float-badge {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
 /* Fade in up — section entrance */
 @keyframes fadeInUp {
   from {
@@ -201,6 +211,9 @@ html.dark {
   }
   .animate-float {
     transform: none !important;
+  }
+  [style*="float-badge"] {
+    animation: none !important;
   }
 }
 
