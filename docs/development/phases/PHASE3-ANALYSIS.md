@@ -126,8 +126,8 @@ Os seguintes issues do **PHASE2-REVIEW.md** são P0 e NÃO foram resolvidos:
 | Issue | Priority | Impact | Status |
 |-------|----------|--------|--------|
 | CR-01: Session token in response body | P0 | API exposes tokens | ❌ Pending |
-| CR-02: Token in localStorage | P0 | XSS vulnerability | ❌ Pending |
-| MR-03: Rate limiting absent | P1 | Security prerequisite | ⚠️ Tests only |
+| CR-02: Token in localStorage | P0 | XSS vulnerability | ✅ Resolved |
+| MR-03: Rate limiting absent | P1 | Security prerequisite | ✅ Implemented |
 | HR-01: Escalation via invites | P1 | CI token security | ❌ Pending |
 
 **Implicação:** Estes issues bloqueiam o lançamento da Public API (M3.4).

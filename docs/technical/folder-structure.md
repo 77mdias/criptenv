@@ -78,9 +78,9 @@ criptenv/
 │   │   │       └── integrations/
 │   │   │           ├── __init__.py
 │   │   │           ├── base.py
-│   │   │           ├── vercel.py   # Pending
-│   │   │           ├── railway.py  # Pending
-│   │   │           └── render.py   # Pending
+│   │   │           ├── vercel.py   # Implemented
+│   │   │           ├── railway.py  # Not present; pending
+│   │   │           └── render.py   # Implemented
 │   │   └── tests/
 │   │       ├── __init__.py
 │   │       ├── test_auth_routes.py
@@ -120,7 +120,7 @@ criptenv/
 │   │       │   └── vault.py    # Vault client
 │   │       ├── commands/
 │   │       │   ├── __init__.py
-│   │       │   ├── ci.py        # CI commands (pending)
+│   │       │   ├── ci.py        # CI login, deploy, secrets and token commands
 │   │       │   ├── doctor.py    # Diagnostic
 │   │       │   ├── environments.py
 │   │       │   ├── import_export.py
@@ -382,4 +382,4 @@ criptenv/
 ---
 
 **Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Last Updated**: 2026-09-18

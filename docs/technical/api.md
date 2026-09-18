@@ -2,7 +2,7 @@
 
 ## Overview
 
-FastAPI backend providing REST API for the CriptEnv platform. All protected endpoints require `Authorization: Bearer <session_token>` header.
+FastAPI backend providing REST API for the CriptEnv platform. The OpenAPI document at `/openapi.json` is the canonical endpoint contract; this page is the human-oriented overview.
 
 ---
 
@@ -11,7 +11,7 @@ FastAPI backend providing REST API for the CriptEnv platform. All protected endp
 | Environment | URL |
 |-------------|-----|
 | Development | `http://localhost:8000` |
-| Production | `https://criptenv-api.77mdevseven.tech` (example) |
+| Production | `https://criptenv-api.77mdevseven.tech` |
 
 ---
 
@@ -19,7 +19,7 @@ FastAPI backend providing REST API for the CriptEnv platform. All protected endp
 
 ### Session Token (Default)
 
-Most endpoints use session-based authentication:
+Session-based endpoints accept the HTTP-only `criptenv_session` cookie. CLI and non-browser clients may use the equivalent bearer credential:
 
 ```
 Authorization: Bearer <session_token>
@@ -29,14 +29,18 @@ Session tokens are:
 - Generated on login
 - Stored in HTTP-only cookies
 - JWT-like format (custom implementation)
-- Configurable expiration (default: 30 minutes)
+- Configurable expiration (default: 30 days for sessions; access-token setting remains configurable)
+
+### API Key
+
+Public read endpoints also accept an API key as `Authorization: Bearer cek_...`. Scope and environment restrictions are enforced server-side.
 
 ### CI Token
 
 For CI/CD pipelines, use CI tokens:
 
 ```
-Authorization: Bearer ci_<token_hash>
+Authorization: Bearer ci_<token>
 ```
 
 CI tokens are validated differently from session tokens and have their own permission scopes.
@@ -313,6 +317,10 @@ CI tokens are validated differently from session tokens and have their own permi
 | GET | `/api/v1/projects/{p_id}/secrets/expiring` | List expiring secrets | Session |
 | POST | `/api/v1/projects/{p_id}/environments/{e_id}/expiration` | Set expiration | Session |
 
+### Additional Routers
+
+The versioned API also exposes authentication/OAuth, API keys, CI login/secrets, integrations, notifications, contributions/webhooks and health aliases. Use `/docs` in development or `/openapi.json` for the complete route list. Production may disable the interactive `/docs` page while retaining `/openapi.json`.
+
 **Rotate Secret Request:**
 ```json
 {
@@ -403,5 +411,5 @@ When `DEBUG=true`, interactive API documentation is available:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-09-18

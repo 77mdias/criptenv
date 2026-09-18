@@ -27,6 +27,13 @@ Planned and future features organized by priority.
   - Files: `apps/web/src/app/(dashboard)/projects/[id]/settings/page.tsx`
   - Status: Not started
 
+#### VPS Operations Baseline
+
+- [ ] **Operational runbook and monitoring**
+  - Testable PostgreSQL backups and restore procedure
+  - Firewall, OS patching, Docker log rotation and tunnel/uptime checks
+  - Status: Partially documented; not automated in this repository
+
 ---
 
 ## Medium Priority
@@ -238,7 +245,7 @@ These are ideas that have been discussed but not validated with users:
 ## Dependency Map
 
 ```
-Phase 3 (CI/CD) — 92% Complete
+Phase 3 (CI/CD) — Core implemented; closure work pending
 ├── M3.1: GitHub Action ✅ (publishing pending)
 ├── M3.2: Cloud Integrations
 │   ├── Vercel ✅
@@ -252,7 +259,8 @@ Phase 3 (CI/CD) — 92% Complete
 │   └── Rotation modal ──► P1 pending
 ├── M3.6: APScheduler ✅
 ├── M3.7: OAuth ✅
-└── Integration Config Encryption ✅
+├── Integration Config Encryption ✅
+└── VPS operations baseline ──► pending
 
 Phase 4 (Enterprise)
 ├── SSO/SAML ──► Depends on user research validation

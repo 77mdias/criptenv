@@ -10,9 +10,9 @@ CriptEnv uses PostgreSQL as its primary database with SQLAlchemy async for ORM o
 
 | Component | Technology | Version |
 |-----------|------------|---------|
-| **Database** | PostgreSQL | 14+ |
+| **Database** | PostgreSQL | 15 in VPS Compose |
 | **ORM** | SQLAlchemy (async) | 2.0+ |
-| **Driver** | asyncpg | 0.9+ |
+| **Driver** | asyncpg | 0.30+ |
 | **Connection Pool** | asyncpg built-in | — |
 | **Migrations** | Alembic | 1.18+ |
 
@@ -32,7 +32,7 @@ postgresql+asyncpg://user:password@host:5432/db
 
 **Pool settings (in `apps/api/app/database.py`):**
 - Pool size: 2
-- Max overflow: 5
+- Max overflow: 5 by application default; VPS example overrides to 2
 - Prepared statements: disabled (compatibility with pgbouncer)
 
 **Note:** `Settings.async_database_url` converts `postgresql://` to `postgresql+asyncpg://` and strips Prisma-only query params such as `pgbouncer` and `schema`.
@@ -421,5 +421,5 @@ Tests use a separate test database or temporary directories with SQLite for CLI 
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-09-18

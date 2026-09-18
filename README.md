@@ -190,6 +190,8 @@ CriptEnv is built with security as the primary design constraint:
 
 ## 📚 Documentation
 
+The repository documentation was audited against the source and deployment manifests on **2026-09-18**. The current status and known gaps are tracked in [docs/project/current-state.md](docs/project/current-state.md).
+
 - **User Guide**: [https://criptenv.77mdevseven.tech/docs](https://criptenv.77mdevseven.tech/docs)
 - **API Reference**: [https://criptenv-api.77mdevseven.tech/docs](https://criptenv-api.77mdevseven.tech/docs)
 - **Local Development**: [docs/development/local-setup.md](docs/development/local-setup.md)
@@ -211,9 +213,10 @@ Want to contribute or self-host? Check out:
 | Layer | Technology |
 |-------|------------|
 | **CLI** | Python, Click, cryptography |
-| **Backend** | FastAPI, SQLAlchemy, PostgreSQL, Redis |
-| **Frontend** | Vinext (Next.js), React, Tailwind CSS |
-| **Deploy** | Cloudflare Pages + Workers, VPS Docker |
+| **Backend** | FastAPI, SQLAlchemy, PostgreSQL 15, Redis |
+| **Frontend** | Vinext, React 19, Tailwind CSS v4 |
+| **Deploy** | Cloudflare Pages + Workers, VPS Docker, Cloudflare Tunnel |
+| **Avatar storage** | Cloudflare R2 (recommended) or Supabase Storage |
 
 ---
 

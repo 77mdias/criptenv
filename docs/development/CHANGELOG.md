@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Documentation and Verification Audit (2026-09-18)
+
+- **Documentation:** Reconciled current state, overview, tech stack, environment, architecture, feature status and deployment guides with the source code and current VPS Compose stack.
+- **Deployment:** Documented PostgreSQL 15 on the VPS as the current database, Cloudflare R2 as the recommended avatar backend, and removed references to missing setup/backup/migration scripts.
+- **Status accuracy:** Kept RailwayProvider, web alert configuration, GitHub Marketplace publication and VPS operations baseline explicitly pending.
+- **Validation:** `npm run lint` and `npm run check:vinext` passed; API and CLI test commands are recorded with their verification status in `docs/project/current-state.md`.
+- **Test isolation:** Prevented the email verification route test from calling Resend when a developer machine happens to expose `RESEND_API_KEY`.
+
 ### Added
 
 #### Mobile Notifications and Bulk Secret Selection Plan (2026-05-30)

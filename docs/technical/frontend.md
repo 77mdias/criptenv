@@ -2,7 +2,7 @@
 
 ## Overview
 
-Vinext (Next.js 16) + React 19 frontend with TailwindCSS v4 and Radix UI components. Deployed on Cloudflare Pages + Workers.
+Vinext `0.0.45+` (Next.js-compatible) + React `19.2+` frontend with TailwindCSS v4 and Radix UI components. Deployed on Cloudflare Pages + Workers.
 
 ---
 
@@ -302,5 +302,5 @@ npx wrangler pages deploy .next
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-09-18

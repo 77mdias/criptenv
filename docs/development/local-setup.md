@@ -127,10 +127,10 @@ make docker-up
 make test
 
 # Specific suites
-make api-test          # Backend (365 tests)
-make cli-test          # CLI (173 tests)
-make web-test-unit     # Frontend unit (41 tests)
-make web-test-e2e      # Full E2E (4 tests)
+ make api-test          # Backend suite
+ make cli-test          # CLI suite
+ make web-test-unit     # Frontend Jest unit suite
+ make web-test-e2e      # Full Cypress E2E suite
 ```
 
 ## Project Structure

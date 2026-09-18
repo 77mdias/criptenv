@@ -9,9 +9,9 @@
 | **API Tunnel** | Cloudflare Tunnel | `criptenv-api.77mdevseven.tech` -> `http://api:8000` |
 | **DNS** | Cloudflare | Custom frontend/API hostnames |
 | **Rate Limit Store** | VPS Docker | Redis |
-| **Database** | Supabase PostgreSQL | External managed Postgres |
+| **Database** | PostgreSQL 15 in VPS Docker Compose | Persistent local Postgres volume |
 
-Render/Railway hosting configs remain as legacy rollback references. Product integrations with Render/Railway are separate from CriptEnv's own hosting.
+Render/Railway hosting configs remain as legacy rollback references. Product integrations with Render are separate from CriptEnv's own hosting; RailwayProvider is not implemented.
 
 ---
 
@@ -106,11 +106,11 @@ Then manually verify signup/signin, OAuth callback, project list, and a vault pu
 
 ## Current Gaps
 
-- Confirm Supabase production migrations with `alembic upgrade head`.
-- Validate login/signup, OAuth callback, project list, and vault push/pull through the Workers frontend.
-- Add VPS operations baseline: firewall review, OS patch cadence, tunnel monitoring, log rotation, and uptime monitoring.
+- Confirm the current VPS database revision with `make db-current` or `alembic current` on the target environment.
+- Validate login/signup, OAuth callback, project list, and vault push/pull through the Workers frontend during a controlled production smoke test.
+- Add VPS operations baseline: tested backups/restores, firewall review, OS patch cadence, tunnel monitoring, log rotation, and uptime monitoring.
 
 ---
 
-**Document Version**: 3.0
-**Last Updated**: 2026-05-10
+**Document Version**: 3.1
+**Last Updated**: 2026-09-18

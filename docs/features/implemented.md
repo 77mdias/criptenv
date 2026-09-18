@@ -230,7 +230,7 @@ All completed features organized by phase.
 
 ---
 
-## Phase 3: CI/CD Integrations (In Progress 🔄)
+## Phase 3: CI/CD Integrations (Core Implemented, Closure Pending 🔄)
 
 ### Secret Rotation
 
@@ -377,6 +377,26 @@ All completed features organized by phase.
 **Files:** `apps/api/app/crypto/integration_config.py`, `apps/api/app/services/integration_service.py`, `apps/api/migrations/versions/20260506_0003_encrypt_integration_configs.py`
 **Tests:** `test_integration_config_encryption.py`, `test_integration_providers.py`
 
+## In-App Notifications
+
+**Status:** ✅ Implemented
+**Description:** Invite notifications scoped to existing users, unread count, polling, mark-read actions and mobile-safe notification panel.
+**Files:** `apps/api/app/routers/notifications.py`, `apps/web/src/components/layout/notification-bell.tsx`
+**Tests:** API notification/invite tests and frontend notification bell tests.
+
+## Project RBAC and Bulk Secret Actions
+
+**Status:** ✅ Implemented
+**Description:** Owner/admin-only settings and secret mutations; developer/viewer restrictions; invite revocation cleanup; admin/owner bulk secret deletion with one encrypted vault push.
+**Files:** `apps/api/app/strategies/access.py`, `apps/web/src/app/(dashboard)/projects/[id]/secrets/`
+**Tests:** API RBAC tests and frontend role/permission/secrets table tests.
+
+## Avatar Storage
+
+**Status:** ✅ Implemented
+**Description:** Server-side avatar uploads/deletes using Cloudflare R2 or legacy Supabase Storage, selected by `AVATAR_STORAGE_BACKEND`.
+**Files:** `apps/api/app/services/avatar_service.py`, `deploy/vps/.env.example`
+
 ## CLI Integrations Commands
 
 **Status:** ✅ Implemented  
@@ -461,12 +481,12 @@ All completed features organized by phase.
 | Cloud integrations (Vercel) | 3 | ✅ |
 | Cloud integrations (Render) | 3 | ✅ |
 | Cloud integrations (Railway) | 3 | ⚠️ Pending |
-| Integration config encryption | 3 | ❌ |
+| Integration config encryption | 3 | ✅ |
 | Pix contribution thank-you email | 3 | ✅ |
 | Web alert configuration UI | 3 | ⚠️ Partial |
 | Email/Slack notifications | 3 | ❌ |
 
 ---
 
-**Document Version**: 1.2  
-**Last Updated**: 2026-05-23
+**Document Version**: 1.3
+**Last Updated**: 2026-09-18

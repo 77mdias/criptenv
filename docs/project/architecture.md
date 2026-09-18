@@ -25,11 +25,10 @@ flowchart TD
     subgraph External["External Services"]
         GH[GitHub Actions]
         VC[Vercel]
-        RL[Railway]
         RT[Render]
     end
     
-    API -->|Webhook/Integrations| External
+    API -->|Integrations| External
     GH -->|CI Token| API
 ```
 
@@ -303,5 +302,5 @@ Encrypted Blob ──────────► Server (never sees plain-text)
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2026-05-06
+**Document Version**: 1.2
+**Last Updated**: 2026-09-18

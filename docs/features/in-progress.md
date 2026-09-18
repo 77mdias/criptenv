@@ -6,7 +6,7 @@ Features currently under active development or pending completion.
 
 ---
 
-## Phase 3: CI/CD Integrations (~92% Complete)
+## Phase 3: CI/CD Integrations — Closure Work
 
 ### M3.2: Cloud Integrations — Railway Provider
 
@@ -125,6 +125,12 @@ class RailwayProvider(IntegrationProvider):
 
 ---
 
+## Completed Since This File Was Created
+
+- Integration configuration encryption is implemented and covered by tests.
+- Project RBAC, invite notification cleanup, mobile notifications and bulk secret actions are implemented.
+- Cloudflare R2 avatar storage is implemented; Supabase Storage is the fallback backend.
+
 ## Phase 2 Security Review — Resolved ✅
 
 ### CR-01: Session Token in Response Body
@@ -151,7 +157,6 @@ class RailwayProvider(IntegrationProvider):
 
 1. **High Priority**
    - RailwayProvider implementation (M3.2 closure)
-   - Integration config at-rest encryption (security)
    - Web alert configuration UI (M3.5 closure)
 
 2. **Medium Priority**
@@ -166,6 +171,6 @@ class RailwayProvider(IntegrationProvider):
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: 2026-05-06
-**Status**: Active Development — Phase 3 (92%)
+**Document Version**: 1.3
+**Last Updated**: 2026-09-18
+**Status**: Active Development — Railway provider, web alert configuration, Marketplace publication and VPS operations remain.

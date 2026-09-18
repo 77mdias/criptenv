@@ -324,7 +324,7 @@ Audit log filtering and aggregation.
 Strategy pattern for cloud providers:
 - `base.py` — Interface definition
 - `vercel.py` — Vercel integration
-- `railway.py` — Railway integration (pending)
+- `railway.py` — not present; Railway integration remains pending
 - `render.py` — Render integration
 
 Provider configs are encrypted at rest by `IntegrationService` before being stored in `integrations.config`; providers receive decrypted config dictionaries only at sync/validation time.
@@ -350,13 +350,13 @@ Provider configs are encrypted at rest by `IntegrationService` before being stor
 - SQL injection prevented by SQLAlchemy ORM
 - XSS prevention via frontend sanitization
 
-### Known Issues (from Phase 2 Review)
+### Security Review Status
 
 | Issue | Priority | Status |
 |-------|----------|--------|
-| CR-01: Token in response body | P0 | Needs fix |
-| CR-02: Token in localStorage | P0 | Needs fix |
-| MR-03: Rate limiting | P1 | Not implemented |
+| CR-01: Token in response body | P0 | Resolved: HTTP-only cookie |
+| CR-02: Token in localStorage | P0 | Resolved: cookie-backed session |
+| Rate limiting | P1 | Implemented: memory locally, Redis in multi-worker production |
 
 ---
 
@@ -378,5 +378,5 @@ API docs at `http://localhost:8000/docs` (when `DEBUG=true`).
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-09-18

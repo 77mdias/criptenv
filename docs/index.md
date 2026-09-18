@@ -19,10 +19,10 @@
 |-------|--------|-------------|
 | **Phase 1 (MVP)** | ✅ COMPLETE | CLI with 14 commands, AES-256-GCM encryption, local SQLite vault |
 | **Phase 2 (Web UI)** | ✅ COMPLETE | Vinext/Next.js dashboard, auth, CRUD, audit logs |
-| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | GitHub Action, secret rotation, cloud integrations |
+| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | Public API, CI, integrations, rotation, notifications and OAuth; Railway/UI/ops gaps remain |
 | **Phase 4 (Enterprise)** | 📋 PLANNED | SSO/SAML, SCIM, self-hosted |
 
-**Current Focus**: Phase 3 — CI/CD Integrations (API/WEB/CLI alignment complete, Railway provider & Web Alert UI pending)
+**Current Focus**: Documentation and operational accuracy, then Railway provider, web alert configuration and VPS operations baseline.
 
 ---
 
@@ -105,17 +105,18 @@
 
 | Metric | Value |
 |--------|-------|
-| CLI Tests | 173 passing |
-| API Tests | 365 passing, 2 skipped |
-| Web Unit Tests | 41 passing (Jest + React Testing Library) |
-| Web E2E Tests | 4 passing (Cypress) |
-| CLI Commands | 25+ (init, login, logout, set, get, list, delete, push, pull, env, projects, doctor, import, export, rotate, secrets expire, secrets alert, ci login, ci deploy, integrations, etc.) |
-| API Routers | 12+ (auth, oauth, projects, environments, vault, members, invites, tokens, audit, rotation, integrations, api-keys, ci) |
-| Frontend Pages | 15+ routes |
-| Phase Progress | Phase 1 ✅, Phase 2 ✅, Phase 3 ~92%, Phase 4 📋 |
+| API Tests | 416 passing, 2 skipped at last local verification |
+| CLI Tests | 184 passing at last local verification |
+| Web Unit Tests | 84 passing at last local verification |
+| Web lint | Passing at last local verification |
+| Vinext compatibility | 100% (58 pages, 6 layouts) |
+| CLI/Web tests | Run `make cli-test` and `make web-test`; counts are intentionally not hard-coded here |
+| CLI Commands | See `apps/cli/src/criptenv/commands/` and `criptenv --help` |
+| API Routers | See `apps/api/app/routers/` and `/openapi.json` |
+| Phase Progress | Phase 1 ✅, Phase 2 ✅, Phase 3 🔄, Phase 4 📋 |
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: 2026-05-13  
+**Document Version**: 1.2
+**Last Updated**: 2026-09-18
 **Status**: Organized

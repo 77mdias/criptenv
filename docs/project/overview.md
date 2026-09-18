@@ -69,40 +69,41 @@ CriptEnv provides:
 
 ---
 
-## Current Scope (Phase 1-2)
+## Current Scope (Phase 1-3)
 
 ### Implemented
 
 | Component | Description |
 |-----------|-------------|
-| **CLI** | 14 commands for secret management, sync, import/export |
+| **CLI** | Remote vault management, CI workflows, integrations, rotation, sessions, audit and import/export |
 | **Web Dashboard** | Full CRUD for projects, environments, secrets, team management |
-| **Auth** | Session-based authentication with JWT-like tokens |
+| **Auth** | HTTP-only session cookies, email verification, OAuth and enforced TOTP 2FA |
 | **Encryption** | AES-256-GCM with PBKDF2HMAC (100k iterations) + HKDF |
-| **Local Vault** | SQLite at `~/.criptenv/vault.db` for offline access |
+| **Local Metadata** | SQLite at `~/.criptenv/vault.db` for sessions and metadata; remote vault is the source of secrets |
 | **Audit Logs** | Paginated timeline of all operations |
 
-### Partially Implemented (Phase 3)
+### Implemented (Phase 3)
 
 | Feature | Status |
 |---------|--------|
-| GitHub Action | Implemented in `packages/github-action/` |
-| Secret Rotation | API + CLI commands implemented |
-| Secret Expiration | Model + background job implemented |
-| Webhook Notifications | Service implemented |
-| Vercel/Railway/Render | Not yet implemented |
+| GitHub Action | Source and bundled `dist/index.js` implemented; Marketplace publication pending |
+| Secret Rotation | API, CLI and expiration badges implemented |
+| Secret Expiration | Model, API, CLI and isolated scheduler job implemented |
+| Notifications | Webhook service plus in-app invite notifications implemented |
+| Public API | `/api/v1`, API keys, CI tokens, scopes and rate limiting implemented |
+| Cloud integrations | Vercel and Render implemented; Railway provider pending |
+| Avatar storage | Cloudflare R2 implemented; Supabase Storage remains compatible |
 
 ---
 
 ## Future Scope (Phase 3-4)
 
-### Phase 3: CI/CD Integrations (In Progress)
+### Remaining Phase 3 Work
 
-- GitHub Actions official action
-- Cloud provider integrations (Vercel, Railway, Render)
-- CLI commands for CI workflows
-- Public API with versioning
-- Rate limiting and API keys
+- Railway provider and corresponding UI/tests
+- Web configuration UI for secret alerts
+- GitHub Action Marketplace publication
+- VPS operational baseline and production smoke checks
 
 ### Phase 4: Enterprise Ready (Planned)
 
@@ -133,5 +134,5 @@ CriptEnv provides:
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-09-18

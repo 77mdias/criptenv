@@ -2,6 +2,8 @@
 
 ## Environment Variables
 
+**Última verificação:** 2026-09-18. Os nomes suportados são definidos em `apps/api/app/config.py`, `apps/api/.env.example`, `apps/web/.env.example` e `deploy/vps/.env.example`. Nunca copie valores reais para o repositório.
+
 ### Backend (apps/api)
 
 **Required variables:**
@@ -9,7 +11,7 @@
 ```bash
 # Database Connection
 DATABASE_URL=postgresql+asyncpg://user:password@host:5432/database
-ASYNC_DATABASE_URL=postgresql://user:password@host:5432/database
+# `DATABASE_URL` is the canonical setting; the app derives its asyncpg URL.
 
 # Authentication
 SECRET_KEY=your-secret-key-at-least-32-characters-long
@@ -31,13 +33,17 @@ SCHEDULER_INTERVAL_HOURS=24
 
 # Rate Limiting
 RATE_LIMIT_ENABLED=true
-RATE_LIMIT_AUTH=5/minute
-RATE_LIMIT_API_KEY=100/minute
-RATE_LIMIT_CI_TOKEN=200/minute
 
-# Webhook Notifications
-WEBHOOK_TIMEOUT_SECONDS=30
-WEBHOOK_MAX_RETRIES=3
+# Storage for multi-worker deployments
+RATE_LIMIT_STORAGE=memory
+REDIS_URL=redis://redis:6379/0
+
+# Session lifecycle
+SESSION_MAX_ACTIVE=5
+SESSION_INACTIVITY_DAYS=7
+
+# Webhook retry settings are defined by the webhook service implementation;
+# they are not independent pydantic settings.
 ```
 
 **Location:** `apps/api/.env` (not committed to git)
@@ -185,12 +191,11 @@ make lint          # Run linters
 
 ## Environment Files
 
-### .env.example (API)
+### `.env.example` (API)
 
 ```bash
 # Database
-DATABASE_URL=postgresql+asyncpg://user:password@localhost:5432/criptenv
-ASYNC_DATABASE_URL=postgresql://user:password@localhost:5432/criptenv
+DATABASE_URL=postgresql://user:password@localhost:5432/criptenv
 
 # Auth
 SECRET_KEY=change-this-to-a-secure-random-string-at-least-32-chars
@@ -204,13 +209,23 @@ CORS_ORIGINS=http://localhost:3000
 # Scheduler
 SCHEDULER_ENABLED=true
 SCHEDULER_INTERVAL_HOURS=24
+
+# Avatar storage: r2 (recommended) or supabase
+AVATAR_STORAGE_BACKEND=r2
+R2_ACCOUNT_ID=
+R2_ACCESS_KEY_ID=
+R2_SECRET_ACCESS_KEY=
+R2_BUCKET=criptenv-avatars
+R2_PUBLIC_URL=https://avatars.example.com
 ```
 
-### .env.example (Web)
+### `.env.example` (Web)
 
 ```bash
 # API
 NEXT_PUBLIC_API_URL=http://localhost:8000
+API_URL=http://localhost:8000
+NEXT_PUBLIC_COOKIE_NAME=criptenv_session
 ```
 
 ---
@@ -275,5 +290,5 @@ NEXT_PUBLIC_API_URL=https://api.your-domain.com
 
 ---
 
-**Document Version**: 1.0  
-**Last Updated**: 2026-05-01
+**Document Version**: 1.1
+**Last Updated**: 2026-09-18

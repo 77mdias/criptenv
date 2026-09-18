@@ -1,5 +1,7 @@
 # Tech Stack — CriptEnv
 
+**Última verificação:** 2026-09-18. As versões mínimas abaixo são lidas dos manifests; versões efetivamente instaladas podem ser mais novas e ficam registradas nos lockfiles/ambientes.
+
 ## Overview
 
 CriptEnv uses a modern full-stack architecture with Python for backend and TypeScript/Next.js for frontend.
@@ -10,28 +12,35 @@ CriptEnv uses a modern full-stack architecture with Python for backend and TypeS
 
 | Component | Technology | Version | Purpose |
 |-----------|------------|---------|---------|
-| **Framework** | FastAPI | 0.110+ | REST API with async support |
+| **Framework** | FastAPI | 0.115+ (`!=0.136.3`) | REST API with async support |
 | **ORM** | SQLAlchemy (async) | 2.0+ | Database abstraction |
-| **Driver** | asyncpg | 0.9+ | Async PostgreSQL driver |
+| **Driver** | asyncpg | 0.30+ | Async PostgreSQL driver |
 | **Validation** | Pydantic | 2.0+ | Request/response schemas |
 | **Settings** | pydantic-settings | 2.0+ | Environment configuration |
-| **Auth** | Custom JWT-like | — | Session tokens |
+| **Auth** | Custom JWT-like + OAuth/TOTP | — | HTTP-only sessions, social login and 2FA |
 | **Scheduler** | APScheduler | 3.10+ | Background jobs |
-| **HTTP Client** | httpx | 0.27+ | Webhook notifications |
+| **HTTP Client** | httpx | 0.27+ | Provider APIs, webhooks and storage |
 
 **Dependencies** (`apps/api/requirements.txt`):
 ```
-fastapi>=0.110.0
-uvicorn[standard]>=0.27.0
+fastapi>=0.115.0,!=0.136.3
+uvicorn[standard]>=0.30.0
 sqlalchemy[asyncio]>=2.0.0
-asyncpg>=0.9.0
+alembic>=1.13.0
+asyncpg>=0.30.0
 pydantic>=2.0.0
 pydantic-settings>=2.0.0
 python-jose[cryptography]>=3.3.0
 pyasn1>=0.6.3
-passlib[bcrypt]>=1.7.4
+passlib[bcrypt]>=1.7.0
+python-multipart>=0.0.9
 httpx>=0.27.0
 apscheduler>=3.10.0
+authlib>=1.3.0
+gunicorn>=23.0.0
+redis>=5.0.0
+resend>=2.0.0
+pyotp>=2.9.0
 ```
 
 ---
@@ -60,15 +69,15 @@ aiosqlite>=0.20.0
 
 | Component | Technology | Version | Purpose |
 |-----------|------------|---------|---------|
-| **Framework** | Vinext (Next.js 16) | 16.0+ | Full-stack React framework |
-| **Runtime** | React | 19.0+ | UI library |
+| **Framework** | Vinext | 0.0.45+ | Vite-based Next.js-compatible framework |
+| **Runtime** | React | 19.2+ | UI library |
 | **Styling** | TailwindCSS | v4 | Utility-first CSS |
 | **Components** | Radix UI | 1.0+ | Accessible primitives |
 | **Forms** | react-hook-form | 7.0+ | Form handling |
-| **Validation** | Zod | 3.0+ | Schema validation |
-| **State** | Zustand | 4.0+ | Client state |
+| **Validation** | Zod | 4.3+ | Schema validation |
+| **State** | Zustand | 5.0+ | Client state |
 | **Server State** | @tanstack/react-query | 5.0+ | Server state management |
-| **Build** | Vite | 5.0+ | Bundler |
+| **Build** | Vite | 8.0+ | Bundler |
 | **Deployment** | Cloudflare Pages/Workers | — | Edge deployment |
 
 **Dependencies** (`apps/web/package.json`):
@@ -91,10 +100,10 @@ aiosqlite>=0.20.0
 
 | Component | Technology | Purpose |
 |-----------|------------|---------|
-| **Database** | PostgreSQL | Primary data store |
+| **Database** | PostgreSQL 15 in VPS Compose | Primary data store |
 | **ORM** | SQLAlchemy async | Database abstraction |
 | **Connection Pool** | asyncpg | Non-blocking connections |
-| **Migrations** | (manual) | Schema management |
+| **Migrations** | Alembic | Schema management |
 
 **Connection Settings**:
 - Pool size: 2
@@ -107,12 +116,12 @@ aiosqlite>=0.20.0
 
 | Service | Platform | Purpose |
 |---------|----------|---------|
-| **Database** | PostgreSQL (Free Tier) | Primary store |
+| **Database** | PostgreSQL 15 (Docker on VPS) | Primary store |
 | **Backend** | VPS Docker + Gunicorn/Uvicorn | FastAPI server |
 | **API Tunnel** | Cloudflare Tunnel | `criptenv-api.77mdevseven.tech` -> `http://api:8000` |
 | **Rate Limit Store** | Redis | Shared counters across API workers |
 | **Frontend** | Cloudflare Pages + Workers | Vinext deployment + `/api/*` proxy |
-| **CLI Distribution** | PyPI (future) | Package distribution |
+| **CLI Distribution** | Package metadata ready; PyPI publication pending | Package distribution |
 
 ---
 
@@ -133,7 +142,7 @@ aiosqlite>=0.20.0
 | Tool | Purpose |
 |------|---------|
 | **Package Manager** | npm (frontend), pip (backend) |
-| **Linter** | ESLint (frontend), pytest (backend) |
+| **Linter** | ESLint (frontend); pytest is the test runner, not a linter |
 | **Tests** | pytest (Python), Jest + Cypress (frontend) |
 | **Make** | `Makefile` for common commands |
 
@@ -182,9 +191,9 @@ NEXT_PUBLIC_COOKIE_NAME=criptenv_session
 
 | Layer | Framework | Coverage |
 |-------|-----------|----------|
-| **CLI** | pytest | 173 tests |
-| **API** | pytest | 365 tests |
-| **Frontend** | Jest + Cypress | 41 unit + 4 E2E |
+| **CLI** | pytest | Run `make cli-test` |
+| **API** | pytest | 416 passing, 2 skipped at last local verification |
+| **Frontend** | Jest + Cypress | Run `make web-test`; counts evolve with the suite |
 
 ---
 
@@ -220,5 +229,5 @@ NEXT_PUBLIC_COOKIE_NAME=criptenv_session
 
 ---
 
-**Document Version**: 1.2
-**Last Updated**: 2026-05-13
+**Document Version**: 1.3
+**Last Updated**: 2026-09-18

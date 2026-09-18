@@ -26,37 +26,30 @@ Stack otimizada para rodar PostgreSQL 15 em uma VPS com Docker.
 rsync -avz deploy/vps/ usuario@sua-vps:/tmp/criptenv-vps/
 ```
 
-### 2. Execute o setup na VPS
+### 2. Configure o Compose na VPS
 
 ```bash
 ssh usuario@sua-vps
 cd /tmp/criptenv-vps
-bash setup-postgres.sh
+cp .env.example .env
+# Edite .env antes de iniciar: senha do Postgres, secrets, R2 e TUNNEL_TOKEN.
+docker compose up -d
+docker compose ps
 ```
 
-O script vai:
-- Instalar Docker (se não tiver)
-- Criar estrutura em `~/projects/criptenv/deploy/vps/`
-- Gerar senha segura automaticamente
-- Subir o PostgreSQL
-- Configurar backup automático (diário às 03:00)
+O repositório não contém instalador automático de Docker, gerador de senha ou job de backup. Esses itens devem ser configurados pela operação da VPS.
 
-### 3. Anote a senha gerada
+### 3. Verifique a API
 
-O script exibe a senha no final. Guarde com segurança!
-
-### 4. Atualize o backend
-
-Edite o `.env` do seu backend (`apps/api/.env`):
-
-```env
-DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_GERADA@localhost:5432/criptenv
-```
-
-Ou se o backend também roda em Docker na mesma VPS, use o nome do serviço `postgres`:
+Como API e PostgreSQL rodam no mesmo Compose, use o nome do serviço `postgres` no `deploy/vps/.env`:
 
 ```env
 DATABASE_URL=postgresql+asyncpg://criptenv:SENHA_GERADA@postgres:5432/criptenv
+```
+
+```bash
+curl -fsS http://127.0.0.1:8000/health
+curl -fsS http://127.0.0.1:8000/health/ready
 ```
 
 ---
@@ -154,17 +147,17 @@ Este passo migra **todos os dados** do seu banco no Supabase para o PostgreSQL l
 > 2. Considere parar o backend temporariamente para evitar writes durante o dump
 > 3. O processo pode levar minutos dependendo do tamanho do banco
 
-### Opção A: Fazer dump DIRETO na VPS (recomendado — mais rápido)
+### Opção A: Fazer dump direto na VPS
 
 ```bash
 ssh usuario@sua-vps
 cd ~/projects/criptenv/deploy/vps  # ou onde está o projeto
-bash deploy/vps/migrate-from-supabase.sh
+pg_dump "postgresql://postgres.xxx:SENHA@host.pooler.supabase.com:6543/postgres?pgbouncer=true" \
+  --clean --if-exists --create \
+  > /tmp/criptenv_supabase_dump.sql
 ```
 
-O script vai perguntar:
-1. Se quer fazer dump direto na VPS ou transferir da máquina local
-2. A connection string do banco (produção ou desenvolvimento)
+Restaure o dump no container com `psql` ou `pg_restore`, após validar o destino e manter um backup do banco local.
 
 ### Opção B: Fazer dump na máquina local e transferir
 
@@ -178,10 +171,9 @@ pg_dump "postgresql://postgres.xxx:SENHA@host.pooler.supabase.com:6543/postgres?
 scp criptenv_dump.sql usuario@sua-vps:/tmp/criptenv_supabase_dump.sql
 ```
 
-Na VPS:
+Na VPS, depois de transferir o arquivo:
 ```bash
-bash deploy/vps/migrate-from-supabase.sh
-# O script vai encontrar o dump e fazer o restore automaticamente
+cat /tmp/criptenv_supabase_dump.sql | docker exec -i criptenv-postgres psql -U criptenv -d criptenv
 ```
 
 ### 4. Rode as migrations do Alembic (se necessário)
@@ -213,7 +205,7 @@ docker stats criptenv-postgres
 
 ### Backup manual
 ```bash
-~/projects/criptenv/deploy/vps/backup.sh
+docker exec criptenv-postgres pg_dump -U criptenv -d criptenv | gzip > ./backups/criptenv_$(date +%Y%m%d_%H%M%S).sql.gz
 ```
 
 ### Listar backups
@@ -248,7 +240,7 @@ docker compose down
 
 - ✅ PostgreSQL só escuta em `127.0.0.1:5432` (não está exposto à internet)
 - ✅ Senha gerada automaticamente com 24 caracteres aleatórios
-- ✅ Backups automáticos com retenção de 14 dias
+- ⚠️ O Compose monta `./backups`, mas não agenda backup nem retenção automaticamente; configure e teste isso separadamente.
 - ✅ Restart automático do container
 - ✅ Healthcheck configurado
 

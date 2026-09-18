@@ -382,6 +382,7 @@ def test_verify_email_with_valid_token(monkeypatch):
         return user
 
     monkeypatch.setattr(AuthService, "verify_email", fake_verify_email)
+    monkeypatch.setattr(EmailService, "send_welcome", lambda self, to, name: {"id": "welcome-test"})
 
     with TestClient(make_app()) as client:
         response = client.post(

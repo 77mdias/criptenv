@@ -4,7 +4,21 @@ A record of significant architectural and technical decisions.
 
 ---
 
-## DEC-051 — Project RBAC for Settings, Secrets, and Invites
+## DEC-056 — Source of Truth for System and Deployment Documentation
+
+**Date:** 2026-09-18
+**Status:** ✅ Accepted
+**Context:** Several documents still described the former Supabase/Render deployment, old test counts, unimplemented features, or VPS scripts that are not present in the repository.
+
+**Decision:** Treat manifests, source code, Compose files, environment examples, migrations and reproducible local commands as the source of truth. Current-status documents must include a verification date and distinguish implemented behavior, configuration-dependent behavior, historical claims and backlog items.
+
+**Rationale:** This prevents operational instructions from pointing to missing scripts and avoids presenting provider names or old plans as shipped functionality.
+
+**Consequences:** Documentation updates must follow code/config changes. Production smoke-test checkboxes remain unchecked unless executed during the current verification window. Historical changelog entries are preserved, but stale current-state claims are corrected.
+
+---
+
+## DEC-053 — Project RBAC for Settings, Secrets, and Invites
 
 **Date:** 2026-05-29
 **Status:** ✅ Accepted
@@ -26,7 +40,7 @@ Restrict project settings and all human-session secret writes to `owner` and `ad
 
 ---
 
-## DEC-050 — Existing-User Scope for Invite Notifications
+## DEC-054 — Existing-User Scope for Invite Notifications
 
 **Date:** 2026-05-29
 **Status:** ✅ Accepted
@@ -48,7 +62,7 @@ Keep in-app invite notifications scoped to existing users only. Normalize invite
 
 ---
 
-## DEC-049 — In-App Notification System
+## DEC-055 — In-App Notification System
 
 **Date:** 2026-05-28
 **Status:** ✅ Accepted
@@ -354,7 +368,7 @@ Use APScheduler with FastAPI lifespan integration:
 
 ---
 
-## DEC-009 — Phase 3 Integration Strategy
+## DEC-011 — Phase 3 Integration Strategy
 
 **Date:** 2026-04 (Phase 3)
 **Status:** ✅ Accepted
@@ -1010,8 +1024,8 @@ The CLI still behaved like a local encrypted vault that occasionally synchronize
 
 ---
 
-**Document Version**: 2.7
-**Last Updated**: 2026-05-23
+**Document Version**: 2.8
+**Last Updated**: 2026-09-18
 
 ---
 

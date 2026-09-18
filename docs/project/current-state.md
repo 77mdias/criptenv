@@ -1,161 +1,82 @@
 # Current State — CriptEnv
 
-## Estado atual em uma frase
+**Última auditoria:** 2026-09-18
+**Status:** Phase 3 em andamento, com o núcleo web/API/CLI operacional e lacunas de produto/operação explicitamente listadas abaixo.
 
-**CriptEnv Phase 1 e 2 completos. Phase 3 (CI/CD) ~95%: GitHub Action ✅, Public API ✅, CI Tokens ✅, Cloud Integrations (Vercel + Render) ✅, Integration Config Encryption ✅, Secret Rotation/Alerts ✅, OAuth ✅, Security Hardening (CR-01/CR-02) ✅, Project Vault Passwords ✅, CLI Remote Terminal ✅, Pix contribution thank-you emails ✅, In-App Notifications ✅. Backend migrado e validado em VPS Docker com PostgreSQL local, Redis rate limiting, Cloudflare Tunnel (`criptenv-api.77mdevseven.tech`), frontend custom domain (`criptenv.77mdevseven.tech`) e suporte a Cloudflare R2 para avatares. Resta Railway provider, Web Alert UI e VPS ops baseline.**
+## Resumo
 
----
+O CriptEnv é um gerenciador de segredos zero-knowledge com três superfícies: CLI Python, API FastAPI e dashboard web Vinext/React. Os segredos são cifrados no cliente com AES-256-GCM; a API armazena blobs opacos e metadados. A implantação atual documentada no repositório é:
 
-## Development Status
+- Web: Cloudflare Pages + Worker em `https://criptenv.77mdevseven.tech`.
+- API: Docker na VPS, exposta por Cloudflare Tunnel em `https://criptenv-api.77mdevseven.tech`.
+- Dados: PostgreSQL 15 local no Compose da VPS.
+- Rate limit: Redis no mesmo Compose.
+- Jobs: serviço `scheduler` separado, com um worker.
+- Avatares: Cloudflare R2 quando `AVATAR_STORAGE_BACKEND=r2`; Supabase Storage permanece como backend compatível.
 
-| Phase | Status | Completion |
-|-------|--------|------------|
-| **Phase 1 (CLI MVP)** | ✅ COMPLETE | 100% |
-| **Phase 2 (Web UI)** | ✅ COMPLETE | 100% |
-| **Phase 3 (CI/CD)** | 🔄 IN PROGRESS | ~95% |
-| **Phase 4 (Enterprise)** | 📋 PLANNED | 0% |
+Render e Railway continuam como artefatos de rollback/legado para hospedagem. `RenderProvider` é uma integração de produto; `RailwayProvider` ainda não existe.
 
----
+## Fases
 
-## Implemented Features
+| Fase | Estado | Observação |
+|---|---|---|
+| Phase 1 (CLI) | Completa | CLI remota, criptografia, import/export e diagnóstico. |
+| Phase 2 (Web) | Completa | Auth, dashboard, projetos, ambientes, vault, equipes e auditoria. |
+| Phase 3 (CI/CD) | Em andamento | API pública, tokens CI, GitHub Action, integrações Vercel/Render, rotação, notificações e OAuth implementados. |
+| Phase 4 (Enterprise) | Planejada | SSO/SAML, SCIM, SIEM e políticas avançadas. |
 
-### CLI (apps/cli)
+## Entregas verificadas no código
 
-| Command | Description | Status |
-|---------|-------------|--------|
-| `init` | Prepare local CLI metadata | ✅ |
-| `login` | Authenticate with backend | ✅ |
-| `logout` | Clear session | ✅ |
-| `set` | Add/update remote project secret (encrypted client-side) | ✅ |
-| `get` | Get decrypted remote secret in memory | ✅ |
-| `list` | List remote secret names (no values) | ✅ |
-| `delete` | Remove remote secret | ✅ |
-| `push` | Import `.env` file into remote vault | ✅ |
-| `pull` | Export remote vault to file | ✅ |
-| `env` | Environment management | ✅ |
-| `projects` | Project management | ✅ |
-| `projects create` | Create cloud project with project vault password | ✅ |
-| `doctor` | Diagnostic checks | ✅ |
-| `import` | Import from `.env` file | ✅ |
-| `export` | Export to `.env` file | ✅ |
-| `rotate` | Rotate secret value | ✅ |
-| `secrets expire` | Set secret expiration | ✅ |
-| `secrets alert` | Configure alert timing | ✅ |
-| `rotation list` | List secrets pending rotation | ✅ |
-| `ci login` | Login with CI token | ✅ |
-| `ci logout` | Clear CI session | ✅ |
-| `ci secrets` | List secrets in CI context | ✅ |
-| `ci deploy` | Import file into remote vault with CI session | ✅ |
-| `ci tokens list` | List CI tokens | ✅ |
-| `ci tokens create` | Create CI token | ✅ |
-| `ci tokens revoke` | Revoke CI token | ✅ |
-| `integrations list` | List cloud integrations | ✅ |
-| `integrations connect` | Connect provider | ✅ |
-| `integrations disconnect` | Disconnect provider | ✅ |
-| `integrations sync` | Sync secrets with provider | ✅ |
+### CLI
 
-**CLI Tests**: 178 unit tests passing
+- Autenticação humana e CI, sessões locais cifradas e `doctor`.
+- Projetos, ambientes, membros, convites, sessões e chaves de API.
+- `set`, `get`, `list`, `delete`, import/export, `push`/`pull` como aliases remotos.
+- Rotação, expiração e alertas de secrets.
+- Integrações Vercel/Render e comandos CI.
+- A senha de projeto é usada para cifrar/desbloquear o vault; plaintext não é persistido pelo fluxo remoto.
 
-### API Backend (apps/api)
+### API
 
-| Router | Endpoints | Status |
-|--------|-----------|--------|
-| `auth` | signup, signin, signout, session, sessions, oauth, forgot/reset password, change password, enforced 2FA/TOTP login challenges | ✅ |
-| `auth/oauth` | github, google, discord | ✅ |
-| `projects` | CRUD + list/get with API key + vault rekey | ✅ |
-| `environments` | CRUD + list/get with API key | ✅ |
-| `vault` | push with vault proof + expected_version, pull/version (session + API key) | ✅ |
-| `members` | CRUD on team members | ✅ |
-| `invites` | create, list, accept, revoke | ✅ |
-| `tokens` | CI/CD tokens CRUD | ✅ |
-| `audit` | Paginated audit logs + CSV export | ✅ |
-| `rotation` | Secret rotation operations | ✅ |
-| `integrations` | Vercel + Render providers, sync, validate | ✅ |
-| `integration config encryption` | AES-256-GCM encrypted provider configs at rest | ✅ |
-| `api-keys` | API key CRUD | ✅ |
-| `ci` | CI login, CI secrets | ✅ |
-| `profile` | Update profile, delete account | ✅ |
-| `contributions` | Public Pix creation/status/sync with paid thank-you email | ✅ |
-| `rate limiting` | Middleware active (1000/200/100/5 per min) | ✅ |
-| `notifications` | In-app notification system (invite alerts, unread badge, mark read) | ✅ |
-| `vps deploy` | Docker Compose API + Redis + Cloudflare Tunnel + custom domains | ✅ Live smoke validated |
-| `worker health proxy` | `/api/health` and `/api/health/ready` aliases for Cloudflare Worker proxy | ✅ |
+- Auth por cookie HTTP-only, OAuth GitHub/Google/Discord, email verification, reset de senha e 2FA/TOTP com trusted devices.
+- RBAC de projeto: `owner`, `admin`, `developer` e `viewer`.
+- API versionada em `/api/v1`, API keys `cek_`, tokens CI e rate limiting.
+- Vault com `expected_version` para evitar sobrescrita concorrente.
+- Rotação/expiração, auditoria, webhooks, notificações in-app e contribuições Pix.
+- Configurações de integrações cifradas em repouso com `INTEGRATION_CONFIG_SECRET`.
+- Upload de avatar em R2 ou Supabase Storage.
 
-**API Tests**: 395 tests passing, 2 skipped
+### Web
 
-### Web Frontend (apps/web)
+- Landing, autenticação, dashboard, projetos, ambientes, secrets, auditoria, membros, settings, conta, integrações e contribuições.
+- Permissões administrativas aplicadas no dashboard; developers/viewers não recebem controles destrutivos.
+- Seleção e exclusão em lote de secrets apenas para `admin`/`owner`, com um único push cifrado.
+- Notification bell com badge, polling e painel seguro para mobile.
+- Documentação navegável em `/docs`, incluindo CLI, API, segurança, guias e integrações.
 
-| Page | Route | Status |
-|------|-------|--------|
-| Landing | `/` | ✅ |
-| Notifications | Top-nav bell with dropdown, badge, polling | ✅ |
-| Login | `/login` | ✅ |
-| 2FA Challenge | `/2fa` | ✅ TOTP/backup code + remember device |
-| Signup | `/signup` | ✅ |
-| Forgot Password | `/forgot-password` | ✅ |
-| Dashboard | `/dashboard` | ✅ |
-| Projects List | `/projects` | ✅ |
-| Project Detail | `/projects/[id]` | ✅ |
-| Secrets Browser | `/projects/[id]/secrets` | ✅ Project vault unlock |
-| Audit Log | `/projects/[id]/audit` | ✅ |
-| Team Settings | `/projects/[id]/members` | ✅ |
-| Project Settings | `/projects/[id]/settings` | ✅ Vault password rotation |
-| Account | `/account` | ✅ OAuth accounts + 2FA setup |
-| Invites Accept | `/invites/accept?token=` | ✅ |
-| Integrations | `/integrations` | ⚠️ Functional for Vercel, placeholder UI |
+## Lacunas atuais
 
-**Web Tests**: 69 Jest/React Testing Library tests passing; 4 Cypress E2E tests passing against local Vinext + FastAPI + PostgreSQL test stack.
+| Item | Estado | Ação recomendada |
+|---|---|---|
+| RailwayProvider | Não implementado | Implementar estratégia, testes, UI e documentação quando a integração for priorizada. |
+| Configuração de alertas no dashboard | Parcial | Expor no web as políticas que já existem na API/CLI. |
+| GitHub Action Marketplace | Não publicado | Criar README do pacote, release/tag e publicação. |
+| Operação da VPS | Parcial | Formalizar backup testado, patching, rotação de logs, firewall e monitoramento. |
+| E2E de produção | Não revalidado nesta auditoria | Executar smoke test com credenciais e ambiente de produção controlados. |
 
----
+## Validação local em 2026-09-18
 
-## Phase 3 Milestones Status
+- API: `416 passed, 2 skipped`.
+- CLI: `184 passed`, com um warning de `RuntimeWarning` sobre coroutine não aguardada em `test_status_logged_in`.
+- Web unit: `84 passed` em 23 suites.
+- `npm run lint`: passou.
+- `npm run check:vinext`: passou com 100% de compatibilidade.
+- `npm run build`: passou; o Vinext emitiu apenas warning de chunks grandes e classificação dinâmica de rotas.
+- Cypress E2E e smoke test contra produção: ainda não executados nesta auditoria.
 
-| Milestone | Status | Notes |
-|-----------|--------|-------|
-| **M3.1**: GitHub Action | ✅ Complete | action.yml + src/index.ts + dist |
-| **M3.2**: Cloud integrations | 🟡 Mostly Complete | Vercel ✅, Render ✅, Railway ⚠️ pending, CLI commands ✅ |
-| **M3.3**: CI tokens | ✅ Complete | Backend + CLI 100%, ci deploy real implementation |
-| **M3.4**: Public API | ✅ Complete | Rate limiting ✅, API keys ✅, dual auth ✅, OpenAPI docs ✅ |
-| **M3.5**: Secret alerts | 🟡 Mostly Complete | API + CLI ✅, Web UI partial |
-| **M3.6**: APScheduler | ✅ Complete | Lifespan integration ✅ |
-| **M3.7**: OAuth | ✅ Complete | GitHub, Google, Discord ✅ |
-| **API/WEB/CLI Alignment** | ✅ Complete | 16 gaps resolved across 5 waves |
+## Riscos e cuidados
 
----
-
-## Incomplete / Pending
-
-| Feature | Priority | Status |
-|---------|----------|--------|
-| Railway provider | P1 | ⚠️ Not implemented |
-| Integration tokens at-rest encryption | P1 | ✅ AES-256-GCM envelope in JSONB |
-| Web alert configuration UI | P1 | ⚠️ Not started |
-| Security review CR-01/CR-02 | P0 | ✅ Resolved (HTTP-only cookies) |
-| API/WEB/CLI Alignment | P0 | ✅ Complete (16 gaps closed) |
-
----
-
-## Technical Risks
-
-| Risk | Level | Mitigation |
-|------|-------|------------|
-| Railway provider missing | 🟡 Medium | P1 — can be added following Render pattern |
-| Web alert UI incomplete | 🟡 Medium | Finish M3.5 web gap — notification infra ready |
-| APScheduler duplication with multiple workers | 🟡 Medium | Public API workers disable scheduler; dedicated one-worker scheduler service owns jobs |
-| Cloudflare Tunnel availability | 🟡 Medium | Monitor tunnel health and keep rollback API guidance current |
-| VPS operational ownership | 🟡 Medium | Add basic backups, patching routine, container log rotation, uptime checks, and tunnel monitoring |
-| App-level production validation | ✅ Closed | Signup/signin/OAuth/projects/vault flows validated through Workers frontend |
-
----
-
-## Next Recommended Steps
-
-1. **VPS operations baseline**: Backups, firewall review, OS patching routine, uptime/health monitoring, and Cloudflare Tunnel alerts.
-2. **Railway Provider**: Implement following the RenderProvider pattern.
-3. **Web Alert Configuration UI**: Complete M3.5 web gap.
-
----
-
-**Document Version**: 1.8
-**Last Updated**: 2026-05-28
-**Status**: Active Development — Phase 3 (~92% complete, 2FA login enforcement done, API/WEB/CLI alignment done, VPS backend and app flows validated)
+- Nunca documentar uma integração como implementada apenas porque seu nome aparece em schemas ou docs.
+- `RESEND_API_KEY`, tokens OAuth, credenciais R2 e `TUNNEL_TOKEN` só devem existir em secrets do ambiente; nunca em commits.
+- O scheduler deve continuar isolado em um único worker.
+- A afirmação zero-knowledge não cobre plaintext exibido no terminal, browser ou arquivos exportados após a descriptografia pelo usuário.
