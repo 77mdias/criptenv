@@ -142,6 +142,10 @@ class EmailService:
 
         return resend.Emails.send(params)
 
+    def send_alert(self, to: str, html: str, text: str) -> Optional[dict]:
+        """Send a rendered expiration alert through the configured provider."""
+        return self._send(to, "CriptEnv secret expiration alert", html, text)
+
     # ─── Email: Password Reset ────────────────────────────────────────────────
 
     def send_password_reset(self, to: str, reset_url: str, expires_minutes: int = 60) -> Optional[dict]:

@@ -11,10 +11,19 @@ GRASP Patterns:
 
 import httpx
 import asyncio
+import re
 from datetime import datetime, timezone
 from dataclasses import dataclass, field
 from typing import Optional, Dict, Any, Protocol, runtime_checkable
 from uuid import UUID
+
+from app.config import settings
+from app.services.alert_payload import build_alert_payload
+from app.services.alert_settings_service import (
+    resolve_webhook_target,
+    ValidatedWebhookTarget,
+)
+from app.models.alert_delivery import AlertDelivery
 
 
 @dataclass
@@ -29,6 +38,30 @@ class DeliveryResult:
     status_code: Optional[int] = None
 
 
+def sanitize_delivery_error(error: object) -> str:
+    """Return a safe, category-level delivery error without request details."""
+    text = str(error or "").strip()
+    if re.fullmatch(r"HTTP \d{3}", text):
+        return text
+
+    normalized = text.lower()
+    if "timeout" in normalized:
+        return "timeout"
+    invalid_target_error = (
+        "invalid" in normalized
+        or "dns" in normalized
+        or "resolve" in normalized
+        or "host could not" in normalized
+    )
+    if invalid_target_error:
+        return "invalid_target"
+    if "request error" in normalized or "connection" in normalized or "network" in normalized:
+        return "request_error"
+    if normalized in {"timeout", "invalid_target", "request_error", "delivery_error"}:
+        return normalized
+    return "delivery_error"
+
+
 @runtime_checkable
 class NotificationChannel(Protocol):
     """Abstract notification channel — GRASP Protected Variations.
@@ -37,7 +70,12 @@ class NotificationChannel(Protocol):
     Allows swapping notification mechanisms without changing WebhookService.
     """
     
-    async def send(self, url: str, payload: dict) -> DeliveryResult:
+    async def send(
+        self,
+        url: str,
+        payload: dict,
+        idempotency_key: Optional[str] = None,
+    ) -> DeliveryResult:
         """Send notification to target URL.
         
         Args:
@@ -57,15 +95,21 @@ class WebhookChannel(NotificationChannel):
     GRASP Protected Variations: Extensible via channel interface.
     """
     
-    def __init__(self, timeout: float = 10.0):
+    def __init__(self, timeout: float = 10.0, follow_redirects: bool = False):
         """Initialize webhook channel.
         
         Args:
             timeout: HTTP request timeout in seconds
         """
         self.timeout = timeout
+        self.follow_redirects = follow_redirects
     
-    async def send(self, url: str, payload: dict) -> DeliveryResult:
+    async def send(
+        self,
+        url: str,
+        payload: dict,
+        idempotency_key: Optional[str] = None,
+    ) -> DeliveryResult:
         """Send webhook POST request.
         
         Args:
@@ -76,8 +120,21 @@ class WebhookChannel(NotificationChannel):
             DeliveryResult with HTTP status
         """
         try:
-            async with httpx.AsyncClient(timeout=self.timeout) as client:
-                response = await client.post(url, json=payload)
+            target = await resolve_webhook_target(url, settings.APP_ENV)
+            async with httpx.AsyncClient(
+                timeout=self.timeout,
+                follow_redirects=self.follow_redirects,
+                trust_env=False,
+            ) as client:
+                headers = {"Host": target.host_header}
+                if idempotency_key is not None:
+                    headers["Idempotency-Key"] = idempotency_key
+                response = await client.post(
+                    target.request_url,
+                    headers=headers,
+                    json=payload,
+                    extensions={"sni_hostname": target.sni_hostname},
+                )
                 return DeliveryResult(
                     success=200 <= response.status_code < 300,
                     attempts=1,
@@ -87,19 +144,25 @@ class WebhookChannel(NotificationChannel):
             return DeliveryResult(
                 success=False,
                 attempts=1,
-                error=f"Timeout: {str(e)}"
+                error=sanitize_delivery_error(e)
             )
         except httpx.RequestError as e:
             return DeliveryResult(
                 success=False,
                 attempts=1,
-                error=f"Request error: {str(e)}"
+                error=sanitize_delivery_error(e)
+            )
+        except ValueError as e:
+            return DeliveryResult(
+                success=False,
+                attempts=1,
+                error=sanitize_delivery_error(e),
             )
         except Exception as e:
             return DeliveryResult(
                 success=False,
                 attempts=1,
-                error=str(e)
+                error=sanitize_delivery_error(e),
             )
 
 
@@ -156,26 +219,23 @@ class WebhookService:
         Returns:
             Dict payload suitable for JSON serialization
         """
-        payload = {
-            "event": event,
-            "project_id": project_id,
-            "environment": environment,
-            "secret_key": secret_key,
-            "expires_at": expires_at.isoformat() if isinstance(expires_at, datetime) else str(expires_at),
-            "notify_days_before": notify_days_before,
-            "timestamp": datetime.now(timezone.utc).isoformat()
-        }
-        
-        if days_until_expiration is not None:
-            payload["days_until_expiration"] = days_until_expiration
-        
-        return payload
+        return build_alert_payload(
+            event=event,
+            project_id=UUID(project_id),
+            environment=environment,
+            secret_key=secret_key,
+            expires_at=expires_at,
+            notify_days_before=notify_days_before,
+            days_until_expiration=days_until_expiration,
+        )
     
     async def send(
         self,
         webhook_url: str,
         event: str,
-        payload: Dict[str, Any]
+        payload: Dict[str, Any],
+        idempotency_key: Optional[str] = None,
+        delivery: Optional[AlertDelivery] = None,
     ) -> DeliveryResult:
         """Send webhook notification with retry logic.
         
@@ -189,11 +249,19 @@ class WebhookService:
         Returns:
             DeliveryResult with success status and attempt count
         """
+        idempotency_key = idempotency_key or (delivery.idempotency_key if delivery else None)
         last_error = None
         
         for attempt in range(1, self.max_retries + 1):
             try:
-                result = await self.channel.send(webhook_url, payload)
+                if idempotency_key is None:
+                    result = await self.channel.send(webhook_url, payload)
+                else:
+                    result = await self.channel.send(
+                        webhook_url,
+                        payload,
+                        idempotency_key=idempotency_key,
+                    )
                 
                 if result.success:
                     return DeliveryResult(
@@ -202,10 +270,14 @@ class WebhookService:
                         status_code=result.status_code
                     )
                 
-                last_error = f"HTTP {result.status_code}" if result.status_code else result.error
+                last_error = (
+                    f"HTTP {result.status_code}"
+                    if result.status_code
+                    else sanitize_delivery_error(result.error)
+                )
                 
             except Exception as e:
-                last_error = str(e)
+                last_error = sanitize_delivery_error(e)
             
             # Exponential backoff: 1s, 2s, 4s, ...
             if attempt < self.max_retries:

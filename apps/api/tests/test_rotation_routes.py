@@ -106,6 +106,17 @@ class TestRotationSchemas:
         assert schema.rotation_policy == "notify"
         assert schema.notify_days_before == 14
 
+    def test_expiration_create_omits_notify_days_by_default(self):
+        from app.schemas.secret_expiration import ExpirationCreate
+
+        schema = ExpirationCreate(
+            secret_key="API_KEY",
+            expires_at=datetime.now(timezone.utc) + timedelta(days=90),
+        )
+
+        assert schema.notify_days_before is None
+        assert "notify_days_before" not in schema.model_fields_set
+
     def test_expiration_response_schema(self):
         """ExpirationResponse should have all expiration fields."""
         from app.schemas.secret_expiration import ExpirationResponse
@@ -316,6 +327,78 @@ class TestRotationRouterIntegration:
             project_id,
             "admin",
         )
+
+    @pytest.mark.asyncio
+    async def test_create_expiration_resolves_project_default_only_when_omitted(self, mock_db):
+        from app.models.project import Project
+        from app.schemas.secret_expiration import ExpirationCreate
+        from app.services.rotation_service import RotationService
+
+        project = MagicMock(spec=Project)
+        project.settings = {"alerts": {"default_notify_days_before": 21}}
+        project_id = uuid4()
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = project
+        mock_db.execute.return_value = result
+        mock_db.add = MagicMock()
+        mock_db.refresh = AsyncMock()
+
+        expiration = await RotationService(mock_db).create_expiration(
+            project_id,
+            uuid4(),
+            ExpirationCreate(
+                secret_key="API_KEY",
+                expires_at=datetime.now(timezone.utc) + timedelta(days=90),
+            ),
+        )
+
+        assert expiration.notify_days_before == 21
+
+    @pytest.mark.asyncio
+    async def test_create_expiration_keeps_explicit_notify_days(self, mock_db):
+        from app.schemas.secret_expiration import ExpirationCreate
+        from app.services.rotation_service import RotationService
+
+        mock_db.refresh = AsyncMock()
+        mock_db.add = MagicMock()
+        expiration = await RotationService(mock_db).create_expiration(
+            uuid4(),
+            uuid4(),
+            ExpirationCreate(
+                secret_key="API_KEY",
+                expires_at=datetime.now(timezone.utc) + timedelta(days=90),
+                notify_days_before=3,
+            ),
+        )
+
+        assert expiration.notify_days_before == 3
+
+    @pytest.mark.asyncio
+    async def test_pending_selection_uses_each_policy_and_lead_time(self):
+        from app.models.secret_expiration import SecretExpiration
+        from app.services.rotation_service import RotationService
+
+        now = datetime.now(timezone.utc)
+        candidates = [
+            SecretExpiration(expires_at=now + timedelta(days=2), rotation_policy="notify", notify_days_before=3),
+            SecretExpiration(expires_at=now + timedelta(days=2), rotation_policy="notify", notify_days_before=1),
+            SecretExpiration(expires_at=now - timedelta(days=1), rotation_policy="manual", notify_days_before=30),
+        ]
+
+        class Result:
+            def scalars(self):
+                return self
+
+            def all(self):
+                return candidates
+
+        db = MagicMock()
+        db.execute = AsyncMock(return_value=Result())
+        pending = await RotationService(db).list_pending_rotations()
+
+        assert candidates[0] in pending
+        assert candidates[1] not in pending
+        assert candidates[2] in pending
 
 
 class TestRotationRouterSecurity:

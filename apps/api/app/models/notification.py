@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, DateTime, ForeignKey, func, Index
+from sqlalchemy import Column, String, DateTime, ForeignKey, func, Index, UniqueConstraint
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -10,6 +10,7 @@ class Notification(Base):
 
     id = Column(UUID(as_uuid=True), primary_key=True, default=uuid.uuid4)
     user_id = Column(UUID(as_uuid=True), ForeignKey("users.id", ondelete="CASCADE"), nullable=False, index=True)
+    delivery_id = Column(UUID(as_uuid=True), ForeignKey("alert_deliveries.id", ondelete="SET NULL"), nullable=True)
     type = Column(String(50), nullable=False, default="system")
     title = Column(String(255), nullable=False)
     message = Column(String(1000), nullable=False)
@@ -23,4 +24,5 @@ class Notification(Base):
     __table_args__ = (
         Index("idx_notifications_user_id_read_at", "user_id", "read_at"),
         Index("idx_notifications_user_id_created_at", "user_id", "created_at"),
+        UniqueConstraint("delivery_id", name="uq_notifications_delivery_id"),
     )

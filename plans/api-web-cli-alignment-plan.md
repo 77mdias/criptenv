@@ -1,5 +1,7 @@
 # Plano de Alinhamento API ↔ WEB ↔ CLI
 
+> **Snapshot histórico/superseded:** Este plano registra o diagnóstico e as lacunas de 2026-05-13; seus percentuais e pendências não representam o estado atual. Consulte `docs/project/current-state.md` para o status verificado atual.
+
 > **Data:** 2026-05-13
 > **Escopo:** Identificar gaps entre backend (API), frontend (WEB) e CLI, e propor correções/features para deixar todos coerentes.
 > **Metodologia:** Mapeamento completo dos 3 domínios, comparação funcional, priorização por severidade.

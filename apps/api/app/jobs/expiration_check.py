@@ -1,251 +1,205 @@
-"""Expiration Check Background Job for M3.5 Secret Alerts
-
-Periodic job that checks for secrets approaching expiration
-and triggers notifications via configured channels.
-
-GRASP Patterns:
-- Information Expert: Knows when to check and what to notify
-- Pure Fabrication: Orchestrates check → notify workflow
-- Protected Variations: Notification channel is injected
-- Indirection: Mediates between RotationService and WebhookService
-"""
+"""Background expiration alert scheduler."""
 
 import logging
-from datetime import datetime, timezone
 from typing import List, Optional
 from uuid import UUID
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.config import settings as app_settings
+from app.models.alert_delivery import AlertDelivery
+from app.models.environment import Environment
+from app.models.project import Project
+from app.services.alert_delivery_service import AlertDeliveryService
+from app.services.alert_payload import build_alert_payload
+from app.services.alert_settings_service import AlertSettingsService
 from app.services.rotation_service import RotationService
-from app.services.webhook_service import WebhookService, DeliveryResult
+from app.services.webhook_service import DeliveryResult, WebhookService, sanitize_delivery_error
 
 
 logger = logging.getLogger(__name__)
 
 
 class ExpirationChecker:
-    """Background job that checks for expiring secrets and sends alerts.
-    
-    GRASP Information Expert: Contains expiration check logic
-    GRASP Pure Fabrication: Orchestrates the check → notify workflow
-    GRASP Indirection: Mediates between RotationService and WebhookService
-    GRASP Low Coupling: Decoupled from HTTP implementations
-    
-    Usage:
-        checker = ExpirationChecker(db_session)
-        results = await checker.check_expirations()
-    """
-    
+    """Materialize, claim, and dispatch project-configured expiration alerts."""
+
     def __init__(
         self,
         db: AsyncSession,
-        webhook_service: Optional[WebhookService] = None
+        webhook_service: Optional[WebhookService] = None,
+        delivery_service: Optional[AlertDeliveryService] = None,
     ):
-        """Initialize expiration checker.
-        
-        Args:
-            db: Async database session
-            webhook_service: Optional webhook service (creates default if None)
-        """
         self.db = db
         self.rotation_service = RotationService(db)
-        self.webhook_service = webhook_service or WebhookService()
-    
+        self.webhook_service = webhook_service
+        self.delivery_service = delivery_service or AlertDeliveryService(
+            db, webhook_service=webhook_service
+        )
+
     async def check_expirations(self) -> List[DeliveryResult]:
-        """Check for secrets approaching expiration and send notifications.
-        
-        Returns:
-            List of DeliveryResult for each notification attempt
-        """
-        results = []
-        
+        results: list[DeliveryResult] = []
         try:
-            # Get secrets pending rotation notification
-            pending = await self.rotation_service.list_pending_rotations()
-            
-            logger.info(f"Found {len(pending)} secrets pending notification")
-            
-            for expiration in pending:
+            for expiration in await self.rotation_service.list_pending_rotations():
                 try:
-                    result = await self._notify_expiration(expiration)
+                    result = await self._process_expiration(expiration)
+                except Exception as exc:
+                    await self.db.rollback()
+                    logger.error("Expiration unit failed: %s", sanitize_delivery_error(exc))
+                    result = DeliveryResult(False, 0, sanitize_delivery_error(exc))
+                else:
+                    try:
+                        await self.db.commit()
+                    except Exception as exc:
+                        await self.db.rollback()
+                        logger.error("Expiration unit commit failed: %s", sanitize_delivery_error(exc))
+                        result = DeliveryResult(False, 0, sanitize_delivery_error(exc))
+                if result is not None:
                     results.append(result)
-                    
-                    # Mark as notified (idempotent — 24h window handled by query)
-                    if result.success:
-                        await self.rotation_service.mark_notified(expiration.id)
-                        logger.debug(
-                            f"Marked {expiration.secret_key} as notified"
-                        )
-                        
-                except Exception as e:
-                    logger.error(
-                        f"Failed to notify for secret {expiration.secret_key}: {e}"
-                    )
-                    results.append(DeliveryResult(
-                        success=False,
-                        attempts=0,
-                        error=str(e)
-                    ))
-            
-        except Exception as e:
-            logger.error(f"Expiration check failed: {e}")
-        
+        except Exception as exc:
+            await self.db.rollback()
+            logger.error("Expiration check failed: %s", sanitize_delivery_error(exc))
         return results
-    
-    async def _notify_expiration(self, expiration) -> DeliveryResult:
-        """Send notification for a single expiring secret.
-        
-        GRASP Protected Variations: Never includes secret values in payload.
-        
-        Args:
-            expiration: The SecretExpiration record
-            
-        Returns:
-            DeliveryResult from webhook delivery
-        """
-        # Build payload — NEVER includes secret value
-        payload = self.webhook_service.build_payload(
-            event="secret.expiring" if not expiration.is_expired else "secret.expired",
-            project_id=str(expiration.project_id),
+
+    async def _get_project(self, project_id: UUID) -> Optional[Project]:
+        result = await self.db.execute(select(Project).where(Project.id == project_id))
+        return result.scalar_one_or_none()
+
+    async def _get_environment_name(self, environment_id: UUID) -> Optional[str]:
+        result = await self.db.execute(select(Environment).where(Environment.id == environment_id))
+        environment = result.scalar_one_or_none()
+        return environment.name if environment else None
+
+    async def _process_expiration(self, expiration) -> Optional[DeliveryResult]:
+        project = await self._get_project(expiration.project_id)
+        if project is None:
+            return None
+        settings = AlertSettingsService().get(project)
+        if not settings.enabled:
+            return None
+
+        webhook_url = None
+        channels = {
+            "in_app": settings.channels.in_app,
+            "email": settings.channels.email,
+            "webhook": False,
+        }
+        if settings.channels.webhook:
+            webhook_url = AlertSettingsService().get_webhook_url(project)
+            channels["webhook"] = bool(webhook_url)
+        if not any(channels.values()):
+            return None
+
+        event = "secret.expired" if expiration.is_expired else "secret.expiring"
+        payload = build_alert_payload(
+            event=event,
+            project_id=expiration.project_id,
+            project_name=project.name,
+            environment_id=expiration.environment_id,
+            environment_name=await self._get_environment_name(expiration.environment_id),
             environment=str(expiration.environment_id),
             secret_key=expiration.secret_key,
             expires_at=expiration.expires_at,
             notify_days_before=expiration.notify_days_before,
-            days_until_expiration=expiration.days_until_expiration
+            days_until_expiration=expiration.days_until_expiration,
+            action_url=(
+                f"{app_settings.FRONTEND_URL.rstrip('/')}/projects/"
+                f"{expiration.project_id}/secrets/{expiration.secret_key}"
+            ),
         )
-        
-        # Get webhook URL from project configuration
-        # TODO: Query Project.webhook_url or ProjectSettings
-        webhook_url = await self._get_webhook_url(expiration.project_id)
-        
-        if not webhook_url:
-            logger.warning(
-                f"No webhook URL configured for project {expiration.project_id}"
+
+        deliveries = []
+        recipient_users = {}
+        if channels["in_app"]:
+            for user in await self.delivery_service.resolve_recipients(expiration.project_id):
+                recipient_users[str(user.id)] = user
+                deliveries.append(await self.delivery_service.create_delivery(
+                    expiration.project_id, expiration.id, event, "in_app", str(user.id)
+                ))
+        if channels["email"]:
+            for user in await self.delivery_service.resolve_recipients(
+                expiration.project_id, email=True
+            ):
+                recipient_users[str(user.id)] = user
+                deliveries.append(await self.delivery_service.create_delivery(
+                    expiration.project_id, expiration.id, event, "email", str(user.id)
+                ))
+        if channels["webhook"]:
+            deliveries.append(await self.delivery_service.create_delivery(
+                expiration.project_id,
+                expiration.id,
+                event,
+                "webhook",
+                f"project:{expiration.project_id}:webhook",
+            ))
+        await self.db.flush()
+
+        if not deliveries:
+            return None
+        if not all(getattr(delivery, "status", None) == "delivered" for delivery in deliveries):
+            await self.delivery_service.deliver_channels(
+                project_id=expiration.project_id,
+                expiration_id=expiration.id,
+                event=event,
+                payload=payload,
+                channels=channels,
+                webhook_url=webhook_url,
+                materialized_deliveries=deliveries,
+                recipient_users=recipient_users,
             )
-            return DeliveryResult(
-                success=False,
-                attempts=0,
-                error="No webhook URL configured"
-            )
-        
-        return await self.webhook_service.send(
-            webhook_url=webhook_url,
-            event=payload["event"],
-            payload=payload
+
+        if not await self._deliveries_complete([delivery.id for delivery in deliveries]):
+            return DeliveryResult(False, 0, "delivery_error")
+
+        await self.rotation_service.mark_notified(expiration.id, commit=False)
+        return DeliveryResult(True, 1)
+
+    async def _deliveries_complete(self, delivery_ids: list[UUID]) -> bool:
+        result = await self.db.execute(
+            select(AlertDelivery).where(AlertDelivery.id.in_(delivery_ids))
         )
-    
+        rows = list(result.scalars().all())
+        if rows:
+            return len(rows) == len(delivery_ids) and all(row.status == "delivered" for row in rows)
+        return False
+
+    async def _notify_expiration(self, expiration) -> DeliveryResult:
+        """Compatibility entry point used by older callers and tests."""
+        return await self._process_expiration(expiration) or DeliveryResult(False, 0, "disabled")
+
     async def _get_webhook_url(self, project_id: UUID) -> Optional[str]:
-        """Get webhook URL from project configuration.
-        
-        GRASP Protected Variations: This is a placeholder that will be
-        implemented when project settings support webhook URLs.
-        
-        TODO: Implement when project settings support webhook URLs.
-        
-        Args:
-            project_id: Project UUID
-            
-        Returns:
-            Webhook URL string or None if not configured
-        """
-        # Future: query Project.webhook_url or ProjectSettings
-        # Example implementation:
-        # from app.models.project import Project
-        # result = await self.db.execute(
-        #     select(Project.webhook_url).where(Project.id == project_id)
-        # )
-        # return result.scalar_one_or_none()
-        return None
+        project = await self._get_project(project_id)
+        return AlertSettingsService().get_webhook_url(project) if project else None
 
 
 def create_scheduler_job(checker: ExpirationChecker):
-    """Create APScheduler job function.
-    
-    GRASP Pure Fabrication: Factory function for scheduler integration.
-    
-    Usage in FastAPI lifespan:
-        from apscheduler.schedulers.asyncio import AsyncIOScheduler
-        
-        scheduler = AsyncIOScheduler()
-        job = create_scheduler_job(ExpirationChecker(db_session))
-        scheduler.add_job(job, 'interval', hours=1)
-        scheduler.start()
-        
-        # In shutdown:
-        scheduler.shutdown()
-    
-    Args:
-        checker: ExpirationChecker instance
-        
-    Returns:
-        Async callable for APScheduler
-    """
     async def run_check():
-        """Run expiration check and log results."""
-        logger.info("Running expiration check...")
-        
         try:
             results = await checker.check_expirations()
-            success_count = sum(1 for r in results if r.success)
-            total_count = len(results)
-            
             logger.info(
-                f"Expiration check complete: {success_count}/{total_count} notifications sent"
+                "Expiration check complete: %s/%s notifications sent",
+                sum(result.success for result in results),
+                len(results),
             )
-            
-            # Log failures
-            for i, result in enumerate(results):
-                if not result.success:
-                    logger.warning(
-                        f"Notification {i+1} failed: {result.error}"
-                    )
-                    
-        except Exception as e:
-            logger.error(f"Expiration check job failed: {e}")
-    
+        except Exception as exc:
+            logger.error("Expiration check job failed: %s", sanitize_delivery_error(exc))
+
     return run_check
 
 
-def create_session_scoped_scheduler_job(
-    session_factory,
-    checker_cls=ExpirationChecker,
-):
-    """Create a scheduler job that opens a fresh DB session per execution.
-
-    FastAPI lifespan runs once, while APScheduler jobs run later. Capturing a
-    request-style dependency generator or a long-lived session at startup can
-    leave the background job with invalid DB state, so the job owns its session
-    scope every time it runs.
-    """
+def create_session_scoped_scheduler_job(session_factory, checker_cls=ExpirationChecker):
     async def run_check():
         async with session_factory() as db:
-            checker = checker_cls(db)
-            results = await checker.check_expirations()
-            success_count = sum(1 for r in results if r.success)
-            total_count = len(results)
-
-            logger.info(
-                f"Expiration check complete: {success_count}/{total_count} notifications sent"
-            )
-
-            for i, result in enumerate(results):
-                if not result.success:
-                    logger.warning(
-                        f"Notification {i+1} failed: {result.error}"
-                    )
+            try:
+                await checker_cls(db).check_expirations()
+                await db.commit()
+            except Exception as exc:
+                await db.rollback()
+                logger.error("Expiration check job failed: %s", sanitize_delivery_error(exc))
 
     return run_check
 
 
 def create_hourly_scheduler(db: AsyncSession) -> tuple:
-    """Create expiration checker and scheduler job for hourly execution.
-    
-    Convenience function for common setup pattern.
-    
-    Returns:
-        Tuple of (ExpirationChecker, scheduler_job)
-    """
     checker = ExpirationChecker(db)
-    job = create_scheduler_job(checker)
-    return checker, job
+    return checker, create_scheduler_job(checker)

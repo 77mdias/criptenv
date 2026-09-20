@@ -7,6 +7,23 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Project Alerts Implementation Complete; Validation Incomplete (2026-09-19)
+
+- **API:** Added owner/admin-only alert settings endpoints, encrypted webhook configuration, safe previews, audit events and sanitized project serialization.
+- **Delivery:** Added `alert_deliveries` persistence with unique delivery identity, fencing-token claims, a three-attempt shared budget, retry state and stable webhook idempotency keys.
+- **Channels:** Added in-app, verified-owner/admin email and configured webhook delivery using one canonical payload (`payload_version: 1`); external channels remain at-least-once across crashes.
+- **Scheduler:** Replaced the webhook-only placeholder flow with project settings, per-secret lead-time evaluation and channel fan-out; omitted per-secret lead time uses the project default only for new expiration records.
+- **Web:** Added the responsive project Settings alert card and typed API client.
+- **Security:** Alert payloads, emails and delivery errors exclude secret plaintext/ciphertext and webhook credentials.
+- **Verification:** Implementation checks passed: API 501 passed/2 skipped, CLI 184 passed, web unit 101 passed, lint, Vinext check and build passed. Release validation is incomplete: Alembic `upgrade head` was not applied against a confirmed disposable database, and Cypress alert assertions were blocked before signup by the Resend `example.com` fixture rejection.
+
+### Project Alert Foundations (2026-09-18)
+
+- **API:** Added typed project alert settings with encrypted webhook configuration, safe previews, SSRF/DNS validation, owner/admin authorization and sanitized project responses.
+- **API:** Added alert settings GET/PATCH/test-webhook routes, canonical alert payload builder and sanitized webhook transport behavior with connection pinning.
+- **Audit:** Alert settings mutations use `project.alert_settings_updated` without storing webhook credentials in metadata.
+- **Verification:** The foundations were subsequently implemented by the delivery, scheduler and web work recorded above; migration application and browser E2E remain blocked/pending as recorded in the current task.
+
 ### Documentation and Verification Audit (2026-09-18)
 
 - **Documentation:** Reconciled current state, overview, tech stack, environment, architecture, feature status and deployment guides with the source code and current VPS Compose stack.

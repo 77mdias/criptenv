@@ -9,6 +9,8 @@ from uuid import UUID
 
 from pydantic import BaseModel, Field, field_validator
 
+from app.services.alert_payload import AlertPayload
+
 
 class ExpirationCreate(BaseModel):
     """Schema for creating a secret expiration record."""
@@ -19,8 +21,8 @@ class ExpirationCreate(BaseModel):
         default="notify",
         description="Rotation policy: manual (user triggers), notify (alert before expiration), auto (rotate on expiration)"
     )
-    notify_days_before: int = Field(
-        default=7,
+    notify_days_before: Optional[int] = Field(
+        default=None,
         ge=1,
         le=365,
         description="Days before expiration to send notification"
@@ -131,28 +133,5 @@ class RotationHistoryResponse(BaseModel):
     total: int
 
 
-class ExpirationAlert(BaseModel):
-    """Schema for expiration alert notification payload."""
-    
-    event: Literal["secret.expiring", "secret.expired", "secret.rotated"] = Field(..., description="Event type")
-    project_id: UUID
-    environment: str
-    secret_key: str
-    expires_at: datetime
-    notify_days_before: int
-    days_until_expiration: Optional[int] = None
-    timestamp: datetime = Field(default_factory=lambda: datetime.now(timezone.utc))
-    
-    class Config:
-        json_schema_extra = {
-            "example": {
-                "event": "secret.expiring",
-                "project_id": "550e8400-e29b-41d4-a716-446655440000",
-                "environment": "production",
-                "secret_key": "DATABASE_PASSWORD",
-                "expires_at": "2024-06-01T00:00:00Z",
-                "notify_days_before": 7,
-                "days_until_expiration": 5,
-                "timestamp": "2024-05-25T12:00:00Z"
-            }
-        }
+# Keep the established import path while maintaining one payload contract.
+ExpirationAlert = AlertPayload

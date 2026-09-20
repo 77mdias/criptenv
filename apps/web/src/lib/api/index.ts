@@ -55,3 +55,10 @@ export { ciTokensApi } from "./ci-tokens";
 export { rotationApi } from "./rotation";
 export { apiKeysApi } from "./api-keys";
 export { integrationsApi } from "./integrations";
+export { alertSettingsApi } from "./alert-settings";
+export type {
+  AlertChannels,
+  AlertSettingsResponse,
+  AlertSettingsUpdate,
+  TestWebhookResponse,
+} from "./alert-settings";

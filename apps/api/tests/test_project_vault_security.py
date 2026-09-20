@@ -61,6 +61,19 @@ def test_project_response_sanitizes_vault_proof_hash():
     assert "proof_hash" not in response.model_dump_json()
 
 
+def test_project_response_omits_alert_settings_and_envelopes():
+    project = make_project()
+    project.settings["alerts"] = {
+        "enabled": True,
+        "webhook_url": {"_criptenv_encrypted": True, "ciphertext": "secret"},
+    }
+
+    response = ProjectResponse.from_project(project)
+
+    assert response.settings is None or "alerts" not in response.settings
+    assert "webhook_url" not in response.model_dump_json()
+
+
 def test_project_create_requires_vault_config_and_proof():
     with pytest.raises(ValidationError):
         ProjectCreate(name="Missing Vault")

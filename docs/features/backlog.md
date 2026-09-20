@@ -18,14 +18,20 @@ Planned and future features organized by priority.
   - Files: `apps/api/app/strategies/integrations/railway.py`
   - Status: Not started
 
-#### Web Alert Configuration UI
+#### Project Alert Follow-ups
 
-- [ ] **Alert Configuration Page**
-  - Per-project alert settings
-  - Webhook URL configuration
-  - Notification preferences
-  - Files: `apps/web/src/app/(dashboard)/projects/[id]/settings/page.tsx`
-  - Status: Not started
+- [ ] **Production migration rollout**
+  - Apply `20260918_0010_create_alert_deliveries.py` only against a confirmed target database.
+  - Status: Pending environment validation
+
+- [ ] **Alert E2E fixture/provider validation**
+  - Replace the Cypress `example.com` recipient or disable/mock Resend in the isolated E2E environment.
+  - Re-run owner/admin and 320/375/390/430px alert assertions.
+  - Status: Blocked by current Resend fixture
+
+- [ ] **Production alert operations validation**
+  - Verify Resend configuration, webhook allowlisting, retries and scheduler monitoring in a controlled environment.
+  - Status: Pending production validation
 
 #### VPS Operations Baseline
 
@@ -54,9 +60,8 @@ Planned and future features organized by priority.
 
 ### Webhook Enhancements
 
-- [ ] **Email Notifications**
-  - SMTP integration for expiration alerts
-  - Configurable email templates
+- [ ] **Additional Email Provider Options**
+  - Add SMTP or another provider only if required beyond the implemented Resend adapter.
   - Status: Not started
 
 - [ ] **Slack Integration**
@@ -255,7 +260,8 @@ Phase 3 (CI/CD) — Core implemented; closure work pending
 ├── M3.4: Public API ✅
 ├── M3.5: Secret Alerts
 │   ├── ExpirationBadge ✅
-│   ├── Web alert config ──► P1 pending
+│   ├── Project alert settings ✅ (E2E/provider validation pending)
+│   ├── Production migration/ops ──► validation pending
 │   └── Rotation modal ──► P1 pending
 ├── M3.6: APScheduler ✅
 ├── M3.7: OAuth ✅

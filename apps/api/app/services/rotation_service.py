@@ -17,6 +17,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.secret_expiration import SecretExpiration, SecretRotation
 from app.models.vault import VaultBlob
+from app.models.project import Project
+from app.services.alert_settings_service import AlertSettingsService
 from app.schemas.secret_expiration import (
     ExpirationCreate,
     ExpirationUpdate,
@@ -51,13 +53,21 @@ class RotationService:
         Returns:
             Created SecretExpiration record
         """
+        notify_days_before = payload.notify_days_before
+        if notify_days_before is None:
+            result = await self.db.execute(select(Project).where(Project.id == project_id))
+            project = result.scalar_one_or_none()
+            if project is None:
+                raise ValueError("Project not found")
+            notify_days_before = AlertSettingsService().get(project).default_notify_days_before
+
         expiration = SecretExpiration(
             project_id=project_id,
             environment_id=environment_id,
             secret_key=payload.secret_key,
             expires_at=payload.expires_at,
             rotation_policy=payload.rotation_policy,
-            notify_days_before=payload.notify_days_before,
+            notify_days_before=notify_days_before,
         )
         
         self.db.add(expiration)
@@ -143,33 +153,38 @@ class RotationService:
         
         return list(expirations), len(expirations)
     
-    async def list_pending_rotations(self, notify_days: int = 7) -> List[SecretExpiration]:
+    async def list_pending_rotations(self) -> List[SecretExpiration]:
         """List secrets that need rotation notification.
         
-        Args:
-            notify_days: Days before expiration to trigger notification
-            
         Returns:
             List of SecretExpiration records needing attention
         """
         now = datetime.now(timezone.utc)
-        
+
+        # The per-row lead time cannot be represented by a single fixed cutoff.
+        # Fetch the bounded range allowed by the schema, then apply each record's
+        # policy and lead time without consulting legacy notification metadata.
         result = await self.db.execute(
             select(SecretExpiration).where(
                 and_(
-                    SecretExpiration.expires_at <= now + timedelta(days=notify_days),
                     SecretExpiration.rotated_at.is_(None),
-                    or_(
-                        SecretExpiration.last_notified_at.is_(None),
-                        SecretExpiration.last_notified_at < now - timedelta(hours=24)
-                    )
+                    SecretExpiration.expires_at <= now + timedelta(days=365),
                 )
             )
         )
-        
-        return list(result.scalars().all())
+        candidates = list(result.scalars().all())
+        pending = []
+        for expiration in candidates:
+            if expiration.rotation_policy == "notify":
+                lead_time = expiration.notify_days_before or 0
+                if expiration.expires_at <= now + timedelta(days=lead_time):
+                    pending.append(expiration)
+            elif expiration.rotation_policy in {"auto", "manual"}:
+                if expiration.expires_at <= now:
+                    pending.append(expiration)
+        return pending
     
-    async def mark_notified(self, expiration_id: UUID) -> None:
+    async def mark_notified(self, expiration_id: UUID, *, commit: bool = True) -> None:
         """Mark an expiration record as notified."""
         result = await self.db.execute(
             select(SecretExpiration).where(SecretExpiration.id == expiration_id)
@@ -178,7 +193,8 @@ class RotationService:
         
         if expiration:
             expiration.last_notified_at = datetime.now(timezone.utc)
-            await self.db.commit()
+            if commit:
+                await self.db.commit()
     
     async def rotate_secret(
         self,

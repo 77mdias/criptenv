@@ -1,5 +1,7 @@
 # HELL TDD Plan — M3.5.6 → M3.6
 
+> **Historical/superseded plan snapshot:** This plan reflects an earlier execution state and is not the current implementation status. Consult `docs/project/current-state.md` and `docs/tasks/current-task.md` for current verified status and remaining validation blockers.
+
 ## "Alta Coesão. Baixo Acoplamento. Sem piedade."
 
 ---

@@ -13,6 +13,11 @@ from app.models.member import ProjectMember, ProjectInvite, CIToken, CISession
 from app.models.audit import AuditLog
 from app.models.api_key import APIKey
 from app.models.contribution import Contribution
+from app.models.alert_delivery import AlertDelivery
+from app.models.oauth_account import OAuthAccount
+from app.models.notification import Notification
+from app.models.secret_expiration import SecretExpiration, SecretRotation
+from app.models.integration import Integration
 
 __all__ = [
     "User",
@@ -30,5 +35,11 @@ __all__ = [
     "CISession",
     "AuditLog",
     "APIKey",
-    "Contribution"
+    "Contribution",
+    "AlertDelivery",
+    "OAuthAccount",
+    "Notification",
+    "SecretExpiration",
+    "SecretRotation",
+    "Integration",
 ]

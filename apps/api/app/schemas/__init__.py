@@ -7,3 +7,4 @@ from app.schemas.audit import *
 from app.schemas.api_key import *
 from app.schemas.contribution import *
 from app.schemas.error import *
+from app.schemas.alert_settings import *

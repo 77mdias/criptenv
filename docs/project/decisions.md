@@ -4,6 +4,30 @@ A record of significant architectural and technical decisions.
 
 ---
 
+## DEC-058 — Project Alert Channel Delivery Manager
+
+**Date:** 2026-09-19
+**Status:** Accepted; implementation/documentation verified locally; release validation incomplete
+**Context:** Delivery persistence now needs channel-specific fan-out without weakening the zero-knowledge boundary or duplicating notifications during retries.
+
+**Decision:** Resolve the project owner plus accepted owner/admin members once per user, apply `email_verified` only to email recipients, and use the canonical `AlertPayload` for all channel payloads. In-app deliveries create `Notification` rows with the delivery ID in the same transaction; email uses the synchronous Resend adapter through `asyncio.to_thread`; webhook sends use the existing pinned/sanitized transport with one provider attempt per delivery claim and the delivery ID as the stable idempotency key.
+
+**Consequences:** Developers/viewers are excluded from expiration alerts. Missing or disabled Resend configuration is a failed delivery rather than a production success. External channels remain at-least-once across crashes, while delivery errors retain only sanitized categories. Browser E2E remains environment-blocked when the Resend fixture uses an `example.com` recipient.
+
+---
+
+## DEC-057 — Project Alert Settings and Delivery Boundary
+
+**Date:** 2026-09-18
+**Status:** ✅ Accepted; implementation verified locally
+**Context:** Expiration policies existed per secret, but project owners/admins had no way to configure notification channels. The existing scheduler was webhook-only and did not provide safe persistence, owner/admin fan-out or channel-specific idempotency.
+
+**Decision:** Store non-secret alert preferences under `projects.settings.alerts`, encrypt the webhook URL with the existing integration-config envelope, expose dedicated owner/admin alert-settings endpoints, and use a separate delivery table for retry/idempotency state. The eventual feature targets owners/admins through in-app, verified-email and webhook channels; it never receives or emits secret plaintext/ciphertext.
+
+**Consequences:** General project responses must omit alert settings. Webhook URLs require DNS/IP validation and connection pinning. External delivery is at-least-once across crash recovery; in-app delivery is transactionally idempotent. Per-secret `notify_days_before` remains authoritative; the project default applies only when a new expiration omits that field. Browser E2E and production-provider paths remain environment-dependent.
+
+---
+
 ## DEC-056 — Source of Truth for System and Deployment Documentation
 
 **Date:** 2026-09-18
@@ -779,7 +803,7 @@ Browser-based CLI login creates a short-lived `state` during `/api/auth/cli/init
 
 ## Pending Decisions
 
-### DEC-011 — API Key vs CI Token Separation
+### DEC-059 — API Key vs CI Token Separation
 
 **Status:** Under Review
 **Context:**

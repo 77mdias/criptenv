@@ -152,11 +152,16 @@ async def set_expiration(
         )
     else:
         # Override secret_key from path (user provides in body but we use path)
+        create_values = {
+            "secret_key": secret_key,
+            "expires_at": payload.expires_at,
+            "rotation_policy": payload.rotation_policy,
+        }
+        # Preserve omission so the service can snapshot the current project default.
+        if "notify_days_before" in payload.model_fields_set:
+            create_values["notify_days_before"] = payload.notify_days_before
         create_payload = ExpirationCreate(
-            secret_key=secret_key,
-            expires_at=payload.expires_at,
-            rotation_policy=payload.rotation_policy,
-            notify_days_before=payload.notify_days_before
+            **create_values
         )
         expiration = await rotation_service.create_expiration(
             project_id, environment_id, create_payload

@@ -57,9 +57,9 @@ class RailwayProvider(IntegrationProvider):
 
 ---
 
-### M3.5: Secret Alerts & Rotation — Web UI Polish
+### M3.5: Secret Alerts & Rotation — E2E and Remaining Policies
 
-**Status:** 🟡 Mostly Complete (API + CLI ✅, Web partial)
+**Status:** 🟡 Mostly Complete (API, scheduler and web settings ✅; E2E/provider verification pending)
 
 #### What Exists
 
@@ -76,22 +76,25 @@ class RailwayProvider(IntegrationProvider):
 | CLI `rotation list` command | ✅ | `apps/cli/src/criptenv/commands/secrets.py` |
 | `ExpirationBadge` component | ✅ | `apps/web/src/components/shared/expiration-badge.tsx` |
 | Secret row badge integration | ✅ | `apps/web/src/app/(dashboard)/projects/[id]/secrets/page.tsx` |
+| Project alert settings API | ✅ | `apps/api/app/routers/alert_settings.py` |
+| Alert delivery persistence and scheduler fan-out | ✅ | `apps/api/app/models/alert_delivery.py`, `apps/api/app/jobs/expiration_check.py` |
+| Project alert settings card | ✅ locally | `apps/web/src/components/shared/project-alert-settings.tsx` |
 
 #### What's Missing
 
 | Component | Priority | Status |
 |-----------|----------|--------|
-| Web: Alert configuration page | P1 | ❌ Not started |
 | Web: Rotation modal | P1 | ⚠️ Partial |
-| Webhook: Email notifications | P2 | ❌ Not started |
 | Webhook: Slack integration | P2 | ❌ Not started |
 | Rotation: Auto-rotation policy | P1 | ❌ Not started |
+| Browser E2E alert flow | P1 | ⚠️ Blocked by Resend `example.com` fixture |
+| Production Resend/webhook delivery | P1 | ⚠️ Requires provider and allowlist validation |
 
 #### Next Steps
 
-1. Create alert configuration UI in project settings
-2. Add rotation modal to web dashboard
-3. Implement auto-rotation policy (future milestone)
+1. Replace the Cypress fixture recipient or run E2E with Resend disabled/mockado, then repeat alert viewports.
+2. Add rotation modal to web dashboard.
+3. Implement auto-rotation policy (future milestone).
 
 ---
 
@@ -130,6 +133,7 @@ class RailwayProvider(IntegrationProvider):
 - Integration configuration encryption is implemented and covered by tests.
 - Project RBAC, invite notification cleanup, mobile notifications and bulk secret actions are implemented.
 - Cloudflare R2 avatar storage is implemented; Supabase Storage is the fallback backend.
+- Project alert settings, delivery persistence, scheduler fan-out and the web settings card are implemented and locally verified; Cypress remains blocked by the Resend fixture.
 
 ## Phase 2 Security Review — Resolved ✅
 
@@ -157,12 +161,12 @@ class RailwayProvider(IntegrationProvider):
 
 1. **High Priority**
    - RailwayProvider implementation (M3.2 closure)
-   - Web alert configuration UI (M3.5 closure)
+    - Browser E2E/provider verification for project alerts (M3.5 closure)
 
 2. **Medium Priority**
    - GitHub Action publishing to Marketplace
    - Web rotation modal completion
-   - Email webhook notifications
+    - Production email/webhook provider validation
 
 3. **Lower Priority**
    - Slack webhook integration
@@ -171,6 +175,6 @@ class RailwayProvider(IntegrationProvider):
 
 ---
 
-**Document Version**: 1.3
-**Last Updated**: 2026-09-18
-**Status**: Active Development — Railway provider, web alert configuration, Marketplace publication and VPS operations remain.
+**Document Version**: 1.4
+**Last Updated**: 2026-09-19
+**Status**: Active Development — Railway provider, project-alert E2E/provider verification, Marketplace publication and VPS operations remain.

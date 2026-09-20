@@ -10,6 +10,7 @@ import { PermissionDialog } from "@/components/shared/permission-dialog";
 import { environmentsApi, peekCached, projectsApi, vaultApi } from "@/lib/api";
 import { CITokensPanel } from "@/components/shared/ci-tokens-panel";
 import { ApiKeysPanel } from "@/components/shared/api-keys-panel";
+import { ProjectAlertSettings } from "@/components/shared/project-alert-settings";
 import { canManageProject } from "@/lib/project-permissions";
 import {
   buildProjectVaultConfig,
@@ -295,6 +296,9 @@ export default function SettingsPage() {
 
       {/* API Keys */}
       <ApiKeysPanel projectId={projectId} />
+
+      {/* Alert Settings */}
+      <ProjectAlertSettings projectId={projectId} />
 
       {error && (
         <Card className="p-4 border-red-500/50">

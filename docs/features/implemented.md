@@ -299,7 +299,14 @@ All completed features organized by phase.
 **Files:** `apps/web/src/components/shared/expiration-badge.tsx`, `apps/web/src/app/(dashboard)/projects/[id]/secrets/page.tsx`  
 **Tests:** Manual verification
 
-### Notifications
+## Notifications
+
+## Project Expiration Alerts
+
+**Status:** ✅ Implemented locally; browser E2E provider-blocked
+**Description:** Owner/admin project settings for in-app, verified-email and webhook expiration alerts. Settings preserve unrelated project metadata, webhook credentials are encrypted at rest, deliveries use idempotent records with fencing/retry state, and the scheduler uses each secret's own lead time. A project default applies only when a new expiration omits `notify_days_before`.
+**Files:** `apps/api/app/routers/alert_settings.py`, `apps/api/app/services/alert_delivery_service.py`, `apps/api/app/jobs/expiration_check.py`, `apps/web/src/components/shared/project-alert-settings.tsx`
+**Tests:** API alert settings/delivery/scheduler tests and `project-alert-settings.test.tsx`; Cypress setup is blocked by the Resend `example.com` fixture rejection.
 
 ## WebhookService
 
@@ -483,10 +490,11 @@ All completed features organized by phase.
 | Cloud integrations (Railway) | 3 | ⚠️ Pending |
 | Integration config encryption | 3 | ✅ |
 | Pix contribution thank-you email | 3 | ✅ |
-| Web alert configuration UI | 3 | ⚠️ Partial |
-| Email/Slack notifications | 3 | ❌ |
+| Web alert configuration UI | 3 | ✅ (local verification; E2E provider-blocked) |
+| Project email expiration notifications | 3 | ✅ (local verification; provider configuration required) |
+| Slack notifications | 3 | ❌ |
 
 ---
 
-**Document Version**: 1.3
-**Last Updated**: 2026-09-18
+**Document Version**: 1.4
+**Last Updated**: 2026-09-19

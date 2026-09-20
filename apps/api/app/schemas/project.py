@@ -50,6 +50,7 @@ class ProjectResponse(BaseModel):
     def from_project(cls, project, current_user_role: Optional[str] = None):
         settings = dict(getattr(project, "settings", None) or {})
         vault_settings = settings.pop("vault", None)
+        settings.pop("alerts", None)
         vault_config = None
 
         if isinstance(vault_settings, dict):

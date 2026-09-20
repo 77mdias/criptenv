@@ -1,5 +1,7 @@
 # HELL TDD Plan — M3.5 Continuation (M3.5.3 → M3.5.5)
 
+> **Historical/superseded plan snapshot:** This plan records an earlier implementation sequence. Consult `docs/project/current-state.md` and `docs/tasks/current-task.md` instead of using its pending statuses as current claims.
+
 ## "Alta Coesão. Baixo Acoplamento. Sem piedade."
 
 ---

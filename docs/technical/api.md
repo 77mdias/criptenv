@@ -91,8 +91,7 @@ CI tokens are validated differently from session tokens and have their own permi
 ```json
 {
   "id": "uuid",
-  "email": "user@example.com",
-  "token": "session_token_here"  // Note: Should be removed per CR-01
+  "email": "user@example.com"
 }
 ```
 
@@ -352,6 +351,62 @@ The versioned API also exposes authentication/OAuth, API keys, CI login/secrets,
 
 ---
 
+### Project Alert Settings Router (Phase 3)
+
+**File:** `apps/api/app/routers/alert_settings.py`
+
+These endpoints require a human session and the project `owner` or `admin` role.
+API keys and CI tokens cannot configure or test alert settings.
+
+| Method | Path | Description | Auth |
+|--------|------|-------------|------|
+| GET | `/api/v1/projects/{project_id}/alert-settings` | Read safe alert settings and webhook preview | Session + owner/admin |
+| PATCH | `/api/v1/projects/{project_id}/alert-settings` | Merge alert settings and optionally configure/remove webhook | Session + owner/admin |
+| POST | `/api/v1/projects/{project_id}/alert-settings/test-webhook` | Send a stored-configuration synthetic webhook event | Session + owner/admin |
+
+**Settings response:**
+```json
+{
+  "enabled": true,
+  "default_notify_days_before": 7,
+  "channels": { "in_app": true, "email": false, "webhook": false },
+  "webhook_configured": false,
+  "webhook_url_preview": null
+}
+```
+
+`PATCH` accepts optional `enabled`, `default_notify_days_before` (1-365), a complete
+`channels` object (`in_app`, `email`, `webhook`) and `webhook_url`. Omitted values are
+preserved; `webhook_url: null` explicitly removes the saved webhook. The complete URL
+is write-only, encrypted at rest with the integration-config envelope, and never
+returned in a project response, audit metadata, log or browser payload. Save and
+delivery time both validate the URL and reject unsafe/private targets outside
+development/tests.
+
+The channels are independent. In-app alerts go to the project owner and accepted
+owner/admin members. Email additionally requires `email_verified=true`; developers and
+viewers are excluded. Webhooks use the saved URL and the existing pinned, no-redirect
+transport. A test event uses `payload_version: 1` and `test: true`; scheduled events
+use the same canonical payload with `test: false`.
+
+**Delivery semantics:** `alert_deliveries` is the source of truth for unique
+`(expiration, event, channel, recipient)` work. Claims use a fencing token and a
+shared maximum of three attempts; failed work is retried with sanitized errors, while
+expired claims at the limit become terminal failures. In-app delivery is transactionally
+idempotent. Email and webhook delivery are at-least-once across process crashes and
+webhooks include a stable idempotency key. `last_notified_at` is compatibility metadata
+and does not suppress pending work.
+
+For a new secret expiration, omitted `notify_days_before` resolves from the project
+default (7 by default). An explicit per-secret value always wins, and changing the
+project default does not rewrite existing expiration records. Alert payloads contain
+only project/environment identifiers and names, secret key identifier, expiration
+metadata, `payload_version`, `test`, and an action link. They never contain secret
+plaintext, ciphertext, IV, authentication tag, vault password, webhook URL or API
+credentials.
+
+---
+
 ## Error Responses
 
 ### 400 Bad Request
@@ -411,5 +466,5 @@ When `DEBUG=true`, interactive API documentation is available:
 
 ---
 
-**Document Version**: 1.1
-**Last Updated**: 2026-09-18
+**Document Version**: 1.2
+**Last Updated**: 2026-09-19

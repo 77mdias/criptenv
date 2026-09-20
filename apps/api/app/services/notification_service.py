@@ -20,6 +20,7 @@ class NotificationService:
         message: str,
         action_url: Optional[str] = None,
         meta: Optional[dict] = None,
+        delivery_id: Optional[UUID] = None,
     ) -> Notification:
         notification = Notification(
             user_id=user_id,
@@ -28,6 +29,7 @@ class NotificationService:
             message=message,
             action_url=action_url,
             meta=meta or {},
+            delivery_id=delivery_id,
         )
         self.db.add(notification)
         await self.db.flush()

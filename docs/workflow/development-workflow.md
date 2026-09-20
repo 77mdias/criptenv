@@ -202,9 +202,9 @@ python -m pytest tests/test_crypto.py -v
 
 ### Running Migrations
 
-> Note: Current project uses manual migrations (no Alembic configured).
+> Alembic is configured for the API migrations. Apply migrations only against the intended database, and use the repository Alembic commands rather than assuming schema creation from application startup.
 
-For now, database schema changes are applied manually or through SQL scripts in `apps/api/migrations/` if created.
+Migration files live in `apps/api/migrations/versions/`. Use `make db-history` to inspect revisions, `make db-current` to inspect the target database, and `make db-upgrade` to apply `upgrade head` after confirming the database target.
 
 ### Resetting Local Database
 

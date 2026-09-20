@@ -5,12 +5,26 @@ TDD RED Phase: Tests for the background job that checks expiring secrets.
 
 import pytest
 from datetime import datetime, timezone, timedelta
-from uuid import uuid4
+from uuid import UUID, uuid4
 from unittest.mock import patch, AsyncMock, MagicMock
 
 import sys
 from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
+
+
+def configure_delivery_service(checker, *, claims=None):
+    delivery = MagicMock(
+        id=uuid4(),
+        claim_token="claim-token",
+        idempotency_key="delivery-key",
+    )
+    service = MagicMock()
+    service.create_delivery = AsyncMock(return_value=delivery)
+    service.claim_delivery = AsyncMock(side_effect=claims or [delivery])
+    service.finalize_delivery = AsyncMock(return_value=delivery)
+    checker.delivery_service = service
+    return service, delivery
 
 
 class TestExpirationCheckerImports:
@@ -51,6 +65,14 @@ class TestExpirationCheckerInstantiation:
         
         checker = ExpirationChecker(mock_db)
         assert checker.rotation_service is not None
+
+    def test_checker_does_not_create_legacy_webhook_service(self, mock_db):
+        from app.jobs.expiration_check import ExpirationChecker
+
+        with patch("app.jobs.expiration_check.WebhookService") as legacy:
+            ExpirationChecker(mock_db)
+
+        legacy.assert_not_called()
 
 
 class TestExpirationCheckerCheck:
@@ -103,6 +125,7 @@ class TestExpirationCheckerCheck:
         mock_webhook.send = AsyncMock(return_value=MagicMock(success=True, attempts=1))
         mock_webhook.build_payload = MagicMock(return_value={"event": "secret.expiring"})
         checker.webhook_service = mock_webhook
+        configure_delivery_service(checker)
         
         # Mock _get_webhook_url
         checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
@@ -113,8 +136,8 @@ class TestExpirationCheckerCheck:
         assert len(results) >= 0
 
     @pytest.mark.asyncio
-    async def test_check_marks_notified_on_success(self, mock_db, mock_expiring_secret):
-        """check_expirations should mark_notified after successful notification."""
+    async def test_check_does_not_use_legacy_mark_notified_on_success(self, mock_db, mock_expiring_secret):
+        """Persisted alert deliveries, not legacy metadata, own success state."""
         from app.jobs.expiration_check import ExpirationChecker
         
         checker = ExpirationChecker(mock_db)
@@ -128,13 +151,13 @@ class TestExpirationCheckerCheck:
         mock_webhook.send = AsyncMock(return_value=MagicMock(success=True, attempts=1))
         mock_webhook.build_payload = MagicMock(return_value={"event": "secret.expiring"})
         checker.webhook_service = mock_webhook
+        configure_delivery_service(checker)
         
         checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
         
         await checker.check_expirations()
         
-        # mark_notified should be called
-        mock_rotation_service.mark_notified.assert_called_once()
+        mock_rotation_service.mark_notified.assert_not_called()
 
     @pytest.mark.asyncio
     async def test_check_does_not_mark_on_failure(self, mock_db, mock_expiring_secret):
@@ -152,6 +175,7 @@ class TestExpirationCheckerCheck:
         mock_webhook.send = AsyncMock(return_value=MagicMock(success=False, attempts=3, error="Failed"))
         mock_webhook.build_payload = MagicMock(return_value={"event": "secret.expiring"})
         checker.webhook_service = mock_webhook
+        configure_delivery_service(checker)
         
         checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
         
@@ -175,6 +199,70 @@ class TestExpirationCheckerCheck:
         
         assert isinstance(result, list)
         assert len(result) == 0
+
+    @pytest.mark.asyncio
+    async def test_disabled_project_creates_no_rows_and_does_not_mark(self, mock_db, mock_expiring_secret):
+        from app.jobs.expiration_check import ExpirationChecker
+
+        checker = ExpirationChecker(mock_db)
+        checker.rotation_service.list_pending_rotations = AsyncMock(return_value=[mock_expiring_secret])
+        checker.rotation_service.mark_notified = AsyncMock()
+        disabled_project = MagicMock(settings={"alerts": {"enabled": False}})
+        disabled_project.name = "Project"
+        checker._get_project = AsyncMock(return_value=disabled_project)
+        checker.delivery_service.create_delivery = AsyncMock()
+
+        result = await checker.check_expirations()
+
+        assert result == []
+        checker.delivery_service.create_delivery.assert_not_awaited()
+        checker.rotation_service.mark_notified.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_success_requires_all_intended_channels(self, mock_db, mock_expiring_secret):
+        from app.jobs.expiration_check import ExpirationChecker
+        from app.services.webhook_service import DeliveryResult
+
+        checker = ExpirationChecker(mock_db)
+        checker.rotation_service.list_pending_rotations = AsyncMock(return_value=[mock_expiring_secret])
+        checker.rotation_service.mark_notified = AsyncMock()
+        configured_project = MagicMock(
+            id=mock_expiring_secret.project_id,
+            settings={"alerts": {"enabled": True, "channels": {"in_app": True, "email": True, "webhook": False}}},
+        )
+        configured_project.name = "Project"
+        checker._get_project = AsyncMock(return_value=configured_project)
+        checker.delivery_service.resolve_recipients = AsyncMock(side_effect=[
+            [MagicMock(id=uuid4())],
+            [MagicMock(id=uuid4(), email="owner@example.test")],
+        ])
+        checker.delivery_service.create_delivery = AsyncMock(side_effect=lambda *args, **kwargs: MagicMock(
+            id=uuid4(), status="pending"
+        ))
+        checker.delivery_service.deliver_channels = AsyncMock(return_value=[
+            DeliveryResult(success=True, attempts=1),
+            DeliveryResult(success=False, attempts=1, error="delivery_error"),
+        ])
+
+        class Result:
+            def __init__(self, rows):
+                self.rows = rows
+
+            def scalar_one_or_none(self):
+                return self.rows[0] if self.rows else None
+
+            def scalars(self):
+                return self
+
+            def all(self):
+                return self.rows
+
+        mock_db.execute.return_value = Result([])
+
+        result = await checker.check_expirations()
+
+        assert result[0].success is False
+        checker.rotation_service.mark_notified.assert_not_awaited()
 
     @pytest.mark.asyncio
     async def test_check_handles_exception(self, mock_db):
@@ -208,6 +296,7 @@ class TestExpirationCheckerCheck:
         mock_webhook.send = AsyncMock(side_effect=Exception("Connection refused"))
         mock_webhook.build_payload = MagicMock(return_value={"event": "secret.expiring"})
         checker.webhook_service = mock_webhook
+        configure_delivery_service(checker)
         
         checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
         
@@ -216,90 +305,30 @@ class TestExpirationCheckerCheck:
         
         assert isinstance(result, list)
 
-
-class TestExpirationCheckerNotify:
-    """Test ExpirationChecker._notify_expiration method."""
-
     @pytest.mark.asyncio
-    async def test_notify_builds_payload(self, mock_db, mock_expiring_secret):
-        """_notify_expiration should build payload using webhook service."""
+    async def test_check_sanitizes_webhook_exception_in_result_and_logs(
+        self, mock_db, mock_expiring_secret, caplog
+    ):
         from app.jobs.expiration_check import ExpirationChecker
-        
-        checker = ExpirationChecker(mock_db)
-        
-        mock_webhook = MagicMock()
-        mock_webhook.build_payload = MagicMock(return_value={"event": "secret.expiring"})
-        mock_webhook.send = AsyncMock(return_value=MagicMock(success=True, attempts=1))
-        checker.webhook_service = mock_webhook
-        
-        checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
-        
-        await checker._notify_expiration(mock_expiring_secret)
-        
-        mock_webhook.build_payload.assert_called_once()
-        # Check payload structure
-        call_args = mock_webhook.build_payload.call_args
-        assert 'event' in call_args.kwargs or call_args[1].get('event')
 
-    @pytest.mark.asyncio
-    async def test_notify_does_not_include_secret_value(self, mock_db, mock_expiring_secret):
-        """_notify_expiration should NOT include secret value in payload."""
-        from app.jobs.expiration_check import ExpirationChecker
-        
         checker = ExpirationChecker(mock_db)
-        
-        # Test that the service method accepts correct kwargs
-        # without sensitive fields
-        kwargs_used = {}
-        
-        def capture_build_payload(**kwargs):
-            kwargs_used.update(kwargs)
-            return {
-                "event": kwargs.get("event", "secret.expiring"),
-                "project_id": str(kwargs.get("project_id", "")),
-                "environment": str(kwargs.get("environment", "")),
-                "secret_key": kwargs.get("secret_key", ""),
-                "expires_at": str(kwargs.get("expires_at", "")),
-                "notify_days_before": kwargs.get("notify_days_before", 7),
-                "timestamp": "2026-05-01T10:00:00Z"
-            }
-        
+        mock_rotation_service = MagicMock()
+        mock_rotation_service.list_pending_rotations = AsyncMock(return_value=[mock_expiring_secret])
+        checker.rotation_service = mock_rotation_service
         mock_webhook = MagicMock()
-        mock_webhook.build_payload = MagicMock(side_effect=capture_build_payload)
-        mock_webhook.send = AsyncMock(return_value=MagicMock(success=True, attempts=1))
+        mock_webhook.send = AsyncMock(side_effect=RuntimeError(
+            "failed https://hooks.example.test/hook?token=topsecret response body=private"
+        ))
         checker.webhook_service = mock_webhook
-        
-        checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
-        
-        await checker._notify_expiration(mock_expiring_secret)
-        
-        # Verify build_payload was called
-        assert len(kwargs_used) > 0, "build_payload should have been called"
-        
-        # Verify secret_key is passed (the identifier, NOT the value)
-        assert "secret_key" in kwargs_used, "secret_key identifier should be passed"
-        
-        # Verify sensitive fields are NOT passed to build_payload
-        sensitive_fields = ["secret_value", "encrypted_value", "plaintext", "ciphertext"]
-        for field in sensitive_fields:
-            assert field not in kwargs_used, f"{field} should NOT be passed to build_payload"
+        configure_delivery_service(checker)
+        checker._get_webhook_url = AsyncMock(return_value="https://hooks.example.test/hook?token=topsecret")
 
-    @pytest.mark.asyncio
-    async def test_notify_returns_no_webhook_url_result(self, mock_db, mock_expiring_secret):
-        """_notify_expiration should return failure if no webhook URL configured."""
-        from app.jobs.expiration_check import ExpirationChecker
-        
-        checker = ExpirationChecker(mock_db)
-        
-        mock_webhook = MagicMock()
-        checker.webhook_service = mock_webhook
-        
-        checker._get_webhook_url = AsyncMock(return_value=None)
-        
-        result = await checker._notify_expiration(mock_expiring_secret)
-        
-        assert result.success is False
-        assert result.error == "No webhook URL configured"
+        results = await checker.check_expirations()
+
+        assert results == []
+        assert "topsecret" not in caplog.text
+        assert "hooks.example.test/hook" not in caplog.text
+        assert "private" not in caplog.text
 
 
 class TestExpirationCheckerGetWebhookUrl:
@@ -307,10 +336,11 @@ class TestExpirationCheckerGetWebhookUrl:
 
     @pytest.mark.asyncio
     async def test_get_webhook_url_returns_none(self, mock_db):
-        """_get_webhook_url should return None (placeholder implementation)."""
+        """_get_webhook_url returns None when the project is absent."""
         from app.jobs.expiration_check import ExpirationChecker
         
         checker = ExpirationChecker(mock_db)
+        mock_db.execute.return_value = MagicMock(scalar_one_or_none=MagicMock(return_value=None))
         
         url = await checker._get_webhook_url(uuid4())
         
@@ -346,6 +376,23 @@ class TestCreateSchedulerJob:
         await job()
         
         mock_rotation_service.list_pending_rotations.assert_called_once()
+
+    @pytest.mark.asyncio
+    async def test_scheduler_job_sanitizes_fallback_exception_logging(self, mock_db, caplog):
+        """Scheduler fallback logging must not expose webhook exception details."""
+        from app.jobs.expiration_check import ExpirationChecker, create_scheduler_job
+
+        checker = ExpirationChecker(mock_db)
+        checker.check_expirations = AsyncMock(side_effect=RuntimeError(
+            "failed https://hooks.example.test/hook?token=topsecret response body=private"
+        ))
+
+        await create_scheduler_job(checker)()
+
+        assert "topsecret" not in caplog.text
+        assert "hooks.example.test/hook" not in caplog.text
+        assert "private" not in caplog.text
+        assert "delivery_error" in caplog.text
 
     @pytest.mark.asyncio
     async def test_session_scoped_scheduler_job_opens_fresh_db_session(self):
@@ -391,67 +438,125 @@ class TestCreateSchedulerJob:
         assert [context.entered for context in contexts] == [1, 1]
         assert [context.exited for context in contexts] == [1, 1]
 
+    @pytest.mark.asyncio
+    async def test_session_scoped_scheduler_job_commits_successful_and_failed_delivery_state(self):
+        from app.jobs.expiration_check import create_session_scoped_scheduler_job
+        from app.services.webhook_service import DeliveryResult
 
-class TestExpirationCheckerEdgeCases:
-    """Edge case tests for ExpirationChecker."""
+        db = AsyncMock()
+        contexts = []
+
+        class SessionContext:
+            async def __aenter__(self):
+                contexts.append(self)
+                return db
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return False
+
+        class FakeChecker:
+            def __init__(self, session):
+                assert session is db
+
+            async def check_expirations(self):
+                return [DeliveryResult(False, 1, "delivery_error")]
+
+        await create_session_scoped_scheduler_job(
+            lambda: SessionContext(), checker_cls=FakeChecker
+        )()
+
+        db.commit.assert_awaited_once()
+        db.rollback.assert_not_awaited()
+        assert contexts
 
     @pytest.mark.asyncio
-    async def test_check_with_mixed_results(self, mock_db):
-        """check_expirations should handle mixed success/failure results."""
+    async def test_session_scoped_scheduler_job_rolls_back_unhandled_job_exception(self):
+        from app.jobs.expiration_check import create_session_scoped_scheduler_job
+
+        db = AsyncMock()
+
+        class SessionContext:
+            async def __aenter__(self):
+                return db
+
+            async def __aexit__(self, exc_type, exc, tb):
+                return False
+
+        class FailingChecker:
+            def __init__(self, session):
+                pass
+
+            async def check_expirations(self):
+                raise RuntimeError("database failure")
+
+        await create_session_scoped_scheduler_job(
+            lambda: SessionContext(), checker_cls=FailingChecker
+        )()
+
+        db.rollback.assert_awaited_once()
+        db.commit.assert_not_awaited()
+
+    @pytest.mark.asyncio
+    async def test_scheduler_dispatches_materialized_recipients_without_resolving_again(
+        self, mock_db, mock_expiring_secret
+    ):
         from app.jobs.expiration_check import ExpirationChecker
-        
+
         checker = ExpirationChecker(mock_db)
-        
-        # Create mock secrets
-        secret1 = MagicMock()
-        secret1.secret_key = "KEY1"
-        secret1.project_id = uuid4()
-        secret1.environment_id = uuid4()
-        secret1.expires_at = datetime.now(timezone.utc) + timedelta(days=5)
-        secret1.notify_days_before = 7
-        secret1.days_until_expiration = 5
-        secret1.is_expired = False
-        
-        secret2 = MagicMock()
-        secret2.secret_key = "KEY2"
-        secret2.project_id = uuid4()
-        secret2.environment_id = uuid4()
-        secret2.expires_at = datetime.now(timezone.utc) - timedelta(days=1)
-        secret2.notify_days_before = 7
-        secret2.days_until_expiration = -1
-        secret2.is_expired = True
-        
-        mock_rotation_service = MagicMock()
-        mock_rotation_service.list_pending_rotations = AsyncMock(return_value=[secret1, secret2])
-        mock_rotation_service.mark_notified = AsyncMock()
-        checker.rotation_service = mock_rotation_service
-        
-        mock_webhook = MagicMock()
-        # First succeeds, second fails
-        mock_webhook.send = AsyncMock(side_effect=[
-            MagicMock(success=True, attempts=1),
-            MagicMock(success=False, attempts=3, error="Failed")
-        ])
-        mock_webhook.build_payload = MagicMock(return_value={"event": "secret.expiring"})
-        checker.webhook_service = mock_webhook
-        
-        checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
-        
-        results = await checker.check_expirations()
-        
-        # Should have 2 results
-        assert len(results) == 2
-        # First should succeed, second should fail
-        assert results[0].success is True
-        assert results[1].success is False
+        project = MagicMock(
+            id=mock_expiring_secret.project_id,
+            settings={"alerts": {"enabled": True, "channels": {"in_app": True, "email": False, "webhook": False}}},
+        )
+        project.name = "Project"
+        user = MagicMock(id=uuid4())
+        delivery = MagicMock(id=uuid4(), status="pending")
+        checker._get_project = AsyncMock(return_value=project)
+        checker.delivery_service.resolve_recipients = AsyncMock(return_value=[user])
+        checker.delivery_service.create_delivery = AsyncMock(return_value=delivery)
+        checker.delivery_service.deliver_channels = AsyncMock(return_value=[])
+        checker.rotation_service.mark_notified = AsyncMock()
+
+        class Result:
+            def scalar_one_or_none(self):
+                return None
+
+            def scalars(self):
+                return self
+
+            def all(self):
+                return [delivery]
+
+        mock_db.execute.return_value = Result()
+
+        await checker._process_expiration(mock_expiring_secret)
+
+        checker.delivery_service.deliver_channels.assert_awaited_once()
+        args = checker.delivery_service.deliver_channels.await_args.kwargs
+        assert args["materialized_deliveries"] == [delivery]
+        assert args["recipient_users"] == {str(user.id): user}
+        from app.config import settings
+        assert args["payload"]["action_url"].startswith(settings.FRONTEND_URL.rstrip("/"))
+        checker.delivery_service.resolve_recipients.assert_awaited_once_with(
+            mock_expiring_secret.project_id
+        )
 
 
 # Fixtures
 @pytest.fixture
 def mock_db():
     """Mock database session."""
+    class EmptyResult:
+        def scalar_one_or_none(self):
+            return None
+
+        def scalars(self):
+            return self
+
+        def all(self):
+            return []
+
     session = AsyncMock()
-    session.execute = AsyncMock()
+    session.execute = AsyncMock(return_value=EmptyResult())
     session.commit = AsyncMock()
     session.refresh = AsyncMock()
     return session

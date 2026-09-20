@@ -26,7 +26,8 @@ from app.routers import (
     cli_auth_router,
     rotation_router,
     expiring_router,
-    notifications_router
+    notifications_router,
+    alert_settings_router
 )
 from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
@@ -254,6 +255,7 @@ app.include_router(cli_auth_router)
 app.include_router(rotation_router)
 app.include_router(expiring_router)
 app.include_router(notifications_router)
+app.include_router(alert_settings_router)
 
 
 # Custom OpenAPI schema with dual security schemes

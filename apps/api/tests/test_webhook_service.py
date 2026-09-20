@@ -123,6 +123,148 @@ class TestWebhookChannel:
             assert result.attempts == 1
             assert result.status_code == 500
 
+    @pytest.mark.asyncio
+    async def test_webhook_channel_uses_validated_ip_and_original_host(self):
+        from app.services.webhook_service import ValidatedWebhookTarget, WebhookChannel
+
+        channel = WebhookChannel()
+        target = ValidatedWebhookTarget(
+            original_url="https://hooks.example.test/hook?x=1",
+            request_url="https://93.184.216.34/hook?x=1",
+            host_header="hooks.example.test",
+            sni_hostname="hooks.example.test",
+            resolved_ip="93.184.216.34",
+        )
+
+        with patch("app.services.webhook_service.resolve_webhook_target", new_callable=AsyncMock) as resolve:
+            resolve.return_value = target
+            with patch("httpx.AsyncClient") as mock_client:
+                mock_response = MagicMock(status_code=204)
+                mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                    return_value=mock_response
+                )
+
+                result = await channel.send("https://hooks.example.test/hook?x=1", {"test": True})
+
+        assert result.success is True
+        request = mock_client.return_value.__aenter__.return_value.post.await_args
+        assert request.args[0] == "https://93.184.216.34/hook?x=1"
+        assert request.kwargs["headers"] == {"Host": "hooks.example.test"}
+        assert request.kwargs["extensions"] == {"sni_hostname": "hooks.example.test"}
+        resolve.assert_awaited_once()
+
+    @pytest.mark.asyncio
+    async def test_webhook_channel_propagates_idempotency_key_with_pinned_transport(self):
+        from app.services.webhook_service import ValidatedWebhookTarget, WebhookChannel
+
+        target = ValidatedWebhookTarget(
+            original_url="https://hooks.example.test/hook",
+            request_url="https://93.184.216.34/hook",
+            host_header="hooks.example.test",
+            sni_hostname="hooks.example.test",
+            resolved_ip="93.184.216.34",
+        )
+        with patch("app.services.webhook_service.resolve_webhook_target", new_callable=AsyncMock) as resolve:
+            resolve.return_value = target
+            with patch("httpx.AsyncClient") as mock_client:
+                mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                    return_value=MagicMock(status_code=204)
+                )
+
+                await WebhookChannel().send(
+                    target.original_url,
+                    {"test": True},
+                    idempotency_key="delivery-123",
+                )
+
+        request = mock_client.return_value.__aenter__.return_value.post.await_args
+        assert request.kwargs["headers"] == {
+            "Host": "hooks.example.test",
+            "Idempotency-Key": "delivery-123",
+        }
+        assert request.kwargs["extensions"] == {"sni_hostname": "hooks.example.test"}
+
+    @pytest.mark.asyncio
+    async def test_webhook_channel_ignores_proxy_environment_for_pinned_target(self, monkeypatch):
+        from app.services.webhook_service import ValidatedWebhookTarget, WebhookChannel
+
+        monkeypatch.setenv("HTTPS_PROXY", "http://proxy.example.test:8080")
+        monkeypatch.setenv("HTTP_PROXY", "http://proxy.example.test:8080")
+        target = ValidatedWebhookTarget(
+            original_url="https://hooks.example.test/hook",
+            request_url="https://93.184.216.34/hook",
+            host_header="hooks.example.test",
+            sni_hostname="hooks.example.test",
+            resolved_ip="93.184.216.34",
+        )
+
+        with patch("app.services.webhook_service.resolve_webhook_target", new_callable=AsyncMock) as resolve:
+            resolve.return_value = target
+            with patch("httpx.AsyncClient") as mock_client:
+                mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                    return_value=MagicMock(status_code=204)
+                )
+
+                result = await WebhookChannel().send(target.original_url, {"test": True})
+
+        assert result.success is True
+        assert mock_client.call_args.kwargs["trust_env"] is False
+        request = mock_client.return_value.__aenter__.return_value.post.await_args
+        assert request.args[0] == "https://93.184.216.34/hook"
+        assert request.kwargs["headers"] == {"Host": "hooks.example.test"}
+
+    @pytest.mark.asyncio
+    async def test_webhook_channel_revalidates_target_on_each_retry(self):
+        from app.services.webhook_service import ValidatedWebhookTarget, WebhookChannel, WebhookService
+
+        target = ValidatedWebhookTarget(
+            original_url="https://hooks.example.test/hook",
+            request_url="https://93.184.216.34/hook",
+            host_header="hooks.example.test",
+            sni_hostname="hooks.example.test",
+            resolved_ip="93.184.216.34",
+        )
+        channel = WebhookChannel()
+        with patch("app.services.webhook_service.resolve_webhook_target", new_callable=AsyncMock) as resolve:
+            resolve.return_value = target
+            with patch("httpx.AsyncClient") as mock_client:
+                mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                    side_effect=[MagicMock(status_code=500), MagicMock(status_code=204)]
+                )
+                service = WebhookService(max_retries=2, base_delay=0, channel=channel)
+                result = await service.send("https://hooks.example.test/hook", "alert.test", {"test": True})
+
+        assert result.success is True
+        assert resolve.await_count == 2
+
+    @pytest.mark.asyncio
+    async def test_webhook_channel_sanitizes_exception_text(self):
+        from app.services.webhook_service import ValidatedWebhookTarget, WebhookChannel
+
+        target = ValidatedWebhookTarget(
+            original_url="https://hooks.example.test/hook?token=topsecret",
+            request_url="https://93.184.216.34/hook?token=topsecret",
+            host_header="hooks.example.test",
+            sni_hostname="hooks.example.test",
+            resolved_ip="93.184.216.34",
+        )
+        channel = WebhookChannel()
+        with patch("app.services.webhook_service.resolve_webhook_target", new_callable=AsyncMock) as resolve:
+            resolve.return_value = target
+            with patch("httpx.AsyncClient") as mock_client:
+                mock_client.return_value.__aenter__.return_value.post = AsyncMock(
+                    side_effect=RuntimeError(
+                        "failed https://hooks.example.test/hook?token=topsecret response body=private"
+                    )
+                )
+
+                result = await channel.send(target.original_url, {"test": True})
+
+        assert result.error == "delivery_error"
+        assert "topsecret" not in str(result)
+        assert "https://hooks.example.test" not in str(result)
+        assert "private" not in str(result)
+
 
 class TestWebhookService:
     """Test WebhookService methods."""
@@ -328,6 +470,30 @@ class TestWebhookService:
         assert result.success is False
         assert result.attempts == 2
         assert result.error is not None
+
+    @pytest.mark.asyncio
+    async def test_webhook_service_sanitizes_channel_error(self):
+        from app.services.webhook_service import DeliveryResult, WebhookService
+
+        service = WebhookService(max_retries=1)
+        channel = MagicMock()
+        channel.send = AsyncMock(return_value=DeliveryResult(
+            success=False,
+            attempts=1,
+            error="request failed https://hooks.example.test/hook?token=topsecret",
+            status_code=502,
+        ))
+        service.channel = channel
+
+        result = await service.send(
+            webhook_url="https://hooks.example.test/hook?token=topsecret",
+            event="alert.test",
+            payload={"test": True},
+        )
+
+        assert result.error == "HTTP 502"
+        assert "topsecret" not in str(result)
+        assert "hooks.example.test" not in str(result)
 
 
 class TestWebhookChannelTimeout:

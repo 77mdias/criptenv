@@ -14,6 +14,7 @@ from app.routers.webhooks import router as webhooks_router
 from app.routers.cli_auth import router as cli_auth_router
 from app.routers.rotation import router as rotation_router, expiring_router
 from app.routers.notifications import router as notifications_router
+from app.routers.alert_settings import router as alert_settings_router
 
 __all__ = [
     "auth_router",
@@ -32,5 +33,6 @@ __all__ = [
     "cli_auth_router",
     "rotation_router",
     "expiring_router",
-    "notifications_router"
+    "notifications_router",
+    "alert_settings_router"
 ]
