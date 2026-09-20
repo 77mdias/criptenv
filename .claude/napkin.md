@@ -9,6 +9,8 @@
 ## Execution & Validation (Highest Priority)
 1. **[2026-09-18] Documentation claims must be checked against source and commands**
    Do instead: verify routes, scripts, dependency manifests, deploy files, and test output before updating status.
+2. **[2026-09-19] Cypress signup fixtures must not use example.com with a live Resend key**
+   Do instead: use an accepted Resend test recipient or disable/mock Resend in the isolated E2E environment before relying on browser results.
 
 ## Shell & Command Reliability
 1. **[2026-09-18] Prefer repository Make targets for validation**
