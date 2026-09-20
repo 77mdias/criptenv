@@ -129,13 +129,24 @@ async def test_v1_ready_endpoint(transport):
     assert "status" in data
 
 
+def _iter_route_paths(routes):
+    """Yield effective paths across FastAPI versions.
+
+    FastAPI >= 0.137 mounts included routers lazily as _IncludedRouter
+    wrappers instead of flattening routes into app.routes, so we must
+    recurse through effective_candidates() to see their paths. On older
+    FastAPI versions routes expose .path directly.
+    """
+    for route in routes:
+        if hasattr(route, "effective_candidates"):
+            yield from _iter_route_paths(route.effective_candidates())
+        else:
+            yield getattr(route, "path", "")
+
+
 def test_route_manifest_has_no_nested_v1_prefixes():
     """Versioned routers must not be re-mounted under /api/v1/api/v1."""
-    paths = [
-        getattr(route, "path", "")
-        for route in app.routes
-        if getattr(route, "path", "").startswith("/api/")
-    ]
+    paths = [path for path in _iter_route_paths(app.routes) if path.startswith("/api/")]
 
     assert not any(path.startswith("/api/v1/api/v1") for path in paths)
     assert "/api/v1/projects" in paths
