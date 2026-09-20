@@ -8,6 +8,7 @@ __pycache__/
 .env
 .env.test
 .venv
+.venv*
 venv/
 ENV/
 
