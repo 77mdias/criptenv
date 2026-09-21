@@ -274,8 +274,10 @@ async def get_integration(
             detail="Project not found"
         )
     
-    integration = await integration_service.get_integration(integration_uuid)
-    if not integration or str(integration.project_id) != project_id:
+    integration = await integration_service.get_integration(
+        integration_uuid, project_id=project_uuid
+    )
+    if not integration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Integration not found"
@@ -314,14 +316,18 @@ async def delete_integration(
             detail="Project not found or insufficient permissions"
         )
     
-    integration = await integration_service.get_integration(integration_uuid)
-    if not integration or str(integration.project_id) != project_id:
+    integration = await integration_service.get_integration(
+        integration_uuid, project_id=project_uuid
+    )
+    if not integration:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Integration not found"
         )
     
-    await integration_service.delete_integration(integration_uuid)
+    await integration_service.delete_integration(
+        integration_uuid, project_id=project_uuid
+    )
     
     # Log audit
     await audit_service.log(
@@ -376,6 +382,7 @@ async def sync_integration(
     
     success, error = await integration_service.sync_integration(
         integration_id=integration_uuid,
+        project_id=project_uuid,
         direction=payload.direction,
         secrets=payload.secrets,
         environment=payload.environment
@@ -443,7 +450,9 @@ async def validate_integration(
             detail="Project not found or insufficient permissions"
         )
     
-    is_valid, error = await integration_service.validate_integration(integration_uuid)
+    is_valid, error = await integration_service.validate_integration(
+        integration_uuid, project_id=project_uuid
+    )
     
     return {
         "valid": is_valid,

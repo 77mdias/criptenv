@@ -328,6 +328,7 @@ class TestIntegrationService:
                 
                 success, error = await service.sync_integration(
                     integration_id=mock_integration.id,
+                    project_id=uuid4(),
                     direction="push",
                     secrets=mock_blobs
                 )
@@ -365,7 +366,9 @@ class TestIntegrationService:
                 mock_provider.validate_connection = AsyncMock(return_value=True)
                 mock_get_provider.return_value = mock_provider
 
-                success, error = await service.validate_integration(mock_integration.id)
+                success, error = await service.validate_integration(
+                    mock_integration.id, project_id=uuid4()
+                )
 
                 assert success is True
                 assert error is None
@@ -393,7 +396,9 @@ class TestIntegrationService:
                 mock_provider.validate_connection = AsyncMock(return_value=True)
                 mock_get_provider.return_value = mock_provider
 
-                success, error = await service.validate_integration(mock_integration.id)
+                success, error = await service.validate_integration(
+                    mock_integration.id, project_id=uuid4()
+                )
 
                 assert success is True
                 assert error is None
@@ -424,6 +429,7 @@ class TestIntegrationService:
 
                 success, error = await service.sync_integration(
                     integration_id=mock_integration.id,
+                    project_id=uuid4(),
                     direction="push",
                     secrets=[{"key": "DATABASE_URL", "value": "postgres://..."}],
                 )
@@ -489,3 +495,91 @@ class TestVercelProviderSpecific:
         assert "production" in envs
         assert "preview" in envs
         assert "development" in envs
+
+
+class TestIntegrationProjectScoping:
+    """CR-P1-3: an integration must never be reachable from another project.
+
+    `get_integration` used to resolve by primary key only, so an admin of one
+    project could sync secrets into — or validate — another tenant's integration
+    using that tenant's stored provider credentials.
+    """
+
+    @pytest.mark.asyncio
+    async def test_get_integration_query_filters_by_project(self):
+        """The lookup must constrain both the integration id and the project id."""
+        from app.services.integration_service import IntegrationService
+
+        captured = {}
+
+        async def fake_execute(query):
+            captured["query"] = query
+            result = MagicMock()
+            result.scalar_one_or_none.return_value = None
+            return result
+
+        mock_db = MagicMock()
+        mock_db.execute = fake_execute
+        service = IntegrationService(db=mock_db)
+
+        found = await service.get_integration(uuid4(), project_id=uuid4())
+
+        assert found is None
+        compiled = str(captured["query"])
+        assert "integrations.id" in compiled
+        assert "integrations.project_id" in compiled
+
+    @pytest.mark.asyncio
+    async def test_get_integration_requires_project_id(self):
+        """The tenant scope is mandatory, so a caller cannot omit it by accident."""
+        import inspect
+        from app.services.integration_service import IntegrationService
+
+        signature = inspect.signature(IntegrationService.get_integration)
+        project_param = signature.parameters["project_id"]
+        assert project_param.kind is inspect.Parameter.KEYWORD_ONLY
+        assert project_param.default is inspect.Parameter.empty
+
+    @pytest.mark.asyncio
+    async def test_sync_refuses_foreign_integration(self):
+        """A not-found integration must abort before any provider is touched."""
+        from app.services.integration_service import IntegrationService
+
+        service = IntegrationService(db=MagicMock())
+
+        with patch.object(
+            service, "get_integration", new=AsyncMock(return_value=None)
+        ) as mock_get:
+            with patch.object(service, "_get_provider") as mock_get_provider:
+                success, error = await service.sync_integration(
+                    integration_id=uuid4(),
+                    project_id=uuid4(),
+                    direction="push",
+                    secrets=[{"key": "DATABASE_URL", "value": "postgres://..."}],
+                )
+
+        assert success is False
+        assert error == "Integration not found"
+        mock_get_provider.assert_not_called()
+        # The scope must be forwarded to the lookup, not dropped.
+        assert mock_get.await_args.kwargs["project_id"]
+
+    @pytest.mark.asyncio
+    async def test_validate_refuses_foreign_integration(self):
+        """Validation of a foreign integration must not reach the provider."""
+        from app.services.integration_service import IntegrationService
+
+        service = IntegrationService(db=MagicMock())
+
+        with patch.object(
+            service, "get_integration", new=AsyncMock(return_value=None)
+        ) as mock_get:
+            with patch.object(service, "_get_provider") as mock_get_provider:
+                is_valid, error = await service.validate_integration(
+                    uuid4(), project_id=uuid4()
+                )
+
+        assert is_valid is False
+        assert error == "Integration not found"
+        mock_get_provider.assert_not_called()
+        assert mock_get.await_args.kwargs["project_id"]

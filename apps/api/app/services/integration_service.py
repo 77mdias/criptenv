@@ -92,10 +92,20 @@ class IntegrationService:
         
         return integration
     
-    async def get_integration(self, integration_id: UUID) -> Optional[Integration]:
-        """Get integration by ID."""
+    async def get_integration(
+        self, integration_id: UUID, *, project_id: UUID
+    ) -> Optional[Integration]:
+        """Get an integration by ID, scoped to its owning project.
+
+        The project scope is a required keyword argument on purpose: resolving an
+        integration by primary key alone would let a caller who legitimately
+        administers one project operate on another tenant's integration.
+        """
         result = await self.db.execute(
-            select(Integration).where(Integration.id == integration_id)
+            select(Integration).where(
+                Integration.id == integration_id,
+                Integration.project_id == project_id,
+            )
         )
         return result.scalar_one_or_none()
     
@@ -108,26 +118,34 @@ class IntegrationService:
         )
         return list(result.scalars().all())
     
-    async def delete_integration(self, integration_id: UUID) -> bool:
-        """Delete an integration.
+    async def delete_integration(
+        self, integration_id: UUID, *, project_id: UUID
+    ) -> bool:
+        """Delete an integration scoped to ``project_id``.
         
         Returns:
             True if deleted, False if not found
         """
-        integration = await self.get_integration(integration_id)
+        integration = await self.get_integration(
+            integration_id, project_id=project_id
+        )
         if not integration:
             return False
         
         await self.db.delete(integration)
         return True
     
-    async def validate_integration(self, integration_id: UUID) -> tuple[bool, Optional[str]]:
+    async def validate_integration(
+        self, integration_id: UUID, *, project_id: UUID
+    ) -> tuple[bool, Optional[str]]:
         """Validate an integration by testing provider connection.
         
         Returns:
             (is_valid, error_message)
         """
-        integration = await self.get_integration(integration_id)
+        integration = await self.get_integration(
+            integration_id, project_id=project_id
+        )
         if not integration:
             return False, "Integration not found"
         
@@ -159,14 +177,17 @@ class IntegrationService:
     async def sync_integration(
         self,
         integration_id: UUID,
+        *,
+        project_id: UUID,
         direction: str,  # "push" or "pull"
         secrets: Optional[list[dict]] = None,
         environment: str = "production"
     ) -> tuple[bool, Optional[str]]:
-        """Sync secrets with an integration.
+        """Sync secrets with an integration owned by ``project_id``.
         
         Args:
             integration_id: Integration UUID
+            project_id: Owning project UUID (mandatory tenant scope)
             direction: "push" (criptenv -> provider) or "pull" (provider -> criptenv)
             secrets: For push, list of {key, value} dicts. For pull, ignored.
             environment: Target/source environment
@@ -174,7 +195,9 @@ class IntegrationService:
         Returns:
             (success, error_message)
         """
-        integration = await self.get_integration(integration_id)
+        integration = await self.get_integration(
+            integration_id, project_id=project_id
+        )
         if not integration:
             return False, "Integration not found"
         
