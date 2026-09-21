@@ -21,6 +21,10 @@ class Settings(BaseSettings):
     DB_POOL_TIMEOUT: int = 10
     RATE_LIMIT_ENABLED: bool = True
     RATE_LIMIT_STORAGE: str = "memory"
+    # Comma-separated addresses whose X-Forwarded-For we trust (the reverse
+    # proxy / tunnel in front of the API). Requests from any other peer have
+    # their forwarded headers ignored, so a client cannot spoof its own IP.
+    TRUSTED_PROXIES: str = "127.0.0.1,::1"
     REDIS_URL: str = ""
     INTEGRATION_CONFIG_SECRET: str = ""
     SCHEDULER_ENABLED: bool = True
@@ -96,6 +100,11 @@ class Settings(BaseSettings):
             except json.JSONDecodeError:
                 pass
         return [origin.strip() for origin in val.split(",") if origin.strip()]
+
+    @property
+    def trusted_proxies_set(self) -> set[str]:
+        """Addresses allowed to assert X-Forwarded-For on behalf of a client."""
+        return {item.strip() for item in self.TRUSTED_PROXIES.split(",") if item.strip()}
 
     @property
     def async_database_url(self) -> str:
