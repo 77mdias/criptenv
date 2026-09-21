@@ -296,9 +296,41 @@ AES-256-GCM -> Encrypted Blob -> Server (never sees plaintext)
 | CI Token (`ci_` prefix) | Database hash | CI/CD pipelines |
 
 ### Known Security Issues (Phase 2 Review — P0)
-- **CR-01**: Session token exposed in response body
-- **CR-02**: Token stored in localStorage (XSS risk)
-These must be resolved before public API work continues.
+
+**Resolved** (verified in code and covered by regression tests):
+
+- **CR-01** Session token exposed in response body — resolved. `AuthResponse`
+  carries only `user` + `session`; the token is delivered solely via the HTTP-only
+  `session_token` cookie. The CLI reads it from `Set-Cookie`
+  (`apps/cli/src/criptenv/api/client.py`).
+  Regression tests: `apps/api/tests/test_auth_routes.py`
+  (`test_signin_sets_cookie_without_returning_session_token`,
+  `test_get_sessions_hides_session_tokens`).
+- **CR-02** Token stored in localStorage — resolved. `useAuthStore` has no
+  `persist` middleware; the session is re-validated from the cookie on load.
+
+> Note: `testsprite_tests/TC002..TC010` still assert the pre-fix behaviour
+> (`session_token` in the login response body) and must be updated to read the
+> cookie instead.
+
+Additional fixes from the follow-up audit (`hotfix/security-vuln-fix`):
+
+- **P0** API key management required no project access check (cross-tenant BOLA).
+- **P0** The CLI browser login accepted an arbitrary `callback_url` and exchanged
+  the authorization code without PKCE (account takeover chain).
+- **P1** Integration `sync`/`validate` were reachable across projects.
+- **P1** Password-reset tokens were echoed in the response body outside local dev.
+- **P1** The Mercado Pago webhook failed open when its secret was unconfigured.
+- **P1** Auth endpoints used the anonymous rate limit (100/min, not the documented
+  5/min) and were keyed on an untrusted client address; API-key buckets collided.
+
+Still open (tracked in `plans/security-p1-remediation.md`):
+
+- **P1** Secret rotation writes `vault_blob.encrypted_value` (not a column), so
+  the ciphertext is never persisted, and the web client sends plaintext as
+  `new_value`.
+- **P2/P3** Committed `cookies.txt` session token, `.gitleaks.toml` with no rules,
+  plaintext session tokens at rest, `DEBUG` defaulting to `True`.
 
 ### Agent Rules for Security
 - Never commit secrets, `.env` files, or credential files

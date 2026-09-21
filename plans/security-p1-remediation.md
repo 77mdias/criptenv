@@ -158,10 +158,45 @@ service.
 ## Cross-cutting
 
 - Run the full API (`pytest tests`) and CLI (`pytest tests`) suites after each
-  item; both are green at the start of this plan (522 passed / 2 skipped and 189
-  passed).
+  item; both are green (548 passed / 2 skipped and 189 passed after P1-3..P1-7).
 - Update `AGENTS.md` (stale "Known Security Issues" list), `docs/features/in-progress.md`,
   and `docs/development/CHANGELOG.md` once the fixes land.
 - Deployment follow-up (out of code scope): rotate the committed `cookies.txt`
   session token and the local `.env` credentials exposed during the audit, and
   fix `.gitleaks.toml` (`[extend] useDefault = true`) so the scan is not a no-op.
+
+---
+
+## Status
+
+| Item | Status | Commit |
+|------|--------|--------|
+| P0-1 CLI callback allowlist + PKCE | Done | `security(auth): bind CLI browser login to loopback callback and PKCE` |
+| P0-2 API key cross-tenant BOLA | Done | `security(api): require project admin for API key management` |
+| P1-3 Integrations IDOR | Done | `security(api): scope integration sync/validate to the owning project` |
+| P1-4 Reset-token exposure | Done | `security(auth): stop echoing reset tokens outside local development` |
+| P1-5 Webhook fail-open | Done | `security(api): fail closed when the webhook secret is unconfigured` |
+| P1-6 Auth rate limit + trusted IP | Done | `security(api): enforce auth rate limits and a trustworthy client identity` |
+| P1-7 API key bucket collision | Done | (same commit as P1-6) |
+| P1-8 Rotation ciphertext / plaintext leak | **Deferred** | to be done in a follow-up |
+
+### P1-8 follow-up handoff (not yet implemented)
+
+Two defects remain in the rotation path:
+
+1. `app/services/rotation_service.py` assigns `vault_blob.encrypted_value`, which
+   is not a column on `VaultBlob` (`iv`/`ciphertext`/`auth_tag`/`checksum`). The
+   ciphertext is never persisted while `iv`, `auth_tag` and `version` are, so the
+   stored blob becomes undecryptable and the API still reports success. Fix:
+   assign `ciphertext` and recompute `checksum` with the canonical digest
+   `sha256(f"{key_id}:{iv}:{ciphertext}:{auth_tag}")` already used by
+   `apps/cli/src/criptenv/remote_vault.py` — the server can compute it without
+   the plaintext, so zero-knowledge holds.
+2. The web client sends **plaintext** as `new_value`
+   (`apps/web/src/app/(dashboard)/projects/[id]/secrets/use-project-secrets.ts`),
+   which would persist a secret in cleartext. Fix: send `encrypted.ciphertext`.
+
+Recommended test: assert the persisted blob's `ciphertext` matches the request
+and that the canonical checksum recomputes, plus a schema guard that no plaintext
+field reaches the service.
+
