@@ -5,11 +5,15 @@ plus a device authorization grant fallback for headless environments.
 """
 
 import asyncio
+import base64
+import hashlib
+import hmac
 import json
 import secrets
 import time
 from datetime import datetime, timezone, timedelta
-from typing import Optional
+from typing import Literal, Optional
+from urllib.parse import quote, urlparse
 from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -23,6 +27,67 @@ from app.middleware.auth import get_current_user
 from app.models.user import User
 
 router = APIRouter(prefix="/api/auth/cli", tags=["CLI Authentication"])
+
+# Only loopback callbacks are allowed for the browser redirect flow: the CLI
+# listens on an ephemeral localhost port. Any other host would let a third party
+# receive the authorization code and exchange it for a session.
+LOOPBACK_HOSTS = frozenset({"127.0.0.1", "localhost", "::1"})
+
+# RFC 7636 §4.1 bounds for code_verifier / code_challenge.
+PKCE_MIN_LENGTH = 43
+PKCE_MAX_LENGTH = 128
+
+
+def _validate_loopback_callback(callback_url: str) -> str:
+    """Return `callback_url` unchanged, or raise 400 if it is not loopback.
+
+    This is a security control, not input hygiene: the browser is redirected to
+    this URL carrying the single-use authorization code, so accepting an
+    arbitrary host would hand the code to an attacker-controlled endpoint.
+    """
+    parsed = urlparse(callback_url)
+    if parsed.scheme != "http":
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="callback_url must use the http scheme on loopback",
+        )
+    if parsed.username or parsed.password:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="callback_url must not contain userinfo",
+        )
+    host = (parsed.hostname or "").lower()
+    if host not in LOOPBACK_HOSTS:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="callback_url must point to loopback (127.0.0.1, localhost or ::1)",
+        )
+    try:
+        port = parsed.port
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="callback_url has an invalid port",
+        )
+    if port is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="callback_url must include an explicit port",
+        )
+    return callback_url
+
+
+def _compute_code_challenge(code_verifier: str) -> str:
+    """Derive the S256 PKCE challenge from a code verifier (RFC 7636 §4.2)."""
+    digest = hashlib.sha256(code_verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def _verify_pkce(code_verifier: str, expected_challenge: str) -> bool:
+    """Constant-time comparison of the derived challenge against the stored one."""
+    return hmac.compare_digest(
+        _compute_code_challenge(code_verifier), expected_challenge
+    )
 
 
 # ─── Shared Store with TTL ───────────────────────────────────────────────────
@@ -74,18 +139,20 @@ class _CLIAuthStore:
     def _code_key(self, auth_code: str) -> str:
         return f"cli_auth:code:{auth_code}"
 
-    async def create(self, state: str, callback_url: str) -> str:
+    async def create(self, state: str, callback_url: str, code_challenge: str) -> str:
         """Create a new pending auth request. Returns auth_code."""
         auth_code = secrets.token_urlsafe(32)
         state_entry = {
             "auth_code": auth_code,
             "callback_url": callback_url,
+            "code_challenge": code_challenge,
             "created_at": time.time(),
             "user_id": None,
             "authorized": False,
         }
         code_entry = {
             "state": state,
+            "code_challenge": code_challenge,
             "created_at": time.time(),
             "user_id": None,
             "authorized": False,
@@ -106,8 +173,12 @@ class _CLIAuthStore:
             self._data[auth_code] = code_entry
         return auth_code
 
-    async def authorize(self, state: str, user_id: str) -> Optional[str]:
-        """Mark a state as authorized by a user. Returns auth_code."""
+    async def authorize(self, state: str, user_id: str) -> Optional[dict]:
+        """Mark a state as authorized by a user. Returns the pending entry.
+
+        The returned entry carries the server-registered ``callback_url`` so the
+        web client can redirect to it instead of trusting a query parameter.
+        """
         if self._redis is not None:
             entry = _json_loads(await self._redis.get(self._state_key(state)))
             if not entry:
@@ -121,13 +192,14 @@ class _CLIAuthStore:
             }
             code_entry["user_id"] = user_id
             code_entry["authorized"] = True
+            code_entry.setdefault("code_challenge", entry.get("code_challenge"))
             await self._redis.setex(
                 self._state_key(state), self._ttl, _json_dumps(entry)
             )
             await self._redis.setex(
                 self._code_key(auth_code), self._ttl, _json_dumps(code_entry)
             )
-            return auth_code
+            return entry
 
         async with self._lock:
             self._cleanup()
@@ -141,7 +213,8 @@ class _CLIAuthStore:
             if auth_code in self._data:
                 self._data[auth_code]["user_id"] = user_id
                 self._data[auth_code]["authorized"] = True
-            return auth_code
+                self._data[auth_code].setdefault("code_challenge", entry.get("code_challenge"))
+            return entry
 
     async def get_by_code(self, auth_code: str) -> Optional[dict]:
         """Get auth entry by auth_code. Returns None if expired/invalid."""
@@ -283,7 +356,14 @@ _device_flow_store = _DeviceFlowStore(default_ttl_seconds=600)
 # ─── Schemas ─────────────────────────────────────────────────────────────────
 
 class CLIInitiateRequest(BaseModel):
-    callback_url: str = Field(..., description="Localhost callback URL where CLI is listening")
+    callback_url: str = Field(..., description="Loopback callback URL where CLI is listening")
+    code_challenge: str = Field(
+        ...,
+        min_length=PKCE_MIN_LENGTH,
+        max_length=PKCE_MAX_LENGTH,
+        description="PKCE S256 code challenge (RFC 7636)",
+    )
+    code_challenge_method: Literal["S256"] = "S256"
 
 
 class CLIInitiateResponse(BaseModel):
@@ -303,6 +383,12 @@ class CLIAuthorizeResponse(BaseModel):
 
 class CLITokenRequest(BaseModel):
     auth_code: str
+    code_verifier: str = Field(
+        ...,
+        min_length=PKCE_MIN_LENGTH,
+        max_length=PKCE_MAX_LENGTH,
+        description="PKCE code verifier matching the challenge sent to /initiate",
+    )
 
 
 class CLITokenResponse(BaseModel):
@@ -358,13 +444,18 @@ async def cli_initiate(
     The CLI calls this to get a state and auth URL. It then opens the browser
     to the auth URL and starts a localhost server to receive the callback.
     """
-    state = secrets.token_urlsafe(32)
-    auth_code = await _cli_auth_store.create(state, request.callback_url)
+    _validate_loopback_callback(request.callback_url)
 
-    # Build the web URL where the user will authenticate
+    state = secrets.token_urlsafe(32)
+    auth_code = await _cli_auth_store.create(
+        state, request.callback_url, request.code_challenge
+    )
+
+    # Build the web URL where the user will authenticate. Both values are
+    # URL-encoded so neither can inject extra query parameters.
     auth_url = (
         f"{settings.FRONTEND_URL.rstrip('/')}/cli-auth?"
-        f"state={state}&callback={request.callback_url}"
+        f"state={quote(state, safe='')}&callback={quote(request.callback_url, safe='')}"
     )
 
     return CLIInitiateResponse(
@@ -384,18 +475,19 @@ async def cli_authorize(
 
     The web frontend calls this after the user has authenticated.
     It links the user to the pending state and returns an auth_code
-    that the web will send back to the CLI via localhost redirect.
+    plus the loopback callback URL registered at /initiate (which the
+    client must use verbatim rather than a caller-supplied query value).
     """
-    auth_code = await _cli_auth_store.authorize(payload.state, str(current_user.id))
-    if not auth_code:
+    entry = await _cli_auth_store.authorize(payload.state, str(current_user.id))
+    if not entry:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired state. Please try again."
         )
 
     return CLIAuthorizeResponse(
-        auth_code=auth_code,
-        callback_url="",  # Web knows the callback from query params
+        auth_code=entry["auth_code"],
+        callback_url=entry["callback_url"],
     )
 
 
@@ -408,12 +500,24 @@ async def cli_token(
     """Exchange an auth_code for a session token.
 
     The CLI calls this after receiving the auth_code via localhost callback.
+    The exchange requires the PKCE code verifier matching the challenge that
+    was registered at /initiate, so a leaked or intercepted auth_code is not
+    by itself sufficient to obtain a session.
     """
     entry = await _cli_auth_store.get_by_code(payload.auth_code)
     if not entry or not entry.get("authorized"):
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid or expired auth code."
+        )
+
+    expected_challenge = entry.get("code_challenge")
+    if not expected_challenge or not _verify_pkce(
+        payload.code_verifier, expected_challenge
+    ):
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid code verifier."
         )
 
     user_id = entry.get("user_id")

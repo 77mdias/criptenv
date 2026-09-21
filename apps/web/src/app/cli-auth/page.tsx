@@ -27,12 +27,31 @@ type Step =
   | "success"
   | "error";
 
+const LOOPBACK_HOSTS = new Set(["127.0.0.1", "localhost", "::1", "[::1]"]);
+
+/**
+ * The API only ever registers a loopback callback for the CLI browser flow.
+ * Re-validating it here prevents the browser from being redirected to a
+ * third-party origin even if the authorization response were tampered with.
+ */
+function resolveLoopbackCallback(raw: unknown): string | null {
+  if (typeof raw !== "string" || !raw) return null;
+  try {
+    const parsed = new URL(raw);
+    if (parsed.protocol !== "http:") return null;
+    if (!LOOPBACK_HOSTS.has(parsed.hostname)) return null;
+    if (!parsed.port) return null;
+    return parsed.toString();
+  } catch {
+    return null;
+  }
+}
+
 function CLIAuthContent() {
   const searchParams = useSearchParams();
   const { user, login, isLoading: authLoading } = useAuth();
 
   const state = searchParams.get("state");
-  const callback = searchParams.get("callback");
   const deviceCode = searchParams.get("device_code");
 
   const hasValidParams = Boolean(state || deviceCode);
@@ -103,11 +122,15 @@ function CLIAuthContent() {
         const data = await res.json();
         const authCode = data.auth_code;
 
-        // Redirect back to CLI localhost callback
-        if (callback) {
-          const callbackUrl = new URL(callback);
-          callbackUrl.searchParams.set("code", authCode);
-          window.location.href = callbackUrl.toString();
+        // Redirect back to the CLI callback registered server-side at /initiate.
+        // The `callback` query parameter is intentionally ignored: a crafted
+        // link could point it at an attacker-controlled origin.
+        const callbackUrl = resolveLoopbackCallback(data.callback_url);
+
+        if (callbackUrl) {
+          const target = new URL(callbackUrl);
+          target.searchParams.set("code", authCode);
+          window.location.href = target.toString();
         } else {
           setExplicitStep("success");
         }
@@ -132,7 +155,7 @@ function CLIAuthContent() {
       setErrorMsg(message);
       setExplicitStep("error");
     }
-  }, [state, callback, deviceCode]);
+  }, [state, deviceCode]);
 
   if (step === "checking") {
     return (

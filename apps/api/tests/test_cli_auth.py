@@ -1,18 +1,45 @@
 """Tests for CLI authentication endpoints."""
 
 import asyncio
+import base64
+import hashlib
 from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from uuid import uuid4
 
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
+import pytest
 
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.routers.cli_auth import _CLIAuthStore, _DeviceFlowStore
 from app.routers.cli_auth import router as cli_auth_router
 from app.services.auth_service import AuthService
+
+
+# ─── PKCE helpers ────────────────────────────────────────────────────────────
+
+# 49 chars — within the RFC 7636 §4.1 range of 43..128.
+CODE_VERIFIER = "verifier-" + "a" * 40
+LOOPBACK_CALLBACK = "http://127.0.0.1:57341/callback"
+
+
+def code_challenge_for(verifier: str = CODE_VERIFIER) -> str:
+    """Compute the S256 PKCE challenge for a verifier."""
+    digest = hashlib.sha256(verifier.encode("ascii")).digest()
+    return base64.urlsafe_b64encode(digest).rstrip(b"=").decode("ascii")
+
+
+def initiate_payload(
+    callback_url: str = LOOPBACK_CALLBACK,
+    verifier: str = CODE_VERIFIER,
+) -> dict:
+    """Build a valid /initiate body including the PKCE challenge."""
+    return {
+        "callback_url": callback_url,
+        "code_challenge": code_challenge_for(verifier),
+    }
 
 
 async def _dummy_db():
@@ -77,7 +104,7 @@ class TestCLIAuthRedisStore:
             store = _CLIAuthStore(default_ttl_seconds=300, redis_client=redis)
 
             auth_code = await store.create(
-                "state-123", "http://127.0.0.1:57341/callback"
+                "state-123", "http://127.0.0.1:57341/callback", code_challenge_for()
             )
 
             assert "cli_auth:state:state-123" in redis.values
@@ -85,12 +112,14 @@ class TestCLIAuthRedisStore:
             assert redis.ttls["cli_auth:state:state-123"] == 300
             assert redis.ttls[f"cli_auth:code:{auth_code}"] == 300
 
-            authorized_code = await store.authorize("state-123", "usr_123")
+            authorized_entry = await store.authorize("state-123", "usr_123")
             entry = await store.get_by_code(auth_code)
 
-            assert authorized_code == auth_code
+            assert authorized_entry["auth_code"] == auth_code
+            assert authorized_entry["callback_url"] == "http://127.0.0.1:57341/callback"
             assert entry["authorized"] is True
             assert entry["user_id"] == "usr_123"
+            assert entry["code_challenge"] == code_challenge_for()
 
             await store.delete(auth_code)
 
@@ -128,7 +157,7 @@ class TestCLIInitiate:
         with TestClient(make_app()) as client:
             response = client.post(
                 "/api/auth/cli/initiate",
-                json={"callback_url": "http://127.0.0.1:57341/callback"},
+                json=initiate_payload(),
             )
         assert response.status_code == 200
         data = response.json()
@@ -137,11 +166,64 @@ class TestCLIInitiate:
         assert "expires_in" in data
         assert data["expires_in"] == 300
         assert "/cli-auth?" in data["auth_url"]
+        # The callback registered by the CLI is carried in the auth URL.
+        assert "127.0.0.1%3A57341" in data["auth_url"]
 
     def test_cli_initiate_missing_callback(self):
         with TestClient(make_app()) as client:
             response = client.post("/api/auth/cli/initiate", json={})
         assert response.status_code == 422
+
+    def test_cli_initiate_requires_code_challenge(self):
+        """PKCE is mandatory: no challenge means no authorization request."""
+        with TestClient(make_app()) as client:
+            response = client.post(
+                "/api/auth/cli/initiate",
+                json={"callback_url": LOOPBACK_CALLBACK},
+            )
+        assert response.status_code == 422
+
+    @pytest.mark.parametrize(
+        "callback_url",
+        [
+            "https://attacker.example/collect",
+            "http://attacker.example/collect",
+            "http://10.0.0.5:8080/callback",
+            "http://192.168.1.10:8080/callback",
+            "http://127.0.0.1.evil.example:8080/callback",
+            # userinfo trick: urlparse hostname is attacker.example
+            "http://127.0.0.1@attacker.example:8080/callback",
+            # non-http schemes
+            "ftp://127.0.0.1:8080/callback",
+        ],
+    )
+    def test_cli_initiate_rejects_non_loopback_callback(self, callback_url):
+        """A callback that is not loopback must never be registered."""
+        with TestClient(make_app()) as client:
+            response = client.post(
+                "/api/auth/cli/initiate",
+                json=initiate_payload(callback_url=callback_url),
+            )
+        assert response.status_code == 400
+        assert "callback_url" in response.json()["detail"]
+
+    def test_cli_initiate_requires_explicit_port(self):
+        with TestClient(make_app()) as client:
+            response = client.post(
+                "/api/auth/cli/initiate",
+                json=initiate_payload(callback_url="http://127.0.0.1/callback"),
+            )
+        assert response.status_code == 400
+        assert "port" in response.json()["detail"].lower()
+
+    def test_cli_initiate_accepts_localhost_and_ipv6_loopback(self):
+        for callback in ("http://localhost:57341/callback", "http://[::1]:57341/callback"):
+            with TestClient(make_app()) as client:
+                response = client.post(
+                    "/api/auth/cli/initiate",
+                    json=initiate_payload(callback_url=callback),
+                )
+            assert response.status_code == 200, callback
 
 
 class TestCLIAuthorize:
@@ -169,7 +251,7 @@ class TestCLIAuthorize:
             # First initiate
             init_resp = client.post(
                 "/api/auth/cli/initiate",
-                json={"callback_url": "http://127.0.0.1:57341/callback"},
+                json=initiate_payload(),
             )
             assert init_resp.status_code == 200
             state = init_resp.json()["state"]
@@ -183,6 +265,27 @@ class TestCLIAuthorize:
         data = auth_resp.json()
         assert "auth_code" in data
 
+    def test_cli_authorize_returns_server_registered_callback(self):
+        """The client must be told the registered loopback callback.
+
+        This lets the web page redirect to a server-validated URL instead of
+        trusting the attacker-controllable `callback` query parameter.
+        """
+        with TestClient(make_auth_app()) as client:
+            init_resp = client.post(
+                "/api/auth/cli/initiate",
+                json=initiate_payload(),
+            )
+            state = init_resp.json()["state"]
+
+            auth_resp = client.post(
+                "/api/auth/cli/authorize",
+                json={"state": state},
+            )
+
+        assert auth_resp.status_code == 200
+        assert auth_resp.json()["callback_url"] == LOOPBACK_CALLBACK
+
 
 class TestCLIToken:
     """Tests for POST /api/auth/cli/token"""
@@ -191,10 +294,18 @@ class TestCLIToken:
         with TestClient(make_app()) as client:
             response = client.post(
                 "/api/auth/cli/token",
-                json={"auth_code": "invalid_code"},
+                json={"auth_code": "invalid_code", "code_verifier": CODE_VERIFIER},
             )
         assert response.status_code == 400
         assert "Invalid or expired auth code" in response.json()["detail"]
+
+    def test_cli_token_requires_code_verifier(self):
+        with TestClient(make_app()) as client:
+            response = client.post(
+                "/api/auth/cli/token",
+                json={"auth_code": "some_code"},
+            )
+        assert response.status_code == 422
 
     def test_cli_token_success(self, monkeypatch):
         user = make_user()
@@ -221,7 +332,7 @@ class TestCLIToken:
             # Initiate
             init_resp = client.post(
                 "/api/auth/cli/initiate",
-                json={"callback_url": "http://127.0.0.1:57341/callback"},
+                json=initiate_payload(),
             )
             state = init_resp.json()["state"]
 
@@ -235,7 +346,7 @@ class TestCLIToken:
             # Exchange for token
             token_resp = client.post(
                 "/api/auth/cli/token",
-                json={"auth_code": auth_code},
+                json={"auth_code": auth_code, "code_verifier": CODE_VERIFIER},
             )
 
         assert token_resp.status_code == 200
@@ -244,6 +355,96 @@ class TestCLIToken:
         assert len(data["token"]) >= 32
         assert "user" in data
         assert data["user"]["email"] == user.email
+
+    def test_cli_token_rejects_wrong_code_verifier(self, monkeypatch):
+        """A stolen auth_code alone must not yield a session (PKCE)."""
+        user = make_user()
+        created_sessions = []
+
+        async def fake_get_user_by_id(self, user_id):
+            return user
+
+        async def fake_create_session(self, **kwargs):
+            created_sessions.append(kwargs)
+            now = datetime.now(timezone.utc)
+            return SimpleNamespace(
+                id=uuid4(),
+                user_id=user.id,
+                token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                expires_at=now + timedelta(days=30),
+                created_at=now,
+                ip_address="127.0.0.1",
+                user_agent="pytest",
+            )
+
+        monkeypatch.setattr(AuthService, "get_user_by_id", fake_get_user_by_id)
+        monkeypatch.setattr(AuthService, "create_session", fake_create_session)
+
+        with TestClient(make_auth_app(user)) as client:
+            init_resp = client.post("/api/auth/cli/initiate", json=initiate_payload())
+            state = init_resp.json()["state"]
+            auth_resp = client.post("/api/auth/cli/authorize", json={"state": state})
+            auth_code = auth_resp.json()["auth_code"]
+
+            # Attacker replays the intercepted code with a verifier of their own.
+            stolen = client.post(
+                "/api/auth/cli/token",
+                json={"auth_code": auth_code, "code_verifier": "x" * 49},
+            )
+
+            # A failed exchange must not consume the code: the legit CLI can retry.
+            assert stolen.status_code == 400
+            assert "Invalid code verifier" in stolen.json()["detail"]
+            assert created_sessions == []
+
+            retry = client.post(
+                "/api/auth/cli/token",
+                json={"auth_code": auth_code, "code_verifier": CODE_VERIFIER},
+            )
+
+        assert retry.status_code == 200
+        assert "token" in retry.json()
+        assert len(created_sessions) == 1
+
+    def test_cli_token_is_single_use(self, monkeypatch):
+        """The auth code cannot be exchanged twice."""
+        user = make_user()
+
+        async def fake_get_user_by_id(self, user_id):
+            return user
+
+        async def fake_create_session(self, **kwargs):
+            now = datetime.now(timezone.utc)
+            return SimpleNamespace(
+                id=uuid4(),
+                user_id=user.id,
+                token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                expires_at=now + timedelta(days=30),
+                created_at=now,
+                ip_address="127.0.0.1",
+                user_agent="pytest",
+            )
+
+        monkeypatch.setattr(AuthService, "get_user_by_id", fake_get_user_by_id)
+        monkeypatch.setattr(AuthService, "create_session", fake_create_session)
+
+        with TestClient(make_auth_app(user)) as client:
+            init_resp = client.post("/api/auth/cli/initiate", json=initiate_payload())
+            state = init_resp.json()["state"]
+            auth_resp = client.post("/api/auth/cli/authorize", json={"state": state})
+            auth_code = auth_resp.json()["auth_code"]
+
+            first = client.post(
+                "/api/auth/cli/token",
+                json={"auth_code": auth_code, "code_verifier": CODE_VERIFIER},
+            )
+            second = client.post(
+                "/api/auth/cli/token",
+                json={"auth_code": auth_code, "code_verifier": CODE_VERIFIER},
+            )
+
+        assert first.status_code == 200
+        assert second.status_code == 400
 
 
 # ─── Device Authorization Grant ──────────────────────────────────────────────
