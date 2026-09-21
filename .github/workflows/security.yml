@@ -52,6 +52,7 @@ jobs:
       - name: Audit CLI Python dependencies
         working-directory: apps/cli
         run: |
+          python -m pip install --upgrade setuptools
           python -m pip install -e .
           pip-audit
       - name: Audit web npm dependencies
