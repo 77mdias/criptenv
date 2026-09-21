@@ -33,6 +33,27 @@ def _cookie_secure() -> bool:
     return not settings.DEBUG
 
 
+# Environments where echoing one-time tokens in an API response is acceptable
+# for local development only.
+_DEV_ENVIRONMENTS = frozenset({"development", "dev", "local", "test", "testing"})
+
+
+def _dev_token_allowed() -> bool:
+    """Whether one-time tokens may be echoed back in the API response.
+
+    Password-reset and email-verification tokens are bearer credentials: any
+    caller who receives one can take over the account. An unconfigured email
+    service is NOT a safe signal on its own, because a production deployment
+    that forgets RESEND_API_KEY would then hand out reset tokens to anyone who
+    knows an email address. Requiring the debug flag *and* an explicitly
+    non-production environment keeps the convenience local-only.
+    """
+    return (
+        bool(settings.DEBUG)
+        and settings.APP_ENV.strip().lower() in _DEV_ENVIRONMENTS
+    )
+
+
 def _set_session_cookie(response: Response, token: str) -> None:
     response.set_cookie(
         key=SESSION_COOKIE,
@@ -250,7 +271,7 @@ async def forgot_password(
         email_service.send_password_reset(data.email, reset_url)
 
         # Dev fallback: expose token when email service is not configured
-        if not email_service.enabled:
+        if not email_service.enabled and _dev_token_allowed():
             return ForgotPasswordResponse(
                 message="If an account exists with this email, a reset link has been sent.",
                 dev_token=reset.token,
@@ -295,7 +316,7 @@ async def send_verification(
         email_service.send_email_verification(data.email, verification_url)
 
         # Dev fallback: expose token when email service is not configured
-        if not email_service.enabled:
+        if not email_service.enabled and _dev_token_allowed():
             return SendVerificationResponse(
                 message="If the account exists and is unverified, a verification link has been sent.",
                 dev_token=verification.token,
