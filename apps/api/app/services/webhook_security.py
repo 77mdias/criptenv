@@ -69,17 +69,23 @@ def validate_mercadopago_signature(
     Returns:
         True if signature is valid, False otherwise
         
-    Raises:
-        WebhookSignatureError: If the secret is not configured
+    Note:
+        Fails closed: an unconfigured secret yields False rather than skipping
+        validation, because `PAYMENTS_ENABLED` defaults to True and a forged
+        notification would otherwise be accepted. Replay of a captured valid
+        notification is not blocked by a timestamp window on purpose -- Mercado
+        Pago retries notifications for hours, and processing is idempotent
+        because the authoritative payment status is re-fetched from the provider.
     """
     secret = settings.MERCADO_PAGO_WEBHOOK_SECRET
     
-    # If no secret is configured, skip validation but log a warning
+    # Fail closed when the secret is not configured.
     if not secret:
-        logger.warning(
-            "MERCADO_PAGO_WEBHOOK_SECRET not configured, skipping signature validation"
+        logger.error(
+            "MERCADO_PAGO_WEBHOOK_SECRET is not configured; rejecting webhook. "
+            "Set the secret in the Mercado Pago dashboard and in the environment."
         )
-        return True
+        return False
     
     # If no signature header is present, reject
     if not x_signature:

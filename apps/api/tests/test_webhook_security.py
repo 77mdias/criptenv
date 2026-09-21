@@ -50,14 +50,28 @@ class TestValidateSignature:
     """Test full signature validation flow."""
     
     @patch("app.services.webhook_security.settings.MERCADO_PAGO_WEBHOOK_SECRET", "")
-    def test_no_secret_skips_validation(self):
-        """When no secret is configured, validation is skipped."""
+    def test_no_secret_fails_closed(self):
+        """An unconfigured secret must reject the webhook, not skip validation.
+
+        P1-5: this used to return True, so a deployment that enabled payments
+        without MERCADO_PAGO_WEBHOOK_SECRET accepted unsigned notifications.
+        """
         result = validate_mercadopago_signature(
             x_signature="ts=123,v1=abc",
             x_request_id="req-123",
             data_id="pay-123",
         )
-        assert result is True
+        assert result is False
+
+    @patch("app.services.webhook_security.settings.MERCADO_PAGO_WEBHOOK_SECRET", "")
+    def test_no_secret_rejects_even_a_well_formed_request(self):
+        """Fail-closed applies regardless of how plausible the payload looks."""
+        result = validate_mercadopago_signature(
+            x_signature=None,
+            x_request_id=None,
+            data_id=None,
+        )
+        assert result is False
     
     @patch("app.services.webhook_security.settings.MERCADO_PAGO_WEBHOOK_SECRET", "my-secret")
     def test_missing_signature_header(self):
