@@ -23,6 +23,12 @@ jobs:
         uses: gitleaks/gitleaks-action@v2
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # The action passes continueOnError to the artifact client, but
+          # @actions/artifact still rethrows on FinalizeArtifact. A transient
+          # 403 from GitHub's artifact service therefore fails the job even
+          # when the scan found nothing. Only the scan result should decide
+          # this job's status, so the best-effort SARIF upload is skipped.
+          GITLEAKS_ENABLE_UPLOAD_ARTIFACT: "false"
 
   codeql:
     name: CodeQL
