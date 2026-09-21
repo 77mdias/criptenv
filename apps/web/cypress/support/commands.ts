@@ -4,6 +4,7 @@ declare global {
   namespace Cypress {
     interface Chainable {
       resetDb(): Chainable<void>
+      visitHydrated(url: string): Chainable<void>
       signup(email?: string, password?: string): Chainable<void>
       createProject(name?: string, vaultPassword?: string): Chainable<string>
     }
@@ -18,10 +19,22 @@ Cypress.Commands.add("resetDb", () => {
   cy.task("resetDb")
 })
 
+// `cy.visit` resolves on the document load event, which in the dev server fires
+// before React hydrates. Anything typed or clicked in that window only touches
+// the server-rendered DOM: inputs accept the text, but no handler is attached
+// yet, so the submit button is inert and no request leaves the browser.
+// The app's session bootstrap is a React effect, so it can only run once the
+// tree has hydrated - waiting for it guarantees the page is interactive.
+Cypress.Commands.add("visitHydrated", (url: string) => {
+  cy.intercept("GET", "**/api/auth/session").as("sessionBootstrap")
+  cy.visit(url)
+  cy.wait("@sessionBootstrap", { timeout: 20000 })
+})
+
 Cypress.Commands.add(
   "signup",
   (email = "e2e.user@example.com", password = "Passw0rd!") => {
-    cy.visit("/signup")
+    cy.visitHydrated("/signup")
     inputByLabel("Nome").type("E2E User")
     inputByLabel("Email").type(email)
     inputByLabel("Senha").type(password)
@@ -54,7 +67,7 @@ Cypress.Commands.add(
 )
 
 Cypress.Commands.add("createProject", (name = "e2e-project", vaultPassword = "VaultPassw0rd!") => {
-  cy.visit("/projects")
+  cy.visitHydrated("/projects")
   cy.intercept("POST", "**/api/v1/projects").as("createProject")
   cy.contains("button", "Novo Projeto").click()
   inputByLabel("Nome do projeto").type(name)
