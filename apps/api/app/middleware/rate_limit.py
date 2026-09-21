@@ -4,6 +4,7 @@ Implements rate limiting with different limits per authentication method.
 Uses slowapi for FastAPI integration with X-RateLimit-* headers.
 """
 
+import hashlib
 import time
 from typing import Optional
 from datetime import datetime, timezone
@@ -12,12 +13,36 @@ from fastapi import Request, HTTPException, status
 from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
+from app.models.api_key import API_KEY_PREFIX
+
 
 # Rate limit constants per authentication method
 AUTH_RATE_LIMIT = "5/minute"      # Auth endpoints: 5 req/min per IP
 API_KEY_RATE_LIMIT = "1000/minute"  # API key: 1000 req/min per key
 CI_TOKEN_RATE_LIMIT = "200/minute"  # CI token: 200 req/min per token
 PUBLIC_RATE_LIMIT = "100/minute"    # Public endpoints: 100 req/min per IP
+
+# Paths that verify credentials, so they get the strict AUTH_RATE_LIMIT instead
+# of the generic anonymous bucket. These are the brute-force surfaces (signin,
+# password reset, 2FA challenge) plus the unauthenticated CLI code exchange.
+#
+# NOTE: /api/auth/cli/device/poll is deliberately absent — the CLI polls it every
+# `interval` seconds (12 requests/minute), so a 5/min limit would break the
+# device flow. It is not a credential-guessing endpoint.
+AUTH_RATE_LIMIT_PATHS = (
+    "/api/auth/signin",
+    "/api/auth/signup",
+    "/api/auth/forgot-password",
+    "/api/auth/reset-password",
+    "/api/auth/change-password",
+    "/api/auth/send-verification",
+    "/api/auth/verify-email",
+    "/api/auth/2fa/challenge/verify",
+    "/api/auth/2fa/disable",
+    "/api/auth/cli/initiate",
+    "/api/auth/cli/token",
+    "/api/auth/invites/accept",
+)
 
 # Error code
 RATE_LIMIT_ERROR_CODE = "RATE_LIMIT_EXCEEDED"
@@ -35,11 +60,13 @@ class RateLimitConfig:
         enabled: bool = True,
         storage_uri: Optional[str] = None,
         storage_backend: str = "memory",
+        trusted_proxies: Optional[set[str]] = None,
     ):
         self.default_limit = default_limit
         self.enabled = enabled
         self.storage_uri = storage_uri
         self.storage_backend = storage_backend
+        self.trusted_proxies = trusted_proxies or set()
 
 
 class RateLimitHeaders:
@@ -155,18 +182,92 @@ def get_rate_limit_key(request: Request) -> Optional[str]:
     """Extract identifier for rate limiting based on auth method.
     
     Returns:
-        - API key prefix (e.g., "cek_live_") if API key auth
+        - A per-key digest if API key auth
         - None if session/CI token (will use IP fallback)
     """
-    auth_header = request.headers.get("Authorization", "")
-    
-    if auth_header.startswith("Bearer cek_"):
-        # API key - use prefix for rate limiting
-        key = auth_header[7:]  # Remove "Bearer "
-        return key[:8] if len(key) >= 8 else key  # "cek_live_" or "cek_test_"
-    
+    token = _extract_bearer_token(request)
+    if token and token.startswith(API_KEY_PREFIX):
+        return api_key_rate_limit_key(token)
+
     # Session or CI token - fallback to IP in middleware
     return None
+
+
+def _extract_bearer_token(request: Request) -> Optional[str]:
+    """Return the bearer token from the Authorization header, if any."""
+    auth_header = request.headers.get("Authorization", "")
+    if auth_header.startswith("Bearer "):
+        return auth_header[7:]
+    return None
+
+
+def api_key_rate_limit_key(token: str) -> str:
+    """Build a stable, per-key rate limit bucket.
+
+    Hashing the full token gives each API key its own counter without storing or
+    logging the credential. Truncating the raw token instead (the previous
+    behaviour) collapsed every live key into the same `cek_live` bucket, so one
+    noisy key throttled all API consumers.
+    """
+    digest = hashlib.sha256(token.encode("utf-8")).hexdigest()
+    return f"apikey:{digest[:24]}"
+
+
+def _normalize_ip(value: str) -> str:
+    """Strip the IPv4-mapped IPv6 prefix so `::ffff:1.2.3.4` matches `1.2.3.4`."""
+    value = value.strip()
+    if value.lower().startswith("::ffff:"):
+        return value[7:]
+    return value
+
+
+def get_client_ip(request: Request, trusted_proxies: Optional[set[str]] = None) -> str:
+    """Resolve the client address used for rate limiting and abuse tracking.
+
+    `X-Forwarded-For` is only consulted when the immediate peer is a configured
+    trusted proxy; anything else could be set by the client itself. The chain is
+    walked from the hop closest to us back towards the client and stops at the
+    first untrusted address, so a client-injected left-hand value is ignored.
+    """
+    peer = _normalize_ip(request.client.host) if request.client else "unknown"
+    trusted = {_normalize_ip(entry) for entry in (trusted_proxies or set())}
+
+    if peer not in trusted:
+        return peer
+
+    forwarded_for = request.headers.get("x-forwarded-for")
+    if not forwarded_for:
+        return peer
+
+    chain = [_normalize_ip(hop) for hop in forwarded_for.split(",") if hop.strip()]
+    for hop in reversed(chain):
+        if hop not in trusted:
+            return hop
+    return chain[0] if chain else peer
+
+
+def is_auth_rate_limited_path(path: str) -> bool:
+    """Whether `path` is one of the credential-verifying endpoints."""
+    return path.rstrip("/") in AUTH_RATE_LIMIT_PATHS
+
+
+def build_rate_limit_key(request: Request, client_ip: str) -> str:
+    """Bucket a request by credential when present, otherwise by client IP."""
+    if is_auth_rate_limited_path(request.url.path):
+        return f"auth:{client_ip}"
+
+    api_key = get_rate_limit_key(request)
+    if api_key:
+        return api_key
+
+    return f"ip:{client_ip}"
+
+
+def resolve_rate_limit(request: Request) -> str:
+    """Pick the rate limit string that applies to this request."""
+    if is_auth_rate_limited_path(request.url.path):
+        return AUTH_RATE_LIMIT
+    return get_rate_limit_for_auth_type(identify_auth_type(request))
 
 
 def identify_auth_type(request: Request) -> str:
@@ -240,18 +341,12 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         if not self.config.enabled:
             return await call_next(request)
         
-        # Get identifier and auth type
-        auth_type = identify_auth_type(request)
-        limit_str = get_rate_limit_for_auth_type(auth_type)
+        # Pick the limit for this route, then bucket by credential or client IP.
+        limit_str = resolve_rate_limit(request)
         limit_count, window_seconds = parse_rate_limit(limit_str)
-        
-        # Get rate limit key
-        if auth_type == "api_key":
-            rate_key = get_rate_limit_key(request)
-        else:
-            # Use IP for session/CI token/anonymous
-            rate_key = f"ip:{request.client.host if request.client else 'unknown'}"
-        
+        client_ip = get_client_ip(request, self.config.trusted_proxies)
+        rate_key = build_rate_limit_key(request, client_ip)
+
         if rate_key:
             current_count = await self.storage.get_count(rate_key)
             

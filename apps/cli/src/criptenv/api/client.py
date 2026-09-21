@@ -171,17 +171,31 @@ class CriptEnvClient:
 
     # ─── CLI Auth ───────────────────────────────────────────────────────────────
 
-    async def cli_initiate(self, callback_url: str) -> dict[str, Any]:
-        """POST /api/auth/cli/initiate"""
+    async def cli_initiate(self, callback_url: str, code_challenge: str) -> dict[str, Any]:
+        """POST /api/auth/cli/initiate
+
+        ``code_challenge`` is the S256 PKCE challenge bound to this login attempt.
+        """
         resp = await self._request(
-            "POST", "/api/auth/cli/initiate", json={"callback_url": callback_url}
+            "POST",
+            "/api/auth/cli/initiate",
+            json={
+                "callback_url": callback_url,
+                "code_challenge": code_challenge,
+                "code_challenge_method": "S256",
+            },
         )
         return resp.json()
 
-    async def cli_token(self, auth_code: str) -> dict[str, Any]:
-        """POST /api/auth/cli/token"""
+    async def cli_token(self, auth_code: str, code_verifier: str) -> dict[str, Any]:
+        """POST /api/auth/cli/token
+
+        The verifier must be the one whose challenge was sent to ``cli_initiate``.
+        """
         resp = await self._request(
-            "POST", "/api/auth/cli/token", json={"auth_code": auth_code}
+            "POST",
+            "/api/auth/cli/token",
+            json={"auth_code": auth_code, "code_verifier": code_verifier},
         )
         return resp.json()
 

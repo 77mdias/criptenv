@@ -3,6 +3,7 @@ from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
+import pytest
 from fastapi import FastAPI
 from fastapi.testclient import TestClient
 
@@ -484,3 +485,99 @@ def test_delete_avatar_refreshes_user_after_audit_before_response(monkeypatch):
     assert response.status_code == 200
     assert response.json()["avatar_url"] is None
     fake_db.refresh.assert_awaited_once_with(user)
+
+
+# ─── Dev-token exposure gate (CR-P1-4) ───────────────────────────────────────
+
+
+def _force_env(monkeypatch, *, debug: bool, app_env: str):
+    from app.config import settings
+
+    monkeypatch.setattr(settings, "DEBUG", debug)
+    monkeypatch.setattr(settings, "APP_ENV", app_env)
+
+
+@pytest.mark.parametrize("app_env", ["production", "prod", "release", "staging"])
+def test_reset_token_never_exposed_outside_development(monkeypatch, app_env):
+    """A production deployment missing RESEND_API_KEY must not echo reset tokens."""
+    reset_record = SimpleNamespace(token="LEAKED-reset-token", email="victim@example.com")
+
+    async def fake_create_password_reset(self, email):
+        return reset_record
+
+    monkeypatch.setattr(AuthService, "create_password_reset", fake_create_password_reset)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
+    _force_env(monkeypatch, debug=True, app_env=app_env)
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/forgot-password",
+            json={"email": "victim@example.com"},
+        )
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert "dev_token" not in payload or payload["dev_token"] is None
+    assert "LEAKED-reset-token" not in response.text
+
+
+def test_reset_token_not_exposed_when_debug_is_off(monkeypatch):
+    """Even in a development environment, DEBUG=false hides the token."""
+    reset_record = SimpleNamespace(token="LEAKED-reset-token", email="victim@example.com")
+
+    async def fake_create_password_reset(self, email):
+        return reset_record
+
+    monkeypatch.setattr(AuthService, "create_password_reset", fake_create_password_reset)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
+    _force_env(monkeypatch, debug=False, app_env="development")
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/forgot-password",
+            json={"email": "victim@example.com"},
+        )
+
+    assert response.status_code == 200
+    assert "LEAKED-reset-token" not in response.text
+
+
+def test_reset_token_exposed_in_local_development(monkeypatch):
+    """DEBUG + development keeps the local convenience fallback working."""
+    reset_record = SimpleNamespace(token="local-reset-token", email="dev@example.com")
+
+    async def fake_create_password_reset(self, email):
+        return reset_record
+
+    monkeypatch.setattr(AuthService, "create_password_reset", fake_create_password_reset)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
+    _force_env(monkeypatch, debug=True, app_env="development")
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/forgot-password",
+            json={"email": "dev@example.com"},
+        )
+
+    assert response.json()["dev_token"] == "local-reset-token"
+
+
+def test_verification_token_never_exposed_outside_development(monkeypatch):
+    """Same gate applies to the email-verification resend endpoint."""
+    verification_record = SimpleNamespace(token="LEAKED-verification-token")
+
+    async def fake_create_email_verification(self, email):
+        return verification_record
+
+    monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
+    monkeypatch.setattr(EmailService, "__init__", lambda self: setattr(self, "enabled", False))
+    _force_env(monkeypatch, debug=True, app_env="production")
+
+    with TestClient(make_app()) as client:
+        response = client.post(
+            "/api/auth/send-verification",
+            json={"email": "victim@example.com"},
+        )
+
+    assert response.status_code == 200
+    assert "LEAKED-verification-token" not in response.text

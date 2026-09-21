@@ -13,6 +13,7 @@ from urllib.parse import urlparse, parse_qs
 import click
 
 from criptenv.context import local_vault, run_async
+from criptenv.pkce import generate_pkce_pair
 from criptenv.session import SessionManager, get_or_create_auth_key
 from criptenv.api.client import CriptEnvClient
 
@@ -41,6 +42,7 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
     auth_code: str | None = None
     error: str | None = None
+    expected_state: str | None = None
     event: threading.Event = threading.Event()
 
     def do_GET(self):
@@ -48,8 +50,15 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
         params = parse_qs(parsed.query)
 
         if "code" in params:
-            _CallbackHandler.auth_code = params["code"][0]
-            self._send_success()
+            received_state = params.get("state", [None])[0]
+            if self.expected_state and received_state != self.expected_state:
+                # Reject unsolicited authorization responses: only the flow this
+                # process started may deliver a code to this port.
+                _CallbackHandler.error = "state_mismatch"
+                self._send_error("State mismatch — authorization response rejected")
+            else:
+                _CallbackHandler.auth_code = params["code"][0]
+                self._send_success()
         elif "error" in params:
             _CallbackHandler.error = params["error"][0]
             self._send_error(params["error"][0])
@@ -101,9 +110,14 @@ async def _browser_login(auth_key: bytes, db) -> dict:
     port = _find_free_port()
     callback_url = f"http://127.0.0.1:{port}/callback"
 
+    # PKCE: the verifier stays on this machine and is required to exchange the
+    # authorization code, so an intercepted code cannot be redeemed elsewhere.
+    code_verifier, code_challenge = generate_pkce_pair()
+
     # Reset handler state
     _CallbackHandler.auth_code = None
     _CallbackHandler.error = None
+    _CallbackHandler.expected_state = None
     _CallbackHandler.event.clear()
 
     # Start temporary HTTP server in a thread
@@ -116,8 +130,10 @@ async def _browser_login(auth_key: bytes, db) -> dict:
     try:
         # Initiate CLI auth flow
         click.echo("Initiating browser login...")
-        init_data = await client.cli_initiate(callback_url)
+        init_data = await client.cli_initiate(callback_url, code_challenge)
         auth_url = init_data["auth_url"]
+        # Only the state issued for this attempt is accepted on the callback.
+        _CallbackHandler.expected_state = init_data.get("state")
 
         click.echo("")
         click.echo("A browser window will open for authentication.")
@@ -140,9 +156,9 @@ async def _browser_login(auth_key: bytes, db) -> dict:
         if not _CallbackHandler.auth_code:
             raise click.ClickException("No authorization code received.")
 
-        # Exchange code for token
+        # Exchange code for token (proving possession of the PKCE verifier)
         click.echo("Authenticating...")
-        token_data = await client.cli_token(_CallbackHandler.auth_code)
+        token_data = await client.cli_token(_CallbackHandler.auth_code, code_verifier)
         token = token_data["token"]
         user = token_data["user"]
 

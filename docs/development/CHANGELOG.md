@@ -7,6 +7,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Security Remediation — P0 and P1 Findings (2026-09-21)
+
+- **Security (P0, API):** API key CRUD under `/api/v1/projects/{project_id}/api-keys` now requires `admin` access to the project (previously any authenticated user could list, create, update or revoke any tenant's API keys — cross-tenant BOLA).
+- **Security (P0, auth/CLI):** The CLI browser login now rejects non-loopback `callback_url` values, requires PKCE (S256), and returns the server-registered callback so the web page no longer redirects to a caller-supplied one. Previously a crafted link could deliver a victim's authorization code to an attacker, who exchanged it for a full session.
+- **Security (P1, API):** `IntegrationService.get_integration`/`delete_integration`/`sync_integration`/`validate_integration` take a mandatory `project_id`, closing cross-project sync/validate that used a victim's stored provider credentials.
+- **Security (P1, auth):** Password-reset and email-verification tokens are only echoed in the response body when `DEBUG` is on **and** `APP_ENV` is non-production; previously an unconfigured `RESEND_API_KEY` leaked working reset tokens to any caller.
+- **Security (P1, webhooks):** Mercado Pago signature validation fails closed when `MERCADO_PAGO_WEBHOOK_SECRET` is unset (previously it skipped validation and accepted unsigned notifications).
+- **Security (P1, rate limiting):** Credential endpoints (`signin`, `signup`, password reset, 2FA challenge, CLI code exchange) now get the documented `5/minute` limit instead of the anonymous `100/minute`; the bucket key uses a validated `X-Forwarded-For` only from configured `TRUSTED_PROXIES`; API keys are bucketed per credential instead of colliding on the constant `cek_live`.
+- **Config:** Added `TRUSTED_PROXIES` (default `127.0.0.1,::1`).
+- **Docs:** Documented the resolved CR-01/CR-02 status and the follow-up findings in `AGENTS.md`; added `plans/security-p1-remediation.md`.
+- **Verification:** API 548 passed/2 skipped, CLI 189 passed, ESLint and TypeScript checks clean on changed files.
+- **Deferred:** Secret rotation still assigns a non-existent `vault_blob.encrypted_value` (so the new ciphertext is not persisted) and the web client sends plaintext as `new_value`; tracked as P1-8 in `plans/security-p1-remediation.md`.
+
 ### Project Alerts Implementation Complete; Validation Incomplete (2026-09-19)
 
 - **API:** Added owner/admin-only alert settings endpoints, encrypted webhook configuration, safe previews, audit events and sanitized project serialization.

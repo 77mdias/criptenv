@@ -13,15 +13,30 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 
 def test_rate_limit_key_function_api_key():
-    """get_rate_limit_key should return API key prefix when present."""
+    """Each API key must get its own bucket (CR-P1-7).
+
+    The old implementation returned `key[:8]`, which for every `cek_live_*`
+    token is the constant "cek_live" — every tenant shared one counter.
+    """
     from app.middleware.rate_limit import get_rate_limit_key
     
-    # With API key - returns first 8 chars ("cek_live")
     request = MagicMock()
     request.headers = {"Authorization": "Bearer cek_live_abc123xyz"}
-    
-    key = get_rate_limit_key(request)
-    assert key == "cek_live"  # First 8 chars of key
+    key_a = get_rate_limit_key(request)
+
+    request.headers = {"Authorization": "Bearer cek_live_different456"}
+    key_b = get_rate_limit_key(request)
+
+    assert key_a is not None and key_b is not None
+    assert key_a != key_b, "distinct API keys must not share a rate limit bucket"
+    assert key_a.startswith("apikey:")
+    # The credential itself must never appear in the bucket name.
+    assert "cek_live_abc123xyz" not in key_a
+    assert "cek_live" not in key_a
+
+    # Stable across calls for the same key.
+    request.headers = {"Authorization": "Bearer cek_live_abc123xyz"}
+    assert get_rate_limit_key(request) == key_a
     
     # With CI token (should return None for rate limit by IP)
     request.headers = {"Authorization": "Bearer ci_token_abc"}
@@ -269,3 +284,121 @@ async def test_redis_rate_limit_storage_shares_counters_between_instances():
     assert await storage_b.get_count("rate:shared") == 1
     assert await storage_b.increment_count("rate:shared", 60) == 2
     assert redis_client.expirations["rate:shared"] == 60
+
+
+# ─── Auth-path limits and trusted proxy identity (CR-P1-6) ───────────────────
+
+
+def _request(path: str, *, client_host: str = "203.0.113.9", headers: dict | None = None):
+    request = MagicMock()
+    mock_url = MagicMock()
+    mock_url.path = path
+    request.url = mock_url
+    request.headers = headers or {}
+    request.client.host = client_host
+    return request
+
+
+@pytest.mark.parametrize(
+    "path",
+    [
+        "/api/auth/signin",
+        "/api/auth/signup",
+        "/api/auth/forgot-password",
+        "/api/auth/reset-password",
+        "/api/auth/change-password",
+        "/api/auth/2fa/challenge/verify",
+        "/api/auth/cli/token",
+    ],
+)
+def test_auth_paths_get_the_strict_limit(path):
+    """Credential endpoints must use AUTH_RATE_LIMIT, not the anonymous bucket."""
+    from app.middleware.rate_limit import resolve_rate_limit, build_rate_limit_key
+
+    request = _request(path)
+    assert resolve_rate_limit(request) == "5/minute"
+    assert build_rate_limit_key(request, "203.0.113.9") == "auth:203.0.113.9"
+
+
+def test_non_auth_paths_keep_their_limit():
+    """A normal API read must not be throttled to 5/min."""
+    from app.middleware.rate_limit import resolve_rate_limit
+
+    assert resolve_rate_limit(_request("/api/v1/projects")) == "100/minute"
+
+
+def test_device_poll_is_excluded_from_the_auth_bucket():
+    """The CLI polls device/poll every 5s, so it must not be capped at 5/min."""
+    from app.middleware.rate_limit import resolve_rate_limit, is_auth_rate_limited_path
+
+    assert is_auth_rate_limited_path("/api/auth/cli/device/poll") is False
+    assert resolve_rate_limit(_request("/api/auth/cli/device/poll")) == "100/minute"
+
+
+def test_forwarded_for_ignored_from_untrusted_peer():
+    """A client-supplied X-Forwarded-For must not spoof the rate limit identity."""
+    from app.middleware.rate_limit import get_client_ip
+
+    request = _request(
+        "/api/auth/signin",
+        client_host="203.0.113.9",
+        headers={"x-forwarded-for": "1.2.3.4"},
+    )
+
+    assert get_client_ip(request, {"127.0.0.1"}) == "203.0.113.9"
+
+
+def test_forwarded_for_used_from_trusted_proxy():
+    """A trusted proxy may assert the real client address."""
+    from app.middleware.rate_limit import get_client_ip
+
+    request = _request(
+        "/api/auth/signin",
+        client_host="127.0.0.1",
+        headers={"x-forwarded-for": "198.51.100.7"},
+    )
+
+    assert get_client_ip(request, {"127.0.0.1"}) == "198.51.100.7"
+
+
+def test_forwarded_for_chain_stops_at_first_untrusted_hop():
+    """A client-injected left-hand entry must be ignored.
+
+    `X-Forwarded-For: 9.9.9.9, 198.51.100.7` where only the rightmost hop came
+    from our own proxy still resolves to 198.51.100.7, not the forged 9.9.9.9.
+    """
+    from app.middleware.rate_limit import get_client_ip
+
+    request = _request(
+        "/api/auth/signin",
+        client_host="127.0.0.1",
+        headers={"x-forwarded-for": "9.9.9.9, 198.51.100.7, 127.0.0.1"},
+    )
+
+    assert get_client_ip(request, {"127.0.0.1"}) == "198.51.100.7"
+
+
+def test_ipv4_mapped_ipv6_is_normalized():
+    """`::ffff:127.0.0.1` must match the configured trusted proxy."""
+    from app.middleware.rate_limit import get_client_ip
+
+    request = _request(
+        "/api/auth/signin",
+        client_host="::ffff:127.0.0.1",
+        headers={"x-forwarded-for": "198.51.100.7"},
+    )
+
+    assert get_client_ip(request, {"127.0.0.1"}) == "198.51.100.7"
+
+
+def test_no_trusted_proxies_falls_back_to_peer_address():
+    """With no configured proxy, forwarded headers are never trusted."""
+    from app.middleware.rate_limit import get_client_ip
+
+    request = _request(
+        "/api/auth/signin",
+        client_host="127.0.0.1",
+        headers={"x-forwarded-for": "198.51.100.7"},
+    )
+
+    assert get_client_ip(request, set()) == "127.0.0.1"

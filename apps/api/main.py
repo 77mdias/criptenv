@@ -166,6 +166,7 @@ app.add_middleware(
         enabled=settings.RATE_LIMIT_ENABLED,
         storage_backend=settings.RATE_LIMIT_STORAGE,
         storage_uri=settings.REDIS_URL or None,
+        trusted_proxies=settings.trusted_proxies_set,
     ),
 )
 

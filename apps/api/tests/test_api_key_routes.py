@@ -75,6 +75,22 @@ def transport():
     return ASGITransport(app=app)
 
 
+@pytest.fixture(autouse=True)
+def allow_project_access():
+    """Grant the authenticated caller admin access to the project by default.
+
+    API key management is project-scoped (see `_require_project_admin`), so every
+    handler performs a `check_user_access` lookup. Individual access-control tests
+    override the return value to `None` to assert the denial path.
+    """
+    with patch(
+        'app.services.project_service.ProjectService.check_user_access',
+        new_callable=AsyncMock,
+    ) as mock_check:
+        mock_check.return_value = MagicMock()
+        yield mock_check
+
+
 @pytest.mark.asyncio
 async def test_create_api_key_returns_plaintext_once(transport, mock_user, mock_project):
     """POST /api/v1/projects/:id/api-keys must return plaintext key once."""
@@ -304,3 +320,77 @@ async def test_revoke_nonexistent_api_key(transport, mock_user, mock_project):
                     )
                 
                 assert response.status_code == 404
+
+
+# ─── Access control (CR-P0-2: cross-tenant BOLA on API key management) ────────
+
+
+@pytest.mark.asyncio
+async def test_api_key_routes_require_admin_role(
+    transport, mock_user, mock_project, allow_project_access
+):
+    """Every handler must verify `admin` access to the project in the path."""
+    with override_current_user(mock_user):
+        with patch('app.services.api_key_service.ApiKeyService.list_api_keys', new_callable=AsyncMock) as mock_list:
+            mock_list.return_value = ([], 0)
+
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                await client.get(
+                    f"/api/v1/projects/{mock_project.id}/api-keys",
+                    headers={"Authorization": "Bearer session_token"},
+                )
+
+    assert allow_project_access.await_count == 1
+    args = allow_project_access.await_args.args
+    assert args[0] == mock_user.id
+    assert args[1] == mock_project.id
+    assert args[2] == "admin"
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "method,suffix",
+    [
+        ("post", ""),
+        ("get", ""),
+        ("get", "/{key_id}"),
+        ("patch", "/{key_id}"),
+        ("delete", "/{key_id}"),
+    ],
+)
+async def test_api_key_routes_deny_without_project_access(
+    transport, mock_user, mock_project, allow_project_access, method, suffix
+):
+    """A caller with no access to the project must get 404 and touch no service."""
+    allow_project_access.return_value = None
+    key_id = uuid4()
+    url = f"/api/v1/projects/{mock_project.id}/api-keys{suffix.format(key_id=key_id)}"
+
+    request_kwargs: dict = {"headers": {"Authorization": "Bearer session_token"}}
+    if method in {"post", "patch"}:
+        request_kwargs["json"] = {"name": "CI Pipeline", "scopes": ["read:secrets"]}
+
+    with override_current_user(mock_user):
+        with patch('app.services.api_key_service.ApiKeyService', autospec=True) as mock_service:
+            async with AsyncClient(transport=transport, base_url="http://test") as client:
+                response = await getattr(client, method)(url, **request_kwargs)
+
+    assert response.status_code == 404
+    # The service must never be constructed for an unauthorized caller.
+    mock_service.assert_not_called()
+
+
+@pytest.mark.asyncio
+async def test_api_key_error_does_not_leak_project_existence(transport, mock_user, allow_project_access):
+    """Denial returns 404 (not 403) so project existence is not disclosed."""
+    allow_project_access.return_value = None
+
+    with override_current_user(mock_user):
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                f"/api/v1/projects/{uuid4()}/api-keys",
+                headers={"Authorization": "Bearer session_token"},
+            )
+
+    assert response.status_code == 404
+    assert "insufficient" in response.json()["detail"].lower() or "not found" in response.json()["detail"].lower()
