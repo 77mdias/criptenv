@@ -13,6 +13,7 @@ import { Mail, Lock, AlertCircle } from "lucide-react"
 import { loginSchema, type LoginInput } from "@/lib/validators/schemas"
 import { useAuth } from "@/hooks/use-auth"
 import { authApi, ApiError } from "@/lib/api"
+import { safeRedirectPath } from "@/lib/safe-redirect"
 
 export default function LoginPage() {
   const router = useRouter()
@@ -37,12 +38,12 @@ export default function LoginPage() {
     setResent(false)
     try {
       const result = await login(data.email, data.password)
+      const destination = safeRedirectPath(searchParams.get("redirect"))
       if ("requires_two_factor" in result) {
-        const next = searchParams.get("redirect") || "/dashboard"
-        router.push(`/2fa?next=${encodeURIComponent(next)}`)
+        router.push(`/2fa?next=${encodeURIComponent(destination)}`)
         return
       }
-      router.push(searchParams.get("redirect") || "/dashboard")
+      router.push(destination)
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 403) {
         setUnverifiedEmail(data.email)

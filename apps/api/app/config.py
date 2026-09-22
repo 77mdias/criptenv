@@ -1,8 +1,11 @@
 from pydantic_settings import BaseSettings
-from pydantic import field_validator
+from pydantic import field_validator, model_validator
 from typing import Any, List
 from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
 import json
+
+# Environments treated as production for security defaults.
+PRODUCTION_ENVIRONMENTS = frozenset({"production", "prod", "release"})
 
 
 class Settings(BaseSettings):
@@ -15,7 +18,10 @@ class Settings(BaseSettings):
     SESSION_INACTIVITY_DAYS: int = 7
     CORS_ORIGINS: str = "http://localhost:3000"
     APP_ENV: str = "development"
-    DEBUG: bool = True
+    # Secure by default: DEBUG governs the cookie `Secure` flag and whether the
+    # API docs and one-time development tokens are exposed, so a deployment that
+    # forgets to set it must not silently turn those on.
+    DEBUG: bool = False
     DB_POOL_SIZE: int = 5
     DB_MAX_OVERFLOW: int = 5
     DB_POOL_TIMEOUT: int = 10
@@ -84,6 +90,29 @@ class Settings(BaseSettings):
             if normalized in {"dev", "development", "debug"}:
                 return True
         return value
+
+    @model_validator(mode="after")
+    def validate_security_settings(self) -> "Settings":
+        """Fail fast on combinations that silently weaken security."""
+        if self.is_production and self.DEBUG:
+            raise ValueError(
+                "DEBUG must be false when APP_ENV is production: it disables the "
+                "Secure cookie flag, serves the API docs and enables development "
+                "token fallbacks."
+            )
+
+        if "*" in self.cors_origins_list:
+            raise ValueError(
+                "CORS_ORIGINS must not contain '*': the API allows credentials, so "
+                "a wildcard would let any origin issue credentialed requests. List "
+                "the allowed origins explicitly."
+            )
+
+        return self
+
+    @property
+    def is_production(self) -> bool:
+        return self.APP_ENV.strip().lower() in PRODUCTION_ENVIRONMENTS
 
     class Config:
         env_file = ".env"

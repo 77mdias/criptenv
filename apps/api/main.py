@@ -143,7 +143,9 @@ app = FastAPI(
     lifespan=lifespan,
     docs_url="/docs" if settings.DEBUG else None,
     redoc_url="/redoc" if settings.DEBUG else None,
-    openapi_url="/openapi.json",
+    # The schema enumerates every route and payload; it is a development aid, not
+    # a public contract, so it follows the same gate as /docs.
+    openapi_url="/openapi.json" if settings.DEBUG else None,
     swagger_ui_parameters={"syntaxHighlight": False},
 )
 

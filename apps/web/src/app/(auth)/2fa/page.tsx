@@ -7,6 +7,7 @@ import { AlertCircle, KeyRound, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { authApi, ApiError } from "@/lib/api"
+import { safeRedirectPath } from "@/lib/safe-redirect"
 import { useAuthStore } from "@/stores/auth"
 
 export default function TwoFactorPage() {
@@ -18,7 +19,7 @@ export default function TwoFactorPage() {
   const [error, setError] = useState<string | null>(null)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const next = searchParams.get("next") || "/dashboard"
+  const next = safeRedirectPath(searchParams.get("next"))
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()

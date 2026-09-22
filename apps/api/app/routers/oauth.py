@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import RedirectResponse
 from sqlalchemy.ext.asyncio import AsyncSession
@@ -9,6 +11,8 @@ from app.services.oauth_service import OAuthService
 from app.schemas.auth import AuthResponse, UserResponse, SessionResponse
 from app.middleware.auth import get_current_user
 from app.models.user import User
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(prefix="/api/auth/oauth", tags=["Authentication"])
 
@@ -216,19 +220,19 @@ async def oauth_callback(
             link_to_user=current_user,
         )
     except Exception as e:
-        import traceback
-        traceback.print_exc()
+        # Log the detail server-side; this endpoint is unauthenticated, so the
+        # response must not echo provider/library messages that can disclose
+        # configuration and internals.
+        logger.exception("OAuth authentication failed for provider %s", provider)
         if action == "link":
-            from urllib.parse import quote
-            err_msg = quote(str(e) or 'Authentication failed')
             return RedirectResponse(
-                url=f"{settings.FRONTEND_URL.rstrip('/')}/account?oauth_error={err_msg}",
+                url=f"{settings.FRONTEND_URL.rstrip('/')}/account?oauth_error=oauth_failed",
                 status_code=307
             )
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"OAuth authentication failed: {type(e).__name__}: {str(e) or 'No details'}"
-        )
+            detail="OAuth authentication failed",
+        ) from e
     
     if action == "link":
         redirect_response = RedirectResponse(
