@@ -11,6 +11,7 @@ GRASP Patterns:
 from uuid import UUID
 from datetime import datetime, timezone, timedelta
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Query
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -24,6 +25,7 @@ from app.schemas.secret_expiration import (
 )
 from app.middleware.auth import get_current_user
 from app.models.user import User
+from app.models.environment import Environment
 
 
 router = APIRouter(
@@ -50,14 +52,33 @@ async def _check_access(
     project_id: UUID, 
     environment_id: UUID,
     project_service: ProjectService, 
+    db: AsyncSession,
     required_role: str | None = None
 ):
-    """Verify user has access to project/environment."""
+    """Verify the user can access this project *and* this environment.
+
+    Checking only the project is not enough: every route carries both ids, and an
+    admin of project A could otherwise pass an environment id belonging to project
+    B, creating cross-project expiration records that feed the alert scheduler.
+    """
     member = await project_service.check_user_access(user.id, project_id, required_role)
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found or insufficient permissions"
+        )
+
+    result = await db.execute(
+        select(Environment).where(
+            Environment.id == environment_id,
+            Environment.project_id == project_id,
+        )
+    )
+    environment = result.scalar_one_or_none()
+    if not environment or getattr(environment, "archived", False):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Environment not found",
         )
 
 
@@ -80,7 +101,7 @@ async def rotate_secret(
     rotation_service = RotationService(db)
     audit_service = AuditService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service, "admin")
+    await _check_access(current_user, project_id, environment_id, project_service, db, "admin")
 
     try:
         rotation, new_version = await rotation_service.rotate_secret(
@@ -135,7 +156,7 @@ async def set_expiration(
     rotation_service = RotationService(db)
     audit_service = AuditService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service, "admin")
+    await _check_access(current_user, project_id, environment_id, project_service, db, "admin")
 
     # Check if expiration already exists
     existing = await rotation_service.get_expiration(project_id, environment_id, secret_key)
@@ -217,7 +238,7 @@ async def get_rotation_status(
     project_service = ProjectService(db)
     rotation_service = RotationService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service)
+    await _check_access(current_user, project_id, environment_id, project_service, db)
 
     status_data = await rotation_service.get_rotation_status(
         project_id, environment_id, secret_key
@@ -311,7 +332,7 @@ async def get_rotation_history(
     project_service = ProjectService(db)
     rotation_service = RotationService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service)
+    await _check_access(current_user, project_id, environment_id, project_service, db)
 
     history = await rotation_service.get_rotation_history(
         project_id, environment_id, secret_key
@@ -338,7 +359,7 @@ async def delete_expiration(
     rotation_service = RotationService(db)
     audit_service = AuditService(db)
 
-    await _check_access(current_user, project_id, environment_id, project_service, "admin")
+    await _check_access(current_user, project_id, environment_id, project_service, db, "admin")
 
     deleted = await rotation_service.delete_expiration(
         project_id, environment_id, secret_key

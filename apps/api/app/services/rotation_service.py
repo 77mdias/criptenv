@@ -19,6 +19,7 @@ from app.models.secret_expiration import SecretExpiration, SecretRotation
 from app.models.vault import VaultBlob
 from app.models.project import Project
 from app.services.alert_settings_service import AlertSettingsService
+from app.services.vault_service import compute_blob_checksum
 from app.schemas.secret_expiration import (
     ExpirationCreate,
     ExpirationUpdate,
@@ -233,10 +234,18 @@ class RotationService:
         
         previous_version = vault_blob.version
         
-        # Update vault blob with new encrypted value
-        vault_blob.encrypted_value = payload.new_value
+        # Update vault blob with the new encrypted value. `ciphertext` is the
+        # column that actually persists the secret; assigning a non-column (as
+        # `encrypted_value` did) silently leaves the old ciphertext in place while
+        # changing the IV and auth tag, producing an undecryptable blob.
+        vault_blob.ciphertext = payload.new_value
         vault_blob.iv = payload.iv
         vault_blob.auth_tag = payload.auth_tag
+        # Keep the integrity digest consistent with the new envelope. The server
+        # derives it from metadata only, so no plaintext is involved.
+        vault_blob.checksum = compute_blob_checksum(
+            secret_key, payload.iv, payload.new_value, payload.auth_tag
+        )
         vault_blob.version = previous_version + 1 if previous_version else 1
         
         # Create rotation record

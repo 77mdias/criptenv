@@ -411,7 +411,9 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         const envKey = await deriveProjectEnvironmentKey(keyMaterial, activeEnv.id)
         const encrypted = await encrypt(newValue, envKey)
         await rotationApi.rotateSecret(projectId, activeEnv.id, secret.key, {
-          new_value: newValue,
+          // Send the ciphertext, never the plaintext: the server stores this
+          // field as the blob's ciphertext and must not learn the secret.
+          new_value: encrypted.ciphertext,
           iv: encrypted.iv,
           auth_tag: encrypted.authTag,
           reason: "Manual rotation via web dashboard",

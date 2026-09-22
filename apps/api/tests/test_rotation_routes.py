@@ -320,7 +320,17 @@ class TestRotationRouterIntegration:
         project_id = uuid4()
         environment_id = uuid4()
 
-        await _check_access(mock_user, project_id, environment_id, service, "admin")
+        # The environment lookup must now resolve to a row owned by this project.
+        environment = MagicMock()
+        environment.archived = False
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = environment
+        db = MagicMock()
+        db.execute = AsyncMock(return_value=result)
+
+        await _check_access(
+            mock_user, project_id, environment_id, service, db, "admin"
+        )
 
         service.check_user_access.assert_awaited_once_with(
             mock_user.id,
@@ -464,3 +474,167 @@ def mock_project_service():
     service = MagicMock()
     service.check_user_access = AsyncMock(return_value=MagicMock(role="developer"))
     return service
+
+
+class TestRotationPersistsCiphertext:
+    """CR-P1-8: rotation must persist the new ciphertext with a matching checksum.
+
+    `rotate_secret` used to assign `vault_blob.encrypted_value`, an attribute that
+    does not exist on VaultBlob. SQLAlchemy accepted it silently, so the ciphertext
+    was never written while the IV and auth tag were -- leaving an undecryptable
+    blob while the API reported a successful rotation.
+    """
+
+    def _service_with_blob(self, version: int = 3):
+        from app.services.rotation_service import RotationService
+        from app.models.vault import VaultBlob
+
+        blob = MagicMock(spec=VaultBlob)
+        blob.version = version
+
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = blob
+
+        mock_db = MagicMock()
+        mock_db.execute = AsyncMock(return_value=result)
+        mock_db.add = MagicMock()
+        mock_db.commit = AsyncMock()
+        mock_db.refresh = AsyncMock()
+        mock_db.flush = AsyncMock()
+
+        service = RotationService(db=mock_db)
+        service.get_expiration = AsyncMock(return_value=None)
+        return service, blob
+
+    @pytest.mark.asyncio
+    async def test_rotate_secret_writes_ciphertext_and_canonical_checksum(self):
+        from app.schemas.secret_expiration import RotationRequest
+        from app.services.vault_service import compute_blob_checksum
+
+        service, blob = self._service_with_blob()
+        payload = RotationRequest(
+            new_value="NEW_CIPHERTEXT",
+            iv="IV_ABC",
+            auth_tag="TAG_DEF",
+            reason="test",
+        )
+
+        rotation, version = await service.rotate_secret(
+            project_id=uuid4(),
+            environment_id=uuid4(),
+            secret_key="API_KEY",
+            payload=payload,
+            user_id=uuid4(),
+        )
+
+        assert blob.ciphertext == "NEW_CIPHERTEXT"
+        assert blob.iv == "IV_ABC"
+        assert blob.auth_tag == "TAG_DEF"
+        assert blob.checksum == compute_blob_checksum(
+            "API_KEY", "IV_ABC", "NEW_CIPHERTEXT", "TAG_DEF"
+        )
+        assert version == 4
+
+    @pytest.mark.asyncio
+    async def test_canonical_checksum_matches_the_cli_convention(self):
+        """Server-side digest must equal the CLI/web `remote_vault` convention."""
+        import hashlib
+        from app.services.vault_service import compute_blob_checksum
+
+        expected = hashlib.sha256(
+            b"API_KEY:IV_ABC:NEW_CIPHERTEXT:TAG_DEF"
+        ).hexdigest()
+
+        assert compute_blob_checksum(
+            "API_KEY", "IV_ABC", "NEW_CIPHERTEXT", "TAG_DEF"
+        ) == expected
+
+    @pytest.mark.asyncio
+    async def test_rotated_blob_is_self_consistent(self):
+        """The stored envelope must be verifiable from its own metadata alone."""
+        from app.schemas.secret_expiration import RotationRequest
+        from app.services.vault_service import compute_blob_checksum
+
+        service, blob = self._service_with_blob()
+        payload = RotationRequest(new_value="CT", iv="IV", auth_tag="TAG")
+
+        await service.rotate_secret(
+            project_id=uuid4(),
+            environment_id=uuid4(),
+            secret_key="KEY",
+            payload=payload,
+        )
+
+        assert blob.checksum == compute_blob_checksum(
+            "KEY", blob.iv, blob.ciphertext, blob.auth_tag
+        )
+
+
+class TestRotationEnvironmentScoping:
+    """CR-P2-12: the environment id must belong to the project in the path."""
+
+    @pytest.mark.asyncio
+    async def test_check_access_rejects_foreign_environment(self):
+        from app.routers.rotation import _check_access
+
+        member = MagicMock()
+        project_service = MagicMock()
+        project_service.check_user_access = AsyncMock(return_value=member)
+
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = None  # environment not in project
+        db = MagicMock()
+        db.execute = AsyncMock(return_value=result)
+
+        with pytest.raises(Exception) as exc_info:
+            await _check_access(
+                MagicMock(id=uuid4()),
+                uuid4(),
+                uuid4(),
+                project_service,
+                db,
+                "admin",
+            )
+
+        assert getattr(exc_info.value, "status_code", None) == 404
+        assert "Environment not found" in str(exc_info.value.detail)
+
+    @pytest.mark.asyncio
+    async def test_check_access_rejects_archived_environment(self):
+        from app.routers.rotation import _check_access
+
+        project_service = MagicMock()
+        project_service.check_user_access = AsyncMock(return_value=MagicMock())
+
+        environment = MagicMock()
+        environment.archived = True
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = environment
+        db = MagicMock()
+        db.execute = AsyncMock(return_value=result)
+
+        with pytest.raises(Exception) as exc_info:
+            await _check_access(
+                MagicMock(id=uuid4()), uuid4(), uuid4(), project_service, db, "admin"
+            )
+
+        assert getattr(exc_info.value, "status_code", None) == 404
+
+    @pytest.mark.asyncio
+    async def test_check_access_allows_matching_environment(self):
+        from app.routers.rotation import _check_access
+
+        project_service = MagicMock()
+        project_service.check_user_access = AsyncMock(return_value=MagicMock())
+
+        environment = MagicMock()
+        environment.archived = False
+        result = MagicMock()
+        result.scalar_one_or_none.return_value = environment
+        db = MagicMock()
+        db.execute = AsyncMock(return_value=result)
+
+        # Must not raise.
+        await _check_access(
+            MagicMock(id=uuid4()), uuid4(), uuid4(), project_service, db, "admin"
+        )

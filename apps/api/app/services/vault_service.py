@@ -1,3 +1,4 @@
+import hashlib
 from typing import Optional
 from uuid import UUID
 
@@ -8,6 +9,20 @@ from app.models.vault import VaultBlob
 from app.models.environment import Environment
 from app.strategies.exceptions import VaultConflict
 from app.strategies.vault_push import ReplaceAllVaultBlobsStrategy, VaultPushStrategy
+
+
+def compute_blob_checksum(key_id: str, iv: str, ciphertext: str, auth_tag: str) -> str:
+    """Return the canonical remote vault digest for a blob envelope.
+
+    This is the convention used by the web client (`encryptVault`) and by
+    `apps/cli/src/criptenv/remote_vault.py`:
+    ``sha256(f"{key_id}:{iv}:{ciphertext}:{auth_tag}")``. It is derived from the
+    envelope metadata alone, so the server can (re)compute it without ever
+    seeing plaintext — which keeps the zero-knowledge guarantee intact.
+    """
+    return hashlib.sha256(
+        f"{key_id}:{iv}:{ciphertext}:{auth_tag}".encode("utf-8")
+    ).hexdigest()
 
 
 class VaultService:
