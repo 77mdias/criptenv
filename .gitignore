@@ -79,3 +79,7 @@ supabase/.temp/
 cookies.txt
 .curl-cookies.txt
 .claude/test-user-credentials.md
+
+# Relatórios de scanner de segredos (contêm os trechos casados)
+.gl-report.json
+gitleaks-report.json
