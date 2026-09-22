@@ -17,8 +17,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Security (P1, rate limiting):** Credential endpoints (`signin`, `signup`, password reset, 2FA challenge, CLI code exchange) now get the documented `5/minute` limit instead of the anonymous `100/minute`; the bucket key uses a validated `X-Forwarded-For` only from configured `TRUSTED_PROXIES`; API keys are bucketed per credential instead of colliding on the constant `cek_live`.
 - **Config:** Added `TRUSTED_PROXIES` (default `127.0.0.1,::1`).
 - **Docs:** Documented the resolved CR-01/CR-02 status and the follow-up findings in `AGENTS.md`; added `plans/security-p1-remediation.md`.
-- **Verification:** API 548 passed/2 skipped, CLI 189 passed, ESLint and TypeScript checks clean on changed files.
-- **Deferred:** Secret rotation still assigns a non-existent `vault_blob.encrypted_value` (so the new ciphertext is not persisted) and the web client sends plaintext as `new_value`; tracked as P1-8 in `plans/security-p1-remediation.md`.
+- **Verification:** API 574 passed/2 skipped, CLI 191 passed, web unit 105 passed, ESLint and TypeScript checks clean on changed files.
+
+### Security Remediation — Rotation and P2/P3 Findings (2026-09-21)
+
+- **Security (P1, rotation):** `rotate_secret` assigned `vault_blob.encrypted_value`, which is not a column on `VaultBlob`, so the new ciphertext was never persisted while the IV, auth tag and version were — producing an undecryptable blob reported as a successful rotation. It now writes `ciphertext` and recomputes the canonical digest `sha256("{key_id}:{iv}:{ciphertext}:{auth_tag}")`, which the server derives from metadata only (zero-knowledge preserved). The web dashboard also sent the **plaintext** as `new_value` and now sends the ciphertext.
+- **Security (P2, sessions):** The `sessions` table stored the raw bearer token while CI tokens, API keys and 2FA challenges were already hashed. Sessions now persist only the SHA-256 digest. **Existing sessions are invalidated by this change (one-time forced re-login);** there is no schema migration, the digest reuses the existing unique column.
+- **Security (P2, invites):** Invite tokens are returned only to the caller that created the invite (any member, including a viewer, can list invites), and the `invite.accepted` audit entry no longer stores the token. Invite creation now requires `admin` instead of `developer`, matching `add_member` and CI token creation.
+- **Security (P2, device flow):** The device grant exposed the `device_code` in the browser URL where it leaked to history/referrers/logs, and every poll minted a new session. The URL now carries the `user_code`, `/device/authorize` accepts it and resolves the pending request server-side, and `/device/poll` consumes the request so a replay returns `expired`.
+- **Security (P2, config):** `DEBUG` now defaults to `False` and startup fails when `APP_ENV=production` with `DEBUG` on; `CORS_ORIGINS` containing `*` is rejected at startup (the API allows credentials); `/openapi.json` follows the `/docs` gate; the OAuth callback no longer returns raw exception text or a traceback to unauthenticated callers.
+- **Security (P2, rotation scope):** Rotation routes validated only the project; `_check_access` now also resolves the environment scoped to that project, so an admin of one project can no longer create expiration records referencing another project's environment.
+- **Security (P2, frontend):** The 2FA (`?next=`) and login (`?redirect=`) pages pushed a caller-supplied URL into the router, allowing an open redirect; both use a shared `safeRedirectPath` helper (unit-tested).
+- **Security (P2/P3, hygiene):** `.gitleaks.toml` now extends the default ruleset (`[extend] useDefault = true`) instead of replacing it with zero rules; `cookies.txt` (live session token) and `.claude/test-user-credentials.md` are untracked and ignored; the dev compose database requires its password from the environment and binds `127.0.0.1:5433`; the CLI restricts `~/.criptenv` to `0700` and `vault.db` to `0600`.
+- **Breaking (ops):** Production must configure `DEBUG=false` explicitly (or omit it) and must not use a wildcard `CORS_ORIGINS`; both now fail fast at startup.
+- **Residual (deployment):** invite/reset tokens still travel in query strings and therefore appear in gunicorn access logs; redacting query strings at the edge or in the log format is left to the deployment.
 
 ### Project Alerts Implementation Complete; Validation Incomplete (2026-09-19)
 

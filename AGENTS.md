@@ -323,14 +323,25 @@ Additional fixes from the follow-up audit (`hotfix/security-vuln-fix`):
 - **P1** The Mercado Pago webhook failed open when its secret was unconfigured.
 - **P1** Auth endpoints used the anonymous rate limit (100/min, not the documented
   5/min) and were keyed on an untrusted client address; API-key buckets collided.
+- **P1** Secret rotation wrote a non-existent `vault_blob.encrypted_value` (the new
+  ciphertext was never persisted) and the web client sent plaintext instead.
+- **P2** Session tokens were stored in plaintext; invite tokens were disclosed to
+  viewers and written to the audit log; the device flow leaked the `device_code`
+  in a browser URL and its poll minted a new session on every call.
+- **P2** `DEBUG` defaulted to `True`; CORS accepted a wildcard with credentials;
+  `/openapi.json` was always public; the OAuth callback leaked exception text; the
+  auth pages had an open redirect; the dev compose had a hardcoded DB password on
+  an exposed port; `.gitleaks.toml` replaced the default ruleset with zero rules.
+- **P3** The CLI created `~/.criptenv` (0755) and `vault.db` (0644), readable by
+  other local users.
 
-Still open (tracked in `plans/security-p1-remediation.md`):
+See `plans/security-p1-remediation.md` for the full status and the deployment
+follow-up (credential rotation, git history purge, proxy/rate-limit configuration).
 
-- **P1** Secret rotation writes `vault_blob.encrypted_value` (not a column), so
-  the ciphertext is never persisted, and the web client sends plaintext as
-  `new_value`.
-- **P2/P3** Committed `cookies.txt` session token, `.gitleaks.toml` with no rules,
-  plaintext session tokens at rest, `DEBUG` defaulting to `True`.
+> Operational notes: session tokens are now stored as digests, so shipping this
+> **invalidates existing sessions** (one-time forced re-login). `DEBUG` must be
+> `false` (or unset) in production and `CORS_ORIGINS` must not contain `*` — both
+> now fail fast at startup.
 
 ### Agent Rules for Security
 - Never commit secrets, `.env` files, or credential files

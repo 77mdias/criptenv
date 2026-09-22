@@ -178,25 +178,36 @@ service.
 | P1-5 Webhook fail-open | Done | `security(api): fail closed when the webhook secret is unconfigured` |
 | P1-6 Auth rate limit + trusted IP | Done | `security(api): enforce auth rate limits and a trustworthy client identity` |
 | P1-7 API key bucket collision | Done | (same commit as P1-6) |
-| P1-8 Rotation ciphertext / plaintext leak | **Deferred** | to be done in a follow-up |
+| P1-8 Rotation ciphertext / plaintext leak | Done | `security: persist rotated ciphertext and scope rotation to the project` |
+| P2-9 Device secret in URL / poll replay | Done | `security(auth): keep the device_code off the browser URL and single-use` |
+| P2-10 Invite token exposure | Done | `security(auth): hash session tokens, stop leaking invite tokens, tighten invites` |
+| P2-11 Invite role ceiling | Done | (same commit as P2-10) |
+| P2-12 Rotation env ↔ project scope | Done | (same commit as P1-8) |
+| P2-13 Session tokens at rest | Done | (same commit as P2-10) |
+| P2-14 Committed `cookies.txt` | Done (untracked) | `chore(security): fix the no-op secret scan and untrack credential files` |
+| P2-15 No-op gitleaks config | Done | (same commit as P2-14) |
+| P2-16 Committed test credentials | Done (untracked) | (same commit as P2-14) |
+| P2-17 `DEBUG` default / `APP_ENV` coupling | Done | `security: secure-by-default config, gated API schema, no open redirects` |
+| P2-18 Public `/openapi.json`, OAuth error leak | Done (partially) | (same commit as P2-17) — query-string tokens are a deployment concern |
+| P2-19 CORS wildcard validation | Done | (same commit as P2-17) |
+| P2-20 Open redirect on `next`/`redirect` | Done | (same commit as P2-17) |
+| P2-21 Dev compose password / exposed port | Done | (same commit as P2-14) |
+| P3 Local vault file permissions | Done | (same commit as P2-14) |
 
-### P1-8 follow-up handoff (not yet implemented)
+Everything code-actionable from the audit is complete. The remaining items are
+deployment/operational.
 
-Two defects remain in the rotation path:
+### Deployment follow-up (owner action required)
 
-1. `app/services/rotation_service.py` assigns `vault_blob.encrypted_value`, which
-   is not a column on `VaultBlob` (`iv`/`ciphertext`/`auth_tag`/`checksum`). The
-   ciphertext is never persisted while `iv`, `auth_tag` and `version` are, so the
-   stored blob becomes undecryptable and the API still reports success. Fix:
-   assign `ciphertext` and recompute `checksum` with the canonical digest
-   `sha256(f"{key_id}:{iv}:{ciphertext}:{auth_tag}")` already used by
-   `apps/cli/src/criptenv/remote_vault.py` — the server can compute it without
-   the plaintext, so zero-knowledge holds.
-2. The web client sends **plaintext** as `new_value`
-   (`apps/web/src/app/(dashboard)/projects/[id]/secrets/use-project-secrets.ts`),
-   which would persist a secret in cleartext. Fix: send `encrypted.ciphertext`.
-
-Recommended test: assert the persisted blob's `ciphertext` matches the request
-and that the canonical checksum recomputes, plus a schema guard that no plaintext
-field reaches the service.
+1. **Rotate exposed credentials** — the committed `cookies.txt` session token and
+   the local `.env` values that appeared in audit output (`R2_ACCESS_KEY_ID`,
+   `R2_SECRET_ACCESS_KEY`, and anything else pasted into the shared workspace).
+2. **Purge git history** for `cookies.txt` and `.claude/test-user-credentials.md`
+   (they are untracked now, but the values remain in past commits).
+3. **Set `FORWARDED_ALLOW_IPS` / `TRUSTED_PROXIES`** to match the real ingress so
+   rate limiting keys on the true client address.
+4. **Redact query strings** in the edge/gunicorn access logs (invite and reset
+   tokens travel in URLs).
+5. **Expect one forced re-login** for all users after the session-token hashing
+   change ships.
 

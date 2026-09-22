@@ -1387,3 +1387,43 @@ The notification menu is currently rendered as a desktop-width dropdown anchored
 - ✅ Developers/viewers keep the same read-only experience without destructive selection controls.
 - ✅ The zero-knowledge model remains intact because plaintext handling stays client-side and the server still receives only encrypted vault blobs.
 - ⚠️ The bulk delete UX must carefully clear selection on environment changes, vault lock, and post-delete refreshes to avoid stale selections.
+
+---
+
+## DEC-052 — Digest-at-Rest Session Tokens and Fail-Fast Security Config
+
+**Date:** 2026-09-21
+**Context:** The follow-up security audit found opaque session tokens persisted in
+plaintext (`sessions.token`) while CI tokens, API keys and 2FA challenges were
+already stored as SHA-256 digests, so read access to the database was sufficient
+to hijack any active session. It also found `DEBUG` defaulting to `True`
+(cookie without `Secure`, public `/docs`) and an unvalidated `CORS_ORIGINS` that
+would have combined a wildcard with `allow_credentials=True`.
+
+**Decision:**
+1. `sessions.token` stores the SHA-256 digest; the raw token is exposed to the
+   caller exactly once through a non-persisted `plaintext_token` attribute used to
+   set the cookie / OAuth redirect / CLI response. `validate_session` and
+   `invalidate_session` look up by digest.
+2. No Alembic migration: the digest reuses the existing unique, indexed column.
+   The trade-off is that **pre-existing sessions stop validating**, forcing a
+   one-time re-login for everyone.
+3. `DEBUG` defaults to `False`, and startup raises when `APP_ENV` is a production
+   alias with `DEBUG` enabled.
+4. `CORS_ORIGINS` containing `*` raises at startup, because the API always sets
+   `allow_credentials=True`.
+
+**Alternatives considered:**
+- Adding a `token_hash` column with a migration plus a dual-lookup transition
+  window. Rejected: it keeps raw tokens readable for old rows and adds schema
+  churn for no security gain once re-login is accepted.
+- Encrypting the token at rest instead of hashing. Rejected: the server never
+  needs to recover the raw token, so a one-way digest is strictly safer.
+
+**Consequences:**
+- ✅ A database leak no longer yields usable session tokens.
+- ✅ Misconfiguration that weakens transport security or opens CORS fails at boot
+  instead of silently degrading production.
+- ⚠️ Shipping the change logs every user out once.
+- ⚠️ The server can no longer display an existing session's token, which no
+  endpoint did anyway.
