@@ -1,9 +1,6 @@
 "use client"
 
-import { useEffect, useRef, useState } from "react"
-import { useGSAP } from "@gsap/react"
-import gsap from "gsap"
-import { ScrollTrigger } from "gsap/ScrollTrigger"
+import { useEffect, useRef, useSyncExternalStore } from "react"
 import {
   ArrowRight,
   Fingerprint,
@@ -14,8 +11,6 @@ import {
   Terminal,
 } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
-
-gsap.registerPlugin(ScrollTrigger, useGSAP)
 
 const secretFragments = [
   { name: ".env.local", value: "local plaintext" },
@@ -43,158 +38,175 @@ const vaultRows = [
   { label: "team keyring", value: "wrapped" },
 ]
 
+const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)"
+
+function subscribeReducedMotion(callback: () => void) {
+  const query = window.matchMedia(REDUCED_MOTION_QUERY)
+  query.addEventListener("change", callback)
+  return () => query.removeEventListener("change", callback)
+}
+
 function usePrefersReducedMotion() {
-  const [prefersReducedMotion, setPrefersReducedMotion] = useState(() => {
-    if (typeof window === "undefined") return false
-    return window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  })
-
-  useEffect(() => {
-    const query = window.matchMedia("(prefers-reduced-motion: reduce)")
-    const handleChange = (event: MediaQueryListEvent) => {
-      setPrefersReducedMotion(event.matches)
-    }
-
-    query.addEventListener("change", handleChange)
-    return () => query.removeEventListener("change", handleChange)
-  }, [])
-
-  return prefersReducedMotion
+  // Server snapshot is false so hydration matches; the real preference is
+  // read on the client and updates reactively.
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false,
+  )
 }
 
 function ProblemToVaultSection() {
   const scope = useRef<HTMLElement>(null)
   const reducedMotion = usePrefersReducedMotion()
 
-  useGSAP(
-    () => {
-      const root = scope.current
-      if (!root) return
+  // GSAP is imported at runtime (inside the effect) so this component can be
+  // server-rendered: the library is never evaluated during SSR/Workers.
+  useEffect(() => {
+    const root = scope.current
+    if (!root) return
 
-      const fragments = gsap.utils.toArray<HTMLElement>(
-        "[data-vault-motion='fragment']",
-      )
-      const lineFill = root.querySelector<HTMLElement>(
-        "[data-vault-motion='line-fill']",
-      )
-      const vault = root.querySelector<HTMLElement>(
-        "[data-vault-motion='vault']",
-      )
-      const vaultDoor = root.querySelector<HTMLElement>(
-        "[data-vault-motion='vault-door']",
-      )
-      const proofItems = gsap.utils.toArray<HTMLElement>(
-        "[data-vault-motion='proof']",
-      )
-      const steps = gsap.utils.toArray<HTMLElement>(
-        "[data-vault-motion='step']",
-      )
+    let cancelled = false
+    let revert: (() => void) | undefined
 
-      if (reducedMotion) {
-        gsap.set([...fragments, ...proofItems, ...steps, vault, lineFill, vaultDoor], {
-          clearProps: "all",
-          opacity: 1,
-          x: 0,
-          y: 0,
-          scale: 1,
-        })
-        return
-      }
+    ;(async () => {
+      const { default: gsap } = await import("gsap")
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger")
+      if (cancelled) return
+      gsap.registerPlugin(ScrollTrigger)
 
-      // Fragments — slide in from left
-      gsap.from(fragments, {
-        opacity: 0,
-        x: -40,
-        y: 24,
-        duration: 0.9,
-        stagger: 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: root.querySelector("[data-vault-motion='fragment']")?.parentElement,
-          start: "top 82%",
-          once: true,
-        },
-      })
-
-      // Pipeline steps — fade up
-      gsap.from(steps, {
-        opacity: 0,
-        y: 28,
-        duration: 0.8,
-        stagger: 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: root.querySelector("[data-vault-motion='step']")?.parentElement,
-          start: "top 80%",
-          once: true,
-        },
-      })
-
-      // Line fill — grow
-      if (lineFill) {
-        gsap.fromTo(
-          lineFill,
-          { scaleX: 0, transformOrigin: "left center" },
-          {
-            scaleX: 1,
-            duration: 1.0,
-            ease: "power2.inOut",
-            scrollTrigger: {
-              trigger: lineFill.parentElement,
-              start: "top 78%",
-              once: true,
-            },
-          },
+      const ctx = gsap.context(() => {
+        const fragments = gsap.utils.toArray<HTMLElement>(
+          "[data-vault-motion='fragment']",
         )
-      }
+        const lineFill = root.querySelector<HTMLElement>(
+          "[data-vault-motion='line-fill']",
+        )
+        const vault = root.querySelector<HTMLElement>(
+          "[data-vault-motion='vault']",
+        )
+        const vaultDoor = root.querySelector<HTMLElement>(
+          "[data-vault-motion='vault-door']",
+        )
+        const proofItems = gsap.utils.toArray<HTMLElement>(
+          "[data-vault-motion='proof']",
+        )
+        const steps = gsap.utils.toArray<HTMLElement>(
+          "[data-vault-motion='step']",
+        )
 
-      // Vault card — slide in from right
-      if (vault) {
-        gsap.from(vault, {
+        if (reducedMotion) {
+          gsap.set([...fragments, ...proofItems, ...steps, vault, lineFill, vaultDoor], {
+            clearProps: "all",
+            opacity: 1,
+            x: 0,
+            y: 0,
+            scale: 1,
+          })
+          return
+        }
+
+        // Fragments — slide in from left
+        gsap.from(fragments, {
           opacity: 0,
-          x: 50,
-          scale: 0.94,
-          duration: 1.0,
+          x: -40,
+          y: 24,
+          duration: 0.9,
+          stagger: 0.12,
           ease: "power3.out",
           scrollTrigger: {
-            trigger: vault,
+            trigger: root.querySelector("[data-vault-motion='fragment']")?.parentElement,
+            start: "top 82%",
+            once: true,
+          },
+        })
+
+        // Pipeline steps — fade up
+        gsap.from(steps, {
+          opacity: 0,
+          y: 28,
+          duration: 0.8,
+          stagger: 0.12,
+          ease: "power3.out",
+          scrollTrigger: {
+            trigger: root.querySelector("[data-vault-motion='step']")?.parentElement,
             start: "top 80%",
             once: true,
           },
         })
-      }
 
-      // Vault door — pop in with elastic feel
-      if (vaultDoor) {
-        gsap.from(vaultDoor, {
+        // Line fill — grow
+        if (lineFill) {
+          gsap.fromTo(
+            lineFill,
+            { scaleX: 0, transformOrigin: "left center" },
+            {
+              scaleX: 1,
+              duration: 1.0,
+              ease: "power2.inOut",
+              scrollTrigger: {
+                trigger: lineFill.parentElement,
+                start: "top 78%",
+                once: true,
+              },
+            },
+          )
+        }
+
+        // Vault card — slide in from right
+        if (vault) {
+          gsap.from(vault, {
+            opacity: 0,
+            x: 50,
+            scale: 0.94,
+            duration: 1.0,
+            ease: "power3.out",
+            scrollTrigger: {
+              trigger: vault,
+              start: "top 80%",
+              once: true,
+            },
+          })
+        }
+
+        // Vault door — pop in with elastic feel
+        if (vaultDoor) {
+          gsap.from(vaultDoor, {
+            opacity: 0,
+            scale: 0.85,
+            duration: 0.7,
+            ease: "back.out(1.6)",
+            scrollTrigger: {
+              trigger: vaultDoor,
+              start: "top 76%",
+              once: true,
+            },
+          })
+        }
+
+        // Proof items — subtle fade up
+        gsap.from(proofItems, {
           opacity: 0,
-          scale: 0.85,
-          duration: 0.7,
-          ease: "back.out(1.6)",
+          y: 20,
+          duration: 0.8,
+          stagger: 0.12,
+          ease: "power3.out",
           scrollTrigger: {
-            trigger: vaultDoor,
-            start: "top 76%",
+            trigger: root.querySelector("[data-vault-motion='proof']")?.parentElement,
+            start: "top 84%",
             once: true,
           },
         })
-      }
+      }, root)
 
-      // Proof items — subtle fade up
-      gsap.from(proofItems, {
-        opacity: 0,
-        y: 20,
-        duration: 0.8,
-        stagger: 0.12,
-        ease: "power3.out",
-        scrollTrigger: {
-          trigger: root.querySelector("[data-vault-motion='proof']")?.parentElement,
-          start: "top 84%",
-          once: true,
-        },
-      })
-    },
-    { scope, dependencies: [reducedMotion], revertOnUpdate: true },
-  )
+      revert = () => ctx.revert()
+    })()
+
+    return () => {
+      cancelled = true
+      revert?.()
+    }
+  }, [reducedMotion])
 
   return (
     <section

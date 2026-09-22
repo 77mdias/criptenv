@@ -1,7 +1,4 @@
-"use client";
-
 import Image from "next/image";
-import { useTheme } from "@/hooks/use-theme";
 
 function ThemeImage({
   lightSrc,
@@ -10,7 +7,6 @@ function ThemeImage({
   className,
   width,
   height,
-  priority = false,
 }: {
   lightSrc: string;
   darkSrc: string;
@@ -18,20 +14,28 @@ function ThemeImage({
   className?: string;
   width: number;
   height: number;
-  priority?: boolean;
 }) {
-  const { resolvedTheme } = useTheme();
-  const src = resolvedTheme === "dark" ? darkSrc : lightSrc;
-
+  // Theme is resolved by the `.dark` class (inline bootstrap script), so CSS
+  // visibility keeps this section a server component. `loading="lazy"` is the
+  // next/image default, and browsers skip hidden lazy images so only the
+  // active theme's variant is downloaded.
   return (
-    <Image
-      src={src}
-      alt={alt}
-      width={width}
-      height={height}
-      priority={priority}
-      className={className}
-    />
+    <>
+      <Image
+        src={lightSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        className={`${className ?? ""} dark:hidden`}
+      />
+      <Image
+        src={darkSrc}
+        alt={alt}
+        width={width}
+        height={height}
+        className={`${className ?? ""} hidden dark:block`}
+      />
+    </>
   );
 }
 
@@ -42,7 +46,7 @@ export function PlatformPreviewSection() {
       className="relative flex min-h-screen scroll-mt-14 items-center overflow-hidden bg-(--background-subtle) py-10 sm:py-14 lg:py-0"
     >
       {/* Background DB image - visible texture */}
-      <div className="pointer-events-none absolute inset-0">
+      <div className="pointer-events-none absolute inset-0" aria-hidden>
         <div className="absolute inset-0">
           <ThemeImage
             lightSrc="/images/db-mocked-light.png"
@@ -50,7 +54,6 @@ export function PlatformPreviewSection() {
             alt=""
             width={1920}
             height={1080}
-            priority
             className="h-full w-full object-cover object-center opacity-25 blur-[1px] saturate-110"
           />
         </div>
@@ -105,7 +108,6 @@ export function PlatformPreviewSection() {
               alt="Dashboard do CriptEnv mostrando projetos, secrets, equipe e auditoria"
               width={1919}
               height={956}
-              priority
               className="w-full"
             />
           </div>

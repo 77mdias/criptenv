@@ -47,7 +47,13 @@ const SECURITY_HEADERS: Record<string, string> = {
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
 };
 
-function withSecurityHeaders(response: Response): Response {
+function withSecurityHeaders(response: Response, url: URL): Response {
+  // Only enforce on https: in plain-http local dev `upgrade-insecure-requests`
+  // would break the vinext image optimizer's http redirects.
+  if (url.protocol !== "https:") {
+    return response;
+  }
+
   const headers = new Headers(response.headers);
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
@@ -131,7 +137,7 @@ const worker = {
           );
         }
 
-        return withSecurityHeaders(response);
+        return withSecurityHeaders(response, url);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[worker] API proxy error:", message, "URL:", targetUrl);
@@ -144,7 +150,7 @@ const worker = {
 
     // Delegate everything to vinext handler
     const response = await handler.fetch(request, env, ctx);
-    return withSecurityHeaders(response);
+    return withSecurityHeaders(response, url);
   },
 };
 

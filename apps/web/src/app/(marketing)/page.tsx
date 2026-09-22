@@ -1,6 +1,3 @@
-"use client";
-
-import dynamic from "next/dynamic";
 import Image from "next/image";
 import Link from "next/link";
 import type { ReactNode } from "react";
@@ -23,51 +20,14 @@ import {
 } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
 import { PricingTrustSection } from "@/components/marketing/pricing-trust-section";
-const ProblemToVaultSection = dynamic(
-  () =>
-    import("@/components/marketing/problem-to-vault-section").then(
-      (mod) => mod.ProblemToVaultSection,
-    ),
-  { ssr: false },
-);
-
-const SecurityScrollytelling = dynamic(
-  () =>
-    import("@/components/marketing/security-scrollytelling").then(
-      (mod) => mod.SecurityScrollytelling,
-    ),
-  { ssr: false },
-);
-
-const PlatformPreviewSection = dynamic(
-  () =>
-    import("@/components/marketing/platform-preview-section").then(
-      (mod) => mod.PlatformPreviewSection,
-    ),
-  { ssr: false },
-);
+import { ProblemToVaultSection } from "@/components/marketing/problem-to-vault-section";
+import { SecurityScrollytelling } from "@/components/marketing/security-scrollytelling";
+import { PlatformPreviewSection } from "@/components/marketing/platform-preview-section";
+import { HeroSceneLazy } from "@/components/marketing/hero-scene-lazy";
+import { LandingMotion } from "@/components/marketing/landing-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-
-const HeroScene = dynamic(
-  () =>
-    import("@/components/marketing/hero-scene").then((mod) => mod.HeroScene),
-  {
-    ssr: false,
-    loading: () => (
-      <div className="absolute inset-0 rounded-xl bg-[radial-gradient(circle_at_center,var(--glow-soft),transparent_62%)]" />
-    ),
-  },
-);
-
-const LandingMotion = dynamic(
-  () =>
-    import("@/components/marketing/landing-motion").then(
-      (mod) => mod.LandingMotion,
-    ),
-  { ssr: false },
-);
 
 const features = [
   {
@@ -282,7 +242,7 @@ export default function LandingPage() {
               data-motion="hero"
               className="relative min-h-100 overflow-visible sm:min-h-130 lg:min-h-160"
             >
-              <HeroScene />
+              <HeroSceneLazy />
               <div className="absolute inset-x-0 bottom-4 mx-auto w-full max-w-xl px-2 sm:bottom-10">
                 <TerminalPanel />
               </div>

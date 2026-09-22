@@ -2,10 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image, { type StaticImageData } from "next/image";
-import { useEffect, useMemo, useRef, useState, type ElementType } from "react";
-import gsap from "gsap";
-import { ScrollTrigger } from "gsap/ScrollTrigger";
-import { useGSAP } from "@gsap/react";
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ElementType } from "react";
 import {
   Eye,
   FileCheck2,
@@ -19,8 +16,6 @@ import aesImage from "../../../assets/images/AES.webp";
 import auditImage from "../../../assets/images/Wer haben vergessen.jpeg";
 import keyholeImage from "../../../assets/images/zero-knowledge-proofs-main-1600.jpg";
 import masterKeysImage from "../../../assets/images/fad0f89c8d6a92fc48b19560eef69626.jpg";
-
-gsap.registerPlugin(ScrollTrigger, useGSAP);
 
 const SecurityVaultScene = dynamic(
   () =>
@@ -128,17 +123,22 @@ const securityTopics: SecurityTopic[] = [
 ];
 
 function useMediaQuery(query: string) {
-  const [matches, setMatches] = useState(false);
+  const subscribe = useCallback(
+    (onStoreChange: () => void) => {
+      const media = window.matchMedia(query);
+      media.addEventListener("change", onStoreChange);
+      return () => media.removeEventListener("change", onStoreChange);
+    },
+    [query],
+  );
 
-  useEffect(() => {
-    const media = window.matchMedia(query);
-    const updateMatches = () => setMatches(media.matches);
-    updateMatches();
-    media.addEventListener("change", updateMatches);
-    return () => media.removeEventListener("change", updateMatches);
-  }, [query]);
-
-  return matches;
+  // Server snapshot is false so hydration matches; the real value is read on
+  // the client and updates reactively.
+  return useSyncExternalStore(
+    subscribe,
+    () => window.matchMedia(query).matches,
+    () => false,
+  );
 }
 
 function usePrefersReducedMotion() {
@@ -374,15 +374,25 @@ export function SecurityScrollytelling() {
   const topicCount = securityTopics.length;
   const scrollDistance = useMemo(() => topicCount * 820, [topicCount]);
 
-  useGSAP(
-    () => {
-      if (!isDesktop || reducedMotion) return;
+  // GSAP is imported at runtime (inside the effect) so this component can be
+  // server-rendered: the library is never evaluated during SSR/Workers.
+  useEffect(() => {
+    const root = scope.current;
+    if (!root || !isDesktop || reducedMotion) return;
 
-      const progressLine = scope.current?.querySelector<HTMLElement>(
+    let cancelled = false;
+    let kill: (() => void) | undefined;
+
+    (async () => {
+      const { default: gsap } = await import("gsap");
+      const { ScrollTrigger } = await import("gsap/ScrollTrigger");
+      if (cancelled) return;
+      gsap.registerPlugin(ScrollTrigger);
+
+      const progressLine = root.querySelector<HTMLElement>(
         ".security-progress-line",
       );
-      const pinTarget =
-        scope.current?.querySelector<HTMLElement>(".security-pin");
+      const pinTarget = root.querySelector<HTMLElement>(".security-pin");
 
       if (!pinTarget) return;
 
@@ -419,14 +429,14 @@ export function SecurityScrollytelling() {
         },
       });
 
-      return () => scrollTrigger.kill();
-    },
-    {
-      scope,
-      dependencies: [isDesktop, reducedMotion, scrollDistance, topicCount],
-      revertOnUpdate: true,
-    },
-  );
+      kill = () => scrollTrigger.kill();
+    })();
+
+    return () => {
+      cancelled = true;
+      kill?.();
+    };
+  }, [isDesktop, reducedMotion, scrollDistance, topicCount]);
 
   return (
     <section

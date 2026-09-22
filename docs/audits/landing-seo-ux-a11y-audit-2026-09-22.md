@@ -34,10 +34,20 @@ Verificado no HTML servido: todas as meta tags, canonical, JSON-LD, `/robots.txt
 
 Verificado no HTML servido: title/description/OG em pt-BR, `og:image` 1200×630, `twitter:card summary_large_image`, `color-scheme`, skip-link, `<main id="conteudo">`, canonical e JSON-LD pt-BR. ESLint limpo nos arquivos alterados.
 
-## Pendente
+## Aplicado na rodada 3 (2026-09-22 — branch `feature/landing-ssr-animated-sections`)
 
-- **P1 — SSR dos textos**: seções `ProblemToVault`, `Scrollytelling` e `PlatformPreview` continuam `ssr:false` (GSAP/tema). Decisão do mantenedor: refatorar em tarefa dedicada (extrair textos SSR + animações client-side).
-- **Deploy-only**: os security headers do Worker só aparecem no ambiente Cloudflare (o `vinext dev` não executa `worker/index.ts`); validar com `curl -I` após o deploy. CSP usa `connect-src 'self' https:` (pragmático; restringir ao domínio da API em uma passada futura).
+SSR dos textos das seções animadas (a pendência P1 que ficou para tarefa dedicada):
+
+| # | Correção | Arquivo |
+|---|----------|---------|
+| 1 | **Descoberta-raiz**: em produção a landing inteira saía como shell vazio (~21 KB, zero conteúdo no HTML) — o vinext não faz SSR do módulo da página quando `page.tsx` é `"use client"`. A página foi convertida em Server Component; `HeroScene` (Three.js) foi para o wrapper client `hero-scene-lazy.tsx` (única forma permitida de `ssr:false`) e `LandingMotion` passou a receber os textos como children de servidor. Resultado: HTML de 21 KB → 215 KB com todo o conteúdo indexável (incluindo `#features`, `#how-it-works`, `#pricing` e `#cta`, que também não eram servidos) | `apps/web/src/app/(marketing)/page.tsx`, `apps/web/src/components/marketing/hero-scene-lazy.tsx` |
+| 2 | `ProblemToVaultSection` agora renderiza no servidor: GSAP/ScrollTrigger saíram do escopo de módulo (`gsap.registerPlugin` global) e passaram a ser importados dinamicamente dentro do `useEffect` (a biblioteca nunca é avaliada no SSR/Worker). Hook de `prefers-reduced-motion` reescrito com `useSyncExternalStore` (hidratação sem mismatch) | `apps/web/src/components/marketing/problem-to-vault-section.tsx` |
+| 3 | `SecurityScrollytelling` idem (pin/scrub/snap preservados via `ScrollTrigger.create` no effect; `SecurityVaultScene` segue `ssr:false`); `useMediaQuery` com `useSyncExternalStore` | `apps/web/src/components/marketing/security-scrollytelling.tsx` |
+| 4 | `PlatformPreviewSection` virou Server Component puro: troca de tema das imagens feita por CSS (`dark:hidden` / `hidden dark:block`) em vez de `useTheme`; sem `dynamic` | `apps/web/src/components/marketing/platform-preview-section.tsx` |
+| 5 | Correção de bug introduzido na rodada 2: o `vinext dev`/`vinext start` executam o `worker/index.ts`, e o CSP `upgrade-insecure-requests` quebrava os redirects http do otimizador de imagens em ambiente local (`ERR_SSL_PROTOCOL_ERROR`). Headers de segurança agora só são aplicados quando a requisição é `https:` | `apps/web/worker/index.ts` |
+| 6 | Mocks do teste do `ProblemToVaultSection` atualizados (`gsap.context` em vez de `useGSAP`) | `apps/web/src/components/marketing/__tests__/problem-to-vault-section.test.tsx` |
+
+**Verificação:** build de produção OK; curl confirma os textos das 3 seções no HTML servido (`vault selado`, `Você só vê`, `AES-GCM com chave de 256 bits`, `PBKDF2 fortalece a senha`); Playwright comparou screenshots antes/depois em light/dark/mobile — paridade visual e animações preservadas (scrollytelling troca de tópico no scroll; troca de imagem por tema funciona; 0 erros de console/hidratação); 105/105 testes unitários; ESLint limpo.
 
 ## Pendente (resolvido — histórico)
 

@@ -5,11 +5,12 @@ jest.mock("gsap", () => ({
   __esModule: true,
   default: {
     registerPlugin: jest.fn(),
-    timeline: jest.fn(() => ({
-      from: jest.fn().mockReturnThis(),
-      fromTo: jest.fn().mockReturnThis(),
-      to: jest.fn().mockReturnThis(),
-    })),
+    context: jest.fn((fn: () => void) => {
+      fn()
+      return { revert: jest.fn() }
+    }),
+    from: jest.fn(),
+    fromTo: jest.fn(),
     set: jest.fn(),
     utils: {
       toArray: jest.fn(() => []),
@@ -18,11 +19,9 @@ jest.mock("gsap", () => ({
 }))
 
 jest.mock("gsap/ScrollTrigger", () => ({
-  ScrollTrigger: {},
-}))
-
-jest.mock("@gsap/react", () => ({
-  useGSAP: jest.fn(),
+  ScrollTrigger: {
+    create: jest.fn(),
+  },
 }))
 
 describe("ProblemToVaultSection", () => {

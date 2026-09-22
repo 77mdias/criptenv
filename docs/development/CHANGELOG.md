@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Landing SSR — Animated Sections and Page-Level Fix (2026-09-22, branch `feature/landing-ssr-animated-sections`)
+
+- **Breaking finding (web):** with `page.tsx` as a Client Component, vinext served the entire landing as an empty shell (~21 KB) in production — no section had server-rendered HTML. The page is now a Server Component: landing HTML went from ~21 KB shell to ~215 KB of fully indexed content.
+- **SEO (web):** `ProblemToVaultSection` and `SecurityScrollytelling` render their copy server-side; GSAP/ScrollTrigger are imported at runtime inside `useEffect` (never evaluated during SSR/Workers), with animations driven via `gsap.context` and `ScrollTrigger.create` — pin/scrub/snap behavior preserved.
+- **Refactor (web):** `PlatformPreviewSection` is a pure Server Component; theme image switching moved from `useTheme` (JS) to CSS (`dark:hidden`/`hidden dark:block`) with default lazy loading.
+- **Fix (web):** Worker security headers are now applied only to `https:` requests — `vinext dev/start` execute the Worker locally, and CSP `upgrade-insecure-requests` was breaking the image optimizer's http redirects (`ERR_SSL_PROTOCOL_ERROR`).
+- **A11y (web):** media-query hooks (`prefers-reduced-motion`, breakpoints) rewritten with `useSyncExternalStore` for hydration-safe SSR.
+- **Three.js (web):** `HeroScene` moved to `hero-scene-lazy.tsx`, the only `ssr:false` client wrapper allowed in a Server Component page.
+- **Tests (web):** `problem-to-vault-section` test mocks updated to the new GSAP integration; 105/105 unit tests pass, ESLint clean, Playwright before/after screenshots verified visual parity (light/dark/mobile) and working scrollytelling.
+
 ### Landing SEO/UX/A11y — Audit Round 2 (2026-09-22)
 
 - **SEO (web):** Canonical language set to pt-BR — `title`, `meta description`, Open Graph and JSON-LD now match `lang="pt-BR"`; added a dedicated 1200×630 OG image (`public/images/og-cover.png`) and upgraded the Twitter card to `summary_large_image`.

@@ -1448,3 +1448,27 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ Social/Content/E-E-A-T e A11y avançam sem mudar o design perceptível.
 - ✅ Headers só aparecem após deploy (o dev server não passa pelo Worker) — validar com `curl -I` em produção.
 - ⚠️ `--text-muted`/`--text-tertiary` ficam ligeiramente mais escuros (labels mais legíveis; scrollbar acompanha).
+
+## DEC-054 — Landing Server-Rendered with Runtime-Imported GSAP
+
+**Date:** 2026-09-22 · **Status:** Accepted · **Branch:** `feature/landing-ssr-animated-sections`
+
+**Context:** The audit's pending P1 item assumed only the three `ssr:false` sections (ProblemToVault, Scrollytelling, PlatformPreview) lacked server HTML. Verification with a production build showed something worse: because `page.tsx` itself was `"use client"`, vinext served the entire landing as an empty shell (~21 KB) — even the static sections had zero indexable HTML, on dev and in production. Additionally, the security headers added in DEC-053 broke local image loading because `vinext dev/start` execute the Worker, and CSP `upgrade-insecure-requests` upgraded the image optimizer's http redirects.
+
+**Decision:**
+1. `page.tsx` becomes a Server Component. Three.js stays behind `ssr:false` via a dedicated client wrapper (`hero-scene-lazy.tsx`) — the only supported form of `ssr:false` per vinext docs. `LandingMotion` remains a client component and receives all copy as server children, which are server-rendered.
+2. GSAP/ScrollTrigger are never imported at module scope of SSR-rendered components anymore. Both animated sections import them with runtime `await import()` inside `useEffect` and drive animations through `gsap.context`/`ScrollTrigger.create`. This satisfies the Workers global-scope constraint while the section markup stays in the server HTML.
+3. Media-query state uses `useSyncExternalStore` (server snapshot `false`) so hydration matches and the preference updates reactively.
+4. `PlatformPreviewSection` drops `useTheme` entirely: theme image variants are swapped with CSS (`dark:hidden`/`hidden dark:block`) and default lazy loading, making the section a pure server component (browsers skip hidden lazy images, so only the active theme's variant is fetched).
+5. Worker security headers apply only to `https:` requests, keeping local http dev immune to `upgrade-insecure-requests`.
+
+**Alternatives considered:**
+- SSR shell + client island rendering all visuals (text inside `ssr:false` dynamic). Rejected: children of an `ssr:false` island do not appear in the server HTML.
+- Mocking media queries with useState/useEffect (previous pattern). Replaced: React's `set-state-in-effect` rule flags it, and `useSyncExternalStore` is the idiomatic subscription.
+
+**Consequences:**
+- ✅ Landing HTML goes from ~21 KB shell to ~215 KB fully indexed content (Content/E-E-A-T impact).
+- ✅ Animations, pin/scrub scrollytelling and theme swaps verified pixel-equivalent via Playwright before/after (light, dark, mobile).
+- ✅ Local dev images no longer break (https-gated headers).
+- ⚠️ Sections are visible in HTML before hydration; entrance animations still start post-mount (same flicker profile as before, but with a meaningful first paint instead of a blank shell).
+- ⚠️ Both theme image variants exist in the DOM for the preview section; non-active variants are skipped by lazy loading in Chromium/Firefox (Safari may fetch both).
