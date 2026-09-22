@@ -136,7 +136,9 @@ class TestCLIAuthRedisStore:
             device_code, user_code, verification_uri = await store.create()
 
             assert user_code
-            assert verification_uri.endswith(f"/cli-auth?device_code={device_code}")
+            # CR-P2-9: the URL carries the user_code, never the device_code.
+            assert verification_uri.endswith(f"/cli-auth?user_code={user_code}")
+            assert device_code not in verification_uri
             assert f"cli_auth:device:{device_code}" in redis.values
             assert redis.ttls[f"cli_auth:device:{device_code}"] == 600
 
@@ -521,10 +523,11 @@ class TestDevicePoll:
             code_resp = client.post("/api/auth/cli/device/code", json={})
             device_code = code_resp.json()["device_code"]
 
-            # Authorize device
+            # Authorize device using the human-facing user_code
+            user_code = code_resp.json()["user_code"]
             auth_resp = client.post(
                 "/api/auth/cli/device/authorize",
-                json={"device_code": device_code},
+                json={"user_code": user_code},
             )
             assert auth_resp.status_code == 200
 
@@ -548,7 +551,7 @@ class TestDeviceAuthorize:
         with TestClient(make_app()) as client:
             response = client.post(
                 "/api/auth/cli/device/authorize",
-                json={"device_code": "test"},
+                json={"user_code": "ABCD-EFGH-IJKL"},
             )
         assert response.status_code == 401
 
@@ -556,7 +559,81 @@ class TestDeviceAuthorize:
         with TestClient(make_auth_app()) as client:
             response = client.post(
                 "/api/auth/cli/device/authorize",
-                json={"device_code": "invalid_code"},
+                json={"user_code": "ZZZZ-ZZZZ-ZZZZ"},
             )
         assert response.status_code == 400
         assert "Invalid or expired device code" in response.json()["detail"]
+
+
+class TestDeviceFlowHardening:
+    """CR-P2-9: the device_code is a secret and the poll issues one session."""
+
+    def _patch_service(self, monkeypatch, user, counter):
+        async def fake_get_user_by_id(self, user_id):
+            return user
+
+        async def fake_create_session(self, **kwargs):
+            counter.append(kwargs)
+            now = datetime.now(timezone.utc)
+            return SimpleNamespace(
+                id=uuid4(),
+                user_id=user.id,
+                token="cli-device-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                plaintext_token="cli-device-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                expires_at=now + timedelta(days=30),
+                created_at=now,
+                ip_address="127.0.0.1",
+                user_agent="pytest",
+            )
+
+        monkeypatch.setattr(AuthService, "get_user_by_id", fake_get_user_by_id)
+        monkeypatch.setattr(AuthService, "create_session", fake_create_session)
+
+    def test_verification_uri_never_contains_the_device_code(self):
+        with TestClient(make_app()) as client:
+            response = client.post("/api/auth/cli/device/code", json={})
+        data = response.json()
+        assert f"user_code={data['user_code']}" in data["verification_uri"]
+        assert data["device_code"] not in data["verification_uri"]
+
+    def test_device_poll_is_single_use(self, monkeypatch):
+        """A replayed poll must not mint a second session."""
+        user = make_user()
+        created = []
+        self._patch_service(monkeypatch, user, created)
+
+        with TestClient(make_auth_app(user)) as client:
+            code_resp = client.post("/api/auth/cli/device/code", json={})
+            device_code = code_resp.json()["device_code"]
+            user_code = code_resp.json()["user_code"]
+
+            client.post(
+                "/api/auth/cli/device/authorize", json={"user_code": user_code}
+            )
+            first = client.post(
+                "/api/auth/cli/device/poll", json={"device_code": device_code}
+            )
+            second = client.post(
+                "/api/auth/cli/device/poll", json={"device_code": device_code}
+            )
+
+        assert first.json()["status"] == "authorized"
+        assert "access_token" in first.json()
+        assert second.json()["status"] == "expired"
+        assert len(created) == 1, "poll replay must not create extra sessions"
+
+    def test_device_authorize_rejects_unknown_user_code(self):
+        with TestClient(make_auth_app()) as client:
+            response = client.post(
+                "/api/auth/cli/device/authorize",
+                json={"user_code": "AAAA-BBBB-CCCC"},
+            )
+        assert response.status_code == 400
+
+    def test_device_authorize_requires_user_code_field(self):
+        with TestClient(make_auth_app()) as client:
+            response = client.post(
+                "/api/auth/cli/device/authorize",
+                json={"device_code": "whatever"},
+            )
+        assert response.status_code == 422

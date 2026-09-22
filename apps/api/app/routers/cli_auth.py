@@ -276,6 +276,9 @@ class _DeviceFlowStore:
         redis_client: object | None = None,
     ):
         self._data: dict[str, dict] = {}
+        # user_code -> device_code. The user_code is the only part a human sees
+        # (it travels in a browser URL); the device_code stays on the CLI channel.
+        self._user_codes: dict[str, str] = {}
         self._lock = asyncio.Lock()
         self._ttl = default_ttl_seconds
         self._redis = redis_client if redis_client is not None else _get_redis_client()
@@ -283,11 +286,19 @@ class _DeviceFlowStore:
     def _device_key(self, device_code: str) -> str:
         return f"cli_auth:device:{device_code}"
 
+    def _user_code_key(self, user_code: str) -> str:
+        return f"cli_auth:usercode:{user_code}"
+
     async def create(self) -> tuple[str, str, str]:
-        """Create device flow request. Returns (device_code, user_code, verification_uri)."""
+        """Create device flow request. Returns (device_code, user_code, verification_uri).
+
+        The verification URI carries the short user_code, never the device_code:
+        the browser URL lands in history, referrers and access logs, and the
+        device_code is the bearer secret the CLI uses to collect its token.
+        """
         device_code = secrets.token_urlsafe(32)
         user_code = "-".join([secrets.token_hex(2).upper() for _ in range(3)])
-        verification_uri = f"{settings.FRONTEND_URL.rstrip('/')}/cli-auth?device_code={device_code}"
+        verification_uri = f"{settings.FRONTEND_URL.rstrip('/')}/cli-auth?user_code={user_code}"
         entry = {
             "user_code": user_code,
             "created_at": time.time(),
@@ -300,12 +311,35 @@ class _DeviceFlowStore:
             await self._redis.setex(
                 self._device_key(device_code), self._ttl, _json_dumps(entry)
             )
+            await self._redis.setex(
+                self._user_code_key(user_code),
+                self._ttl,
+                _json_dumps({"device_code": device_code}),
+            )
             return device_code, user_code, verification_uri
 
         async with self._lock:
             self._cleanup()
             self._data[device_code] = entry
+            self._user_codes[user_code] = device_code
         return device_code, user_code, verification_uri
+
+    async def _resolve_user_code(self, user_code: str) -> Optional[str]:
+        """Return the device_code behind a user_code, if any."""
+        if self._redis is not None:
+            entry = _json_loads(await self._redis.get(self._user_code_key(user_code)))
+            return entry.get("device_code") if entry else None
+
+        async with self._lock:
+            self._cleanup()
+            return self._user_codes.get(user_code)
+
+    async def authorize_by_user_code(self, user_code: str, user_id: str) -> bool:
+        """Authorize a pending device request using the human-facing code."""
+        device_code = await self._resolve_user_code(user_code)
+        if not device_code:
+            return False
+        return await self.authorize(device_code, user_id)
 
     async def authorize(self, device_code: str, user_id: str) -> bool:
         """Mark a device code as authorized."""
@@ -329,6 +363,25 @@ class _DeviceFlowStore:
             entry["authorized"] = True
             return True
 
+    async def consume(self, device_code: str) -> None:
+        """Delete a device request once its token has been issued.
+
+        Without this, whoever holds the device_code could poll again and keep
+        minting sessions until the TTL expired -- each one counting toward
+        SESSION_MAX_ACTIVE and evicting the user's other sessions.
+        """
+        if self._redis is not None:
+            entry = _json_loads(await self._redis.get(self._device_key(device_code)))
+            await self._redis.delete(self._device_key(device_code))
+            if entry and entry.get("user_code"):
+                await self._redis.delete(self._user_code_key(entry["user_code"]))
+            return
+
+        async with self._lock:
+            entry = self._data.pop(device_code, None)
+            if entry and entry.get("user_code"):
+                self._user_codes.pop(entry["user_code"], None)
+
     async def poll(self, device_code: str) -> Optional[dict]:
         """Poll for device authorization. Returns entry or None."""
         if self._redis is not None:
@@ -347,7 +400,12 @@ class _DeviceFlowStore:
         now = time.time()
         expired = [k for k, v in self._data.items() if now - v["created_at"] > self._ttl]
         for k in expired:
-            self._data.pop(k, None)
+            entry = self._data.pop(k, None)
+            if entry and entry.get("user_code"):
+                self._user_codes.pop(entry["user_code"], None)
+        stale = [code for code, device in self._user_codes.items() if device not in self._data]
+        for code in stale:
+            self._user_codes.pop(code, None)
 
 
 _device_flow_store = _DeviceFlowStore(default_ttl_seconds=600)
@@ -575,7 +633,12 @@ async def device_code(
 
 
 class DeviceAuthorizeRequest(BaseModel):
-    device_code: str
+    user_code: str = Field(
+        ...,
+        min_length=1,
+        max_length=32,
+        description="Short code shown to the user (never the device_code)",
+    )
 
 
 @router.post("/device/authorize")
@@ -587,7 +650,9 @@ async def device_authorize(
 
     The web frontend calls this after the user authenticates on the device flow page.
     """
-    success = await _device_flow_store.authorize(payload.device_code, str(current_user.id))
+    success = await _device_flow_store.authorize_by_user_code(
+        payload.user_code.strip().upper(), str(current_user.id)
+    )
     if not success:
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
@@ -626,6 +691,9 @@ async def device_poll(
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent", "CriptEnv CLI"),
     )
+
+    # Single use: a replayed poll must not mint another session.
+    await _device_flow_store.consume(payload.device_code)
 
     return DevicePollResponse(
         access_token=session.plaintext_token,

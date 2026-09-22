@@ -52,9 +52,9 @@ function CLIAuthContent() {
   const { user, login, isLoading: authLoading } = useAuth();
 
   const state = searchParams.get("state");
-  const deviceCode = searchParams.get("device_code");
+  const userCode = searchParams.get("user_code");
 
-  const hasValidParams = Boolean(state || deviceCode);
+  const hasValidParams = Boolean(state || userCode);
 
   // Explicit mutable steps override the derived state
   const [explicitStep, setExplicitStep] = useState<Step | null>(null);
@@ -134,13 +134,13 @@ function CLIAuthContent() {
         } else {
           setExplicitStep("success");
         }
-      } else if (deviceCode) {
+      } else if (userCode) {
         // Device flow
         const res = await fetch("/api/auth/cli/device/authorize", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
-          body: JSON.stringify({ device_code: deviceCode }),
+          body: JSON.stringify({ user_code: userCode }),
         });
 
         if (!res.ok) {
@@ -155,7 +155,7 @@ function CLIAuthContent() {
       setErrorMsg(message);
       setExplicitStep("error");
     }
-  }, [state, deviceCode]);
+  }, [state, userCode]);
 
   if (step === "checking") {
     return (
@@ -309,12 +309,12 @@ function CLIAuthContent() {
             CLI autorizado!
           </h2>
           <p className="text-sm text-(--text-tertiary)">
-            {deviceCode
+            {userCode
               ? "Você pode fechar esta janela e voltar ao terminal."
               : "Redirecionando de volta para o CLI..."}
           </p>
         </div>
-        {deviceCode && (
+        {userCode && (
           <Link href="/dashboard">
             <Button variant="outline">Ir para Dashboard</Button>
           </Link>
