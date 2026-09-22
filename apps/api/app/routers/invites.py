@@ -29,15 +29,19 @@ router = APIRouter(prefix="/api/v1/projects/{project_id}/invites", tags=["Invite
 ADMIN_ROLES = {"admin", "owner"}
 
 
-def _invite_to_response(inv, invited_by_user=None, invitee_user=None):
-    """Convert ProjectInvite to response dict with user info."""
-    return {
+def _invite_to_response(inv, invited_by_user=None, invitee_user=None, include_token: bool = False):
+    """Convert ProjectInvite to response dict with user info.
+
+    The invite token is a bearer credential that grants project membership, so it
+    is only echoed to the caller that just created the invite. Listing invites must
+    not disclose it: any member (including a viewer) can list them.
+    """
+    payload = {
         "id": inv.id,
         "project_id": inv.project_id,
         "email": inv.email,
         "role": inv.role,
         "invited_by": inv.invited_by,
-        "token": inv.token,
         "expires_at": inv.expires_at,
         "accepted_at": inv.accepted_at,
         "revoked_at": inv.revoked_at,
@@ -47,6 +51,9 @@ def _invite_to_response(inv, invited_by_user=None, invitee_user=None):
         "invitee_name": getattr(invitee_user, "name", None) if invitee_user else None,
         "invitee_avatar_url": getattr(invitee_user, "avatar_url", None) if invitee_user else None,
     }
+    if include_token:
+        payload["token"] = inv.token
+    return payload
 
 
 @router.post("", response_model=InviteResponse, status_code=status.HTTP_201_CREATED)
@@ -68,17 +75,21 @@ async def create_invite(
             detail="Invalid project ID"
         )
 
-    member = await project_service.check_user_access(current_user.id, project_uuid, "developer")
+    # Creating an invite grants project membership, so it requires the same
+    # `admin` bar as adding a member directly. Letting a developer invite other
+    # developers (or viewers) allowed membership to expand without any
+    # owner/admin involvement.
+    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found or insufficient permissions"
         )
 
-    if member.role not in ADMIN_ROLES and payload.role == "admin":
+    if payload.role == "owner":
         raise HTTPException(
             status_code=status.HTTP_403_FORBIDDEN,
-            detail="Developers can only invite developer or viewer roles"
+            detail="The owner role cannot be granted through an invite"
         )
 
     invite_email = str(payload.email).strip().lower()
@@ -164,7 +175,9 @@ async def create_invite(
             }
         )
 
-    return InviteResponse.model_validate(_invite_to_response(invite))
+    return InviteResponse.model_validate(
+        _invite_to_response(invite, include_token=True)
+    )
 
 
 @router.get("", response_model=InviteListResponse)

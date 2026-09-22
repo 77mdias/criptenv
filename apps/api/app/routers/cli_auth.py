@@ -546,7 +546,7 @@ async def cli_token(
     )
 
     return CLITokenResponse(
-        token=session.token,
+        token=session.plaintext_token,
         user=_user_to_dict(user),
     )
 
@@ -628,7 +628,7 @@ async def device_poll(
     )
 
     return DevicePollResponse(
-        access_token=session.token,
+        access_token=session.plaintext_token,
         token_type="bearer",
         user=_user_to_dict(user),
         status="authorized",

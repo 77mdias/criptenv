@@ -41,7 +41,8 @@ def make_session():
     return SimpleNamespace(
         id=uuid4(),
         user_id=uuid4(),
-        token="super-secret-session-token",
+        token="sha256-digest-not-persisted-in-tests",
+        plaintext_token="super-secret-session-token",
         expires_at=now + timedelta(days=30),
         created_at=now,
         updated_at=now,

@@ -180,13 +180,13 @@ async def test_create_invite_without_existing_user_does_not_create_notification(
 
 
 @pytest.mark.asyncio
-async def test_developer_can_invite_developer_or_viewer(monkeypatch):
+async def test_admin_can_invite_viewer(monkeypatch):
     project_id = uuid4()
     db = _FakeDb(invited_user=None)
 
     async def fake_check_access(self, user_id, pid, role=None):
-        assert role == "developer"
-        return SimpleNamespace(role="developer")
+        assert role == "admin"
+        return SimpleNamespace(role="admin")
 
     async def fake_get_project(self, pid):
         return SimpleNamespace(id=pid, name="Core API")
@@ -212,12 +212,18 @@ async def test_developer_can_invite_developer_or_viewer(monkeypatch):
 
 
 @pytest.mark.asyncio
-async def test_developer_cannot_invite_admin(monkeypatch):
+async def test_developer_cannot_create_invites(monkeypatch):
+    """CR-P2-11: expanding membership requires admin, not developer.
+
+    A developer could previously invite developers/viewers, so the most numerous
+    write-capable role could add arbitrary people without owner/admin knowledge.
+    """
     project_id = uuid4()
     db = _FakeDb(invited_user=None)
 
     async def fake_check_access(self, user_id, pid, role=None):
-        return SimpleNamespace(role="developer")
+        assert role == "admin"
+        return None  # developer is below the required bar
 
     monkeypatch.setattr(invites_router.ProjectService, "check_user_access", fake_check_access)
 
@@ -225,12 +231,22 @@ async def test_developer_cannot_invite_admin(monkeypatch):
         await create_invite(
             project_id=str(project_id),
             request=_request(),
-            payload=InviteCreate(email="admin@example.com", role="admin"),
+            payload=InviteCreate(email="dev@example.com", role="developer"),
             current_user=_user(),
             db=db,
         )
 
-    assert exc.value.status_code == 403
+    assert exc.value.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_owner_role_cannot_be_granted_by_invite():
+    """The owner role is not reachable through an invite at all."""
+    from pydantic import ValidationError
+    from app.schemas.member import InviteCreate
+
+    with pytest.raises(ValidationError):
+        InviteCreate(email="owner@example.com", role="owner")
 
 
 @pytest.mark.asyncio
@@ -314,3 +330,32 @@ async def test_developer_cannot_revoke_other_users_invite(monkeypatch):
 
     assert exc.value.status_code == 404
     assert db.deleted == []
+
+
+@pytest.mark.asyncio
+async def test_invite_list_does_not_disclose_the_token(monkeypatch):
+    """CR-P2-10: viewers can list invites, so the token must not be included."""
+    from app.routers.invites import _invite_to_response
+
+    invite = ProjectInvite(
+        id=uuid4(),
+        project_id=uuid4(),
+        email="dev@example.com",
+        role="developer",
+        token="secret-invite-token",
+        expires_at=datetime.now(timezone.utc),
+        created_at=datetime.now(timezone.utc),
+    )
+
+    listed = _invite_to_response(invite)
+    assert "token" not in listed
+
+    created = _invite_to_response(invite, include_token=True)
+    assert created["token"] == "secret-invite-token"
+
+
+@pytest.mark.asyncio
+async def test_invite_response_schema_token_is_optional():
+    from app.schemas.member import InviteResponse
+
+    assert InviteResponse.model_fields["token"].is_required() is False

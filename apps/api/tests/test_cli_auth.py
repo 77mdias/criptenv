@@ -318,7 +318,8 @@ class TestCLIToken:
             return SimpleNamespace(
                 id=uuid4(),
                 user_id=user.id,
-                token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                token="sha256-digest-not-persisted-in-tests",
+                plaintext_token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
                 expires_at=now + timedelta(days=30),
                 created_at=now,
                 ip_address="127.0.0.1",
@@ -370,7 +371,8 @@ class TestCLIToken:
             return SimpleNamespace(
                 id=uuid4(),
                 user_id=user.id,
-                token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                token="sha256-digest-not-persisted-in-tests",
+                plaintext_token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
                 expires_at=now + timedelta(days=30),
                 created_at=now,
                 ip_address="127.0.0.1",
@@ -418,7 +420,8 @@ class TestCLIToken:
             return SimpleNamespace(
                 id=uuid4(),
                 user_id=user.id,
-                token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                token="sha256-digest-not-persisted-in-tests",
+                plaintext_token="cli-session-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
                 expires_at=now + timedelta(days=30),
                 created_at=now,
                 ip_address="127.0.0.1",
@@ -502,7 +505,8 @@ class TestDevicePoll:
             return SimpleNamespace(
                 id=uuid4(),
                 user_id=user.id,
-                token="cli-device-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
+                token="sha256-digest-not-persisted-in-tests",
+                plaintext_token="cli-device-token-xxx-yyyy-zzzz-aaaa-bbbb-cccc",
                 expires_at=now + timedelta(days=30),
                 created_at=now,
                 ip_address="127.0.0.1",

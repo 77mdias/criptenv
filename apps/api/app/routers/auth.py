@@ -206,7 +206,7 @@ async def signin(
         ip_address=ip_address,
         user_agent=user_agent,
     )
-    _set_session_cookie(response, session.token)
+    _set_session_cookie(response, session.plaintext_token)
 
     return AuthResponse(
         user=_user_to_response(user),
@@ -598,7 +598,7 @@ async def verify_2fa_challenge(
         )
 
     response.delete_cookie(TWO_FACTOR_CHALLENGE_COOKIE)
-    _set_session_cookie(response, session.token)
+    _set_session_cookie(response, session.plaintext_token)
     if trusted_token:
         _set_two_factor_device_cookie(response, trusted_token)
 
@@ -653,7 +653,9 @@ async def accept_invite_by_token(
         resource_id=invite.id,
         user_id=current_user.id,
         project_id=invite.project_id,
-        metadata={"token": token},
+        # The invite token is a bearer credential; never persist it in the audit
+        # trail, which is readable by project members.
+        metadata={"email": invite.email, "role": invite.role},
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent")
     )

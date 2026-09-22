@@ -276,7 +276,7 @@ async def oauth_callback(
     frontend_callback_url = f"{settings.FRONTEND_URL.rstrip('/')}/oauth/callback"
     redirect_response = RedirectResponse(url=frontend_callback_url, status_code=307)
     redirect_response.delete_cookie("oauth_state")
-    _set_session_cookie(redirect_response, session.token)
+    _set_session_cookie(redirect_response, session.plaintext_token)
     return redirect_response
 
 

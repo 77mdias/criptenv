@@ -160,13 +160,20 @@ class AuthService:
         session = Session(
             id=uuid4(),
             user_id=user_id,
-            token=token,
+            # Only the digest is persisted, so a database leak cannot be replayed
+            # as a live session. This matches how CI tokens, API keys and 2FA
+            # challenges are already stored.
+            token=self.hash_token(token),
             expires_at=expires_at,
             ip_address=ip_address,
             user_agent=user_agent
         )
         self.db.add(session)
         await self.db.flush()
+
+        # Not persisted: the raw token is handed to the caller once (to set the
+        # session cookie or to return to the CLI) and is never stored.
+        session.plaintext_token = token
 
         return session
 
@@ -179,7 +186,7 @@ class AuthService:
 
         result = await self.db.execute(
             select(Session).where(
-                Session.token == token,
+                Session.token == self.hash_token(token),
                 Session.expires_at > now,
                 Session.last_accessed_at > inactivity_threshold
             )
@@ -203,7 +210,7 @@ class AuthService:
 
     async def invalidate_session(self, token: str) -> bool:
         result = await self.db.execute(
-            select(Session).where(Session.token == token)
+            select(Session).where(Session.token == self.hash_token(token))
         )
         session = result.scalar_one_or_none()
 

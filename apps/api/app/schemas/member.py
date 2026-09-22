@@ -45,7 +45,9 @@ class InviteResponse(BaseModel):
     email: str
     role: str
     invited_by: Optional[UUID] = None
-    token: str
+    # Only returned to the caller that just created the invite; omitted from list
+    # and mutation responses so the bearer token is not disclosed to viewers.
+    token: Optional[str] = None
     expires_at: datetime
     accepted_at: Optional[datetime] = None
     revoked_at: Optional[datetime] = None
