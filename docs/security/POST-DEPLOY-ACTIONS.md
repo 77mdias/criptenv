@@ -15,7 +15,7 @@ Trate todos como comprometidos e rotacione.
 | # | O que | Onde estava | Ação |
 |---|-------|-------------|------|
 | A1 | `session_token` de sessão web | arquivo `cookies.txt`, **versionado** desde o commit `530a9c5` | Revogar a sessão e forçar re-login (ver A4). O token era de `localhost` e expirava em ~2026-06-07, então provavelmente já expirou — rotacione mesmo assim. |
-| A2 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | `apps/api/.env` (não versionado) — apareceram no output do agente de auditoria | Gerar novas chaves no painel Cloudflare R2, atualizar o `.env`/VPS e **revogar** as antigas. |
+| A2 | `R2_ACCESS_KEY_ID` / `R2_SECRET_ACCESS_KEY` | `apps/api/.env` (não versionado) — apareceram no output do agente de auditoria | ✅ **Feito (2026-09-22): revogadas.** Eram chaves de **desenvolvimento** — o `.env` do VPS usa chaves de produção separadas, então **não há ação lá**. Só vale colar as chaves novas em `apps/api/.env` se o dev local usar o backend `r2` para avatares (`AVATAR_STORAGE_BACKEND`), senão o upload local falha. |
 | A3 | Demais segredos do `.env` local | `apps/api/.env` (GitHub/Google/Discord OAuth, Resend, Mercado Pago webhook, `SECRET_KEY`, `INTEGRATION_CONFIG_SECRET`) e `apps/web/.env` (URL do Supabase com senha), `duckdns/.duck.sh.swp` (token DuckDNS) | Rotacione o que foi colado em workspace compartilhado: OAuth client secrets, `RESEND_API_KEY`, `MERCADO_PAGO_WEBHOOK_SECRET`, senha do banco e o token DuckDNS. Apague o `.swp`. |
 | A4 | Sessões ativas de usuários | tabela `sessions` | **Atenção:** agora só guardamos o digest do token, então **todas as sessões existentes param de validar** no deploy. Avise os usuários de um re-login único. Se quiser derrubar tudo proativamente antes: `DELETE FROM sessions;` |
 
