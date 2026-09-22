@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Landing SEO/UX/A11y — Audit Round 2 (2026-09-22)
+
+- **SEO (web):** Canonical language set to pt-BR — `title`, `meta description`, Open Graph and JSON-LD now match `lang="pt-BR"`; added a dedicated 1200×630 OG image (`public/images/og-cover.png`) and upgraded the Twitter card to `summary_large_image`.
+- **Security (web):** `worker/index.ts` now applies security headers to every response (app and `/api/` proxy): CSP (`frame-ancestors 'none'`, `object-src 'none'`, `base-uri`, `form-action`; `unsafe-inline` kept for the inline theme bootstrap and JSON-LD), HSTS, `X-Content-Type-Options`, `X-Frame-Options`, `Referrer-Policy` and `Permissions-Policy`.
+- **UX/A11y (web):** Skip link "Pular para o conteúdo" plus a `<main id="conteudo">` landmark on marketing pages; smooth anchor scrolling behind `prefers-reduced-motion: no-preference`; `color-scheme` meta added and pinned in CSS.
+- **A11y (web):** `--text-tertiary`/`--text-muted` recalculated to WCAG AA (light `#6b6b6b`/`#767676`, dark alpha `0.6`/`0.52`; all ≥4.5:1, hierarchy preserved).
+- **Decision:** recorded as DEC-053 in `docs/project/decisions.md`; remaining pending item (SSR texts of animated sections) deferred to a dedicated task per maintainer.
+
 ### Security Remediation — P0 and P1 Findings (2026-09-21)
 
 - **Security (P0, API):** API key CRUD under `/api/v1/projects/{project_id}/api-keys` now requires `admin` access to the project (previously any authenticated user could list, create, update or revoke any tenant's API keys — cross-tenant BOLA).

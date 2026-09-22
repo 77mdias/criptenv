@@ -119,9 +119,15 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
         <div
           className="fixed inset-0 bg-black/60 z-50 backdrop-blur-sm md:hidden"
           onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
         />
       )}
       <aside
+        id="mobile-menu"
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu"
+        hidden={!mobileOpen}
         className={cn(
           "fixed top-0 right-0 z-50 h-screen w-70 flex-col border-l border-(--border) bg-(--background) transition-transform duration-300 ease-out motion-reduce:transform-none motion-reduce:transition-none md:hidden",
           mobileOpen ? "translate-x-0" : "translate-x-full",

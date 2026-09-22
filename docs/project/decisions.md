@@ -1427,3 +1427,24 @@ would have combined a wildcard with `allow_credentials=True`.
 - ⚠️ Shipping the change logs every user out once.
 - ⚠️ The server can no longer display an existing session's token, which no
   endpoint did anyway.
+
+## DEC-053 — Landing pt-BR Canônica, OG Dedicada e Headers de Segurança no Worker
+
+**Date:** 2026-09-22 · **Status:** Accepted
+
+**Context:** A auditoria da landing (`docs/audits/landing-seo-ux-a11y-audit-2026-09-22.md`) deixou pendências que exigiam decisão: idioma canônico do marketing (title/description em inglês sobre conteúdo pt-BR), imagem OG dedicada 1200×630, headers HTTP (Security 65), skip-link, scroll suave, `color-scheme` e contraste WCAG de `--text-tertiary`/`--text-muted`.
+
+**Decision:**
+1. pt-BR é o idioma canônico do marketing (decisão do mantenedor); title, meta description, OG e JSON-LD alinhados ao `lang="pt-BR"`. A logo continua servida para feeds que exigem quadrado, mas OG/Twitter usam `og-cover.png` (1200×630) e `summary_large_image`.
+2. Security headers (CSP, HSTS, nosniff, DENY, referrer-policy, permissions-policy) aplicados no `worker/index.ts` sobre toda resposta (app e proxy `/api/`). CSP mantém `unsafe-inline` em `script-src`/`style-src` porque o bootstrap de tema e o JSON-LD são inline; ainda entrega `frame-ancestors 'none'`, `object-src 'none'`, `base-uri` e `form-action`.
+3. Tokens de texto em `globals.css` escurecidos ao mínimo WCAG AA com hierarquia preservada: claro `#6b6b6b`/`#767676`, escuro α `0.6`/`0.52`.
+
+**Alternatives considered:**
+- Inglês canônico com conteúdo pt-BR. Rejeitado: mantém a inconsistência apontada pelo audit; traduzir toda a landing ficou fora de escopo.
+- CSP com nonces/`strict-dynamic`. Rejeitado nesta rodada: exige instrumentar o vinext/SSR; `unsafe-inline` em script já era o estado de fato sem CSP.
+- SSR imediato das seções animadas. Rejeitado pelo mantenedor: refactor dedicado (GSAP importa plugin no escopo do módulo).
+
+**Consequences:**
+- ✅ Social/Content/E-E-A-T e A11y avançam sem mudar o design perceptível.
+- ✅ Headers só aparecem após deploy (o dev server não passa pelo Worker) — validar com `curl -I` em produção.
+- ⚠️ `--text-muted`/`--text-tertiary` ficam ligeiramente mais escuros (labels mais legíveis; scrollbar acompanha).

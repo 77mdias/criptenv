@@ -16,11 +16,11 @@
   --border: #e5e5e5;
   --border-subtle: #f5f5f5;
 
-  /* Text */
+  /* Text — WCAG AA on --background (tertiary 5.33:1, muted 4.54:1) */
   --text-primary: #171717;
   --text-secondary: #525252;
-  --text-tertiary: #737373;
-  --text-muted: #a3a3a3;
+  --text-tertiary: #6b6b6b;
+  --text-muted: #767676;
 
   /* Accent */
   --accent: #171717;
@@ -70,8 +70,8 @@
   --border-subtle: rgba(255, 255, 255, 0.04);
   --text-primary: #e8e6e3;
   --text-secondary: rgba(232, 230, 227, 0.7);
-  --text-tertiary: rgba(232, 230, 227, 0.5);
-  --text-muted: rgba(232, 230, 227, 0.3);
+  --text-tertiary: rgba(232, 230, 227, 0.6);
+  --text-muted: rgba(232, 230, 227, 0.52);
   --accent: #f5f5f5;
   --accent-hover: #ffffff;
   --accent-foreground: #0a0a0b;
@@ -130,11 +130,19 @@ body {
 
 /* Theme transition */
 html {
+  color-scheme: light;
   transition: background-color 0.3s ease, color 0.3s ease;
 }
 
 html.dark {
   color-scheme: dark;
+}
+
+/* Smooth anchor scrolling, skipped for reduced motion */
+@media (prefers-reduced-motion: no-preference) {
+  html {
+    scroll-behavior: smooth;
+  }
 }
 
 /* Prevent iOS Safari auto-zoom on inputs with font-size < 16px */

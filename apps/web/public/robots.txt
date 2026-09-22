@@ -1,0 +1,13 @@
+User-agent: *
+Allow: /
+
+# Authenticated areas — no indexing value
+Disallow: /dashboard
+Disallow: /settings
+Disallow: /account
+Disallow: /login
+Disallow: /signup
+Disallow: /forgot-password
+Disallow: /cli-auth
+
+Sitemap: https://criptenv.77mdevseven.tech/sitemap.xml
