@@ -1,5 +1,11 @@
 title = "CriptEnv Gitleaks Config"
 
+# Extend the built-in ruleset. Without this section the default rules are
+# REPLACED, not extended, which left the scan with zero detection rules and let a
+# committed session token (cookies.txt) pass CI unnoticed.
+[extend]
+useDefault = true
+
 [allowlist]
 description = "Ignore documentation placeholders and examples"
 regexes = [
@@ -12,4 +18,9 @@ regexes = [
   '''<API_KEY>''',
   '''<TOKEN>''',
   '''<SECRET>''',
+]
+
+paths = [
+  # Local curl cookie jars contain live session tokens.
+  '''(^|/)cookies\.txt$''',
 ]

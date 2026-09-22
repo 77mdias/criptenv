@@ -74,3 +74,8 @@ supabase/.temp/
 .vercel/
 
 .playwright*
+
+# Local credential material — never commit
+cookies.txt
+.curl-cookies.txt
+.claude/test-user-credentials.md

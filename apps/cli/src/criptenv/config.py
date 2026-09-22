@@ -21,8 +21,16 @@ AUTH_TAG_LENGTH = 16
 
 
 def ensure_config_dir() -> Path:
-    """Ensure ~/.criptenv/ directory exists and return its path."""
+    """Ensure ~/.criptenv/ directory exists and return its path.
+
+    The directory holds the encrypted vault, CI sessions and the local auth key,
+    so it is restricted to the owner.
+    """
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    try:
+        os.chmod(CONFIG_DIR, 0o700)
+    except OSError:
+        pass
     return CONFIG_DIR
 
 

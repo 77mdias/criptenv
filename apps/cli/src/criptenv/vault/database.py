@@ -1,17 +1,40 @@
 """SQLite database management for local vault."""
 
+import os
 import aiosqlite
 from pathlib import Path
 
 from criptenv.config import CONFIG_DIR, DB_FILE
 
+# The vault directory holds encrypted secrets, CI sessions and the local auth
+# key. Restrict it to the owner so other local users cannot read (or replace) it.
+CONFIG_DIR_MODE = 0o700
+DB_FILE_MODE = 0o600
+
+
+def _restrict_permissions() -> None:
+    """Best-effort tightening of the vault directory and database file modes."""
+    try:
+        os.chmod(CONFIG_DIR, CONFIG_DIR_MODE)
+    except OSError:
+        pass
+    try:
+        if DB_FILE.exists():
+            os.chmod(DB_FILE, DB_FILE_MODE)
+    except OSError:
+        pass
+
 
 async def get_db() -> aiosqlite.Connection:
     """Get database connection, creating schema if needed."""
     CONFIG_DIR.mkdir(parents=True, exist_ok=True)
+    _restrict_permissions()
 
     db = await aiosqlite.connect(str(DB_FILE))
     db.row_factory = aiosqlite.Row
+
+    # aiosqlite creates the file with the process umask; tighten it explicitly.
+    _restrict_permissions()
 
     # Enable foreign keys
     await db.execute("PRAGMA foreign_keys = ON")
