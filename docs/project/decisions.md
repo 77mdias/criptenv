@@ -1494,3 +1494,25 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ `x-emergency-fallback: 1` permite medir em monitoramento quantas respostas vieram do emergência.
 - ⚠️ O fallback NÃO protege contra throw na avaliação de módulo (caso original do 1101): a prevenção real continua sendo o checklist SSR do AGENTS.md + smoke-test com build de produção antes de cada deploy.
 - ⚠️ Sessões do playwright local não têm `cf-ray`; o Ray ID aparece apenas em tráfego real pela Cloudflare (linha omitida quando ausente).
+
+## DEC-060 — Termos de Uso e Política de Privacidade (LGPD) com Fonte Canônica Única
+
+**Date:** 2026-09-23 · **Status:** Accepted
+
+**Context:** o CriptEnv opera publicamente (dashboard, CLI, API, GitHub Action, doações Pix via Mercado Pago, OAuth Google/GitHub/Discord) sem instrumento jurídico publicado — ausência crítica para conformidade LGPD, para o aviso de irrecoverabilidade Zero-Knowledge e para a política de não-reembolso das doações. Uma auditoria do código (criptografia, coleta OAuth, logs de sessão/auditoria, fluxo de exclusão de conta em cascata, webhooks de pagamento) identificou os fatos que o texto legal precisa descrever com precisão, sob pena de prometer o que o sistema não entrega (ou omitir riscos que ele de fato tem).
+
+**Decision:**
+1. **Fonte canônica única:** documento combinado (Termos + Privacidade) em `docs/legal/termos-de-uso-e-politica-de-privacidade.md`, versionado no repositório junto com o código — a versão vigente acompanha deploys por release, não por canal editorial paralelo.
+2. **Páginas públicas Server Components:** `/termos-de-uso` e `/politica-de-privacidade` sob o route group `(marketing)`, renderizadas sem JS de cliente (indexáveis, leves em Workers), com componentes compartilhados em `src/components/legal/` (`LegalDocument`, `LegalSection`, `LegalAlert` etc.) para DRY entre as duas páginas.
+3. **Cláusulas alinhadas à implementação auditada:** AS-IS sem SLA; irrecoverabilidade por desenho; limites explícitos do zero-knowledge (terminal, exports, runners); responsabilidade do admin de equipe (RBAC owner/admin/developer/viewer); doações não reembolsáveis sob fluxo do Mercado Pago; coleta OAuth mínima (e-mail, nome, ID público, avatar) com escopos reais; operadores nomeados (Cloudflare, Mercado Pago, Resend, VPS, provedores OAuth); transferência internacional (art. 33); exclusão de conta em cascata com aviso pré-export; direitos do titular com prazo de resposta de 15 dias; aviso enfático produção vs. desenvolvimento.
+4. **Descoberta (links de entrada):** links no rodapé global e na página de doações (âncora da cláusula 5), garantindo que a política de não-reembolso esteja visível no ponto de doação.
+
+**Alternatives consideradas:**
+- Página única combinada. Rejeitado: usabilidade e SEO piores; URLs separadas são a expectativa (signup/footer/compliance).
+- Conteúdo jurídico como Markdown importado em runtime. Rejeitado: acopla render a parser no Worker; Server Component estático é mais simples e verificável por build.
+
+**Consequences:**
+- ✅ Conformidade LGPD básica publicada (transparência arts. 6º, VI, e 9º; direitos art. 18; incidentes art. 48; transferência art. 33) com texto espelhado na realidade do código.
+- ✅ Salvaguardas contratuais críticas publicadas: sem SLA, irrecoverabilidade, isenção de danos indiretos (com salvaguardas CDC/dolo), responsabilidade de admin de equipe, doações não reembolsáveis.
+- ⚠️ O documento é gêmeo do conteúdo das páginas — alterações futuras exigem editar ambos (fonte canônica + JSX) e bumpar a versão/data em três lugares (MD, duas páginas).
+- ⚠️ Pendências fora do escopo desta decisão: `security.txt`/página de segurança para reporte de vulnerabilidades, nome/quadro do mantenedor e comarca do foro quando formalizados. O aceite explícito no signup (checkbox) foi implementado na sequência: `signupSchema` passou a exigir `acceptTerms: true` (refine), com componente `ui/checkbox.tsx` nativo + links para as páginas jurídicas e aviso de aceite por primeiro uso exibido junto aos botões OAuth.

@@ -13,13 +13,14 @@ describe("validators", () => {
     expect(loginSchema.safeParse({ email: "bad", password: "secret" }).success).toBe(false)
   })
 
-  it("requires strong signup passwords and matching confirmation", () => {
+  it("requires strong signup passwords, matching confirmation and terms acceptance", () => {
     expect(
       signupSchema.safeParse({
         name: "Jean",
         email: "jean@example.com",
         password: "Passw0rd!",
         confirmPassword: "Passw0rd!",
+        acceptTerms: true,
       }).success
     ).toBe(true)
 
@@ -27,8 +28,28 @@ describe("validators", () => {
       signupSchema.safeParse({
         name: "Jean",
         email: "jean@example.com",
+        password: "Passw0rd!",
+        confirmPassword: "Passw0rd!",
+        acceptTerms: false,
+      }).success
+    ).toBe(false)
+
+    expect(
+      signupSchema.safeParse({
+        name: "Jean",
+        email: "jean@example.com",
+        password: "Passw0rd!",
+        confirmPassword: "Passw0rd!",
+      }).success
+    ).toBe(false)
+
+    expect(
+      signupSchema.safeParse({
+        name: "Jean",
+        email: "jean@example.com",
         password: "password",
         confirmPassword: "different",
+        acceptTerms: true,
       }).success
     ).toBe(false)
   })

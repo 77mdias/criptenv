@@ -477,6 +477,18 @@ export default function ContributePage() {
               infraestrutura, auditoria, documentação e evolução do produto sem
               comprometer o princípio zero-knowledge.
             </p>
+            <p className="mt-4 text-xs leading-relaxed text-(--text-muted)">
+              Contribuições são voluntárias, não concedem recursos exclusivos e
+              não são reembolsáveis. O pagamento é processado pelo Mercado Pago
+              sob seus termos. Consulte a seção 5 dos{" "}
+              <Link
+                href="/termos-de-uso#5-doacoes"
+                className="underline underline-offset-2 transition-colors hover:text-(--text-secondary)"
+              >
+                Termos de Uso
+              </Link>
+              .
+            </p>
           </div>
           {statusPanel}
         </section>

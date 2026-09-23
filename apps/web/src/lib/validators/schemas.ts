@@ -15,6 +15,9 @@ export const signupSchema = z.object({
     .regex(/[0-9]/, "Deve conter pelo menos 1 número")
     .regex(/[^A-Za-z0-9]/, "Deve conter pelo menos 1 símbolo"),
   confirmPassword: z.string(),
+  acceptTerms: z.boolean().refine((value) => value === true, {
+    message: "Aceite os Termos de Uso e a Política de Privacidade para continuar",
+  }),
 }).refine((data) => data.password === data.confirmPassword, {
   message: "Senhas não conferem",
   path: ["confirmPassword"],

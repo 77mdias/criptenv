@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { OAuthButtonGroup } from "@/components/ui/oauth-button"
@@ -56,6 +57,25 @@ export default function SignupPage() {
 
       <div className="space-y-4">
         <OAuthButtonGroup />
+        <p className="text-center text-xs leading-5 text-[var(--text-muted)]">
+          Ao continuar com Google, GitHub ou Discord, você aceita os{" "}
+          <Link
+            href="/termos-de-uso"
+            target="_blank"
+            className="text-[var(--accent)] hover:underline"
+          >
+            Termos de Uso
+          </Link>{" "}
+          e a{" "}
+          <Link
+            href="/politica-de-privacidade"
+            target="_blank"
+            className="text-[var(--accent)] hover:underline"
+          >
+            Política de Privacidade
+          </Link>
+          .
+        </p>
         <div className="relative">
           <Separator className="my-2" />
           <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--surface-elevated)] px-3 text-xs text-[var(--text-tertiary)]">
@@ -97,6 +117,29 @@ export default function SignupPage() {
           error={errors.confirmPassword?.message}
           {...register("confirmPassword")}
         />
+        <Checkbox
+          id="accept-terms"
+          error={errors.acceptTerms?.message}
+          {...register("acceptTerms")}
+        >
+          Eu li e aceito os{" "}
+          <Link
+            href="/termos-de-uso"
+            target="_blank"
+            className="font-medium text-[var(--accent)] hover:underline"
+          >
+            Termos de Uso
+          </Link>{" "}
+          e a{" "}
+          <Link
+            href="/politica-de-privacidade"
+            target="_blank"
+            className="font-medium text-[var(--accent)] hover:underline"
+          >
+            Política de Privacidade
+          </Link>
+          .
+        </Checkbox>
         <Button type="submit" fullWidth loading={isSubmitting}>
           Criar Conta
         </Button>

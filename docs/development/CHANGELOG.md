@@ -7,6 +7,20 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feat — Aceite Explícito dos Termos no Signup (2026-09-23)
+
+- **Feat (web):** checkbox obrigatório de aceite no formulário de cadastro — "Eu li e aceito os Termos de Uso e a Política de Privacidade" com links para as páginas jurídicas (abrem em nova aba, preservando o estado do formulário). Novo componente `src/components/ui/checkbox.tsx` (input nativo + label rica + erro com `aria-invalid`/`aria-describedby`, seguindo o padrão do `Input`).
+- **Feat (web):** aviso de aceite por primeiro uso junto aos botões OAuth ("Ao continuar com Google, GitHub ou Discord, você aceita os Termos e a Política") — cobre o fluxo de cadastro via provedores, que não passa pelo checkbox, conforme cláusula 0.3.
+- **Validation (web):** `signupSchema` passa a exigir `acceptTerms: true` via `z.boolean().refine`; testes do schema e da página de signup atualizados (bloqueio sem aceite, sucesso com aceite, links jurídicos com hrefs corretos em ambas as posições).
+- **Docs (legal):** cláusula 0.3 dos Termos (MD canônico e página `/termos-de-uso`) agora descreve a mecânica de aceite: checkbox expresso no cadastro por e-mail e primeiro uso no OAuth. DEC-060 atualizada (pendência de checkbox resolvida).
+
+### Feat — Termos de Uso e Política de Privacidade (LGPD) (2026-09-23)
+
+- **Docs (legal):** documento jurídico combinado canônico em `docs/legal/termos-de-uso-e-politica-de-privacidade.md` (versão 1.0), redigido a partir de auditoria do código: escopos OAuth reais (GitHub `read:user user:email`, Google `openid email profile`, Discord `identify email`), dados de sessão (IP/user-agent), logs de auditoria sem conteúdo de segredos, doações Pix/Mercado Pago com payer opcional, exclusão de conta em cascata (`DELETE /api/auth/me`) e limites do modelo Zero-Knowledge (terminal, exports `.env`, vault local SQLite, runners de CI).
+- **Feat (web):** páginas públicas `/termos-de-uso` e `/politica-de-privacidade` como Server Components sob `(marketing)` — sem JS de cliente, com metadados SEO, alertas destacados (irrecuperabilidade, produção vs. desenvolvimento, não-reembolso) e Anexo técnico "o que o servidor vê/nunca vê". Componentes compartilhados em `src/components/legal/` (`LegalDocument`, `LegalSection`, `LegalAlert` e afins).
+- **UX (web):** rodapé global ganha links "Termos de Uso" e "Privacidade"; página de doações exibe aviso resumido de voluntariedade/não-reembolso com âncora para a cláusula 5 dos Termos.
+- **Legal:** cláusulas de serviço AS-IS sem SLA nem suporte obrigatório, direito de descontinuidade sem aviso, irrecoverabilidade por desenho, isenção de danos indiretos (lucros cessantes, pipelines CI/CD, vazamentos locais, indisponibilidade) com salvaguardas CDC/dolo, responsabilidade do admin de equipe por permissões e atos de membros, doações não comerciais e não reembolsáveis sob fluxo do Mercado Pago, coleta mínima OAuth, não comercialização de dados, operadores nomeados (Cloudflare, Mercado Pago, Resend, VPS), transferência internacional (art. 33 LGPD), retenção, direitos do titular (15 dias) e exclusão definitiva com efeitos em cascata documentados. Registrado como DEC-060.
+
 ### Feat — Branded Error Pages: Worker Crash, Render Errors and 404 (2026-09-23)
 
 - **Feat (web):** emergency fallback page for unhandled Worker errors (`worker/error-page.ts`) — self-contained HTML (inline CSS, zero JS, zero external requests), 503 + `Retry-After: 60`, `x-emergency-fallback: 1` header for monitoring, dark-first respecting `prefers-color-scheme`, brand accent `#ff4500`, Cloudflare Ray ID surfaced for support, and a reassuring zero-knowledge message. `worker/index.ts` wraps the vinext handler call in try/catch; the renderer itself never throws (plaintext last-resort fallback).

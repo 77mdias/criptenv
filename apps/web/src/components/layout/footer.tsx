@@ -12,13 +12,27 @@ function Footer() {
           </div>
           <div className="flex flex-col md:flex-row gap-6 md:justify-end items-start md:items-center text-sm font-medium text-[var(--text-secondary)]">
             <StatusBadge status="online" label="All systems operational" />
-            <nav className="flex gap-6">
+            <nav className="flex flex-wrap gap-6">
               <Link
                 href="/docs"
                 prefetch={false}
                 className="hover:text-[var(--text-primary)] transition"
               >
                 Docs
+              </Link>
+              <Link
+                href="/termos-de-uso"
+                prefetch={false}
+                className="hover:text-[var(--text-primary)] transition"
+              >
+                Termos de Uso
+              </Link>
+              <Link
+                href="/politica-de-privacidade"
+                prefetch={false}
+                className="hover:text-[var(--text-primary)] transition"
+              >
+                Privacidade
               </Link>
               <Link
                 href="https://github.com/77mdias/criptenv"
