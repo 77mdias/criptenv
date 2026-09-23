@@ -10,6 +10,7 @@ from fastapi.testclient import TestClient
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.routers.auth import router as auth_router
+from app.routers.auth import _user_to_response
 from app.services.audit_service import AuditService
 from app.services.auth_service import AuthService
 from app.services.avatar_service import AvatarService
@@ -60,7 +61,10 @@ def make_app() -> FastAPI:
 
 
 def test_signup_returns_message_and_sends_verification(monkeypatch):
+    captured_kwargs = {}
+
     async def fake_create_user(self, **kwargs):
+        captured_kwargs.update(kwargs)
         return make_user(), make_session()
 
     async def fake_create_email_verification(self, email):
@@ -73,7 +77,12 @@ def test_signup_returns_message_and_sends_verification(monkeypatch):
     with TestClient(make_app()) as client:
         response = client.post(
             "/api/auth/signup",
-            json={"email": "dev@example.com", "password": "password123", "name": "Dev"},
+            json={
+                "email": "dev@example.com",
+                "password": "password123",
+                "name": "Dev",
+                "accept_terms": True,
+            },
         )
 
     assert response.status_code == 201
@@ -81,6 +90,49 @@ def test_signup_returns_message_and_sends_verification(monkeypatch):
     payload = response.json()
     assert "message" in payload
     assert "verify" in payload["message"].lower() or "check your email" in payload["message"].lower()
+    # The signup evidence recorded server-side: timestamp + instrument version.
+    assert captured_kwargs.get("terms_version")
+
+
+@pytest.mark.parametrize(
+    "payload",
+    [
+        # Missing accept_terms entirely
+        {"email": "dev@example.com", "password": "password123", "name": "Dev"},
+        # Explicit refusal
+        {
+            "email": "dev@example.com",
+            "password": "password123",
+            "name": "Dev",
+            "accept_terms": False,
+        },
+    ],
+)
+def test_signup_rejects_account_creation_without_terms_acceptance(monkeypatch, payload):
+    called = False
+
+    async def fake_create_user(self, **kwargs):
+        nonlocal called
+        called = True
+        return make_user(), make_session()
+
+    monkeypatch.setattr(AuthService, "create_user", fake_create_user)
+
+    with TestClient(make_app()) as client:
+        response = client.post("/api/auth/signup", json=payload)
+
+    assert response.status_code == 422
+    assert not called
+
+
+def test_user_response_exposes_terms_acceptance_evidence():
+    user = make_user()
+    user.terms_accepted_at = datetime.now(timezone.utc)
+    user.terms_version = "1.0"
+    response = _user_to_response(user)
+
+    assert response.terms_accepted_at == user.terms_accepted_at
+    assert response.terms_version == "1.0"
 
 
 def test_signin_sets_cookie_without_returning_session_token(monkeypatch):

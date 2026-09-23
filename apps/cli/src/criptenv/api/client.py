@@ -96,7 +96,14 @@ class CriptEnvClient:
         resp = await self._request(
             "POST",
             "/api/auth/signup",
-            json={"email": email, "password": password, "name": name},
+            # accept_terms: the CLI signup helper mirrors the web signup
+            # checkbox (terms acceptance recorded server-side with date/version).
+            json={
+                "email": email,
+                "password": password,
+                "name": name,
+                "accept_terms": True,
+            },
         )
         data = resp.json()
         token = resp.cookies.get("session_token")

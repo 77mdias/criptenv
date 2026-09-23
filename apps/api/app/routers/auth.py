@@ -96,6 +96,8 @@ def _user_to_response(user: User) -> UserResponse:
         avatar_url=user.avatar_url,
         email_verified=user.email_verified,
         two_factor_enabled=user.two_factor_enabled,
+        terms_accepted_at=getattr(user, "terms_accepted_at", None),
+        terms_version=getattr(user, "terms_version", None),
         created_at=user.created_at,
         updated_at=user.updated_at,
         last_login_at=user.last_login_at,
@@ -129,7 +131,8 @@ async def signup(
             password=data.password,
             name=data.name,
             ip_address=request.client.host if request.client else None,
-            user_agent=request.headers.get("User-Agent")
+            user_agent=request.headers.get("User-Agent"),
+            terms_version=settings.TERMS_VERSION,
         )
     except ValueError as e:
         raise HTTPException(

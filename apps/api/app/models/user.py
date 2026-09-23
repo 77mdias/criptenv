@@ -19,6 +19,8 @@ class User(Base):
     two_factor_enabled = Column(Boolean, default=False)
     two_factor_backup_codes = Column(JSONB, default=list)
     email_verified = Column(Boolean, default=False)
+    terms_accepted_at = Column(DateTime(timezone=True))
+    terms_version = Column(String(50))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True))

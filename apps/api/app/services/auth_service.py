@@ -63,7 +63,8 @@ class AuthService:
         password: str,
         name: str,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
+        terms_version: Optional[str] = None
     ) -> tuple[User, Session]:
         existing = await self.db.execute(
             select(User).where(User.email == email)
@@ -78,7 +79,11 @@ class AuthService:
             password_hash=self.hash_password(password),
             kdf_salt=self.generate_kdf_salt(),
             email_verified=False,
-            two_factor_enabled=False
+            two_factor_enabled=False,
+            # Evidence of acceptance of the Terms/Privacy Policy: timestamp plus
+            # the version in force at signup (audit trail).
+            terms_accepted_at=datetime.now(timezone.utc) if terms_version else None,
+            terms_version=terms_version,
         )
         self.db.add(user)
         await self.db.flush()

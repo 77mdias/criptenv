@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feat — Server-Side Record of Terms Acceptance (2026-09-23)
+
+- **DB (api):** `users` ganha `terms_accepted_at TIMESTAMPTZ` e `terms_version VARCHAR(50)` — evidência de aceite dos Termos/Privacidade (quando e qual versão do instrumento). Migration `20260923_0011_add_terms_acceptance_to_users.py` (ADD COLUMN IF NOT EXISTS, downgrade reversível).
+- **Feat (api):** `UserSignup` passa a exigir `accept_terms: true` (field validator → 422 caso ausente ou falso); o router grava `terms_version=settings.TERMS_VERSION` (nova config, default "1.0") e o timestamp no cadastro. OAuth registra aceite por primeiro uso na criação do usuário (cláusula 0.3). `UserResponse` expõe `terms_accepted_at`/`terms_version`.
+- **Clients:** web (`lib/api/auth.ts`) e CLI (`api/client.py`) enviam `accept_terms: true` no signup.
+- **Docs (legal):** cláusula 0.3 (MD + página) agora descreve o registro eletrônico do aceite (data/hora + versão vinculados à conta).
+- **Verified:** API 577 passed / 2 skipped (3 novos testes: 422 sem aceite, 422 com recusa, evidência no UserResponse); CLI 191; web 107, lint, check:vinext 100%, build. Migration validada em Postgres real descartável: create_all → stamp 0010 → colunas removidas (schema legado simulado) → `upgrade head` executa apenas a 0011 e recria as colunas; teste de integração de signup+projeto passou com Resend desabilitado (bloqueio preexistente de fixture example.com) e a linha gravada confirmou `terms_version=1.0` + timestamp.
+- **Known pre-existing (não causado por esta mudança):** `alembic upgrade` do zero falha na revision 0001 (`ci_tokens` inexistente — a cadeia nunca foi baseline completa; bancos reais nascem via `create_all`), e `test_project_create_requires_vault_proof_against_postgres` falha com `401 != 422` mesmo no código original (testes sempre skippados; reproduzido via stash).
+
 ### Feat — Aceite Explícito dos Termos no Signup (2026-09-23)
 
 - **Feat (web):** checkbox obrigatório de aceite no formulário de cadastro — "Eu li e aceito os Termos de Uso e a Política de Privacidade" com links para as páginas jurídicas (abrem em nova aba, preservando o estado do formulário). Novo componente `src/components/ui/checkbox.tsx` (input nativo + label rica + erro com `aria-invalid`/`aria-describedby`, seguindo o padrão do `Input`).

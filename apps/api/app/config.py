@@ -18,6 +18,11 @@ class Settings(BaseSettings):
     SESSION_INACTIVITY_DAYS: int = 7
     CORS_ORIGINS: str = "http://localhost:3000"
     APP_ENV: str = "development"
+    # Version of the Terms of Use / Privacy Policy currently published on the
+    # web app. Recorded on the user row at signup (terms_version +
+    # terms_accepted_at) as evidence of acceptance. Bump this together with the
+    # pages and docs/legal/ when the instrument changes.
+    TERMS_VERSION: str = "1.0"
     # Secure by default: DEBUG governs the cookie `Secure` flag and whether the
     # API docs and one-time development tokens are exposed, so a deployment that
     # forgets to set it must not silently turn those on.

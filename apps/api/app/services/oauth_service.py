@@ -379,6 +379,11 @@ class OAuthService:
                         kdf_salt=self.generate_kdf_salt(),  # Required for OAuth users
                         avatar_url=user_info.get("avatar_url"),
                         email_verified=True,  # OAuth emails are verified by provider
+                        # First-use acceptance (Terms clause 0.3): OAuth signups do
+                        # not pass through the signup checkbox; the acceptance
+                        # notice is displayed beside the provider buttons.
+                        terms_accepted_at=datetime.now(timezone.utc),
+                        terms_version=settings.TERMS_VERSION,
                     )
                     self.db.add(user)
                     await self.db.flush()

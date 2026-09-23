@@ -3,7 +3,9 @@ import type { AuthResponse, User, MessageResponse, SessionResponse, SigninRespon
 
 export const authApi = {
   signup(body: { email: string; password: string; name: string }): Promise<AuthResponse> {
-    return request('POST', '/api/auth/signup', body);
+    // accept_terms: the signup form enforces the explicit checkbox; the API
+    // records terms_accepted_at + terms_version as acceptance evidence.
+    return request('POST', '/api/auth/signup', { ...body, accept_terms: true });
   },
 
   signin(body: { email: string; password: string }): Promise<SigninResponse> {

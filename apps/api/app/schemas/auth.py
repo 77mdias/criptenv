@@ -1,4 +1,4 @@
-from pydantic import BaseModel, EmailStr, Field
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from typing import Optional
 from datetime import datetime
 from uuid import UUID
@@ -8,6 +8,19 @@ class UserSignup(BaseModel):
     email: EmailStr
     password: str = Field(..., min_length=8, max_length=128)
     name: str = Field(..., min_length=1, max_length=255)
+    accept_terms: bool = Field(
+        ...,
+        description="Must be true: explicit acceptance of the Terms of Use and Privacy Policy.",
+    )
+
+    @field_validator("accept_terms")
+    @classmethod
+    def accept_terms_must_be_true(cls, value: bool) -> bool:
+        if value is not True:
+            raise ValueError(
+                "You must accept the Terms of Use and the Privacy Policy to create an account"
+            )
+        return value
 
 
 class UserSignin(BaseModel):
@@ -23,6 +36,8 @@ class UserResponse(BaseModel):
     avatar_url: Optional[str] = None
     email_verified: bool
     two_factor_enabled: bool
+    terms_accepted_at: Optional[datetime] = None
+    terms_version: Optional[str] = None
     created_at: datetime
     updated_at: datetime
     last_login_at: Optional[datetime] = None

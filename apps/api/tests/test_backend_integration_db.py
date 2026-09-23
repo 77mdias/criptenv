@@ -104,6 +104,7 @@ async def test_signup_create_project_and_default_environments_against_postgres()
                 "email": "db@example.com",
                 "password": "Passw0rd!",
                 "name": "DB User",
+                "accept_terms": True,
             },
         )
         assert signup.status_code == 201
@@ -156,6 +157,7 @@ async def test_project_create_requires_vault_proof_against_postgres():
                 "email": "proof@example.com",
                 "password": "Passw0rd!",
                 "name": "Proof User",
+                "accept_terms": True,
             },
         )
         # Verify email and signin to get session

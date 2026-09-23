@@ -40,10 +40,14 @@ export default function TermsPage() {
               <strong>marcação expressa da caixa de aceite</strong> ao final do
               formulário; no cadastro ou acesso por provedores OAuth (Google,
               GitHub ou Discord), dá-se pelo <strong>primeiro uso</strong> do
-              Serviço, com aviso exibido no momento da autenticação. Trata-se de
-              contrato de adesão (art. 423 do Código Civil): as cláusulas
-              limitativas estão destacadas e redigidas de forma compreensível.
-              Estes Termos integram, e devem ser lidos junto com, a{" "}
+              Serviço, com aviso exibido no momento da autenticação. Para fins
+              de comprovação, a aceitação é{" "}
+              <strong>registrada eletronicamente</strong> com data/hora e a{" "}
+              <strong>versão vigente</strong> do instrumento, vinculadas à sua
+              conta. Trata-se de contrato de adesão (art. 423 do Código Civil):
+              as cláusulas limitativas estão destacadas e redigidas de forma
+              compreensível. Estes Termos integram, e devem ser lidos junto
+              com, a{" "}
               <Link
                 href="/politica-de-privacidade"
                 className="font-medium text-[var(--accent)] underline-offset-4 hover:underline"
