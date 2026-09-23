@@ -1516,3 +1516,25 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ Salvaguardas contratuais críticas publicadas: sem SLA, irrecoverabilidade, isenção de danos indiretos (com salvaguardas CDC/dolo), responsabilidade de admin de equipe, doações não reembolsáveis.
 - ⚠️ O documento é gêmeo do conteúdo das páginas — alterações futuras exigem editar ambos (fonte canônica + JSX) e bumpar a versão/data em três lugares (MD, duas páginas).
 - ⚠️ Pendências fora do escopo desta decisão: `security.txt`/página de segurança para reporte de vulnerabilidades, nome/quadro do mantenedor e comarca do foro quando formalizados. O aceite explícito no signup (checkbox) foi implementado na sequência: `signupSchema` passou a exigir `acceptTerms: true` (refine), com componente `ui/checkbox.tsx` nativo + links para as páginas jurídicas e aviso de aceite por primeiro uso exibido junto aos botões OAuth. Seguindo a trilha de auditoria: `users.terms_accepted_at` + `users.terms_version` (migration `20260923_0011`), `accept_terms` obrigatório no `UserSignup` (422 sem aceite), gravação com `settings.TERMS_VERSION` e aceite por primeiro uso no OAuth — a versão registrada é server-authoritative; bump de termos exige atualizar MD + páginas + config juntas.
+
+## DEC-061 — CSP Permite as Origens Públicas do R2 nos Avatares
+
+**Date:** 2026-09-23 · **Status:** Accepted · **Branch:** `imageAvatar-fix`
+
+**Context:** a DEC-053 introduziu os security headers no `worker/index.ts`, com `img-src 'self' data: blob:`. Os avatares são armazenados no Cloudflare R2 e renderizados com um `<img src={avatar_url}>` apontando direto para a URL pública do bucket (custom domain `avatars.77mdevseven.tech`, ou `*.r2.dev`). Em produção a CSP passou a bloquear essas origens: o upload continuava funcionando (`POST /api/auth/me/avatar` → 200 e o objeto presente no bucket), mas o browser recusava a imagem e a UI caía no fallback de iniciais — sintoma de "avatar parou do nada". Não reproduz em dev porque o dev server serve em http e os headers são aplicados apenas em `https:` (DEC-054).
+
+**Decision:**
+1. A `img-src` passa a incluir as origens dos avatares, resolvidas por `buildCsp(env)` a partir de `AVATAR_PUBLIC_ORIGIN` (lista separada por vírgula, aceita URL completa — é reduzida à origem) ou dos defaults `https://avatars.77mdevseven.tech` e `https://*.r2.dev`.
+2. `withSecurityHeaders(response, url, env)` passa a receber o `env` para montar a CSP por request; as demais diretivas permanecem inalteradas.
+3. Nada de `img-src https:` genérico: a allowlist continua explícita.
+
+**Alternatives considered:**
+- `img-src https:` genérico. Rejeitado: abre carregamento de imagem de qualquer origem (vetor de rastreamento) sem necessidade.
+- Servir os avatares pelo próprio domínio (proxy no Worker). Rejeitado nesta rodada: adiciona um endpoint de streaming/proxy e custo no Worker; a allowlist resolve com menos superfície.
+- Hardcode apenas do domínio de produção. Rejeitado: a env var cobre self-host e trocas de domínio sem alterar código.
+
+**Consequences:**
+- ✅ Avatares voltam a renderizar em produção após o deploy.
+- ✅ Self-hosters ajustam a origem via `AVATAR_PUBLIC_ORIGIN` sem tocar no código.
+- ⚠️ Enquanto a env var não estiver setada no Cloudflare, valem os defaults (domínio de produção + `*.r2.dev`).
+- ⚠️ Headers só aparecem após deploy (o dev server não passa pelo Worker); validar com `curl -I` em https.

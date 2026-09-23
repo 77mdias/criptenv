@@ -40,9 +40,14 @@ NEXT_PUBLIC_API_URL=
 API_URL=https://criptenv-api.77mdevseven.tech
 NEXT_PUBLIC_COOKIE_NAME=criptenv_session
 NEXT_PUBLIC_APP_URL=https://criptenv.77mdevseven.tech
+# Optional: override the avatar origins allowed by the Worker CSP. Defaults to
+# https://avatars.77mdevseven.tech and https://*.r2.dev (the R2 public URLs).
+AVATAR_PUBLIC_ORIGIN=https://avatars.77mdevseven.tech
 ```
 
 `NEXT_PUBLIC_API_URL` should stay empty in production so browser requests use the same-origin Worker proxy. The Worker reads `API_URL` at runtime and forwards `/api/*` to the VPS API.
+
+Avatars are rendered with a plain `<img>` straight from the R2 public URL, so the Worker CSP must list that origin in `img-src`; otherwise the browser blocks the image and the UI falls back to initials. `AVATAR_PUBLIC_ORIGIN` is optional and overrides the built-in defaults.
 
 Configure the custom Pages domain:
 
@@ -196,6 +201,7 @@ When `AVATAR_STORAGE_BACKEND=supabase`, the legacy `SUPABASE_URL`, `SUPABASE_SER
 | `API_URL` | Yes | Worker runtime backend target |
 | `NEXT_PUBLIC_COOKIE_NAME` | Yes | `criptenv_session` |
 | `NEXT_PUBLIC_APP_URL` | Yes | Cloudflare Pages custom frontend URL |
+| `AVATAR_PUBLIC_ORIGIN` | No | Comma-separated avatar origins allowed in the Worker CSP `img-src`; defaults to `https://avatars.77mdevseven.tech,https://*.r2.dev` |
 
 ---
 

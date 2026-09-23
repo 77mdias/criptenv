@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix — Avatares do R2 bloqueados pela CSP (2026-09-23)
+
+- **Fix (web/worker):** a diretiva `img-src` da CSP passa a permitir as origens públicas do R2. Antes era `img-src 'self' data: blob:`, então o browser bloqueava `https://avatars.77mdevseven.tech` (e `*.r2.dev`) e o avatar não renderizava — a UI caía no fallback de iniciais mesmo com o upload retornando `POST /api/auth/me/avatar 200` e o objeto existindo no bucket. As origens vêm de `AVATAR_PUBLIC_ORIGIN` (lista separada por vírgula) ou dos defaults `https://avatars.77mdevseven.tech` e `https://*.r2.dev`; `withSecurityHeaders` agora monta a CSP a partir do `env` (regressão de DEC-053).
+- **Verified:** `vinext build` verde; ESLint limpo no `worker/index.ts`; web unit **107/107**. Header CSP a confirmar em produção via `curl -I` (o dev server não passa pelo Worker). Detalhes em DEC-061.
+
 ### Fix — Cypress E2E verde após aceite de termos (2026-09-23)
 
 - **Fix (e2e):** `cy.signup()` agora marca o checkbox obrigatório de aceite (`#accept-terms`) antes de submeter — sem isso o formulário era bloqueado pela validação client-side e nenhum request saía do navegador (3 specs falhando no timeout de `/verify-email/sent`).
