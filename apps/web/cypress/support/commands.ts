@@ -39,6 +39,9 @@ Cypress.Commands.add(
     inputByLabel("Email").type(email)
     inputByLabel("Senha").type(password)
     inputByLabel("Confirmar Senha").type(password)
+    // Mandatory terms acceptance: the form blocks submission until the
+    // checkbox is marked (client-side Zod + API 422 without it).
+    cy.get("#accept-terms").check()
     cy.contains("button", "Criar Conta").click()
 
     // After signup, user is redirected to verify-email/sent

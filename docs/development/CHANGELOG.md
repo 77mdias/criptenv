@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix — Cypress E2E verde após aceite de termos (2026-09-23)
+
+- **Fix (e2e):** `cy.signup()` agora marca o checkbox obrigatório de aceite (`#accept-terms`) antes de submeter — sem isso o formulário era bloqueado pela validação client-side e nenhum request saía do navegador (3 specs falhando no timeout de `/verify-email/sent`).
+- **Fix (e2e env):** `apps/api/.env.test` / `.env.test.example` passam a definir explicitamente `RESEND_API_KEY=` (vazio) e `APP_ENV=development`. Causa: o pydantic-settings faz fallback para o `.env` do desenvolvedor para toda chave ausente no ambiente, vazando a chave real do Resend para a API de E2E — que então rejeitava o fixture `e2e.user@example.com` com 500 no `POST /api/auth/send-verification` (bloqueio preexistente documentado no current-task.md, mascarado pela falha anterior do checkbox).
+- **Verified:** suíte completa `npm run test:e2e` — **5/5 passing** (auth 2/2, project-alert-settings 1/1, project-vault 2/2, 0 skipped; antes: 1 passing, 3 failing, 1 skipped).
+
 ### Feat — Server-Side Record of Terms Acceptance (2026-09-23)
 
 - **DB (api):** `users` ganha `terms_accepted_at TIMESTAMPTZ` e `terms_version VARCHAR(50)` — evidência de aceite dos Termos/Privacidade (quando e qual versão do instrumento). Migration `20260923_0011_add_terms_acceptance_to_users.py` (ADD COLUMN IF NOT EXISTS, downgrade reversível).
