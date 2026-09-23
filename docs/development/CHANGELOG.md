@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix — Cloudflare Workers Error 1101 on Landing Page (2026-09-23)
+
+- **Hotfix (web):** every request to `/` returned 1101 ("Worker threw exception") after the landing SSR refactor. Root cause: `landing-motion.tsx` still statically imports `gsap`/`@gsap/react` and calls `gsap.registerPlugin` at module scope; `@gsap/react` schedules a `setTimeout` during plugin init, a disallowed global-scope operation on Workers. Fixed by wrapping it behind `landing-motion-lazy.tsx`, a client-only `next/dynamic` (`ssr: false`) wrapper — same pattern as `hero-scene-lazy`.
+- **Verified:** production build + `wrangler dev` — `/`, `/login`, `/signup`, `/forgot-password` return 200 (previously `/` returned 500 with "Disallowed operation called within global scope" at `registerPlugin → setTimeout`).
+
 ### Landing SSR — Animated Sections and Page-Level Fix (2026-09-22, branch `feature/landing-ssr-animated-sections`)
 
 - **Breaking finding (web):** with `page.tsx` as a Client Component, vinext served the entire landing as an empty shell (~21 KB) in production — no section had server-rendered HTML. The page is now a Server Component: landing HTML went from ~21 KB shell to ~215 KB of fully indexed content.

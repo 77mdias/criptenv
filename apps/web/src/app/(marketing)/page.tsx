@@ -24,7 +24,7 @@ import { ProblemToVaultSection } from "@/components/marketing/problem-to-vault-s
 import { SecurityScrollytelling } from "@/components/marketing/security-scrollytelling";
 import { PlatformPreviewSection } from "@/components/marketing/platform-preview-section";
 import { HeroSceneLazy } from "@/components/marketing/hero-scene-lazy";
-import { LandingMotion } from "@/components/marketing/landing-motion";
+import { LandingMotionLazy } from "@/components/marketing/landing-motion-lazy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -177,7 +177,7 @@ function SectionHeading({
 
 export default function LandingPage() {
   return (
-    <LandingMotion>
+    <LandingMotionLazy>
       <section
         id="hero"
         className="relative flex min-h-screen scroll-mt-14 items-center overflow-hidden bg-(--background)"
@@ -603,6 +603,6 @@ export default function LandingPage() {
       </section>
 
       <Footer />
-    </LandingMotion>
+    </LandingMotionLazy>
   );
 }
