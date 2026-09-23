@@ -1472,3 +1472,25 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ Local dev images no longer break (https-gated headers).
 - ⚠️ Sections are visible in HTML before hydration; entrance animations still start post-mount (same flicker profile as before, but with a meaningful first paint instead of a blank shell).
 - ⚠️ Both theme image variants exist in the DOM for the preview section; non-active variants are skipped by lazy loading in Chromium/Firefox (Safari may fetch both).
+
+## DEC-055 — Branded Error Pages em Três Níveis (Worker, Render, 404)
+
+**Date:** 2026-09-23 · **Status:** Accepted · **Plan:** `plans/error-pages.md`
+
+**Context:** após o incidente Error 1101 (corrigido em `25fc291`), a página exibida ao usuário foi a padrão da Cloudflare — sem marca, sem orientação, sem Ray ID utilizável. Falhas acontecem em três níveis distintos (crash do Worker, erro de render do React, rota inexistente) e nenhum tinha tratamento brandado.
+
+**Decision:**
+1. **Nível A (Worker crash):** a página de emergência NÃO é um componente React — é HTML estático gerado por `worker/error-page.ts` (zero imports de runtime do app), servido com 503 + `Retry-After: 60` + `x-emergency-fallback: 1`. Dark-first com `prefers-color-scheme`, accent `#ff4500`, cores hardcoded (cópias hex de `globals.css`), Ray ID do header `cf-ray`, zero JS. O `worker/index.ts` envolve a delegação ao vinext em try/catch; o renderer tem fallback de texto puro que nunca lança.
+2. **Nível B (erro de render):** `error.tsx` raiz e `(dashboard)/error.tsx` com copy zero-knowledge diferenciada. Esta versão do Next usa `retry()` (não `reset()`) — assinatura confirmada na doc local. `global-error.tsx` com documento próprio (`<html>/<body>`) importando `globals.css` e replicando o bootstrap de tema inline do layout raiz.
+3. **Nível C (404):** `not-found.tsx` Server Component estático dentro do layout marketing, com card de terminal CLI (`$ criptenv get …`) — temático do produto. `not_found_handling: "none"` mantido (delega ao app).
+
+**Alternatives consideradas:**
+- Página de emergência como rota Next dedicada. Rejeitado: se o Worker crashou, o bundle do app é exatamente o que falhou.
+- Status 500 no fallback. Rejeitado: herdaria semânticas de retry indevidas; 503 comunica "volte já já" (decisão do plano §4).
+- Cloudflare Custom Error Pages por zona. Descartado no plano: pago e não se aplica a Workers.
+
+**Consequences:**
+- ✅ Os três níveis de falha agora têm tela brandada, validada com build de produção no `wrangler dev` (503 com headers corretos + Ray ID; error boundary com retry funcional; 404 brandado).
+- ✅ `x-emergency-fallback: 1` permite medir em monitoramento quantas respostas vieram do emergência.
+- ⚠️ O fallback NÃO protege contra throw na avaliação de módulo (caso original do 1101): a prevenção real continua sendo o checklist SSR do AGENTS.md + smoke-test com build de produção antes de cada deploy.
+- ⚠️ Sessões do playwright local não têm `cf-ray`; o Ray ID aparece apenas em tráfego real pela Cloudflare (linha omitida quando ausente).

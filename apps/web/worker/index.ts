@@ -3,6 +3,7 @@
  * Removes IMAGES binding dependency that may not be available on free plan
  */
 import handler from "vinext/server/app-router-entry";
+import { renderEmergencyPage } from "./error-page";
 
 interface Env {
   ASSETS: Fetcher;
@@ -149,8 +150,18 @@ const worker = {
     }
 
     // Delegate everything to vinext handler
-    const response = await handler.fetch(request, env, ctx);
-    return withSecurityHeaders(response, url);
+    try {
+      const response = await handler.fetch(request, env, ctx);
+      return withSecurityHeaders(response, url);
+    } catch (err) {
+      console.error(
+        "[worker] Unhandled error:",
+        err instanceof Error ? err.stack : err,
+        "Path:",
+        url.pathname
+      );
+      return renderEmergencyPage(request);
+    }
   },
 };
 

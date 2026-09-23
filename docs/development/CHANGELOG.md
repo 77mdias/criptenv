@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feat — Branded Error Pages: Worker Crash, Render Errors and 404 (2026-09-23)
+
+- **Feat (web):** emergency fallback page for unhandled Worker errors (`worker/error-page.ts`) — self-contained HTML (inline CSS, zero JS, zero external requests), 503 + `Retry-After: 60`, `x-emergency-fallback: 1` header for monitoring, dark-first respecting `prefers-color-scheme`, brand accent `#ff4500`, Cloudflare Ray ID surfaced for support, and a reassuring zero-knowledge message. `worker/index.ts` wraps the vinext handler call in try/catch; the renderer itself never throws (plaintext last-resort fallback).
+- **Feat (web):** App Router error boundaries — `src/app/error.tsx` (root segment) and `src/app/(dashboard)/error.tsx` (dashboard-specific copy: "seus secrets estão protegidos"), both client components using this Next version's `retry()` prop (not `reset()` — verified against local `node_modules/next` docs) with `error.digest` surfaced for support. `src/app/global-error.tsx` renders its own `<html>/<body>` with self-imported `globals.css` and theme bootstrap.
+- **Feat (web):** `src/app/not-found.tsx` — branded 404 with fading giant "404", CLI-themed terminal card (`$ criptenv get esta-pagina` → `error: secret not found (code 404)`) and links to `/` and `/login`; renders inside the marketing layout. `wrangler.jsonc` `assets.not_found_handling: "none"` confirmed correct (delegates to the app).
+- **Verified:** `wrangler dev` with production build — forced crash returns the branded 503 with correct headers; `/error-test` throwing page renders the error boundary and `retry()` re-captures on re-throw; unknown route returns 404 branded page. ESLint clean on all new files; CLI 191 and API 574 tests green.
+
 ### Fix — Cloudflare Workers Error 1101 on Landing Page (2026-09-23)
 
 - **Hotfix (web):** every request to `/` returned 1101 ("Worker threw exception") after the landing SSR refactor. Root cause: `landing-motion.tsx` still statically imports `gsap`/`@gsap/react` and calls `gsap.registerPlugin` at module scope; `@gsap/react` schedules a `setTimeout` during plugin init, a disallowed global-scope operation on Workers. Fixed by wrapping it behind `landing-motion-lazy.tsx`, a client-only `next/dynamic` (`ssr: false`) wrapper — same pattern as `hero-scene-lazy`.
