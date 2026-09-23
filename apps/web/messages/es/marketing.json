@@ -1,0 +1,235 @@
+{
+  "landing": {
+    "hero": {
+      "badge": "Código abierto",
+      "title": "Secretos <strong>seguros,</strong><br></br><accent>equipo feliz.</accent>",
+      "subtitle": "Gestión de secretos con cifrado Zero-Knowledge. Tus archivos .env se cifran antes de salir de tu computadora.",
+      "primaryCta": "Crear proyecto",
+      "secondaryCta": "Saber más"
+    },
+    "features": {
+      "label": "Características",
+      "title": "Todo lo que necesitas",
+      "items": {
+        "zeroKnowledge": {
+          "title": "Zero-Knowledge",
+          "description": "Cifrado AES-GCM de 256 bits en el cliente. El servidor NUNCA ve tus secretos en texto plano."
+        },
+        "cli": {
+          "title": "CLI remoto",
+          "description": "La terminal opera directamente sobre el vault remoto: login, project, set, get, list, import y export sin replicar secretos en un SQLite local."
+        },
+        "teamSync": {
+          "title": "Team Sync",
+          "description": "CLI, panel web, equipo y CI/CD trabajan sobre la misma fuente de verdad cifrada por proyecto y entorno."
+        },
+        "control": {
+          "title": "Control total",
+          "description": "Audit logs, roles, invites, CI tokens, API keys, OAuth, 2FA e integraciones con Vercel/Render sin exponer texto plano."
+        }
+      }
+    },
+    "workflow": {
+      "label": "Cómo funciona",
+      "title": "Un vault remoto. <accent>Cero texto plano en el servidor.</accent>",
+      "description": "CriptEnv funciona como una terminal remota para el vault del proyecto: te autenticas, desbloqueas con la Vault password y sincronizas solo blobs cifrados entre CLI, web, equipo y CI.",
+      "panel": {
+        "kicker": "flujo sellado",
+        "title": "De la terminal al deploy, la API solo coordina ciphertext."
+      },
+      "proofs": [
+        "Vault password nunca enviada",
+        "La API ve ciphertext, IV y metadata",
+        "Conflictos protegidos por versión"
+      ],
+      "nodes": {
+        "cli": {
+          "label": "CLI local",
+          "description": "descifrado en memoria"
+        },
+        "ciphertext": {
+          "label": "Ciphertext",
+          "description": "AES-256-GCM"
+        },
+        "api": {
+          "label": "API vault",
+          "description": "blob versionado"
+        },
+        "clients": {
+          "label": "Web + CI",
+          "description": "misma fuente"
+        }
+      },
+      "steps": {
+        "authenticate": {
+          "title": "Autentica la terminal",
+          "description": "La sesión queda protegida localmente como metadata. Los secretos siguen exigiendo la Vault password del proyecto."
+        },
+        "createVault": {
+          "title": "Crea el vault del proyecto",
+          "description": "La Vault password nace en el cliente, deriva las claves del entorno y nunca se envía a la API."
+        },
+        "writeSecrets": {
+          "title": "Escribe secretos en el vault remoto",
+          "description": "El CLI descifra en memoria, modifica el conjunto, vuelve a cifrar y envía solo ciphertext versionado."
+        },
+        "consume": {
+          "title": "Úsalo en la web, el equipo o CI",
+          "description": "Lista claves, exporta archivos cuando haga falta y entrega secretos al pipeline sin crear un vault local paralelo."
+        }
+      }
+    },
+    "pricing": {
+      "label": "Precios",
+      "title": "Gratis para usar, abierto para apoyar"
+    },
+    "cta": {
+      "label": "Empezar",
+      "title": "Lleva tu primer vault seguro a producción.",
+      "description": "Crea una cuenta, conecta el CLI e invita a tu equipo cuando el vault remoto ya esté sellado. Sin trial confuso, sin texto plano en el servidor.",
+      "proofs": [
+        "Código abierto",
+        "Cero texto plano",
+        "Gratis para empezar"
+      ],
+      "primary": "Empezar gratis",
+      "secondary": "Ver en GitHub"
+    },
+    "problemToVault": {
+      "kicker": "Problem to Vault",
+      "title": "De un <code>.env</code> suelto a un <accent>vault sellado</accent>",
+      "description": "CriptEnv toma variables dispersas, aplica cifrado local autenticado y sincroniza solo blobs opacos. El vault se vuelve la fuente auditable; el texto plano nunca cruza la red.",
+      "proofs": [
+        "servidor ve: ciphertext",
+        "texto plano: nunca",
+        "hash de auditoría: encadenado"
+      ],
+      "pipeline": {
+        "plainEnv": "env plano",
+        "seal": "sellado AES-GCM local",
+        "vault": "vault cifrado"
+      },
+      "vault": {
+        "badge": "sellado",
+        "rows": {
+          "ciphertext": "ciphertext",
+          "iv": "iv + auth tag",
+          "keyring": "llavero del equipo"
+        },
+        "sync": "sincronización cloud",
+        "syncValue": "solo ciphertext"
+      }
+    },
+    "platformPreview": {
+      "kicker": "El servidor solo ve ciphertext.",
+      "title": "Tú solo ves <accent>resultados.</accent>",
+      "badge": "El servidor vio 0 texto plano",
+      "desktopAlt": "Panel de CriptEnv mostrando proyectos, secretos, equipo y auditoría",
+      "mobileAlt": "Interfaz móvil de CriptEnv"
+    },
+    "security": {
+      "label": "Seguridad",
+      "title": "Una caja fuerte explicada en cuatro capas",
+      "intro": "En móvil la narrativa se apila para preservar la lectura, el toque y el control del scroll. La historia es la misma: cifra en local, sincroniza ciphertext y mantén todo auditable.",
+      "topicAria": "Tema de seguridad: {topic}",
+      "topics": {
+        "aesGcm": {
+          "title": "AES-GCM",
+          "kicker": "Cifrado autenticado antes del sync",
+          "description": "Cada secreto se convierte en ciphertext usando AES-GCM con una clave de 256 bits. El modo GCM combina confidencialidad y autenticación: si alguien altera bytes, nonce o auth tag, el descifrado falla en lugar de entregar datos corruptos.",
+          "details": [
+            "Clave de 256 bits para cifrar el contenido sensible.",
+            "Nonce único por operación y auth tag de 128 bits para detectar alteraciones.",
+            "El servidor almacena blobs cifrados, nunca valores de .env en texto claro."
+          ],
+          "metricLabel": "bits de clave",
+          "imageAlt": "Ilustración del estándar AES con una carpeta cifrada"
+        },
+        "zeroKnowledge": {
+          "title": "Zero-knowledge",
+          "kicker": "El backend opera sin conocer el secreto",
+          "description": "CriptEnv Cloud recibe solo ciphertext, metadatos operativos y las trazas necesarias para la sincronización. Las claves de descifrado quedan fuera del servidor, así que la base de datos, la API y los logs no contienen material suficiente para revelar tus secretos.",
+          "details": [
+            "El texto plano nunca cruza la frontera de red.",
+            "Las claves de contenido no se envían a la API.",
+            "El servidor coordina acceso y versiones sin ver el valor real."
+          ],
+          "metricLabel": "texto plano",
+          "imageAlt": "Cerradura iluminada que simboliza el acceso privado"
+        },
+        "clientSide": {
+          "title": "Solo en el cliente",
+          "kicker": "La clave nace y trabaja en el dispositivo",
+          "description": "La contraseña del proyecto deriva claves en local con PBKDF2/HKDF, y el cifrado ocurre antes de cualquier push. El store de crypto no se persiste en localStorage, lo que reduce la exposición ante XSS o una sesión reutilizada.",
+          "details": [
+            "PBKDF2 refuerza la contraseña antes de derivar la clave maestra.",
+            "HKDF separa las claves por entorno y contexto.",
+            "Los valores solo se descifran en el cliente autorizado."
+          ],
+          "metricLabel": "ruta de clave",
+          "imageAlt": "Conjunto de claves maestras sobre fondo transparente"
+        },
+        "openSource": {
+          "title": "100 % código abierto y auditable",
+          "kicker": "Confianza por inspección, no por promesa",
+          "description": "El código es abierto bajo licencia MIT para que los equipos puedan revisar el flujo de cifrado, validar decisiones de seguridad y seguir los cambios. La traza de auditoría del producto registra acciones sin convertir los secretos en evidencia sensible.",
+          "details": [
+            "Implementación abierta para leer, hacer fork y revisar.",
+            "Flujo de crypto verificable en local por quien opera el proyecto.",
+            "Los audit logs rastrean acciones y contexto sin registrar texto plano."
+          ],
+          "metricLabel": "licencia",
+          "imageAlt": "Checklist dorado que representa revisión y auditoría"
+        }
+      }
+    },
+    "pricingTrust": {
+      "contribute": {
+        "badge": "apoyo abierto",
+        "kicker": "Sostenido por la comunidad",
+        "title": "Apoya a CriptEnv",
+        "description": "El producto sigue siendo gratis y open source. Tu contribución ayuda a mantener el proyecto vivo, independiente y más confiable para equipos que cuidan secretos todos los días.",
+        "priceNote": "via Pix",
+        "benefits": [
+          "Apoyo vía Pix para mantener el proyecto independiente",
+          "Ningún plan de pago obligatorio para usar el producto",
+          "Ayuda a financiar infraestructura, docs y evolución",
+          "Mantiene sostenible la propuesta open source"
+        ],
+        "primary": "Contribuir ahora",
+        "secondary": "Ver transparencia"
+      },
+      "openSource": {
+        "kicker": "Código abierto",
+        "title": "Gratis",
+        "description": "Usa el CLI, el panel y la base actual sin plan de pago. Puede que lleguen planes alojados más adelante, pero el núcleo abierto sigue siendo el punto de partida.",
+        "benefits": [
+          "Vault Zero-Knowledge para secretos de proyectos",
+          "CLI y panel web disponibles hoy",
+          "Team sync, audit trail y CI tokens",
+          "Código MIT para revisar, autoalojar y evolucionar"
+        ],
+        "cta": "Empezar gratis"
+      },
+      "trust": {
+        "mit": {
+          "label": "MIT",
+          "description": "código abierto"
+        },
+        "plaintext": {
+          "label": "0 texto plano",
+          "description": "el servidor ve ciphertext"
+        },
+        "selfHosted": {
+          "label": "autoalojable",
+          "description": "control de la stack"
+        },
+        "roadmap": {
+          "label": "roadmap abierto",
+          "description": "sin promesas ocultas"
+        }
+      },
+      "footnote": "Sin lock-in comercial: los planes alojados pueden evolucionar en el futuro, pero el self-hosting y la transparencia siguen siendo prioridades."
+    }
+  }
+}

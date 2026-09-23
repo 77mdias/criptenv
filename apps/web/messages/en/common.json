@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "CriptEnv — Secret management for developers",
+    "description": "Zero-Knowledge secret management with 256-bit AES-GCM encryption. CLI-first, client-side encryption and built for teams.",
+    "ogAlt": "CriptEnv — Zero-Knowledge secret management with client-side encryption"
+  },
+  "header": {
+    "nav": {
+      "features": "Features",
+      "howItWorks": "How It Works",
+      "security": "Security",
+      "pricing": "Pricing"
+    },
+    "menu": "Menu",
+    "openMenu": "Open menu",
+    "closeMenu": "Close menu",
+    "login": "Sign in",
+    "getStarted": "Get started"
+  },
+  "footer": {
+    "tagline": "Secret Management for Developers",
+    "status": "All systems operational",
+    "docs": "Docs",
+    "terms": "Terms of Use",
+    "privacy": "Privacy",
+    "github": "GitHub"
+  },
+  "localeSwitcher": {
+    "label": "Language",
+    "aria": "Change language"
+  }
+}

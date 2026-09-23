@@ -1,4 +1,5 @@
-import Link from "next/link";
+import { getTranslations } from "next-intl/server";
+import { Link } from "@/i18n/navigation";
 import {
   ArrowRight,
   Check,
@@ -9,42 +10,40 @@ import {
   ShieldCheck,
 } from "lucide-react";
 
-const contributionBenefits = [
-  "Apoio via Pix para manter o projeto independente",
-  "Nenhum plano pago obrigatorio para usar o produto",
-  "Ajuda a financiar infraestrutura, docs e evolucao",
-  "Mantem a proposta open source sustentavel",
-];
+// Prose lives in `messages/<locale>/marketing.json` under `landing.pricingTrust`;
+// these module-scope literals only carry stable keys, never user-facing copy.
+const contributionBenefitKeys = [
+  "supportPix",
+  "noPaidPlan",
+  "fundsInfra",
+  "sustainable",
+] as const;
 
-const openSourceBenefits = [
-  "Vault Zero-Knowledge para secrets de projetos",
-  "CLI e dashboard web disponiveis hoje",
-  "Team sync, audit trail e CI tokens",
-  "Codigo MIT para revisar, hospedar e evoluir",
-];
+const openSourceBenefitKeys = [
+  "vault",
+  "cliAndDashboard",
+  "teamSync",
+  "mit",
+] as const;
 
 const trustItems = [
   {
-    label: "MIT",
-    description: "codigo aberto",
+    key: "mit",
     icon: Code2,
   },
   {
-    label: "0 plaintext",
-    description: "servidor ve ciphertext",
+    key: "plaintext",
     icon: LockKeyhole,
   },
   {
-    label: "self-hostable",
-    description: "controle da stack",
+    key: "selfHosted",
     icon: Server,
   },
   {
-    label: "roadmap aberto",
-    description: "sem promessa escondida",
+    key: "roadmap",
     icon: ShieldCheck,
   },
-];
+] as const;
 
 const baseActionClass =
   "inline-flex h-10 items-center justify-center gap-2 whitespace-nowrap rounded-full px-6 py-3 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2";
@@ -69,7 +68,9 @@ function BenefitList({ items }: { items: string[] }) {
   );
 }
 
-export function PricingTrustSection() {
+export async function PricingTrustSection() {
+  const t = await getTranslations("marketing.landing.pricingTrust");
+
   return (
     <div className="relative">
       <div
@@ -88,20 +89,18 @@ export function PricingTrustSection() {
                 <HeartHandshake className="h-5 w-5 text-lime-300" />
               </div>
               <span className="rounded-full border border-lime-300/20 bg-lime-300/10 px-3 py-1 font-mono text-[10px] font-bold uppercase tracking-[0.18em] text-lime-200">
-                apoio aberto
+                {t("contribute.badge")}
               </span>
             </div>
 
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
-              Sustentado pela comunidade
+              {t("contribute.kicker")}
             </p>
             <h3 className="mt-2 text-2xl font-semibold tracking-tight text-(--text-primary) sm:text-3xl">
-              Apoie o CriptEnv
+              {t("contribute.title")}
             </h3>
             <p className="mt-3 max-w-xl text-sm leading-relaxed text-(--text-tertiary)">
-              O produto segue gratuito e open source. Sua contribuicao ajuda a
-              manter o projeto vivo, independente e mais confiavel para equipes
-              que cuidam de secrets todos os dias.
+              {t("contribute.description")}
             </p>
 
             <div className="my-5 flex items-end gap-3">
@@ -109,25 +108,29 @@ export function PricingTrustSection() {
                 R$ 5+
               </span>
               <span className="pb-1.5 font-mono text-[11px] uppercase tracking-[0.18em] text-(--text-muted)">
-                via Pix
+                {t("contribute.priceNote")}
               </span>
             </div>
 
-            <BenefitList items={contributionBenefits} />
+            <BenefitList
+              items={contributionBenefitKeys.map((key) =>
+                t(`contribute.benefits.${key}`),
+              )}
+            />
 
             <div className="mt-6 flex flex-col gap-3 sm:flex-row">
               <Link
                 href="/contribute"
                 className={`${primaryActionClass} w-full sm:w-auto`}
               >
-                Contribute now
+                {t("contribute.primary")}
                 <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/docs"
                 className={`${secondaryActionClass} w-full sm:w-auto`}
               >
-                Ver transparencia
+                {t("contribute.secondary")}
               </Link>
             </div>
           </article>
@@ -138,15 +141,13 @@ export function PricingTrustSection() {
             </div>
 
             <p className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
-              Open Source
+              {t("openSource.kicker")}
             </p>
             <h3 className="mt-2 text-2xl font-semibold tracking-tight text-(--text-primary)">
-              Free
+              {t("openSource.title")}
             </h3>
             <p className="mt-3 text-sm leading-relaxed text-(--text-tertiary)">
-              Use o CLI, o dashboard e a base atual sem plano pago. Hosted
-              plans podem chegar depois, mas o nucleo aberto continua sendo o
-              ponto de partida.
+              {t("openSource.description")}
             </p>
 
             <div className="my-5 rounded-xl border border-(--border) bg-(--background)/50 p-3 font-mono text-[11px] text-(--text-secondary)">
@@ -160,13 +161,17 @@ export function PricingTrustSection() {
               </div>
             </div>
 
-            <BenefitList items={openSourceBenefits} />
+            <BenefitList
+              items={openSourceBenefitKeys.map((key) =>
+                t(`openSource.benefits.${key}`),
+              )}
+            />
 
             <Link
               href="/signup"
               className={`${secondaryActionClass} mt-6 w-full`}
             >
-              Start free
+              {t("openSource.cta")}
               <ArrowRight className="h-4 w-4" />
             </Link>
           </article>
@@ -176,24 +181,23 @@ export function PricingTrustSection() {
           <div className="grid gap-2.5 sm:grid-cols-2 lg:grid-cols-4">
             {trustItems.map((item) => (
               <div
-                key={item.label}
+                key={item.key}
                 className="flex items-center gap-3 rounded-lg border border-(--border) bg-(--surface)/70 px-3 py-2.5"
               >
                 <item.icon className="h-4 w-4 shrink-0 text-(--text-muted)" />
                 <div>
                   <p className="font-mono text-xs font-semibold text-(--text-primary)">
-                    {item.label}
+                    {t(`trust.${item.key}.label`)}
                   </p>
                   <p className="mt-0.5 text-[11px] text-(--text-muted)">
-                    {item.description}
+                    {t(`trust.${item.key}.description`)}
                   </p>
                 </div>
               </div>
             ))}
           </div>
           <p className="mt-3 text-center text-[11px] leading-relaxed text-(--text-muted)">
-            Sem lock-in comercial: planos hospedados podem evoluir no futuro,
-            mas self-hosting e transparencia seguem como prioridades.
+            {t("footnote")}
           </p>
         </div>
       </div>

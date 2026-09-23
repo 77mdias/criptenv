@@ -1,4 +1,5 @@
-import { render, screen } from "@testing-library/react"
+import { screen } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
 import { ProblemToVaultSection } from "../problem-to-vault-section"
 
 jest.mock("gsap", () => ({
@@ -26,7 +27,7 @@ jest.mock("gsap/ScrollTrigger", () => ({
 
 describe("ProblemToVaultSection", () => {
   it("renders the vault ceremony copy and technical proof points", () => {
-    render(<ProblemToVaultSection />)
+    renderWithIntl(<ProblemToVaultSection />)
 
     expect(
       screen.getByRole("heading", {

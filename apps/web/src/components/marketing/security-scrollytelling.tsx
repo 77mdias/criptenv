@@ -2,6 +2,7 @@
 
 import dynamic from "next/dynamic";
 import Image, { type StaticImageData } from "next/image";
+import { useTranslations } from "next-intl";
 import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ElementType } from "react";
 import {
   Eye,
@@ -27,52 +28,30 @@ const SecurityVaultScene = dynamic(
 
 interface SecurityTopic {
   id: string;
-  title: string;
-  kicker: string;
-  description: string;
-  details: string[];
+  /** Catalogue key under `landing.security.topics`. */
+  key: string;
   metric: string;
-  metricLabel: string;
   image: StaticImageData;
-  imageAlt: string;
   icon: ElementType;
   code: string[];
 }
 
+// Prose lives in `messages/<locale>/marketing.json` under `landing.security`;
+// this module-scope literal only carries stable keys and technical values.
 const securityTopics: SecurityTopic[] = [
   {
     id: "aes-gcm",
-    title: "AES-GCM",
-    kicker: "Criptografia autenticada antes do sync",
-    description:
-      "Cada secret vira ciphertext usando AES-GCM com chave de 256 bits. O modo GCM combina confidencialidade e autenticação: se alguém alterar bytes, nonce ou auth tag, a descriptografia falha em vez de entregar dado corrompido.",
-    details: [
-      "Chave de 256 bits para cifrar o conteúdo sensível.",
-      "Nonce único por operação e auth tag de 128 bits para detectar adulteração.",
-      "Servidor armazena blobs cifrados, nunca valores de .env em texto claro.",
-    ],
+    key: "aesGcm",
     metric: "256",
-    metricLabel: "bit keys",
     image: aesImage,
-    imageAlt: "Ilustração do padrão AES com pasta cifrada",
     icon: KeyRound,
     code: ["algorithm: AES-GCM", "keyLength: 256", "tagLength: 128"],
   },
   {
     id: "zero-knowledge",
-    title: "Zero-knowledge",
-    kicker: "O backend opera sem conhecer o segredo",
-    description:
-      "O CriptEnv Cloud recebe somente ciphertext, metadados operacionais e trilhas necessárias para sincronização. As chaves de descriptografia ficam fora do servidor, então banco, API e logs não carregam material suficiente para revelar seus secrets.",
-    details: [
-      "Plaintext não cruza a fronteira de rede.",
-      "Chaves de conteúdo não são enviadas para a API.",
-      "O servidor coordena acesso e versões sem ver o valor real.",
-    ],
+    key: "zeroKnowledge",
     metric: "0",
-    metricLabel: "plaintext",
     image: keyholeImage,
-    imageAlt: "Fechadura iluminada simbolizando acesso privado",
     icon: Eye,
     code: [
       "server.sees = ciphertext",
@@ -82,19 +61,9 @@ const securityTopics: SecurityTopic[] = [
   },
   {
     id: "client-side",
-    title: "Client-side only",
-    kicker: "A chave nasce e trabalha no dispositivo",
-    description:
-      "A senha do projeto deriva chaves localmente com PBKDF2/HKDF, e a criptografia acontece antes de qualquer push. A store de crypto não é persistida em localStorage, reduzindo exposição em caso de XSS ou sessão reaproveitada.",
-    details: [
-      "PBKDF2 fortalece a senha antes de derivar a chave mestra.",
-      "HKDF separa chaves por ambiente e contexto.",
-      "Valores só são decriptados no cliente autorizado.",
-    ],
+    key: "clientSide",
     metric: "local",
-    metricLabel: "key path",
     image: masterKeysImage,
-    imageAlt: "Conjunto de chaves mestras em fundo transparente",
     icon: Fingerprint,
     code: [
       "PBKDF2 -> masterKey",
@@ -104,19 +73,9 @@ const securityTopics: SecurityTopic[] = [
   },
   {
     id: "open-source",
-    title: "100% open source e auditável",
-    kicker: "Confiança por inspeção, não por promessa",
-    description:
-      "O código é aberto sob licença MIT para que equipes possam revisar o fluxo de criptografia, validar decisões de segurança e acompanhar mudanças. A trilha de auditoria do produto registra ações sem transformar secrets em evidência sensível.",
-    details: [
-      "Implementação aberta para leitura, fork e revisão.",
-      "Fluxo de crypto verificável localmente por quem opera o projeto.",
-      "Audit logs rastreiam ações e contexto sem registrar plaintext.",
-    ],
+    key: "openSource",
     metric: "MIT",
-    metricLabel: "license",
     image: auditImage,
-    imageAlt: "Checklist dourado representando revisão e auditoria",
     icon: FileCheck2,
     code: ["license: MIT", "audit.log(redacted)", "verify: source-visible"],
   },
@@ -152,12 +111,14 @@ function TopicImage({
   topic: SecurityTopic;
   priority?: boolean;
 }) {
+  const t = useTranslations("marketing.landing.security");
+
   return (
     <div className="relative overflow-hidden rounded-xl border border-white/10 bg-black/50 shadow-2xl shadow-black/40">
       <div className="relative aspect-16/10">
         <Image
           src={topic.image}
-          alt={topic.imageAlt}
+          alt={t(`topics.${topic.key}.imageAlt`)}
           fill
           priority={priority}
           className="object-cover"
@@ -166,7 +127,9 @@ function TopicImage({
         <div className="absolute inset-0 bg-linear-to-t from-black/88 via-black/18 to-transparent" />
         <div className="absolute right-4 top-4 rounded-lg border border-white/15 bg-black/45 px-3 py-2 font-mono text-xs text-white/80 backdrop-blur-md">
           {topic.metric}{" "}
-          <span className="text-white/45">{topic.metricLabel}</span>
+          <span className="text-white/45">
+            {t(`topics.${topic.key}.metricLabel`)}
+          </span>
         </div>
       </div>
       <div className="absolute bottom-4 left-4 right-4 rounded-lg border border-white/10 bg-black/55 p-3 font-mono text-[11px] leading-relaxed text-white/74 backdrop-blur-md">
@@ -182,20 +145,20 @@ function TopicImage({
 }
 
 function MobileSecurityStory() {
+  const t = useTranslations("marketing.landing.security");
+
   return (
     <div className="lg:hidden">
       <div className="mx-auto max-w-3xl px-6 py-20 sm:px-8">
         <div data-motion="reveal" className="mb-12">
           <span className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
-            Security
+            {t("label")}
           </span>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-(--text-primary)">
-            Um cofre explicado em quatro camadas
+            {t("title")}
           </h2>
           <p className="mt-5 leading-relaxed text-(--text-tertiary)">
-            No mobile a narrativa aparece empilhada para preservar leitura,
-            toque e controle de rolagem. A história é a mesma: criptografa
-            localmente, sincroniza ciphertext e mantém tudo auditável.
+            {t("intro")}
           </p>
         </div>
 
@@ -214,26 +177,28 @@ function MobileSecurityStory() {
                   </div>
                   <div>
                     <p className="font-mono text-[11px] uppercase tracking-[0.18em] text-(--text-muted)">
-                      {topic.kicker}
+                      {t(`topics.${topic.key}.kicker`)}
                     </p>
                     <h3 className="text-2xl font-semibold text-(--text-primary)">
-                      {topic.title}
+                      {t(`topics.${topic.key}.title`)}
                     </h3>
                   </div>
                 </div>
                 <p className="text-sm leading-relaxed text-(--text-secondary)">
-                  {topic.description}
+                  {t(`topics.${topic.key}.description`)}
                 </p>
                 <ul className="mt-5 space-y-3">
-                  {topic.details.map((detail) => (
-                    <li
-                      key={detail}
-                      className="flex gap-3 text-sm text-(--text-tertiary)"
-                    >
-                      <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-(--accent)" />
-                      <span>{detail}</span>
-                    </li>
-                  ))}
+                  {(t.raw(`topics.${topic.key}.details`) as string[]).map(
+                    (detail) => (
+                      <li
+                        key={detail}
+                        className="flex gap-3 text-sm text-(--text-tertiary)"
+                      >
+                        <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-(--accent)" />
+                        <span>{detail}</span>
+                      </li>
+                    ),
+                  )}
                 </ul>
               </div>
             </article>
@@ -253,6 +218,7 @@ function DesktopSecurityStory({
   reducedMotion: boolean;
   isDesktop: boolean;
 }) {
+  const t = useTranslations("marketing.landing.security");
   const activeTopic = securityTopics[activeIndex] ?? securityTopics[0];
 
   return (
@@ -271,12 +237,14 @@ function DesktopSecurityStory({
                 <div
                   key={topic.id}
                   className={`security-nav-dot flex items-center gap-3 text-left ${activeIndex === index ? "is-active" : ""}`}
-                  aria-label={`Security topic: ${topic.title}`}
+                  aria-label={t("topicAria", {
+                    topic: t(`topics.${topic.key}.title`),
+                  })}
                   aria-current={activeIndex === index ? "step" : undefined}
                 >
                   <span className="h-2.5 w-2.5 rounded-full border border-black/25 bg-black/10 transition-colors dark:border-white/30 dark:bg-white/10" />
                   <span className="font-mono text-[11px] uppercase tracking-[0.18em] text-black/38 dark:text-white/35">
-                    {topic.title}
+                    {t(`topics.${topic.key}.title`)}
                   </span>
                 </div>
               ))}
@@ -299,25 +267,27 @@ function DesktopSecurityStory({
                     <topic.icon className="h-6 w-6 text-(--accent) dark:text-lime-300" />
                   </div>
                   <span className="font-mono text-xs font-bold uppercase tracking-[0.22em] text-black/42 dark:text-white/42">
-                    {topic.kicker}
+                    {t(`topics.${topic.key}.kicker`)}
                   </span>
                 </div>
                 <h2 className="max-w-xl text-5xl font-light leading-[0.95] tracking-tight text-(--text-primary) dark:text-white xl:text-6xl">
-                  {topic.title}
+                  {t(`topics.${topic.key}.title`)}
                 </h2>
                 <p className="mt-8 max-w-xl text-base leading-relaxed text-(--text-secondary) dark:text-white/68">
-                  {topic.description}
+                  {t(`topics.${topic.key}.description`)}
                 </p>
                 <div className="mt-8 grid gap-3">
-                  {topic.details.map((detail) => (
-                    <div
-                      key={detail}
-                      className="flex items-start gap-3 rounded-lg border border-black/10 bg-white/62 p-3 text-sm text-(--text-tertiary) dark:border-white/12 dark:bg-white/4.5 dark:text-white/62"
-                    >
-                      <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-(--accent) dark:text-lime-300" />
-                      <span>{detail}</span>
-                    </div>
-                  ))}
+                  {(t.raw(`topics.${topic.key}.details`) as string[]).map(
+                    (detail) => (
+                      <div
+                        key={detail}
+                        className="flex items-start gap-3 rounded-lg border border-black/10 bg-white/62 p-3 text-sm text-(--text-tertiary) dark:border-white/12 dark:bg-white/4.5 dark:text-white/62"
+                      >
+                        <LockKeyhole className="mt-0.5 h-4 w-4 shrink-0 text-(--accent) dark:text-lime-300" />
+                        <span>{detail}</span>
+                      </div>
+                    ),
+                  )}
                 </div>
               </article>
             ))}
@@ -357,7 +327,7 @@ function DesktopSecurityStory({
               {activeTopic.metric}
             </p>
             <p className="text-[11px] uppercase tracking-[0.2em] text-white/42">
-              {activeTopic.metricLabel}
+              {t(`topics.${activeTopic.key}.metricLabel`)}
             </p>
           </div>
         </div>
@@ -367,6 +337,7 @@ function DesktopSecurityStory({
 }
 
 export function SecurityScrollytelling() {
+  const t = useTranslations("marketing.landing.security");
   const scope = useRef<HTMLElement>(null);
   const [activeIndex, setActiveIndex] = useState(0);
   const isDesktop = useMediaQuery("(min-width: 1024px)");
@@ -448,10 +419,10 @@ export function SecurityScrollytelling() {
         <div className="mx-auto hidden max-w-6xl px-8 py-24 lg:block">
           <div className="mb-12 max-w-3xl">
             <span className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
-              Security
+              {t("label")}
             </span>
             <h2 className="mt-4 text-4xl font-semibold tracking-tight text-(--text-primary)">
-              Um cofre explicado em quatro camadas
+              {t("title")}
             </h2>
           </div>
           <div className="grid gap-6 md:grid-cols-2">
@@ -462,10 +433,10 @@ export function SecurityScrollytelling() {
               >
                 <TopicImage topic={topic} priority={index === 0} />
                 <h3 className="mt-5 text-2xl font-semibold text-(--text-primary)">
-                  {topic.title}
+                  {t(`topics.${topic.key}.title`)}
                 </h3>
                 <p className="mt-3 text-sm leading-relaxed text-(--text-secondary)">
-                  {topic.description}
+                  {t(`topics.${topic.key}.description`)}
                 </p>
               </article>
             ))}

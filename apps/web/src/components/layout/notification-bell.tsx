@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
-import { useRouter } from "next/navigation";
+import { useRouter } from "@/i18n/navigation";
 import { Bell, Check, Mail, UserPlus, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotificationsStore } from "@/stores/notifications";

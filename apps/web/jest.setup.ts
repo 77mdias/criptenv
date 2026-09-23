@@ -11,25 +11,43 @@ const router = {
   replace: jest.fn(),
 }
 
+// Shared between the next/navigation mock and the @/i18n/navigation mock so a
+// test asserting on the mocked `useRouter()` still observes what the component
+// did, even though components now import the locale-aware version.
+const mockUsePathname = jest.fn(() => "/")
+const mockUseRouter = jest.fn(() => router)
+
+function mockLink({
+  children,
+  href,
+  ...props
+}: {
+  children: React.ReactNode
+  href: string
+}) {
+  return React.createElement("a", { href, ...props }, children)
+}
+
 jest.mock("next/navigation", () => ({
   useParams: jest.fn(() => ({})),
-  usePathname: jest.fn(() => "/"),
-  useRouter: jest.fn(() => router),
+  usePathname: mockUsePathname,
+  useRouter: mockUseRouter,
   useSearchParams: jest.fn(() => new URLSearchParams()),
 }))
 
-jest.mock("next/link", () => {
-  return function MockLink({
-    children,
-    href,
-    ...props
-  }: {
-    children: React.ReactNode
-    href: string
-}) {
-    return React.createElement("a", { href, ...props }, children)
-  }
-})
+jest.mock("next/link", () => ({ __esModule: true, default: mockLink }))
+
+// Locale-aware navigation (next-intl createNavigation). Shares the router and
+// pathname mocks above; `getPathname` mirrors the as-needed prefixing closely
+// enough for unit tests (locale prefixing itself is covered by the e2e smoke).
+jest.mock("@/i18n/navigation", () => ({
+  __esModule: true,
+  Link: mockLink,
+  getPathname: jest.fn(({ href }: { href: string }) => href),
+  redirect: jest.fn(),
+  usePathname: mockUsePathname,
+  useRouter: mockUseRouter,
+}))
 
 if (!globalThis.crypto?.subtle) {
   Object.defineProperty(globalThis, "crypto", {

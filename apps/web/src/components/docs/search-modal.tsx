@@ -1,7 +1,7 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils"
 import { Search, FileText, ArrowRight } from "lucide-react"
 import { sidebarNav } from "./doc-sidebar"

@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useRef, useSyncExternalStore } from "react"
+import { useTranslations } from "next-intl"
 import {
   ArrowRight,
   Fingerprint,
@@ -20,23 +21,20 @@ const secretFragments = [
   { name: "CI_TOKEN", value: "runner token" },
 ]
 
+// Prose lives in `messages/<locale>/marketing.json` under
+// `landing.problemToVault`; these module-scope literals only carry stable keys,
+// never user-facing copy.
 const pipelineSteps = [
-  { label: "plain env", icon: Terminal },
-  { label: "AES-GCM local seal", icon: Fingerprint },
-  { label: "encrypted vault", icon: LockKeyhole },
-]
-
-const proofPoints = [
-  "server sees: ciphertext",
-  "plaintext: never",
-  "audit hash: chained",
-]
+  { key: "plainEnv", icon: Terminal },
+  { key: "seal", icon: Fingerprint },
+  { key: "vault", icon: LockKeyhole },
+] as const
 
 const vaultRows = [
-  { label: "ciphertext", value: "f8a1...91c4" },
-  { label: "iv + auth tag", value: "12b / 128b" },
-  { label: "team keyring", value: "wrapped" },
-]
+  { key: "ciphertext", value: "f8a1...91c4" },
+  { key: "iv", value: "12b / 128b" },
+  { key: "keyring", value: "wrapped" },
+] as const
 
 const REDUCED_MOTION_QUERY = "(prefers-reduced-motion: reduce)"
 
@@ -57,6 +55,7 @@ function usePrefersReducedMotion() {
 }
 
 function ProblemToVaultSection() {
+  const t = useTranslations("marketing.landing.problemToVault")
   const scope = useRef<HTMLElement>(null)
   const reducedMotion = usePrefersReducedMotion()
 
@@ -220,20 +219,24 @@ function ProblemToVaultSection() {
       <div className="relative mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[0.88fr_1.12fr]">
         <div className="max-w-2xl">
           <span className="font-mono text-xs font-bold uppercase tracking-widest text-[var(--text-muted)]">
-            Problem to Vault
+            {t("kicker")}
           </span>
           <h2 className="mt-4 text-3xl font-semibold tracking-tight text-[var(--text-primary)] md:text-5xl md:leading-[1.04]">
-            Do <span className="font-mono text-[0.82em]">.env</span> solto ao{" "}
-            <span className="text-[var(--accent)]">vault selado</span>
+            {t.rich("title", {
+              code: (chunks) => (
+                <span className="font-mono text-[0.82em]">{chunks}</span>
+              ),
+              accent: (chunks) => (
+                <span className="text-[var(--accent)]">{chunks}</span>
+              ),
+            })}
           </h2>
           <p className="mt-6 max-w-xl leading-relaxed text-[var(--text-tertiary)]">
-            O CriptEnv pega variáveis espalhadas, aplica criptografia local
-            autenticada e sincroniza somente blobs opacos. O vault vira a fonte
-            auditável; plaintext nunca cruza a rede.
+            {t("description")}
           </p>
 
           <div className="mt-8 grid gap-3 sm:grid-cols-3">
-            {proofPoints.map((point) => (
+            {(t.raw("proofs") as string[]).map((point) => (
               <div
                 key={point}
                 data-vault-motion="proof"
@@ -281,13 +284,13 @@ function ProblemToVaultSection() {
               <div className="relative grid grid-cols-3 gap-2 lg:grid-cols-1 lg:gap-5">
                 {pipelineSteps.map((step) => (
                   <div
-                    key={step.label}
+                    key={step.key}
                     data-vault-motion="step"
                     className="flex min-h-20 flex-col items-center justify-center gap-2 rounded-xl border border-[var(--border)] bg-[var(--background)]/92 px-2 py-3 text-center shadow-sm"
                   >
                     <step.icon className="h-4 w-4 text-[var(--accent)] dark:text-lime-200" />
                     <span className="font-mono text-[10px] uppercase leading-tight tracking-[0.12em] text-[var(--text-secondary)]">
-                      {step.label}
+                      {t(`pipeline.${step.key}`)}
                     </span>
                   </div>
                 ))}
@@ -309,7 +312,7 @@ function ProblemToVaultSection() {
                   </span>
                 </div>
                 <Badge className="border-[var(--accent)]/30 bg-[var(--accent)] text-[var(--accent-foreground)] dark:border-lime-200/30 dark:bg-lime-200 dark:text-black">
-                  sealed
+                  {t("vault.badge")}
                 </Badge>
               </div>
 
@@ -329,10 +332,10 @@ function ProblemToVaultSection() {
               <div className="relative z-10 space-y-2">
                 {vaultRows.map((row) => (
                   <div
-                    key={row.label}
+                    key={row.key}
                     className="flex items-center justify-between rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]/70 px-3 py-2 font-mono text-[11px] dark:border-white/8 dark:bg-white/[0.045]"
                   >
-                    <span className="text-[var(--text-muted)] dark:text-white/60">{row.label}</span>
+                    <span className="text-[var(--text-muted)] dark:text-white/60">{t(`vault.rows.${row.key}`)}</span>
                     <span className="text-[var(--text-secondary)] dark:text-white/85">{row.value}</span>
                   </div>
                 ))}
@@ -341,11 +344,11 @@ function ProblemToVaultSection() {
               <div className="relative z-10 mt-5 flex items-center justify-between rounded-xl border border-[var(--border)] bg-[var(--background-subtle)]/60 px-3 py-2 font-mono text-[11px] text-[var(--text-secondary)] dark:border-sky-200/12 dark:bg-sky-200/[0.06] dark:text-sky-100/78">
                 <div className="flex items-center gap-2">
                   <Server className="h-3.5 w-3.5" />
-                  <span>cloud sync</span>
+                  <span>{t("vault.sync")}</span>
                 </div>
                 <div className="flex items-center gap-2 text-[var(--accent)] dark:text-lime-100">
                   <ArrowRight className="h-3.5 w-3.5" />
-                  <span>ciphertext only</span>
+                  <span>{t("vault.syncValue")}</span>
                 </div>
               </div>
             </div>

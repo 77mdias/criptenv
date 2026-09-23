@@ -1,57 +1,57 @@
-# Current Task — Project Alerts
+# Current Task — i18n (pt-BR · en · es) do Web
 
-**Data da revisão documental:** 2026-09-19
-**Branch:** `uiweb-alerts`
-**Status:** Documentação da Task 7 atualizada; validação de release incompleta por migração não aplicada e E2E de alertas bloqueado.
+**Data:** 2026-09-23
+**Branch:** `feature/i18n-support`
+**Status:** Infraestrutura + piloto (login, auth, marketing) **concluídos e verificados**. Dashboard, docs e páginas legais pendentes.
+**Decisão:** DEC-061 · **Plano:** `plans/i18n-en-es-support.md` (§8.bis = relatório do piloto)
 
-## Objetivo
+> Task anterior ("Project Alerts", 2026-09-19) permanecia com validação de release
+> incompleta (migração não aplicada e E2E de alertas bloqueado). Foi substituída como
+> task corrente; o histórico e as decisões DEC-057/058 seguem válidos.
 
-Central de alertas de expiração do projeto com canais in-app, email e webhook,
-destinados somente a owners/admins e sem expor material de secrets.
+## Contexto
 
-## Entrega verificada
+Adicionar suporte a Inglês e Espanhol. A auditoria mostrou que a premissa
+"o projeto está em pt-BR" vale **apenas para `apps/web`**: API e CLI estão em inglês
+(6 literais pt-BR na API; 0 na CLI). Por isso a ordem é: web primeiro (única superfície
+de fato em português), API e CLI depois.
 
-- Settings persistidos em `projects.settings.alerts`, preservando `settings.vault` e demais chaves.
-- `GET`, `PATCH` e `POST .../test-webhook` sob `/api/v1/projects/{project_id}/alert-settings`, com sessão humana e RBAC owner/admin.
-- Webhook cifrado em repouso, preview seguro, validação SSRF/DNS/IP em save e delivery, sem URL completa em respostas, logs ou auditoria.
-- `alert_deliveries` com identidade única, claim token/fencing, lease, retries e orçamento compartilhado de três tentativas.
-- Destinatários: owner e membros aceitos owner/admin; email exige `email_verified=true`; developers/viewers são excluídos.
-- Canais in-app, email e webhook isolam falhas e usam o payload canônico versão 1.
-- Test webhook usa configuração persistida e `test=true`; scheduler usa `test=false`.
-- Scheduler avalia o `notify_days_before` de cada secret; o default do projeto só é usado quando uma nova expiração omite o campo.
-- `last_notified_at` é compatibilidade e não é a fonte de deduplicação.
-- Card responsivo de Settings e cliente API tipado implementados.
-- Payloads não incluem plaintext, ciphertext, IV, tag, senha, URL/segredo de webhook ou credenciais de API.
+Decisões do stakeholder: `as-needed` · web completo · páginas legais **só pt-BR até
+revisão jurídica** · `docs/` Markdown do repositório depois.
 
-## Documentação atualizada
+## Entregue
 
-- `docs/project/decisions.md`: DEC-057/058 agora registram a arquitetura aceita e semântica de entrega verificada, sem duplicar IDs.
-- `docs/development/CHANGELOG.md`: alertas registrados em Unreleased.
-- `docs/project/current-state.md`: API, scheduler, UI, migração e limitações de verificação atualizados.
-- `docs/features/implemented.md`: alertas de projeto marcados implementados localmente, com E2E/provider explicitamente limitado.
-- `docs/features/in-progress.md`: removida a alegação de UI inexistente; permanecem E2E/provider, Slack, rotação modal e auto-rotação.
-- `apps/web/src/app/(docs)/docs/api/rotation/page.tsx` e `docs/technical/api.md`: endpoints, canais, payload versão/test, recipients, defaults, retries e zero-knowledge documentados.
+- `next-intl` 4.x no vinext; módulos `src/i18n/{routing,request,messages,navigation,alternates}.ts`.
+- Toda a árvore de rotas sob `src/app/[locale]/`; layout raiz com `<html lang={locale}>` + `setRequestLocale`.
+- `src/proxy.ts`: middleware do next-intl composto com o guard de auth, com prefixo de locale preservado no redirect de login.
+- Catálogos `messages/<locale>/{common,auth,marketing}.json` (133 chaves em `marketing`, paridade verificada nos 3 idiomas).
+- Traduzido: layout de auth, login, header/footer do marketing, landing page (página + 4 seções).
+- `LocaleSwitcher` no header de marketing; canonical + hreflang (`x-default` = pt-BR).
+- Helpers de teste (`render-with-intl`, `server-intl`) e mock de `next-intl/middleware`.
 
-## Validação da Implementação
+## Validação
 
-- `./.venv/bin/alembic -c alembic.ini heads`: passou; uma head, `20260918_0010`.
-- `./.venv/bin/alembic -c alembic.ini history`: passou; histórico linear até `20260918_0010`.
-- `upgrade head`: não aplicado. O `.env` aponta para uma instância PostgreSQL configurada; sem confirmação de banco descartável, aplicar migração seria uma suposição insegura sobre dados vivos. A validação de schema em banco permanece pendente.
-- `make test`: passou; API `501 passed, 2 skipped, 28 warnings`; CLI `184 passed, 1 warning` de coroutine não aguardada em `test_status_logged_in`.
-- `npm run test:unit -- --runInBand`: passou; `25` suites e `101` testes.
-- `npm run lint`: passou.
-- `npm run check:vinext`: passou com `100% compatible`.
-- `npm run build`: passou; Vinext emitiu apenas warnings existentes de chunks grandes e classificação dinâmica de rotas.
-- `npm run test:e2e`: executado com banco isolado; falhou no setup de signup porque o Resend rejeitou o destinatário fixture em `example.com`. Resultado observado: 1 teste passou, 3 foram pulados e 1 falhou; nenhuma asserção do fluxo de alertas chegou a executar. A validação E2E permanece pendente.
-- `git diff --check`: executado após as edições; resultado registrado nesta seção.
+- `npm run build` — verde, rotas `/:locale/...`.
+- `npx tsc --noEmit` — **0 erros** nos arquivos tocados (394 pré-existentes: jest-dom, `CalloutProps`/`ResponseBlockProps`, `variant="outline"`).
+- `npx jest` — **26/26 suítes, 112/112 testes**.
+- 14 verificações de runtime em workerd (`<html lang>`, copy nos 3 idiomas, metadata, hreflang, `Accept-Language`, cookie `NEXT_LOCALE`, fallback de `de`, `/pt-BR/docs` → `/docs`, 404, guard de auth com/sem prefixo).
 
-## Bloqueios e riscos conhecidos
+## Pendente (ordem sugerida)
 
-- Cypress precisa de fixture de email aceito pelo Resend ou de Resend desabilitado/mockado; manter esse bloqueio explícito até repetir a suíte.
-- Entrega real de email requer `RESEND_API_KEY` e destinatários válidos/verificados; não foi declarada como smoke-test de produção.
-- Webhook de produção depende de URL pública permitida pela validação SSRF e de configuração operacional controlada.
-- O warning existente do CLI sobre coroutine não aguardada permanece fora do escopo de Task 7.
-- O `apps/api/tests/test_project_vault_security.py` e o artefato `apps/web/.vinext/dev/lock.json` já tinham alterações externas e foram preservados.
+1. `(dashboard)` → namespace `dashboard` (maior superfície logada).
+2. `(docs)` → namespace `docs` (40 páginas, maior volume e menor retorno).
+3. Schemas Zod restantes (`signupSchema`, `createProjectSchema`, …) — converter para factory `createXSchema(t)`.
+4. Componentes compartilhados (`src/components/shared/*`, `layout/*`) ainda com copy fixa.
+5. Páginas legais — **bloqueado por revisão jurídica**.
+6. Sitemap dinâmico com os 3 locales (hoje `public/sitemap.xml` estático).
+7. `worker/error-page.ts` tem pt-BR hardcoded — considerar variantes por `Accept-Language`.
+8. Fase B (API) e Fase C (CLI) conforme DEC-061 — ambas em inglês hoje, não bloqueiam pt-BR.
 
-**Document Version:** 3.0
-**Last Updated:** 2026-09-19
+## Riscos observados
+
+- Todas as rotas saem como `ƒ Dynamic` no build: segue SSR indexável, mas renderização
+  sob demanda. Medir impacto no cache do Cloudflare antes do deploy.
+- `NextIntlClientProvider` serializa as mensagens para o cliente; usar
+  `loadNamespaceMessages` por rota quando o bundle crescer.
+- `(docs)` tem 40 páginas de copy fixa com acoplamento de testes — mover
+  rota a rota com `npm run build` entre cada.

@@ -1,4 +1,5 @@
 import Image from "next/image";
+import { getTranslations } from "next-intl/server";
 
 function ThemeImage({
   lightSrc,
@@ -39,7 +40,9 @@ function ThemeImage({
   );
 }
 
-export function PlatformPreviewSection() {
+export async function PlatformPreviewSection() {
+  const t = await getTranslations("marketing.landing.platformPreview");
+
   return (
     <section
       id="preview"
@@ -73,13 +76,14 @@ export function PlatformPreviewSection() {
         {/* Creative headline — following landing page conventions */}
         <div data-motion="reveal" className="mb-6 text-center lg:mb-8">
           <span className="font-mono text-xs font-bold uppercase tracking-widest text-(--text-muted)">
-            O servidor só vê ciphertext.
+            {t("kicker")}
           </span>
           <h2 className="mt-3 text-3xl font-semibold tracking-tight text-(--text-primary) md:text-4xl lg:text-5xl">
-            Você só vê{" "}
-            <span className="text-(--accent)">
-              resultados.
-            </span>
+            {t.rich("title", {
+              accent: (chunks) => (
+                <span className="text-(--accent)">{chunks}</span>
+              ),
+            })}
           </h2>
         </div>
 
@@ -105,7 +109,7 @@ export function PlatformPreviewSection() {
             <ThemeImage
               lightSrc="/images/capture-desk-light.png"
               darkSrc="/images/capture-desk-dark.png"
-              alt="Dashboard do CriptEnv mostrando projetos, secrets, equipe e auditoria"
+              alt={t("desktopAlt")}
               width={1919}
               height={956}
               className="w-full"
@@ -135,7 +139,7 @@ export function PlatformPreviewSection() {
               <ThemeImage
                 lightSrc="/images/criptenv-capturemobile.jpeg"
                 darkSrc="/images/capture-mobile-dark.png"
-                alt="Interface mobile do CriptEnv"
+                alt={t("mobileAlt")}
                 width={938}
                 height={1600}
                 className="w-full"
@@ -157,7 +161,7 @@ export function PlatformPreviewSection() {
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-500 opacity-60" />
                   <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-500" />
                 </span>
-                Server saw 0 plaintext
+                {t("badge")}
               </span>
             </div>
           </div>

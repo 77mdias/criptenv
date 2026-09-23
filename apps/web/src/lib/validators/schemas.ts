@@ -1,9 +1,25 @@
 import { z } from "zod"
 
-export const loginSchema = z.object({
-  email: z.string().email("Email inválido"),
-  password: z.string().min(1, "Senha obrigatória"),
-})
+/**
+ * Zod messages are baked in at schema-construction time, so any schema whose
+ * messages are user-visible cannot live at module scope once the app is
+ * translated. Schemas that are already migrated are exposed as factories that
+ * receive a translator (see `createLoginSchema`).
+ *
+ * Schemas below this line are still module-scope pt-BR and are migrated as
+ * their surfaces are translated.
+ */
+
+/** Translator shape shared by next-intl's `useTranslations`/`getTranslations`. */
+export type ValidatorTranslator = (key: string) => string
+
+export const createLoginSchema = (t: ValidatorTranslator) =>
+  z.object({
+    email: z.string().email(t("errors.invalidEmail")),
+    password: z.string().min(1, t("errors.passwordRequired")),
+  })
+
+export type LoginInput = z.infer<ReturnType<typeof createLoginSchema>>
 
 export const signupSchema = z.object({
   name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
@@ -81,7 +97,6 @@ export const contributionSchema = z.object({
   ),
 })
 
-export type LoginInput = z.infer<typeof loginSchema>
 export type SignupInput = z.infer<typeof signupSchema>
 export type CreateProjectInput = z.infer<typeof createProjectSchema>
 export type CreateSecretInput = z.infer<typeof createSecretSchema>

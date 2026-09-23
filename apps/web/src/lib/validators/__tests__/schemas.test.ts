@@ -1,11 +1,15 @@
 import {
   createEnvironmentSchema,
+  createLoginSchema,
   createProjectSchema,
   createSecretSchema,
   contributionSchema,
-  loginSchema,
   signupSchema,
 } from "../schemas"
+
+// createLoginSchema takes a translator; the messages themselves are covered by
+// the login page test — here we only assert the validation rules.
+const loginSchema = createLoginSchema((key) => key)
 
 describe("validators", () => {
   it("accepts valid login data and rejects invalid email", () => {

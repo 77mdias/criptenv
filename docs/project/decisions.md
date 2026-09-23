@@ -1516,3 +1516,63 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ Salvaguardas contratuais críticas publicadas: sem SLA, irrecoverabilidade, isenção de danos indiretos (com salvaguardas CDC/dolo), responsabilidade de admin de equipe, doações não reembolsáveis.
 - ⚠️ O documento é gêmeo do conteúdo das páginas — alterações futuras exigem editar ambos (fonte canônica + JSX) e bumpar a versão/data em três lugares (MD, duas páginas).
 - ⚠️ Pendências fora do escopo desta decisão: `security.txt`/página de segurança para reporte de vulnerabilidades, nome/quadro do mantenedor e comarca do foro quando formalizados. O aceite explícito no signup (checkbox) foi implementado na sequência: `signupSchema` passou a exigir `acceptTerms: true` (refine), com componente `ui/checkbox.tsx` nativo + links para as páginas jurídicas e aviso de aceite por primeiro uso exibido junto aos botões OAuth. Seguindo a trilha de auditoria: `users.terms_accepted_at` + `users.terms_version` (migration `20260923_0011`), `accept_terms` obrigatório no `UserSignup` (422 sem aceite), gravação com `settings.TERMS_VERSION` e aceite por primeiro uso no OAuth — a versão registrada é server-authoritative; bump de termos exige atualizar MD + páginas + config juntas.
+
+## DEC-061 — i18n (pt-BR · en · es): next-intl no Web, Catálogo JSON na API e na CLI
+
+**Date:** 2026-09-23 · **Status:** Accepted (piloto web executado e verificado) · **Branch:** `feature/i18n-support` · **Plan:** `plans/i18n-en-es-support.md` (§8.bis)
+
+**Context:** o pedido de feature partia da premissa de que "o projeto está apenas em pt-BR". A auditoria das três aplicações mostrou que a premissa vale para **apenas uma**:
+
+| App | Copy real | Volume | Natureza do trabalho |
+|---|---|---|---|
+| `apps/web` | **pt-BR** | ~2.500–3.500 strings / 179 arquivos | Extrair pt-BR → traduzir en/es (o que o pedido descreve) |
+| `apps/api` | **Inglês** (6 literais pt-BR em 2 arquivos) | ~275 strings | Exportar inglês como base → adicionar pt-BR/es |
+| `apps/cli` | **Inglês** (0 acentos em `src/`) | ~520 unidades | Exportar inglês como base → adicionar pt-BR/es |
+
+Descobertas estruturais que condicionam a decisão:
+- `apps/web`: **não há `middleware.ts`, mas existe `src/proxy.ts`** (guard de auth, convenção Next 16) que precisará ser **composto**, não substituído. `src/app/layout.tsx` fixa `<html lang="pt-BR">` e metadata pt-BR em escopo de módulo. `src/lib/validators/schemas.ts` tem mensagens Zod em escopo de módulo. 31 arquivos usam `next/link` e 32 usam `next/navigation`.
+- `apps/api`: **dois envelopes de erro incompatíveis** (`{"detail": "<str>"}` na maioria, sem código algum; `{"detail": {"code","message"}}` em CI/middleware) e `app/schemas/error.py` **é código morto**. **102 das 120 strings `detail` não têm chave estável** — bloqueador anterior a qualquer catálogo. Não há handler de `RequestValidationError`. Não existe `user.locale` e e-mails de jobs agendados não têm request.
+- `apps/cli`: **não existe ponto de estrangulamento** (398 `click.echo` inline em 20 arquivos, 0 `secho`, 0 Rich). Click **cacheia `help`/`short_help` em tempo de declaração**, o que torna `gettext` + `_` de módulo incompatível com `--lang`. 12 prompts `getpass` não passam pelo Click.
+
+**Decision:**
+
+1. **Web — `next-intl` 4.x + segmento `[locale]` + middleware.** Não por preferência, mas por evidência no próprio framework: `vinext/dist/check.js:204` marca `next-intl` como `supported` e `config/next-config.js` o **auto-detecta** a partir de `i18n/request.ts` (descartando `createNextIntlPlugin`, que quebra no vinext). Alternativas rejeitadas: `i18next` (sem integração RSC/App Router e não reconhecido pelo `vinext check`), solução caseira com Context (exigiria reimplementar plurais, interpolação, formatação e negociação de locale), e prefixo apenas por cookie (mata SEO e serve idioma errado no cache do Cloudflare por URL). `localePrefix: "as-needed"` para **preservar as URLs pt-BR já publicadas** (docs indexadas e páginas legais LGPD já linkadas em e-mails/rodapé/signup).
+2. **`setRequestLocale(locale)` no layout de locale é obrigatório** e faz parte da decisão: sem ele os Server Components ignoram silenciosamente o segmento de URL e servem o `defaultLocale` — comportamento verificado empiricamente, não documentado pelo vinext.
+3. **API — catálogo JSON + `Depends(get_translator)` + `ContextVar`, `gettext` rejeitado.** O corpus é pequeno (~275), **não há plurais reais**, não existe `pyproject.toml` nem CI, e o HTML dos e-mails é f-string (que o `xgettext` não extrai de forma útil). `.mo`/`babel` não se pagam. Fallback **por chave** (não pelo catálogo) para `en`. Reavaliar apenas se houver tradutores externos com fluxo `.po`/Weblate.
+4. **CLI — catálogo JSON + módulo `ui.py` novo + subclasse de `Group`/`Command`, `gettext` rejeitado.** O `help` do Click é resolvido em **tempo de renderização** (não no import), senão `--lang` pareceria não funcionar em `--help`. `--lang` entra como `is_eager=True`. Precedência espelha o `resolve_project_id()` já existente: `--lang` → `CRIPTENV_LANG` → config SQLite → `LANGUAGE`/`LC_*`/`LANG` → `en`, com fallback silencioso (um `LANG` inválido nunca derruba a CLI).
+5. **Contrato antes de catálogo (Fase B0, bloqueador):** introduzir `code` estável em todas as respostas de erro e manter `message` **byte-idêntico em inglês** durante a migração, para não quebrar as ~178 asserções de teste acopladas. `code` é contrato; `message` é apresentação.
+6. **Localização no servidor E no cliente:** a API localiza `message` via `Accept-Language`/`?lang=`, mas **sempre devolve `code`**, para que CLI, GitHub Action e frontend possam localizar por conta própria. A CLI passa a preferir `code` e usa o `message` do servidor apenas como último recurso (hoje `CriptEnvAPIError` imprime o `detail` cru, o que produziria saída bilíngue).
+7. **Empacotamento:** nenhuma mudança necessária na CLI — verificado com wheel de teste que `hatchling` com `packages = ["src/criptenv"]` **já inclui** arquivos não-`.py` (o wheel continha `locales/en.json`).
+
+**Alternatives consideradas:**
+- `gettext` + `.po`/`.mo` (sugerido no pedido). Rejeitado nos dois lados: sem plurais reais, com f-strings não extraíveis, sem CI para compilar catálogos, e — no caso da CLI — incompatível com `--lang` por causa do cache de `help` do Click.
+- `react-i18next`/`i18next`. Rejeitado: exige provider cliente em tudo, o que regrediria o SSR das páginas de marketing conquistado em DEC-055.
+- Prefixo de locale `always`. Rejeitado (não descartado): simétrico e melhor para cache, mas emite 307 em todas as URLs pt-BR já publicadas.
+- Usar a chave `i18n` do `next.config.ts` (que o vinext suporta). Rejeitado: a detecção está implementada em `server/pages-i18n.js` (Pages Router); para App Router é extensão específica do vinext, menos portável que `[locale]` + `next-intl`.
+- Reescrever os schemas Zod como factory `createSchemas(t)` vs. emitir chaves semânticas. **Resolvido no piloto:** adotada a **factory** (`createLoginSchema(t)`), não a chave semântica. Motivo: mantém o contrato de exibição `errors.x.message` intacto nos 5 schemas ainda não migrados, eliminando o risco de vazar chave crua na UI. Reavaliar por schema à medida que cada superfície for migrada.
+
+**Resolvido pelo stakeholder antes da execução do piloto:**
+- Prefixo de URL: **`as-needed`** (pt-BR sem prefixo, preservando as URLs já publicadas).
+- Escopo do web: **completo** (inclui o site de docs, 40 páginas).
+- Páginas legais: **só pt-BR até revisão jurídica** — não traduzir mecanicamente.
+- `docs/` Markdown do repositório: **depois**; primeiro o site.
+
+**Achados do piloto (executado e verificado, ver §8.bis do plano):**
+1. `transpilePackages` é **obrigatório** para o Jest. `next-intl` publica ESM não transpilado e o `next/jest` deriva a allow-list de transformação de `next.config.transpilePackages`; corrigir via `transformIgnorePatterns` no `jest.config` **não funciona** (o `next/jest` faz append à lista padrão e o Jest une os padrões com `|`, então `/node_modules/` default sempre vence).
+2. O helper de teste precisa espelhar a estrutura `{ <namespace>: <conteúdo> }` produzida por `loadMessages` — achatar com spread faz todo `t()` devolver a chave crua, silenciosamente.
+3. O redirect de auth precisou preservar o prefixo de locale (`/en/dashboard` → `/en/login`, não `/login`), senão o visitante em inglês caía no login em português.
+4. Componentes **async Server Components** (que passam a usar `await getTranslations`) não são renderizáveis por `@testing-library/react` — renderizam como nó vazio. O padrão de teste é chamar o componente e renderizar o elemento resolvido, com `next-intl/server` mockado por um tradutor de catálogo (`src/test/server-intl.ts`).
+5. Empacotamento da CLI: confirmado com wheel de teste que `hatchling` já inclui arquivos não-`.py` — nenhuma mudança em `pyproject.toml`.
+
+**Verificação do piloto:** build `vinext` verde; `tsc --noEmit` com **0 erros** nos arquivos tocados (os 394 restantes são pré-existentes); Jest **26/26 suítes e 112/112 testes**; 14 verificações de runtime em `wrangler`/workerd cobrindo `<html lang>`, conteúdo traduzido nos 3 idiomas, metadata por locale, hreflang + canonical, detecção por `Accept-Language`, precedência do cookie `NEXT_LOCALE`, fallback de locale não suportado, canonicalização do prefixo redundante, 404 e guard de auth com e sem prefixo.
+
+**Consequences:**
+- ✅ Decisão de ferramentas baseada em comportamento verificado, não em suposição: PoC completo executado e **revertido** (árvore limpa) provando `vinext build` com next-intl (exit 0), `[locale]` + `generateStaticParams`, `generateMetadata` por locale, provider propagando ao cliente, middleware rodando no **workerd** (307), detecção por `Accept-Language`, cookie `NEXT_LOCALE` vencendo o header, e fallback de locale não suportado.
+- ⚠️ **Achado não documentado:** sem `setRequestLocale`, o segmento `[locale]` é ignorado silenciosamente por `getTranslations` e tudo cai no `defaultLocale`. Só apareceu com request real.
+- ⚠️ **`src/proxy.ts` já existia** com o guard de auth e foi sobrescrito durante o spike (restaurado). O middleware do next-intl precisa ser composto com ele, e o guard precisa operar sobre o pathname **sem prefixo de locale**.
+- ⚠️ O `src/app/layout.tsx` atual **não pode permanecer** como layout raiz: fixa `<html lang="pt-BR">` sem acesso a `params`. O layout raiz precisa migrar para `src/app/[locale]/layout.tsx`; `global-error.tsx` fica na raiz (já renderiza documento próprio, DEC-055).
+- ⚠️ Risco de bundle no Workers: `NextIntlClientProvider` serializa as mensagens passadas ao cliente; com 3 locales × ~3.000 chaves é preciso fatiar por namespace e rota.
+- ⚠️ Esforço estimado de engenharia: **~19–28 dias**, dos quais ~10–14 só na CLI (rewire de 398 echoes, ~200 fragmentos de f-string e 9 tabelas). O volume de **tradução** é paralelo e não é trabalho de engenharia.
+- ✅ Fase 0 + Fase A (piloto) **concluídas**: infraestrutura completa, rotas sob `[locale]`, seletor de idioma, login/auth/marketing traduzidos nos 3 idiomas, hreflang e guard de auth ciente de locale — todas verificadas em runtime (§8.bis do plano).
+- ⚠️ Todas as rotas saíram como `ƒ Dynamic` no build. Continua entregando HTML server-rendered e indexável (o que DEC-055 protege), mas sob demanda em vez de estático — medir impacto no cache do Cloudflare antes do deploy.
+- ⚠️ Pendências para retomar: tradução do `(dashboard)` (namespace `dashboard`), das 40 páginas de `(docs)` (namespace `docs`), dos schemas Zod restantes, do restante dos componentes compartilhados, e as páginas legais (bloqueadas por revisão jurídica). API e CLI permanecem em inglês e não bloqueiam pt-BR.
