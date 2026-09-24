@@ -29,6 +29,10 @@ services:
       APP_ENV: development
       DEBUG: "true"
       SCHEDULER_ENABLED: "false"
+      # Inside the compose network Postgres is reachable at the `db` service
+      # on 5432. The .env DATABASE_URL points at localhost:5433, which only
+      # works when the API runs on the host, so override it here.
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD}@db:5432/${POSTGRES_DB:-criptenv}
     volumes:
       # Mount source for hot-reload
       - ./apps/api:/app
@@ -89,7 +93,9 @@ services:
   # Web - Vinext (Vite + React)
   # -------------------------------------------
   web:
-    image: node:22-alpine
+    # Debian-based image (glibc). Alpine's musl cannot run Cloudflare's
+    # `workerd` binary used by vinext/Vite locally -> spawn ENOENT.
+    image: node:22-bookworm-slim
     container_name: criptenv-web
     restart: unless-stopped
     env_file:
@@ -104,7 +110,10 @@ services:
       # Preserve node_modules
       - web-node-modules:/app/node_modules
     working_dir: /app
-    command: ["npm", "run", "dev"]
+    # The named volume `web-node-modules` starts empty and masks the bind
+    # mount's node_modules, so install deps inside the container before
+    # starting the dev server (otherwise `vinext` is not found).
+    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --hostname 0.0.0.0"
     ports:
       - "3000:3000"
     depends_on:

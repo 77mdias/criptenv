@@ -76,10 +76,11 @@ async def test_upload_avatar_uses_project_base_url_and_httpx(storage_settings, m
 
     public_url = await service.upload_avatar(USER_ID, make_upload())
 
-    assert public_url == (
+    assert public_url.startswith(
         "https://abc.supabase.co/storage/v1/object/public/"
-        "avatars/0f2d4e8f-4ddc-4e17-9a18-5efb515c3376.png"
+        "avatars/0f2d4e8f-4ddc-4e17-9a18-5efb515c3376.png?v="
     )
+    assert public_url.split("?v=", 1)[1].isdigit()
     assert fake_client.posts[0]["url"] == (
         "https://abc.supabase.co/storage/v1/object/"
         "avatars/0f2d4e8f-4ddc-4e17-9a18-5efb515c3376.png"
@@ -148,13 +149,17 @@ async def test_upload_avatar_to_r2_uses_s3_endpoint_and_public_url(storage_setti
 
     public_url = await service.upload_avatar(USER_ID, make_upload())
 
-    assert public_url == "https://avatars.example.com/0f2d4e8f-4ddc-4e17-9a18-5efb515c3376.png"
+    assert public_url.startswith(
+        "https://avatars.example.com/0f2d4e8f-4ddc-4e17-9a18-5efb515c3376.png?v="
+    )
+    assert public_url.split("?v=", 1)[1].isdigit()
     assert fake_client.puts[0]["url"] == (
         "https://account123.r2.cloudflarestorage.com/"
         "criptenv-avatars/0f2d4e8f-4ddc-4e17-9a18-5efb515c3376.png"
     )
     headers = fake_client.puts[0]["headers"]
     assert headers["content-type"] == "image/png"
+    assert headers["cache-control"] == "public, max-age=604800, immutable"
     assert headers["x-amz-content-sha256"]
     assert headers["x-amz-date"]
     assert headers["Authorization"].startswith("AWS4-HMAC-SHA256 Credential=access-key/")

@@ -4,6 +4,7 @@ import hashlib
 import hmac
 import json
 import logging
+import time
 import uuid
 from datetime import datetime, timezone
 from typing import Optional
@@ -19,6 +20,18 @@ logger = logging.getLogger(__name__)
 # Valid image MIME types and extensions
 VALID_IMAGE_TYPES = {"image/png", "image/jpeg", "image/jpg"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+
+# Avatars are stored under a stable key ({user_id}{ext}) that is overwritten on
+# every upload. The public URL therefore never changes by itself, which makes
+# browsers and CDNs serve a stale cached image. Each upload returns the URL
+# with a `?v=` cache-buster and stores the object with a long-lived
+# Cache-Control, since the URL changes on every upload.
+AVATAR_CACHE_CONTROL = "public, max-age=604800, immutable"
+
+
+def _cache_buster() -> str:
+    """Return a per-upload version token for avatar public URLs."""
+    return str(time.time_ns())
 
 
 def _detect_image_format(data: bytes) -> Optional[str]:
@@ -199,6 +212,7 @@ def _r2_signed_headers(
     secret_key: str,
     payload: bytes,
     content_type: Optional[str] = None,
+    cache_control: Optional[str] = None,
 ) -> dict[str, str]:
     """Create AWS SigV4 headers for Cloudflare R2's S3-compatible API."""
     parsed = urlparse(endpoint)
@@ -216,6 +230,8 @@ def _r2_signed_headers(
     }
     if content_type:
         headers["content-type"] = content_type
+    if cache_control:
+        headers["cache-control"] = cache_control
 
     signed_header_names = sorted(headers)
     canonical_headers = "".join(f"{name}:{headers[name]}\n" for name in signed_header_names)
@@ -282,10 +298,13 @@ class AvatarService:
         """
         content, ext = await _validate_image(file)
         file_name = f"{user_id}{ext}"
+        version = _cache_buster()
 
         backend = settings.AVATAR_STORAGE_BACKEND.strip().lower()
         if backend == "r2":
-            return await self._upload_avatar_to_r2(file_name, content, file.content_type)
+            return await self._upload_avatar_to_r2(
+                file_name, content, file.content_type, version=version
+            )
         if backend != "supabase":
             raise HTTPException(
                 status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
@@ -327,7 +346,9 @@ class AvatarService:
         )
 
         if response.status_code in (200, 201):
-            return f"{supabase_url}/storage/v1/object/public/{bucket}/{file_name}"
+            return (
+                f"{supabase_url}/storage/v1/object/public/{bucket}/{file_name}?v={version}"
+            )
 
         error_message = _storage_error_message(response.text)
         logger.error(
@@ -345,6 +366,7 @@ class AvatarService:
         file_name: str,
         content: bytes,
         content_type: Optional[str],
+        version: str,
     ) -> str:
         endpoint, access_key, secret_key, bucket, public_url = _get_r2_config()
         upload_url = f"{endpoint}/{bucket}/{quote(file_name, safe='/')}"
@@ -357,6 +379,7 @@ class AvatarService:
             secret_key=secret_key,
             payload=content,
             content_type=content_type or "application/octet-stream",
+            cache_control=AVATAR_CACHE_CONTROL,
         )
 
         logger.info(
@@ -377,7 +400,7 @@ class AvatarService:
             ) from exc
 
         if response.status_code in (200, 201):
-            return f"{public_url}/{file_name}"
+            return f"{public_url}/{quote(file_name, safe='/')}?v={version}"
 
         error_message = _storage_error_message(response.text)
         logger.error(

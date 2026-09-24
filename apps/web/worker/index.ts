@@ -9,6 +9,12 @@ interface Env {
   ASSETS: Fetcher;
   API_URL?: string;
   NEXT_PUBLIC_API_URL?: string;
+  /**
+   * Comma-separated origins allowed to serve user avatars (the R2 public URL /
+   * custom domain). Overrides the defaults below. Example:
+   *   AVATAR_PUBLIC_ORIGIN=https://avatars.example.com,https://*.r2.dev
+   */
+  AVATAR_PUBLIC_ORIGIN?: string;
 }
 
 interface ExecutionContext {
@@ -25,22 +31,57 @@ function normalizeApiBaseUrl(env: Env): string | null {
   return configuredUrl.replace(/\/+$/, "");
 }
 
-const CSP = [
-  "default-src 'self'",
-  "script-src 'self' 'unsafe-inline'",
-  "style-src 'self' 'unsafe-inline'",
-  "img-src 'self' data: blob:",
-  "font-src 'self' data:",
-  "connect-src 'self' https:",
-  "object-src 'none'",
-  "base-uri 'self'",
-  "form-action 'self'",
-  "frame-ancestors 'none'",
-  "upgrade-insecure-requests",
-].join("; ");
+// Avatars are uploaded to Cloudflare R2 and rendered straight from its public
+// URL with a plain <img>. The CSP must allow that origin, otherwise the browser
+// blocks the image and the UI silently falls back to the user's initials.
+// Override per deployment with AVATAR_PUBLIC_ORIGIN.
+const DEFAULT_AVATAR_ORIGINS = [
+  "https://avatars.77mdevseven.tech",
+  "https://*.r2.dev",
+];
+
+function resolveAvatarOrigins(env: Env): string[] {
+  const raw = env.AVATAR_PUBLIC_ORIGIN?.trim();
+  const values = raw ? raw.split(",") : DEFAULT_AVATAR_ORIGINS;
+
+  return values
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .map((value) => {
+      try {
+        // Collapse a full URL (e.g. https://host/some/path) to its origin.
+        const parsed = new URL(value);
+        return `${parsed.protocol}//${parsed.host}`;
+      } catch {
+        return value;
+      }
+    });
+}
+
+function buildCsp(env: Env): string {
+  const imgSrc = [
+    "'self'",
+    "data:",
+    "blob:",
+    ...resolveAvatarOrigins(env),
+  ].join(" ");
+
+  return [
+    "default-src 'self'",
+    "script-src 'self' 'unsafe-inline'",
+    "style-src 'self' 'unsafe-inline'",
+    `img-src ${imgSrc}`,
+    "font-src 'self' data:",
+    "connect-src 'self' https:",
+    "object-src 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+    "frame-ancestors 'none'",
+    "upgrade-insecure-requests",
+  ].join("; ");
+}
 
 const SECURITY_HEADERS: Record<string, string> = {
-  "content-security-policy": CSP,
   "strict-transport-security": "max-age=31536000; includeSubDomains",
   "x-content-type-options": "nosniff",
   "x-frame-options": "DENY",
@@ -48,7 +89,7 @@ const SECURITY_HEADERS: Record<string, string> = {
   "permissions-policy": "camera=(), microphone=(), geolocation=()",
 };
 
-function withSecurityHeaders(response: Response, url: URL): Response {
+function withSecurityHeaders(response: Response, url: URL, env: Env): Response {
   // Only enforce on https: in plain-http local dev `upgrade-insecure-requests`
   // would break the vinext image optimizer's http redirects.
   if (url.protocol !== "https:") {
@@ -59,6 +100,7 @@ function withSecurityHeaders(response: Response, url: URL): Response {
   for (const [name, value] of Object.entries(SECURITY_HEADERS)) {
     headers.set(name, value);
   }
+  headers.set("content-security-policy", buildCsp(env));
 
   if (response.body) {
     return new Response(response.body, {
@@ -138,7 +180,7 @@ const worker = {
           );
         }
 
-        return withSecurityHeaders(response, url);
+        return withSecurityHeaders(response, url, env);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
         console.error("[worker] API proxy error:", message, "URL:", targetUrl);
@@ -152,7 +194,7 @@ const worker = {
     // Delegate everything to vinext handler
     try {
       const response = await handler.fetch(request, env, ctx);
-      return withSecurityHeaders(response, url);
+      return withSecurityHeaders(response, url, env);
     } catch (err) {
       console.error(
         "[worker] Unhandled error:",

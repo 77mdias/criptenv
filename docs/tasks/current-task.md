@@ -3,7 +3,7 @@
 **Data:** 2026-09-23
 **Branch:** `feature/i18n-support`
 **Status:** Infraestrutura + piloto (login, auth, marketing) **concluídos e verificados**. Dashboard, docs e páginas legais pendentes.
-**Decisão:** DEC-061 · **Plano:** `plans/i18n-en-es-support.md` (§8.bis = relatório do piloto)
+**Decisão:** DEC-063 · **Plano:** `plans/i18n-en-es-support.md` (§8.bis = relatório do piloto)
 
 > Task anterior ("Project Alerts", 2026-09-19) permanecia com validação de release
 > incompleta (migração não aplicada e E2E de alertas bloqueado). Foi substituída como
@@ -45,7 +45,7 @@ revisão jurídica** · `docs/` Markdown do repositório depois.
 5. Páginas legais — **bloqueado por revisão jurídica**.
 6. Sitemap dinâmico com os 3 locales (hoje `public/sitemap.xml` estático).
 7. `worker/error-page.ts` tem pt-BR hardcoded — considerar variantes por `Accept-Language`.
-8. Fase B (API) e Fase C (CLI) conforme DEC-061 — ambas em inglês hoje, não bloqueiam pt-BR.
+8. Fase B (API) e Fase C (CLI) conforme DEC-063 — ambas em inglês hoje, não bloqueiam pt-BR.
 
 ## Riscos observados
 

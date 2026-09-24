@@ -1517,7 +1517,49 @@ would have combined a wildcard with `allow_credentials=True`.
 - ⚠️ O documento é gêmeo do conteúdo das páginas — alterações futuras exigem editar ambos (fonte canônica + JSX) e bumpar a versão/data em três lugares (MD, duas páginas).
 - ⚠️ Pendências fora do escopo desta decisão: `security.txt`/página de segurança para reporte de vulnerabilidades, nome/quadro do mantenedor e comarca do foro quando formalizados. O aceite explícito no signup (checkbox) foi implementado na sequência: `signupSchema` passou a exigir `acceptTerms: true` (refine), com componente `ui/checkbox.tsx` nativo + links para as páginas jurídicas e aviso de aceite por primeiro uso exibido junto aos botões OAuth. Seguindo a trilha de auditoria: `users.terms_accepted_at` + `users.terms_version` (migration `20260923_0011`), `accept_terms` obrigatório no `UserSignup` (422 sem aceite), gravação com `settings.TERMS_VERSION` e aceite por primeiro uso no OAuth — a versão registrada é server-authoritative; bump de termos exige atualizar MD + páginas + config juntas.
 
-## DEC-061 — i18n (pt-BR · en · es): next-intl no Web, Catálogo JSON na API e na CLI
+## DEC-061 — CSP Permite as Origens Públicas do R2 nos Avatares
+
+**Date:** 2026-09-23 · **Status:** Accepted · **Branch:** `imageAvatar-fix`
+
+**Context:** a DEC-053 introduziu os security headers no `worker/index.ts`, com `img-src 'self' data: blob:`. Os avatares são armazenados no Cloudflare R2 e renderizados com um `<img src={avatar_url}>` apontando direto para a URL pública do bucket (custom domain `avatars.77mdevseven.tech`, ou `*.r2.dev`). Em produção a CSP passou a bloquear essas origens: o upload continuava funcionando (`POST /api/auth/me/avatar` → 200 e o objeto presente no bucket), mas o browser recusava a imagem e a UI caía no fallback de iniciais — sintoma de "avatar parou do nada". Não reproduz em dev porque o dev server serve em http e os headers são aplicados apenas em `https:` (DEC-054).
+
+**Decision:**
+1. A `img-src` passa a incluir as origens dos avatares, resolvidas por `buildCsp(env)` a partir de `AVATAR_PUBLIC_ORIGIN` (lista separada por vírgula, aceita URL completa — é reduzida à origem) ou dos defaults `https://avatars.77mdevseven.tech` e `https://*.r2.dev`.
+2. `withSecurityHeaders(response, url, env)` passa a receber o `env` para montar a CSP por request; as demais diretivas permanecem inalteradas.
+3. Nada de `img-src https:` genérico: a allowlist continua explícita.
+
+**Alternatives considered:**
+- `img-src https:` genérico. Rejeitado: abre carregamento de imagem de qualquer origem (vetor de rastreamento) sem necessidade.
+- Servir os avatares pelo próprio domínio (proxy no Worker). Rejeitado nesta rodada: adiciona um endpoint de streaming/proxy e custo no Worker; a allowlist resolve com menos superfície.
+- Hardcode apenas do domínio de produção. Rejeitado: a env var cobre self-host e trocas de domínio sem alterar código.
+
+**Consequences:**
+- ✅ Avatares voltam a renderizar em produção após o deploy.
+- ✅ Self-hosters ajustam a origem via `AVATAR_PUBLIC_ORIGIN` sem tocar no código.
+- ⚠️ Enquanto a env var não estiver setada no Cloudflare, valem os defaults (domínio de produção + `*.r2.dev`).
+- ⚠️ Headers só aparecem após deploy (o dev server não passa pelo Worker); validar com `curl -I` em https.
+
+## DEC-062 — Cache-Busting de Avatar por Query Param (`?v=`)
+
+**Date:** 2026-11-19 · **Status:** Accepted
+
+**Context:** avatares são gravados no R2/Supabase sob chave estável `{user_id}{ext}` com upsert (uma imagem por usuário). A URL pública nunca muda entre uploads, e o objeto era gravado sem `Cache-Control`. Resultado: o upload sucede (objeto novo no R2), mas browser/CDN servem a imagem antiga por cache heurístico/edge — a UI "não atualiza" o avatar. Correlacionado a DEC-061 (CSP), mas causa distinta: aqui a imagem carrega, porém desatualizada.
+
+**Decision:**
+1. `AvatarService.upload_avatar` retorna a URL pública com sufixo `?v={time.time_ns()}` a cada upload (backends `r2` e `supabase`). O `avatar_url` persistido no DB (e devolvido no `UserResponse` do `POST /api/auth/me/avatar`) muda a cada upload, invalidando qualquer cache pela mudança de URL.
+2. Uploads para o R2 passam a enviar header `Cache-Control: public, max-age=604800, immutable` (assinado no SigV4 via novo parâmetro `cache_control` em `_r2_signed_headers`). Seguro porque a URL versiona; caches ficam agressivos sem risco de stale.
+3. Nada muda no frontend: `avatar-upload.tsx` e `top-nav.tsx` já renderizam o `avatar_url` retornado/estocado; com a URL mudando, o `<img>` recarrega naturalmente.
+
+**Alternatives considered:**
+- Nome de arquivo versionado (`{user_id}-{ts}{ext}`). Rejeitado: acumula objetos órfãos no bucket — `delete_avatar` só varre extensões conhecidas sob a chave estável.
+- Apenas `Cache-Control: no-cache` no objeto. Rejeitado: não invalida o cache já existente nos browsers/CDN dos usuários atuais, e abre mão de cache agressivo.
+
+**Consequences:**
+- ✅ Novos uploads aparecem imediatamente (URL nova → cache miss).
+- ✅ Leitura do avatar (`GET /me`, members, invites) não muda; o `?v=` viaja junto pelo `avatar_url` persistido.
+- ⚠️ Objetos antigos já gravados sem `Cache-Control` mantêm o comportamento anterior até serem sobrescritos por um novo upload (que então grava o header).
+
+## DEC-063 — i18n (pt-BR · en · es): next-intl no Web, Catálogo JSON na API e na CLI
 
 **Date:** 2026-09-23 · **Status:** Accepted (piloto web executado e verificado) · **Branch:** `feature/i18n-support` · **Plan:** `plans/i18n-en-es-support.md` (§8.bis)
 
@@ -1575,4 +1617,3 @@ Descobertas estruturais que condicionam a decisão:
 - ⚠️ Esforço estimado de engenharia: **~19–28 dias**, dos quais ~10–14 só na CLI (rewire de 398 echoes, ~200 fragmentos de f-string e 9 tabelas). O volume de **tradução** é paralelo e não é trabalho de engenharia.
 - ✅ Fase 0 + Fase A (piloto) **concluídas**: infraestrutura completa, rotas sob `[locale]`, seletor de idioma, login/auth/marketing traduzidos nos 3 idiomas, hreflang e guard de auth ciente de locale — todas verificadas em runtime (§8.bis do plano).
 - ⚠️ Todas as rotas saíram como `ƒ Dynamic` no build. Continua entregando HTML server-rendered e indexável (o que DEC-055 protege), mas sob demanda em vez de estático — medir impacto no cache do Cloudflare antes do deploy.
-- ⚠️ Pendências para retomar: tradução do `(dashboard)` (namespace `dashboard`), das 40 páginas de `(docs)` (namespace `docs`), dos schemas Zod restantes, do restante dos componentes compartilhados, e as páginas legais (bloqueadas por revisão jurídica). API e CLI permanecem em inglês e não bloqueiam pt-BR.

@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix — Avatar não atualiza na UI após upload (cache de URL estável) (2026-11-19)
+
+- **Fix (api):** `AvatarService.upload_avatar` passa a retornar a URL pública com cache-buster `?v={time.time_ns()}` (backends `r2` e `supabase`) e o upload para o R2 grava `Cache-Control: public, max-age=604800, immutable` (header assinado no SigV4). Causa raiz: o objeto é sobrescrito sob a mesma chave `{user_id}{ext}`, logo a URL nunca mudava e browser/CDN serviam a imagem antiga mesmo com o objeto novo no R2 — sintoma: "o upload vai, a imagem do avatar no site não atualiza". Com o `?v=` no `avatar_url` persistido, o `<img>` do top-nav e da página da conta recarrega naturalmente. Detalhes em DEC-062.
+- **Verified:** `pytest tests/test_avatar_service.py tests/test_auth_routes.py tests/test_auth_service.py` — **39 passed** (asserções de URL atualizadas para o sufixo `?v=` + header `cache-control` no PUT do R2).
+
+### Fix — Avatares do R2 bloqueados pela CSP (2026-09-23)
+
+- **Fix (web/worker):** a diretiva `img-src` da CSP passa a permitir as origens públicas do R2. Antes era `img-src 'self' data: blob:`, então o browser bloqueava `https://avatars.77mdevseven.tech` (e `*.r2.dev`) e o avatar não renderizava — a UI caía no fallback de iniciais mesmo com o upload retornando `POST /api/auth/me/avatar 200` e o objeto existindo no bucket. As origens vêm de `AVATAR_PUBLIC_ORIGIN` (lista separada por vírgula) ou dos defaults `https://avatars.77mdevseven.tech` e `https://*.r2.dev`; `withSecurityHeaders` agora monta a CSP a partir do `env` (regressão de DEC-053).
+- **Verified:** `vinext build` verde; ESLint limpo no `worker/index.ts`; web unit **107/107**. Header CSP a confirmar em produção via `curl -I` (o dev server não passa pelo Worker). Detalhes em DEC-061.
+
 ### Feat — i18n do Web: infraestrutura pt-BR/en/es + piloto traduzido (2026-09-23)
 
 - **Infra (web):** `next-intl` 4.x integrado ao vinext (que o auto-detecta via `src/i18n/request.ts`; sem `createNextIntlPlugin`). Módulos `src/i18n/{routing,request,messages,navigation,alternates}.ts`: locales `pt-BR`/`en`/`es` com `localePrefix: "as-needed"` (pt-BR sem prefixo, preservando as URLs já publicadas), catálogos por namespace em `messages/<locale>/{common,auth,marketing}.json`, navegação ciente de locale e geração de canonical + hreflang.
@@ -16,8 +26,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **Fix (web):** `transpilePackages` com os 9 pacotes ESM da cadeia do next-intl em `next.config.ts` — sem isso o Jest nem consegue importar o pacote (`next/jest` deriva a allow-list de transformação dessa opção; `transformIgnorePatterns` no `jest.config` não funciona, pois o padrão `/node_modules/` default sempre vence na união por `|`).
 - **Tests (web):** `loginSchema` → `createLoginSchema(t)` (factory por locale; mantém o contrato `errors.x.message` nos schemas não migrados); helper `src/test/render-with-intl.tsx` (provider pt-BR, estrutura de namespaces espelhando `loadMessages`) e `src/test/server-intl.ts` (tradutor de catálogo para **async Server Components**, que `@testing-library/react` não renderiza); mock de `next-intl/middleware` no teste do proxy, com cobertura nova de prefixo de locale e da precedência do redirect de idioma. **26/26 suítes, 112/112 testes.**
 - **Verified:** `vinext build` verde (rotas emitidas como `/:locale/...`); `tsc --noEmit` com 0 erros nos arquivos tocados (394 erros restantes são pré-existentes: tipagem do jest-dom, `CalloutProps`/`ResponseBlockProps` nos docs, `variant="outline"`); 14 verificações de runtime em workerd cobrindo `<html lang>`, conteúdo traduzido nos 3 idiomas, metadata por locale, hreflang + canonical (`x-default` = pt-BR), detecção por `Accept-Language`, precedência do cookie `NEXT_LOCALE`, fallback de locale não suportado, canonicalização de `/pt-BR/docs` → `/docs`, 404 e guard de auth com/sem prefixo.
-- **Docs:** `plans/i18n-en-es-support.md` (plano completo + §8.bis com o relatório do piloto) e DEC-061.
-- **Pendente:** namespaces `dashboard` e `docs` (40 páginas), schemas Zod restantes, páginas legais (bloqueadas por revisão jurídica — ficam só em pt-BR), API e CLI (hoje em inglês; catálogo JSON já decidido em DEC-061, sem `gettext`).
+- **Docs:** `plans/i18n-en-es-support.md` (plano completo + §8.bis com o relatório do piloto) e DEC-063.
+- **Pendente:** namespaces `dashboard` e `docs` (40 páginas), schemas Zod restantes, páginas legais (bloqueadas por revisão jurídica — ficam só em pt-BR), API e CLI (hoje em inglês; catálogo JSON já decidido em DEC-063, sem `gettext`).
 
 ### Fix — Cypress E2E verde após aceite de termos (2026-09-23)
 
