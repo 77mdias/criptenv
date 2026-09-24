@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Fix — Avatar não atualiza na UI após upload (cache de URL estável) (2026-11-19)
+
+- **Fix (api):** `AvatarService.upload_avatar` passa a retornar a URL pública com cache-buster `?v={time.time_ns()}` (backends `r2` e `supabase`) e o upload para o R2 grava `Cache-Control: public, max-age=604800, immutable` (header assinado no SigV4). Causa raiz: o objeto é sobrescrito sob a mesma chave `{user_id}{ext}`, logo a URL nunca mudava e browser/CDN serviam a imagem antiga mesmo com o objeto novo no R2 — sintoma: "o upload vai, a imagem do avatar no site não atualiza". Com o `?v=` no `avatar_url` persistido, o `<img>` do top-nav e da página da conta recarrega naturalmente. Detalhes em DEC-062.
+- **Verified:** `pytest tests/test_avatar_service.py tests/test_auth_routes.py tests/test_auth_service.py` — **39 passed** (asserções de URL atualizadas para o sufixo `?v=` + header `cache-control` no PUT do R2).
+
 ### Fix — Avatares do R2 bloqueados pela CSP (2026-09-23)
 
 - **Fix (web/worker):** a diretiva `img-src` da CSP passa a permitir as origens públicas do R2. Antes era `img-src 'self' data: blob:`, então o browser bloqueava `https://avatars.77mdevseven.tech` (e `*.r2.dev`) e o avatar não renderizava — a UI caía no fallback de iniciais mesmo com o upload retornando `POST /api/auth/me/avatar 200` e o objeto existindo no bucket. As origens vêm de `AVATAR_PUBLIC_ORIGIN` (lista separada por vírgula) ou dos defaults `https://avatars.77mdevseven.tech` e `https://*.r2.dev`; `withSecurityHeaders` agora monta a CSP a partir do `env` (regressão de DEC-053).

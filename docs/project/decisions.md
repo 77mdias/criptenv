@@ -1538,3 +1538,23 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ Self-hosters ajustam a origem via `AVATAR_PUBLIC_ORIGIN` sem tocar no código.
 - ⚠️ Enquanto a env var não estiver setada no Cloudflare, valem os defaults (domínio de produção + `*.r2.dev`).
 - ⚠️ Headers só aparecem após deploy (o dev server não passa pelo Worker); validar com `curl -I` em https.
+
+## DEC-062 — Cache-Busting de Avatar por Query Param (`?v=`)
+
+**Date:** 2026-11-19 · **Status:** Accepted
+
+**Context:** avatares são gravados no R2/Supabase sob chave estável `{user_id}{ext}` com upsert (uma imagem por usuário). A URL pública nunca muda entre uploads, e o objeto era gravado sem `Cache-Control`. Resultado: o upload sucede (objeto novo no R2), mas browser/CDN servem a imagem antiga por cache heurístico/edge — a UI "não atualiza" o avatar. Correlacionado a DEC-061 (CSP), mas causa distinta: aqui a imagem carrega, porém desatualizada.
+
+**Decision:**
+1. `AvatarService.upload_avatar` retorna a URL pública com sufixo `?v={time.time_ns()}` a cada upload (backends `r2` e `supabase`). O `avatar_url` persistido no DB (e devolvido no `UserResponse` do `POST /api/auth/me/avatar`) muda a cada upload, invalidando qualquer cache pela mudança de URL.
+2. Uploads para o R2 passam a enviar header `Cache-Control: public, max-age=604800, immutable` (assinado no SigV4 via novo parâmetro `cache_control` em `_r2_signed_headers`). Seguro porque a URL versiona; caches ficam agressivos sem risco de stale.
+3. Nada muda no frontend: `avatar-upload.tsx` e `top-nav.tsx` já renderizam o `avatar_url` retornado/estocado; com a URL mudando, o `<img>` recarrega naturalmente.
+
+**Alternatives considered:**
+- Nome de arquivo versionado (`{user_id}-{ts}{ext}`). Rejeitado: acumula objetos órfãos no bucket — `delete_avatar` só varre extensões conhecidas sob a chave estável.
+- Apenas `Cache-Control: no-cache` no objeto. Rejeitado: não invalida o cache já existente nos browsers/CDN dos usuários atuais, e abre mão de cache agressivo.
+
+**Consequences:**
+- ✅ Novos uploads aparecem imediatamente (URL nova → cache miss).
+- ✅ Leitura do avatar (`GET /me`, members, invites) não muda; o `?v=` viaja junto pelo `avatar_url` persistido.
+- ⚠️ Objetos antigos já gravados sem `Cache-Control` mantêm o comportamento anterior até serem sobrescritos por um novo upload (que então grava o header).
