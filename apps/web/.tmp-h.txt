@@ -1,0 +1,10 @@
+HTTP/1.1 404 Not Found
+Vary: Origin
+content-length: 9
+content-type: text/plain;charset=UTF-8
+link: <http://localhost:3145/rota-inexistente>; rel="alternate"; hreflang="pt-BR", <http://localhost:3145/en/rota-inexistente>; rel="alternate"; hreflang="en", <http://localhost:3145/es/rota-inexistente>; rel="alternate"; hreflang="es", <http://localhost:3145/rota-inexistente>; rel="alternate"; hreflang="x-default"
+set-cookie: NEXT_LOCALE=pt-BR; Path=/; SameSite=lax
+Date: Thu, 24 Sep 2026 19:18:29 GMT
+Connection: keep-alive
+Keep-Alive: timeout=5
+
