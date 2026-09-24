@@ -52,6 +52,29 @@ revisão jurídica** · `docs/` Markdown do repositório depois.
 7. `worker/error-page.ts` tem pt-BR hardcoded — considerar variantes por `Accept-Language`.
 8. Fase B (API) e Fase C (CLI) conforme DEC-063 — ambas em inglês hoje, não bloqueiam pt-BR.
 
+## Avatar em produção — checklist de diagnóstico
+
+Sintoma observado: upload chega ao R2, mas a UI mostra o nome no lugar da imagem
+(era o `alt` do `<img>` falhando — agora cai nas iniciais).
+
+1. **Redeploy do worker web.** O fix de CSP (`img-src`) está no código desde
+   `8ed6c11`; se o deploy for anterior, a CSP continua `img-src 'self' data: blob:`
+   e bloqueia o avatar.
+2. **Conferir a origem que a API devolve.** A URL do avatar é
+   `R2_PUBLIC_URL` (API) + `/{arquivo}?v={versão}`. A origem de `R2_PUBLIC_URL`
+   tem de estar no `img-src` do worker — via `AVATAR_PUBLIC_ORIGIN` (web) ou um
+   dos defaults (`https://avatars.77mdevseven.tech`, `https://*.r2.dev`).
+   Se `R2_PUBLIC_URL` apontar para `https://<account_id>.r2.cloudflarestorage.com`
+   (endpoint S3, autenticado), a imagem não carrega publicamente: troque pelo
+   domínio público do bucket.
+3. **Confirmar o header em produção:** `curl -sI https://<dominio-do-app>/login | grep -i content-security-policy`
+   → `img-src` precisa listar a origem do R2.
+4. **Confirmar que a URL do avatar responde:** abrir o `avatar_url` retornado por
+   `GET /api/auth/me` direto no navegador. 403/404 → domínio público não anexado
+   ao bucket ou acesso público (r2.dev) desabilitado.
+5. **Console do browser** em um upload novo: violação de CSP aparece como
+   "Refused to load the image ... violates content security policy: img-src".
+
 ## Riscos observados
 
 - Todas as rotas saem como `ƒ Dynamic` no build: segue SSR indexável, mas renderização
@@ -65,3 +88,12 @@ revisão jurídica** · `docs/` Markdown do repositório depois.
   `useFormatter()` do next-intl (registrado como follow-up, fora do escopo).
 - Rótulos de role em `members.roles.*` são a única cópia nova em pt-BR (antes o
   valor de protocolo era renderizado cru).
+- **Avatar em produção (2026-09-24):** o `<img>` não tinha fallback de erro, então
+  quando a imagem falha o browser renderiza o `alt` (o nome completo) dentro do
+  círculo — corrigido com fallback para iniciais em `AvatarUpload` e `TopNav`.
+  A causa raiz é ambiental: o `img-src` da CSP do worker precisa conter a origem
+  de `R2_PUBLIC_URL` (API). Checklist em docs/tasks/current-task.md, seção Avatar.
+- **Worker 404:** qualquer erro do router — incluindo `NEXT_NOT_FOUND` de rotas
+  inexistentes — respondia 503 + Retry-After (página de emergência). Agora 404
+  brandado; `/sw.js` passou a existir como service worker vazio (sem handler de
+  fetch, não intercepta nada), eliminando o erro não tratado nos logs.
