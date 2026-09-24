@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Camera, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -22,6 +22,13 @@ export function AvatarUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A broken avatar URL would otherwise render the raw `alt` text (the full
+  // name) inside the circle. Track the failure and fall back to initials.
+  const [imageFailed, setImageFailed] = useState(false);
+
+  useEffect(() => {
+    setImageFailed(false);
+  }, [previewUrl]);
 
   const getInitials = (name: string) => {
     return name
@@ -109,12 +116,13 @@ export function AvatarUpload({
             isUploading ? "opacity-70" : "opacity-100"
           }`}
         >
-          {previewUrl ? (
+          {previewUrl && !imageFailed ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewUrl}
               alt={userName}
               className="h-full w-full object-cover"
+              onError={() => setImageFailed(true)}
             />
           ) : (
             <span className="text-2xl font-bold text-[var(--text-muted)]">
