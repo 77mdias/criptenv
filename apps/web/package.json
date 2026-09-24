@@ -23,7 +23,8 @@
     "start:next": "next start",
     "dev:vinext": "vinext dev --port 3001",
     "build:vinext": "vinext build",
-    "start:vinext": "vinext start"
+    "start:vinext": "vinext start",
+    "check:i18n": "node scripts/audit-i18n-keys.mjs"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
