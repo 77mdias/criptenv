@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feat — i18n da área autenticada do dashboard (pt-BR/en/es) (2026-09-24)
+
+- **Conversão completa do `(dashboard)`:** shell (nav, "Verificando sessão..."), home do dashboard, lista de projetos, diálogo de novo projeto, conta, membros, auditoria, configurações do projeto, integrações, ajuda e secrets — um catálogo por área (`messages/<locale>/{dashboard,account,members,audit,settings,integrations,help,secrets}.json`) para que migrações paralelas nunca tocassem o mesmo arquivo.
+- **Ferramenta nova — `npm run check:i18n`:** auditor de cobertura de chaves (`scripts/audit-i18n-keys.mjs`). Mapeia cada variável tradutora do arquivo ao seu namespace, expande chaves de template contra os arrays de chave do arquivo (incluindo arrays tipados sem `as const` e acessos como `${feature.key}`) e valida cada chave nos 3 locales. Motivação: a conversão da landing deixou dois catálogos em formato divergente do que os componentes liam (array onde o código indexava objeto) e o next-intl só reporta `MISSING_MESSAGE` no console — invisível para os testes. Estado atual: **1593 lookups resolvidos, 0 problemas**, exit 1 em qualquer lacuna.
+- **Refactor (web):** `createProjectSchema` vira factory `createProjectSchema(t)` (mesmo padrão do login) para resolver mensagens Zod por locale; `dashboard-nav.ts` passa a emitir `labelKey` e os três consumidores (`sidebar-nav`, `mobile-sidebar-nav`, `dashboard-floating-bar`) resolvem com `useTranslations("dashboard.nav")`.
+- **Tests (web):** `renderWithIntl` inclui por padrão todos os namespaces; `jest.config` ganha o alias `@messages/*` para importar catálogos de testes profundos sem caminhos relativos frágeis; testes de `create-project-dialog`, `schemas`, `settings/page`, `permission-dialog`, `role-picker`, `project-alert-settings`, `secret-form/row/table` e `vault-unlock-panel` atualizados ao padrão com provider.
+- **Verified:** `npm run check:i18n` exit 0 (1593 lookups × 3 locales); Jest **26/26 suítes, 112/112 testes**; `vinext build` verde; smoke em workerd com zero `MISSING_MESSAGE` nas rotas públicas (as rotas do dashboard são protegidas pelo proxy e cobertas por teste de componente + auditor).
+- **Achado de inventário:** a área de secrets tem arquivos co-localizados que não apareceram no levantamento inicial (`secrets-client.tsx`, `secrets/_components/*`) — convertidos nesta entrega, incluindo a chave `secrets.client.removeDescription` que faltava.
+
+### Feat — i18n do Web: infraestrutura pt-BR/en/es + piloto traduzido (2026-09-23)
 ### Fix — Avatar não atualiza na UI após upload (cache de URL estável) (2026-11-19)
 
 - **Fix (api):** `AvatarService.upload_avatar` passa a retornar a URL pública com cache-buster `?v={time.time_ns()}` (backends `r2` e `supabase`) e o upload para o R2 grava `Cache-Control: public, max-age=604800, immutable` (header assinado no SigV4). Causa raiz: o objeto é sobrescrito sob a mesma chave `{user_id}{ext}`, logo a URL nunca mudava e browser/CDN serviam a imagem antiga mesmo com o objeto novo no R2 — sintoma: "o upload vai, a imagem do avatar no site não atualiza". Com o `?v=` no `avatar_url` persistido, o `<img>` do top-nav e da página da conta recarrega naturalmente. Detalhes em DEC-062.

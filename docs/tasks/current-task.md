@@ -2,7 +2,7 @@
 
 **Data:** 2026-09-23
 **Branch:** `feature/i18n-support`
-**Status:** Infraestrutura + piloto (login, auth, marketing) **concluídos e verificados**. Dashboard, docs e páginas legais pendentes.
+**Status:** Dashboard (área autenticada) **concluído e verificado**. Restam: site de docs (40 páginas), schemas Zod restantes, páginas legais e API/CLI.
 **Decisão:** DEC-063 · **Plano:** `plans/i18n-en-es-support.md` (§8.bis = relatório do piloto)
 
 > Task anterior ("Project Alerts", 2026-09-19) permanecia com validação de release
@@ -28,19 +28,24 @@ revisão jurídica** · `docs/` Markdown do repositório depois.
 - Traduzido: layout de auth, login, header/footer do marketing, landing page (página + 4 seções).
 - `LocaleSwitcher` no header de marketing; canonical + hreflang (`x-default` = pt-BR).
 - Helpers de teste (`render-with-intl`, `server-intl`) e mock de `next-intl/middleware`.
+- **Dashboard convertido** (2026-09-24): um catálogo por área, todos os componentes da área autenticada usando hooks; `createProjectSchema(t)` em factory; `dashboard-nav` emite `labelKey`.
+- **`npm run check:i18n`** — auditor de cobertura de chaves (`scripts/audit-i18n-keys.mjs`): 1593 lookups × 3 locales, 0 problemas. Torna lacuna de chave uma falha de build-check, não um console.log silencioso.
+- Alias `@messages/*` no Jest para importar catálogos em testes profundos.
 
 ## Validação
 
 - `npm run build` — verde, rotas `/:locale/...`.
 - `npx tsc --noEmit` — **0 erros** nos arquivos tocados (394 pré-existentes: jest-dom, `CalloutProps`/`ResponseBlockProps`, `variant="outline"`).
 - `npx jest` — **26/26 suítes, 112/112 testes**.
+- `npm run check:i18n` — exit 0 (1593 lookups; valida cobertura nos 3 locales).
+- Smoke em workerd: zero `MISSING_MESSAGE` nas rotas públicas; rotas do dashboard são protegidas pelo proxy e cobertas por teste de componente + auditor.
 - 14 verificações de runtime em workerd (`<html lang>`, copy nos 3 idiomas, metadata, hreflang, `Accept-Language`, cookie `NEXT_LOCALE`, fallback de `de`, `/pt-BR/docs` → `/docs`, 404, guard de auth com/sem prefixo).
 
 ## Pendente (ordem sugerida)
 
-1. `(dashboard)` → namespace `dashboard` (maior superfície logada).
-2. `(docs)` → namespace `docs` (40 páginas, maior volume e menor retorno).
-3. Schemas Zod restantes (`signupSchema`, `createProjectSchema`, …) — converter para factory `createXSchema(t)`.
+1. `(docs)` → namespace `docs` (40 páginas, maior volume e menor retorno).
+2. Schemas Zod restantes (`signupSchema`, `createSecretSchema`, `contributionSchema`, …) — converter para factory `createXSchema(t)` (login e createProject já migrados).
+3. `(marketing)/contribute` e páginas legais — legais bloqueadas por revisão jurídica.
 4. Componentes compartilhados (`src/components/shared/*`, `layout/*`) ainda com copy fixa.
 5. Páginas legais — **bloqueado por revisão jurídica**.
 6. Sitemap dinâmico com os 3 locales (hoje `public/sitemap.xml` estático).
@@ -55,3 +60,8 @@ revisão jurídica** · `docs/` Markdown do repositório depois.
   `loadNamespaceMessages` por rota quando o bundle crescer.
 - `(docs)` tem 40 páginas de copy fixa com acoplamento de testes — mover
   rota a rota com `npm run build` entre cada.
+- Datas formatadas com `toLocaleDateString("pt-BR")` hardcode em conta, membros,
+  settings e secrets: segue renderizando pt-BR nos 3 idiomas. Candidato a
+  `useFormatter()` do next-intl (registrado como follow-up, fora do escopo).
+- Rótulos de role em `members.roles.*` são a única cópia nova em pt-BR (antes o
+  valor de protocolo era renderizado cru).
