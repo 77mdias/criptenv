@@ -188,37 +188,37 @@
         "badge": "apoio aberto",
         "kicker": "Sustentado pela comunidade",
         "title": "Apoie o CriptEnv",
-        "description": "O produto segue gratuito e open source. Sua contribuicao ajuda a manter o projeto vivo, independente e mais confiavel para equipes que cuidam de secrets todos os dias.",
+        "description": "O produto segue gratuito e open source. Sua contribuição ajuda a manter o projeto vivo, independente e mais confiável para equipes que cuidam de secrets todos os dias.",
         "priceNote": "via Pix",
         "benefits": {
           "supportPix": "Apoio via Pix para manter o projeto independente",
-          "noPaidPlan": "Nenhum plano pago obrigatorio para usar o produto",
-          "fundsInfra": "Ajuda a financiar infraestrutura, docs e evolucao",
-          "sustainable": "Mantem a proposta open source sustentavel"
+          "noPaidPlan": "Nenhum plano pago obrigatório para usar o produto",
+          "fundsInfra": "Ajuda a financiar infraestrutura, docs e evolução",
+          "sustainable": "Mantém a proposta open source sustentável"
         },
         "primary": "Contribute now",
-        "secondary": "Ver transparencia"
+        "secondary": "Ver transparência"
       },
       "openSource": {
         "kicker": "Open Source",
         "title": "Free",
-        "description": "Use o CLI, o dashboard e a base atual sem plano pago. Hosted plans podem chegar depois, mas o nucleo aberto continua sendo o ponto de partida.",
+        "description": "Use o CLI, o dashboard e a base atual sem plano pago. Hosted plans podem chegar depois, mas o núcleo aberto continua sendo o ponto de partida.",
         "benefits": {
           "vault": "Vault Zero-Knowledge para secrets de projetos",
-          "cliAndDashboard": "CLI e dashboard web disponiveis hoje",
+          "cliAndDashboard": "CLI e dashboard web disponíveis hoje",
           "teamSync": "Team sync, audit trail e CI tokens",
-          "mit": "Codigo MIT para revisar, hospedar e evoluir"
+          "mit": "Código MIT para revisar, hospedar e evoluir"
         },
         "cta": "Start free"
       },
       "trust": {
         "mit": {
           "label": "MIT",
-          "description": "codigo aberto"
+          "description": "código aberto"
         },
         "plaintext": {
           "label": "0 plaintext",
-          "description": "servidor ve ciphertext"
+          "description": "servidor vê ciphertext"
         },
         "selfHosted": {
           "label": "self-hostable",
@@ -229,7 +229,7 @@
           "description": "sem promessa escondida"
         }
       },
-      "footnote": "Sem lock-in comercial: planos hospedados podem evoluir no futuro, mas self-hosting e transparencia seguem como prioridades."
+      "footnote": "Sem lock-in comercial: planos hospedados podem evoluir no futuro, mas self-hosting e transparência seguem como prioridades."
     }
   }
 }

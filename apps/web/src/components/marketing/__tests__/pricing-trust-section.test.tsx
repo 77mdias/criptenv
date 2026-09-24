@@ -44,7 +44,7 @@ describe("PricingTrustSection", () => {
     expect(screen.getByText("self-hostable")).toBeInTheDocument();
     expect(screen.getByText("roadmap aberto")).toBeInTheDocument();
     expect(
-      screen.getByRole("link", { name: "Ver transparencia" }),
+      screen.getByRole("link", { name: "Ver transparência" }),
     ).toHaveAttribute("href", "/docs");
   });
 });
