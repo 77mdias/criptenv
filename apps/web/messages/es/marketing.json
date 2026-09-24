@@ -190,12 +190,12 @@
         "title": "Apoya a CriptEnv",
         "description": "El producto sigue siendo gratis y open source. Tu contribución ayuda a mantener el proyecto vivo, independiente y más confiable para equipos que cuidan secretos todos los días.",
         "priceNote": "via Pix",
-        "benefits": [
-          "Apoyo vía Pix para mantener el proyecto independiente",
-          "Ningún plan de pago obligatorio para usar el producto",
-          "Ayuda a financiar infraestructura, docs y evolución",
-          "Mantiene sostenible la propuesta open source"
-        ],
+        "benefits": {
+          "supportPix": "Apoyo vía Pix para mantener el proyecto independiente",
+          "noPaidPlan": "Ningún plan de pago obligatorio para usar el producto",
+          "fundsInfra": "Ayuda a financiar infraestructura, docs y evolución",
+          "sustainable": "Mantiene sostenible la propuesta open source"
+        },
         "primary": "Contribuir ahora",
         "secondary": "Ver transparencia"
       },
@@ -203,12 +203,12 @@
         "kicker": "Código abierto",
         "title": "Gratis",
         "description": "Usa el CLI, el panel y la base actual sin plan de pago. Puede que lleguen planes alojados más adelante, pero el núcleo abierto sigue siendo el punto de partida.",
-        "benefits": [
-          "Vault Zero-Knowledge para secretos de proyectos",
-          "CLI y panel web disponibles hoy",
-          "Team sync, audit trail y CI tokens",
-          "Código MIT para revisar, autoalojar y evolucionar"
-        ],
+        "benefits": {
+          "vault": "Vault Zero-Knowledge para secretos de proyectos",
+          "cliAndDashboard": "CLI y dashboard web disponibles hoy",
+          "teamSync": "Team sync, audit trail y tokens de CI",
+          "mit": "Código MIT para revisar, alojar y evolucionar"
+        },
         "cta": "Empezar gratis"
       },
       "trust": {
