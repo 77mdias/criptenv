@@ -1,0 +1,63 @@
+{
+  "page": {
+    "title": "Miembros",
+    "subtitle": "Gestiona los miembros del proyecto",
+    "count": "{members} miembros · {invites} invitaciones pendientes"
+  },
+  "invite": {
+    "button": "Invitar",
+    "title": "Invitar a un nuevo miembro",
+    "expiresNotice": "Las invitaciones expiran en 7 días.",
+    "emailLabel": "Email",
+    "roleLabel": "Rol",
+    "cancel": "Cancelar",
+    "submit": "Enviar invitación",
+    "sentNotice": "Invitación enviada a {email}"
+  },
+  "status": {
+    "pending": "Pendiente",
+    "accepted": "Aceptado",
+    "revoked": "Revocado",
+    "expired": "Expirado"
+  },
+  "roles": {
+    "owner": "Propietario",
+    "admin": "Administrador",
+    "developer": "Desarrollador",
+    "viewer": "Visualizador"
+  },
+  "list": {
+    "joined": "Se unió el {date}",
+    "inviteExpires": "Invitación · Expira el {date}",
+    "removeAria": "Eliminar miembro",
+    "revokeAria": "Revocar invitación"
+  },
+  "empty": {
+    "title": "Aún no hay miembros",
+    "description": "Invita miembros a este proyecto.",
+    "action": "Invitar miembro"
+  },
+  "errors": {
+    "load": "Error al cargar los miembros",
+    "invalidInvite": "Invitación inválida",
+    "send": "Error al enviar la invitación",
+    "updateRole": "Error al actualizar el rol",
+    "remove": "Error al eliminar el miembro",
+    "revoke": "Error al revocar la invitación"
+  },
+  "notices": {
+    "roleUpdated": "Rol actualizado",
+    "memberRemoved": "Miembro eliminado",
+    "inviteRevoked": "Invitación revocada"
+  },
+  "confirmRemove": "¿Eliminar a {name} del proyecto?",
+  "dialog": {
+    "title": "Se requiere permiso",
+    "description": "No tienes el permiso necesario para realizar esta acción en este proyecto.",
+    "action": "Entendido",
+    "closeAria": "Cerrar aviso de permiso"
+  },
+  "rolePicker": {
+    "label": "Rol"
+  }
+}

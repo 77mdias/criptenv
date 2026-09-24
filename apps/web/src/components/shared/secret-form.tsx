@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { useTranslations } from "next-intl"
 import { KeyRound, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -49,6 +50,7 @@ function SecretFormDialog({
   onOpenChange,
   onSubmit,
 }: Omit<SecretFormProps, "open">) {
+  const t = useTranslations("secrets.form")
   const [keyName, setKeyName] = useState(initialValue?.key ?? "")
   const [value, setValue] = useState(initialValue?.value ?? "")
   const [error, setError] = useState<string | null>(null)
@@ -57,7 +59,7 @@ function SecretFormDialog({
     event.preventDefault()
     const parsed = createSecretSchema.safeParse({ key: keyName, value })
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Secret inválido")
+      setError(parsed.error.issues[0]?.message ?? t("invalid"))
       return
     }
 
@@ -69,7 +71,7 @@ function SecretFormDialog({
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label={t("close")}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
@@ -80,7 +82,7 @@ function SecretFormDialog({
               {title}
             </h2>
             <p className="font-mono text-xs text-[var(--text-muted)]">
-              O valor será cifrado no browser antes do envio.
+              {t("encryptNote")}
             </p>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
@@ -90,7 +92,7 @@ function SecretFormDialog({
 
         <form onSubmit={submit} className="space-y-4">
           <Input
-            label="Chave"
+            label={t("keyLabel")}
             placeholder="DATABASE_URL"
             value={keyName}
             onChange={(event) => setKeyName(event.target.value.toUpperCase())}
@@ -98,8 +100,8 @@ function SecretFormDialog({
             icon={KeyRound}
           />
           <Input
-            label="Valor"
-            placeholder="Valor secreto"
+            label={t("valueLabel")}
+            placeholder={t("valuePlaceholder")}
             type="password"
             value={value}
             onChange={(event) => setValue(event.target.value)}
@@ -107,10 +109,10 @@ function SecretFormDialog({
           {error && <p className="font-mono text-xs text-red-600">{error}</p>}
           <div className="flex justify-end gap-3 pt-2">
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button type="submit" loading={loading}>
-              Salvar
+              {t("save")}
             </Button>
           </div>
         </form>

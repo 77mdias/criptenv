@@ -1,0 +1,94 @@
+{
+  "title": "Conta",
+  "subtitle": "Gerencie suas informações e sessões",
+  "fallback": {
+    "userName": "Usuário",
+    "userAgent": "Navegador desconhecido",
+    "ipAddress": "IP desconhecido"
+  },
+  "messages": {
+    "oauthLinked": "Conta {provider} vinculada com sucesso.",
+    "loadError": "Erro ao carregar dados",
+    "signoutError": "Erro ao fazer signout",
+    "profileUpdated": "Perfil atualizado com sucesso.",
+    "profileUpdateError": "Erro ao atualizar perfil",
+    "passwordMismatch": "As senhas não conferem.",
+    "passwordTooShort": "A nova senha deve ter pelo menos 8 caracteres.",
+    "passwordChanged": "Senha alterada. Faça login novamente.",
+    "passwordChangeError": "Erro ao alterar senha",
+    "twoFASetupError": "Erro ao configurar 2FA",
+    "twoFAEnabled": "2FA ativado com sucesso.",
+    "invalidCode": "Código inválido",
+    "disable2FAPrompt": "Digite sua senha para desativar o 2FA:",
+    "twoFADisabled": "2FA desativado com sucesso.",
+    "twoFADisableError": "Erro ao desativar 2FA",
+    "oauthUnlinked": "Conta {provider} desvinculada.",
+    "oauthUnlinkError": "Erro ao desvincular",
+    "deleteConfirmationWord": "Digite \"DELETAR\" para confirmar.",
+    "deleteError": "Erro ao deletar conta",
+    "verificationResent": "Email de verificação reenviado. Verifique sua caixa de entrada.",
+    "verificationResendError": "Erro ao reenviar verificação"
+  },
+  "profile": {
+    "name": "Nome",
+    "email": "Email",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "emailVerified": "Email verificado",
+    "emailNotVerified": "Email não verificado",
+    "resend": "Reenviar",
+    "twoFactorActive": "2FA ativo"
+  },
+  "security": {
+    "title": "Segurança",
+    "currentPassword": "Senha atual",
+    "newPassword": "Nova senha",
+    "confirmNewPassword": "Confirmar nova senha",
+    "changePassword": "Alterar senha",
+    "twoFASetupInstructions": "Escaneie o QR code com seu app autenticador e digite o código de 6 dígitos.",
+    "backupCodes": "Códigos de backup (salve em local seguro)",
+    "twoFACodePlaceholder": "Código de 6 dígitos",
+    "enable2FA": "Ativar 2FA",
+    "disable2FA": "Desativar 2FA",
+    "cancel": "Cancelar"
+  },
+  "oauth": {
+    "title": "Contas vinculadas",
+    "empty": "Nenhuma conta OAuth vinculada.",
+    "unlink": "Desvincular",
+    "linkNew": "Vincular nova conta",
+    "unlinkTitle": "Desvincular conta?",
+    "unlinkDescription": "Tem certeza que deseja desvincular sua conta {provider}? Você não poderá mais usá-la para fazer login."
+  },
+  "sessions": {
+    "title": "Sessões ativas",
+    "signOutAll": "Sair de todas",
+    "empty": "Nenhuma sessão ativa",
+    "active": "Ativa"
+  },
+  "dangerZone": {
+    "title": "Zona de perigo",
+    "deleteWarning": "Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos. Digite <strong>DELETAR</strong> para confirmar.",
+    "deletePermanently": "Deletar permanentemente",
+    "delete": "Deletar conta",
+    "cancel": "Cancelar"
+  },
+  "avatar": {
+    "invalidType": "Apenas imagens PNG ou JPG são permitidas.",
+    "tooLarge": "A imagem deve ter no máximo 5MB.",
+    "uploadError": "Erro ao fazer upload do avatar.",
+    "removeConfirm": "Remover foto de perfil?",
+    "removeError": "Erro ao remover avatar.",
+    "changeTitle": "Alterar foto",
+    "change": "Trocar foto",
+    "add": "Adicionar foto",
+    "remove": "Remover",
+    "hint": "PNG ou JPG · Máx 5MB"
+  },
+  "dialog": {
+    "confirm": "Confirmar",
+    "cancel": "Cancelar",
+    "close": "Fechar confirmação"
+  }
+}

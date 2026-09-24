@@ -39,19 +39,24 @@ export const signupSchema = z.object({
   path: ["confirmPassword"],
 })
 
-export const createProjectSchema = z.object({
-  name: z
-    .string()
-    .min(3, "Nome deve ter 3-50 caracteres")
-    .max(50, "Nome deve ter 3-50 caracteres")
-    .regex(/^[a-zA-Z0-9-]+$/, "Apenas letras, números e hífens"),
-  description: z.string().max(255).optional(),
-  vaultPassword: z.string().min(8, "Senha do vault deve ter pelo menos 8 caracteres"),
-  confirmVaultPassword: z.string(),
-}).refine((data) => data.vaultPassword === data.confirmVaultPassword, {
-  message: "Senhas do vault não conferem",
-  path: ["confirmVaultPassword"],
-})
+export const createProjectSchema = (t: ValidatorTranslator) =>
+  z
+    .object({
+      name: z
+        .string()
+        .min(3, t("createDialog.errors.nameLength"))
+        .max(50, t("createDialog.errors.nameLength"))
+        .regex(/^[a-zA-Z0-9-]+$/, t("createDialog.errors.nameCharset")),
+      description: z.string().max(255).optional(),
+      vaultPassword: z
+        .string()
+        .min(8, t("createDialog.errors.vaultPasswordLength")),
+      confirmVaultPassword: z.string(),
+    })
+    .refine((data) => data.vaultPassword === data.confirmVaultPassword, {
+      message: t("createDialog.errors.vaultPasswordMismatch"),
+      path: ["confirmVaultPassword"],
+    })
 
 export const createSecretSchema = z.object({
   key: z
@@ -98,7 +103,7 @@ export const contributionSchema = z.object({
 })
 
 export type SignupInput = z.infer<typeof signupSchema>
-export type CreateProjectInput = z.infer<typeof createProjectSchema>
+export type CreateProjectInput = z.infer<ReturnType<typeof createProjectSchema>>
 export type CreateSecretInput = z.infer<typeof createSecretSchema>
 export type CreateEnvironmentInput = z.infer<typeof createEnvironmentSchema>
 export type InviteMemberInput = z.infer<typeof inviteMemberSchema>

@@ -1,6 +1,12 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { SecretForm } from "../secret-form"
+
+import { renderWithIntl } from "@/test/render-with-intl"
+import secretsPtBR from "../../../../messages/pt-BR/secrets.json"
+
+const render = (ui: React.ReactElement) =>
+  renderWithIntl(ui, { messages: { secrets: secretsPtBR } })
 
 describe("SecretForm", () => {
   it("renders nothing when closed", () => {

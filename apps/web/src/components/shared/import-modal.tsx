@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Upload, X } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -29,6 +30,7 @@ function parseEnv(text: string): DecryptedSecret[] {
 }
 
 export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) {
+  const t = useTranslations("secrets.import")
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
   const preview = useMemo(() => parseEnv(text), [text])
@@ -50,7 +52,7 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label={t("close")}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
@@ -58,10 +60,10 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Importar .env
+              {t("title")}
             </h2>
             <p className="font-mono text-xs text-[var(--text-muted)]">
-              Cole o conteúdo. Linhas inválidas serão ignoradas.
+              {t("description")}
             </p>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
@@ -76,14 +78,14 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
         />
         <div className="mt-4 flex items-center justify-between gap-4">
           <p className="font-mono text-xs text-[var(--text-muted)]">
-            {preview.length} secrets válidos detectados
+            {t("validCount", { count: preview.length })}
           </p>
           <div className="flex gap-3">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button icon={Upload} loading={loading} disabled={preview.length === 0} onClick={submit}>
-              Importar
+              {t("submit")}
             </Button>
           </div>
         </div>

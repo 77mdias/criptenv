@@ -1,6 +1,7 @@
 "use client"
 
 import { Download, X } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { type DecryptedSecret } from "@/components/shared/secret-row"
@@ -16,6 +17,7 @@ function formatEnv(secrets: DecryptedSecret[]) {
 }
 
 export function ExportModal({ open, secrets, onOpenChange }: ExportModalProps) {
+  const t = useTranslations("secrets.export")
   if (!open) return null
 
   const text = formatEnv(secrets)
@@ -34,7 +36,7 @@ export function ExportModal({ open, secrets, onOpenChange }: ExportModalProps) {
     <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
       <button
         type="button"
-        aria-label="Fechar"
+        aria-label={t("close")}
         className="fixed inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
@@ -42,10 +44,10 @@ export function ExportModal({ open, secrets, onOpenChange }: ExportModalProps) {
         <div className="mb-4 flex items-start justify-between gap-4">
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Exportar .env
+              {t("title")}
             </h2>
             <p className="font-mono text-xs text-[var(--text-muted)]">
-              O conteúdo abaixo é descriptografado localmente.
+              {t("description")}
             </p>
           </div>
           <Button type="button" variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
@@ -59,10 +61,10 @@ export function ExportModal({ open, secrets, onOpenChange }: ExportModalProps) {
         />
         <div className="mt-4 flex justify-end gap-3">
           <Button variant="secondary" onClick={() => onOpenChange(false)}>
-            Fechar
+            {t("closeButton")}
           </Button>
           <Button icon={Download} onClick={download} disabled={secrets.length === 0}>
-            Baixar .env
+            {t("download")}
           </Button>
         </div>
       </Card>

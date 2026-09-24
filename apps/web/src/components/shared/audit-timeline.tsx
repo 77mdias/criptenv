@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Activity } from "lucide-react"
 import { EmptyState } from "@/components/shared/empty-state"
 import { AuditEntry } from "@/components/shared/audit-entry"
@@ -10,12 +11,14 @@ interface AuditTimelineProps {
 }
 
 export function AuditTimeline({ logs }: AuditTimelineProps) {
+  const t = useTranslations("audit.empty")
+
   if (logs.length === 0) {
     return (
       <EmptyState
         icon={Activity}
-        title="Nenhum evento encontrado"
-        description="As ações realizadas neste projeto aparecerão aqui."
+        title={t("title")}
+        description={t("description")}
       />
     )
   }

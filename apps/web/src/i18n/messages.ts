@@ -7,7 +7,21 @@ import type { Locale } from "./routing";
  *
  * Grows as each surface is migrated: dashboard, docs, legal.
  */
-export const NAMESPACES = ["common", "auth", "marketing"] as const;
+export const NAMESPACES = [
+  "common",
+  "auth",
+  "marketing",
+  // dashboard areas — one file per surface keeps parallel migrations from
+  // touching the same catalogue file
+  "dashboard",
+  "account",
+  "members",
+  "audit",
+  "settings",
+  "integrations",
+  "help",
+  "secrets",
+] as const;
 
 export type Namespace = (typeof NAMESPACES)[number];
 

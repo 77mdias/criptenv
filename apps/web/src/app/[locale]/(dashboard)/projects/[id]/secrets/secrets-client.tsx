@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { EnvSelector } from "@/components/shared/env-selector"
 import { ExportModal } from "@/components/shared/export-modal"
@@ -23,6 +24,7 @@ interface SecretsClientProps {
 }
 
 export function SecretsClient({ projectId }: SecretsClientProps) {
+  const t = useTranslations("secrets.client");
   const { state, actions } = useProjectSecrets(projectId)
   const canManageSecrets = canWriteProjectSecrets(state.project?.current_user_role)
   const [permissionOpen, setPermissionOpen] = useState(false)
@@ -172,7 +174,7 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
 
       <SecretForm
         open={state.formOpen}
-        title={state.editingSecret ? "Editar Secret" : "Novo Secret"}
+        title={state.editingSecret ? t("editSecret") : t("newSecret")}
         initialValue={state.editingSecret}
         loading={state.saving}
         onOpenChange={actions.setFormOpen}
@@ -189,13 +191,13 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
       )}
       <ConfirmActionDialog
         open={Boolean(deleteTarget)}
-        title="Remover secret"
+        title={t("removeSecret")}
         description={
           deleteTarget
-            ? `Remover ${deleteTarget.key} deste ambiente? Esta ação atualizará o vault criptografado.`
+            ? t("removeDescription", { key: deleteTarget.key })
             : ""
         }
-        confirmLabel="Remover"
+        confirmLabel={t("remove")}
         destructive
         loading={state.saving}
         onOpenChange={(open) => {
@@ -209,7 +211,7 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
       />
       <ConfirmActionDialog
         open={bulkDeleteOpen}
-        title="Excluir secrets selecionadas"
+        title={t("deleteSelected")}
         description={
           selectedSecrets.length > 0
             ? `Excluir ${selectedSecrets.length} secrets do ambiente ${state.activeEnvName}? Esta ação atualizará o vault criptografado e não poderá ser desfeita.`
@@ -229,13 +231,13 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
       />
       <ConfirmActionDialog
         open={Boolean(rotateTarget)}
-        title="Rotacionar secret"
+        title={t("rotateSecret")}
         description={
           rotateTarget
             ? `Rotacionar ${rotateTarget.key}? Um novo valor aleatório será gerado e salvo no vault.`
             : ""
         }
-        confirmLabel="Rotacionar"
+        confirmLabel={t("rotate")}
         loading={state.saving}
         onOpenChange={(open) => {
           if (!open) setRotateTarget(null)

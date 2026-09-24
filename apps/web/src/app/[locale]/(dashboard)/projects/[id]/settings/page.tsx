@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Settings, Trash2, AlertTriangle, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -59,6 +60,7 @@ async function encryptVaultSecrets(
 }
 
 export default function SettingsPage() {
+  const t = useTranslations("settings");
   const params = useParams();
   const router = useRouter();
   const projectId = params.id as string;
@@ -94,7 +96,7 @@ export default function SettingsPage() {
       } catch (err) {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Erro ao carregar projeto",
+            err instanceof Error ? err.message : t("general.loadError"),
           );
         }
       } finally {
@@ -120,7 +122,7 @@ export default function SettingsPage() {
       });
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao salvar");
+      setError(err instanceof Error ? err.message : t("general.saveError"));
     } finally {
       setSaving(false);
     }
@@ -133,7 +135,7 @@ export default function SettingsPage() {
       await projectsApi.delete(projectId);
       router.push("/projects");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao deletar");
+      setError(err instanceof Error ? err.message : t("general.deleteError"));
     } finally {
       setDeleting(false);
     }
@@ -174,11 +176,11 @@ export default function SettingsPage() {
 
   const handleRekey = async () => {
     if (newVaultPassword.length < 8) {
-      setError("A nova senha do vault deve ter pelo menos 8 caracteres.");
+      setError(t("general.rekey.minLength"));
       return;
     }
     if (newVaultPassword !== confirmNewVaultPassword) {
-      setError("As novas senhas do vault não conferem.");
+      setError(t("general.rekey.mismatch"));
       return;
     }
 
@@ -204,9 +206,7 @@ export default function SettingsPage() {
           );
       } else {
         if (!user?.kdf_salt) {
-          throw new Error(
-            "Sua sessão não tem kdf_salt para migrar este vault legado.",
-          );
+          throw new Error(t("general.rekey.noKdfSalt"));
         }
         const legacyKey = await deriveSessionKeyFromBase64Salt(
           currentVaultPassword,
@@ -231,7 +231,7 @@ export default function SettingsPage() {
       setConfirmNewVaultPassword("");
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Erro ao trocar senha do vault",
+        err instanceof Error ? err.message : t("general.rekey.error"),
       );
     } finally {
       setRekeying(false);
@@ -243,10 +243,10 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Configurações
+            {t("general.title")}
           </h1>
           <p className="text-(--text-tertiary) text-sm font-mono mt-1">
-            Configure o projeto
+            {t("general.subtitle")}
           </p>
         </div>
         <Card className="p-6 space-y-4">
@@ -264,19 +264,19 @@ export default function SettingsPage() {
       <div className="space-y-6">
         <Card className="p-6">
           <h1 className="text-xl font-semibold tracking-tight text-(--text-primary)">
-            Configurações restritas
+            {t("general.restricted.title")}
           </h1>
           <p className="mt-2 font-mono text-sm leading-relaxed text-(--text-tertiary)">
-            Apenas owners e admins podem acessar as configurações deste projeto.
+            {t("general.restricted.description")}
           </p>
           <Button className="mt-6" variant="secondary" onClick={() => router.push(`/projects/${projectId}`)}>
-            Voltar ao projeto
+            {t("general.restricted.back")}
           </Button>
         </Card>
         <PermissionDialog
           open={permissionOpen}
           onOpenChange={setPermissionOpen}
-          actionLabel="Voltar ao projeto"
+          actionLabel={t("general.restricted.back")}
           onAction={() => router.push(`/projects/${projectId}`)}
         />
       </div>
@@ -286,9 +286,9 @@ export default function SettingsPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Configurações</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("general.title")}</h1>
         <p className="text-(--text-tertiary) text-sm font-mono mt-1">
-          Configure o projeto
+          {t("general.subtitle")}
         </p>
       </div>
 
@@ -312,14 +312,14 @@ export default function SettingsPage() {
         <div className="flex items-center gap-2 mb-6">
           <Settings className="h-5 w-5 text-(--text-muted)" />
           <h2 className="font-semibold text-(--text-primary)">
-            Informações do projeto
+            {t("general.info.title")}
           </h2>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
-              Nome
+              {t("general.info.name")}
             </label>
             <input
               type="text"
@@ -331,19 +331,19 @@ export default function SettingsPage() {
 
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
-              Descrição
+              {t("general.info.description")}
             </label>
             <textarea
               className="flex w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-sm text-(--text-primary) placeholder:text-(--text-muted) font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2 min-h-25 resize-y"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descrição opcional do projeto"
+              placeholder={t("general.info.descriptionPlaceholder")}
             />
           </div>
 
           <div className="flex justify-end">
             <Button onClick={handleSave} loading={saving}>
-              Salvar alterações
+              {t("general.info.save")}
             </Button>
           </div>
         </div>
@@ -353,14 +353,14 @@ export default function SettingsPage() {
         <div className="flex items-center gap-2 mb-6">
           <KeyRound className="h-5 w-5 text-(--text-muted)" />
           <h2 className="font-semibold text-(--text-primary)">
-            Senha do vault
+            {t("general.vault.title")}
           </h2>
         </div>
 
         <div className="space-y-4">
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
-              {project?.vault_config ? "Senha atual" : "Senha legada"}
+              {project?.vault_config ? t("general.vault.current") : t("general.vault.legacy")}
             </label>
             <input
               type="password"
@@ -373,7 +373,7 @@ export default function SettingsPage() {
 
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
-              Nova senha
+              {t("general.vault.newPassword")}
             </label>
             <input
               type="password"
@@ -386,7 +386,7 @@ export default function SettingsPage() {
 
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
-              Confirmar nova senha
+              {t("general.vault.confirmPassword")}
             </label>
             <input
               type="password"
@@ -410,8 +410,8 @@ export default function SettingsPage() {
               }
             >
               {project?.vault_config
-                ? "Trocar senha do vault"
-                : "Migrar vault legado"}
+                ? t("general.vault.rekey")
+                : t("general.vault.migrate")}
             </Button>
           </div>
         </div>
@@ -421,19 +421,22 @@ export default function SettingsPage() {
       <Card className="p-6 border-red-500/30">
         <div className="flex items-center gap-2 mb-4">
           <AlertTriangle className="h-5 w-5 text-red-500" />
-          <h2 className="font-semibold text-red-500">Zona de perigo</h2>
+          <h2 className="font-semibold text-red-500">{t("general.danger.title")}</h2>
         </div>
 
         <p className="text-sm text-(--text-tertiary) font-mono mb-4">
-          Esta ação não pode ser desfeita. Isso excluirá permanentemente o
-          projeto e todos os seus dados.
+          {t("general.danger.description")}
         </p>
 
         <div className="space-y-3">
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono">
-              Digite <span className="text-red-500">{project?.name}</span> para
-              confirmar
+              {t.rich("general.danger.confirmLabel", {
+                name: project?.name ?? "",
+                red: (chunks) => (
+                  <span className="text-red-500">{chunks}</span>
+                ),
+              })}
             </label>
             <input
               type="text"
@@ -450,7 +453,7 @@ export default function SettingsPage() {
             disabled={deleteConfirm !== project?.name}
             icon={Trash2}
           >
-            Deletar projeto
+            {t("general.danger.delete")}
           </Button>
         </div>
       </Card>

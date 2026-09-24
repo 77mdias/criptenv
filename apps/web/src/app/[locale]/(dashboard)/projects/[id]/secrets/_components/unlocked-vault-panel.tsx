@@ -1,3 +1,4 @@
+import { useTranslations } from "next-intl";
 import { KeyRound } from "lucide-react";
 import { SecretsTable } from "@/components/shared/secrets-table";
 import { Button } from "@/components/ui/button";
@@ -44,15 +45,17 @@ export function UnlockedVaultPanel({
   onSetExpiration,
   onLock,
 }: UnlockedVaultPanelProps) {
+
+  const t = useTranslations("secrets.panel");
   return (
     <Card className="overflow-hidden p-0">
       <div className="flex items-center justify-between border-b border-(--border) px-4 py-3">
         <div className="flex items-center gap-2 font-mono text-xs text-(--text-muted)">
           <KeyRound className="h-3.5 w-3.5" />
-          Vault desbloqueado apenas nesta sessão
+          {t("unlockedNotice")}
         </div>
         <Button variant="ghost" size="sm" onClick={onLock}>
-          Bloquear
+          {t("lock")}
         </Button>
       </div>
       {busy ? (

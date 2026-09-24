@@ -1,0 +1,215 @@
+{
+  "general": {
+    "title": "Configurações",
+    "subtitle": "Configure o projeto",
+    "loadError": "Erro ao carregar projeto",
+    "saveError": "Erro ao salvar",
+    "deleteError": "Erro ao deletar",
+    "rekey": {
+      "minLength": "A nova senha do vault deve ter pelo menos 8 caracteres.",
+      "mismatch": "As novas senhas do vault não conferem.",
+      "noKdfSalt": "Sua sessão não tem kdf_salt para migrar este vault legado.",
+      "error": "Erro ao trocar senha do vault"
+    },
+    "restricted": {
+      "title": "Configurações restritas",
+      "description": "Apenas owners e admins podem acessar as configurações deste projeto.",
+      "back": "Voltar ao projeto"
+    },
+    "info": {
+      "title": "Informações do projeto",
+      "name": "Nome",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Descrição opcional do projeto",
+      "save": "Salvar alterações"
+    },
+    "vault": {
+      "title": "Senha do vault",
+      "current": "Senha atual",
+      "legacy": "Senha legada",
+      "newPassword": "Nova senha",
+      "confirmPassword": "Confirmar nova senha",
+      "rekey": "Trocar senha do vault",
+      "migrate": "Migrar vault legado"
+    },
+    "danger": {
+      "title": "Zona de perigo",
+      "description": "Esta ação não pode ser desfeita. Isso excluirá permanentemente o projeto e todos os seus dados.",
+      "confirmLabel": "Digite <red>{name}</red> para confirmar",
+      "delete": "Deletar projeto"
+    }
+  },
+  "apiKeys": {
+    "title": "API Keys",
+    "newKey": "Nova API Key",
+    "description": "Use API Keys para integrações server-to-server que precisam ler dados criptografados da API pública. Para pipelines que escrevem secrets ou sincronizam providers, use CI Tokens.",
+    "loadError": "Erro ao carregar API keys",
+    "createError": "Erro ao criar API key",
+    "revokeError": "Erro ao revogar",
+    "revokeConfirm": "Revogar esta API key? Aplicações que a utilizam pararão de funcionar.",
+    "createdNotice": "API Key criada — copie agora, não será exibida novamente!",
+    "close": "Fechar",
+    "comingSoon": "(em breve)",
+    "empty": "Nenhuma API key criada.",
+    "lastUsed": "Usada: {date}",
+    "expires": "Expira: {date}",
+    "form": {
+      "name": "Nome",
+      "namePlaceholder": "Ex: produção-ci",
+      "scopes": "Scopes",
+      "envRestriction": "Environment restriction (opcional)",
+      "expiresIn": "Expira em (dias, opcional)",
+      "create": "Criar",
+      "cancel": "Cancelar"
+    },
+    "scopes": {
+      "readSecrets": {
+        "label": "Read Secrets",
+        "description": "Read encrypted vault blobs from public API"
+      },
+      "writeSecrets": {
+        "label": "Write Secrets",
+        "description": "Reserved for future public API writes"
+      },
+      "deleteSecrets": {
+        "label": "Delete Secrets",
+        "description": "Reserved for future public API deletes"
+      },
+      "readAudit": {
+        "label": "Read Audit",
+        "description": "Reserved for future audit API access"
+      },
+      "writeIntegrations": {
+        "label": "Manage Integrations",
+        "description": "Use CI Tokens for provider sync automation"
+      },
+      "adminProject": {
+        "label": "Admin Project",
+        "description": "Reserved for future public admin API access"
+      }
+    }
+  },
+  "ciTokens": {
+    "title": "CI Tokens",
+    "newToken": "Novo Token",
+    "description": "Use CI Tokens para automações como deploy, escrita de secrets e sync com providers. Gestão de tokens e API Keys continua restrita à sessão humana do dashboard ou CLI.",
+    "loadError": "Erro ao carregar tokens",
+    "revokeError": "Erro ao revogar token",
+    "created": {
+      "title": "Token criado com sucesso!",
+      "warning": "⚠️ Copie este token agora. Ele não será exibido novamente."
+    },
+    "copied": "Copiado!",
+    "copy": "Copiar",
+    "close": "Fechar",
+    "empty": {
+      "title": "Nenhum CI token criado ainda.",
+      "hint": "Crie tokens para integrar com CI/CD pipelines."
+    },
+    "badge": {
+      "revoked": "Revogado",
+      "expired": "Expirado",
+      "active": "Ativo"
+    },
+    "lastUsed": "Último uso: {date}",
+    "expires": "Expira: {date}",
+    "createdAt": "Criado: {date}",
+    "revokeConfirm": "Revogar?",
+    "revoke": "Revogar",
+    "yes": "Sim",
+    "no": "Não",
+    "modal": {
+      "title": "Novo CI Token",
+      "name": "Nome *",
+      "namePlaceholder": "ex: GitHub Actions Deploy",
+      "description": "Descrição",
+      "descriptionPlaceholder": "Descrição opcional",
+      "scopes": "Scopes *",
+      "envRestriction": "Restrição de Ambiente",
+      "envPlaceholder": "ex: production (vazio = todos)",
+      "envHint": "Deixe vazio para permitir acesso a todos os ambientes.",
+      "expiration": "Expiração (dias)",
+      "expirationPlaceholder": "Vazio = sem expiração",
+      "nameRequired": "Nome é obrigatório",
+      "scopeRequired": "Selecione pelo menos um scope",
+      "createError": "Erro ao criar token",
+      "cancel": "Cancelar",
+      "create": "Criar Token"
+    },
+    "scopes": {
+      "readSecrets": {
+        "label": "Read Secrets",
+        "description": "Read secrets from environments"
+      },
+      "writeSecrets": {
+        "label": "Write Secrets",
+        "description": "Create/update secrets"
+      },
+      "deleteSecrets": {
+        "label": "Delete Secrets",
+        "description": "Delete secrets"
+      },
+      "readAudit": {
+        "label": "Read Audit",
+        "description": "Read audit logs"
+      },
+      "writeIntegrations": {
+        "label": "Manage Integrations",
+        "description": "Manage integrations"
+      },
+      "adminProject": {
+        "label": "Admin Project",
+        "description": "Full project access (dangerous)"
+      }
+    }
+  },
+  "alerts": {
+    "loadingAria": "Carregando configurações de alertas",
+    "title": "Alertas de expiração",
+    "description": "Avise a equipe antes que secrets expirem. Apenas owners e admins podem alterar estas preferências.",
+    "loadError": "Não foi possível carregar as configurações de alertas.",
+    "loadErrorDetail": "Não foi possível carregar as configurações de alertas. Nenhuma alteração foi aplicada.",
+    "retry": "Tentar novamente",
+    "saveError": "Não foi possível salvar as configurações de alertas.",
+    "saved": "Configurações de alertas salvas.",
+    "save": "Salvar configurações",
+    "enabled": {
+      "label": "Alertas do projeto",
+      "description": "Ativa ou pausa todos os alertas de expiração."
+    },
+    "channels": {
+      "title": "Canais",
+      "inApp": {
+        "label": "Canal in-app",
+        "description": "Mostra alertas na central de notificações."
+      },
+      "email": {
+        "label": "Canal email",
+        "description": "Envia alertas para owners e admins com email verificado."
+      },
+      "webhook": {
+        "label": "Canal webhook",
+        "description": "Envia um payload seguro para o endpoint configurado."
+      }
+    },
+    "allDisabled": "Todos os canais estão desativados. Nenhum alerta será entregue.",
+    "leadTime": {
+      "label": "Prazo padrão",
+      "option": "{days} {days, plural, one {dia} other {dias}} antes",
+      "hint": "Overrides por secret continuam disponíveis na página Secrets."
+    },
+    "webhook": {
+      "title": "Configuração do webhook",
+      "configured": "Webhook configurado: {url}",
+      "urlLabel": "URL do webhook",
+      "urlLabelNew": "Nova URL do webhook (opcional)",
+      "urlHelper": "A URL salva nunca é exibida novamente em texto completo.",
+      "urlRequired": "Informe uma URL antes de ativar o webhook.",
+      "test": "Testar webhook",
+      "testSuccess": "Webhook testado com sucesso.",
+      "testError": "Não foi possível testar o webhook.",
+      "remove": "Remover configuração",
+      "removed": "Configuração do webhook removida."
+    }
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   Key,
   Plus,
@@ -18,20 +19,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { apiKeysApi } from "@/lib/api";
 import type { APIKey, APIKeyCreateResponse } from "@/lib/api/client";
 
+// Keys, not copy: this is module scope, so no hook can run here.
 const AVAILABLE_SCOPES = [
-  { value: "read:secrets", label: "Read Secrets", description: "Read encrypted vault blobs from public API", enabled: true },
-  { value: "write:secrets", label: "Write Secrets", description: "Reserved for future public API writes", enabled: false },
-  { value: "delete:secrets", label: "Delete Secrets", description: "Reserved for future public API deletes", enabled: false },
-  { value: "read:audit", label: "Read Audit", description: "Reserved for future audit API access", enabled: false },
-  { value: "write:integrations", label: "Manage Integrations", description: "Use CI Tokens for provider sync automation", enabled: false },
-  { value: "admin:project", label: "Admin Project", description: "Reserved for future public admin API access", enabled: false },
-];
+  { value: "read:secrets", key: "readSecrets", enabled: true },
+  { value: "write:secrets", key: "writeSecrets", enabled: false },
+  { value: "delete:secrets", key: "deleteSecrets", enabled: false },
+  { value: "read:audit", key: "readAudit", enabled: false },
+  { value: "write:integrations", key: "writeIntegrations", enabled: false },
+  { value: "admin:project", key: "adminProject", enabled: false },
+] as const;
 
 interface ApiKeysPanelProps {
   projectId: string;
 }
 
 export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
+  const t = useTranslations("settings.apiKeys");
   const [keys, setKeys] = useState<APIKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [creating, setCreating] = useState(false);
@@ -50,7 +53,7 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
       const resp = await apiKeysApi.list(projectId);
       setKeys(resp.items);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar API keys");
+      setError(err instanceof Error ? err.message : t("loadError"));
     } finally {
       setLoading(false);
     }
@@ -83,19 +86,19 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
       setNewKeyExpiresDays("");
       void fetchKeys();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar API key");
+      setError(err instanceof Error ? err.message : t("createError"));
     } finally {
       setCreating(false);
     }
   };
 
   const handleRevoke = async (keyId: string) => {
-    if (!window.confirm("Revogar esta API key? Aplicações que a utilizam pararão de funcionar.")) return;
+    if (!window.confirm(t("revokeConfirm"))) return;
     try {
       await apiKeysApi.revoke(projectId, keyId);
       void fetchKeys();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao revogar");
+      setError(err instanceof Error ? err.message : t("revokeError"));
     }
   };
 
@@ -120,16 +123,14 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-2">
           <Key className="h-5 w-5 text-[var(--accent)]" />
-          <h3 className="font-semibold text-[var(--text-primary)]">API Keys</h3>
+          <h3 className="font-semibold text-[var(--text-primary)]">{t("title")}</h3>
         </div>
         <Button size="sm" onClick={() => setShowCreate(true)}>
-          <Plus className="h-4 w-4 mr-1" /> Nova API Key
+          <Plus className="h-4 w-4 mr-1" /> {t("newKey")}
         </Button>
       </div>
       <p className="text-xs text-[var(--text-muted)] font-mono">
-        Use API Keys para integrações server-to-server que precisam ler dados
-        criptografados da API pública. Para pipelines que escrevem secrets ou
-        sincronizam providers, use CI Tokens.
+        {t("description")}
       </p>
 
       {error && <p className="text-red-500 text-sm font-mono">{error}</p>}
@@ -137,7 +138,7 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
       {/* Created key display (one-time) */}
       {createdKey && (
         <div className="p-4 bg-green-500/10 border border-green-500/30 rounded-lg space-y-2">
-          <p className="text-sm font-semibold text-green-600">API Key criada — copie agora, não será exibida novamente!</p>
+          <p className="text-sm font-semibold text-green-600">{t("createdNotice")}</p>
           <div className="flex items-center gap-2">
             <code className="flex-1 p-2 bg-[var(--background)] rounded font-mono text-xs break-all">{createdKey.key}</code>
             <Button size="sm" variant="secondary" onClick={() => copyKey(createdKey.key)}>
@@ -145,7 +146,7 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
             </Button>
           </div>
           <Button size="sm" variant="ghost" onClick={() => setCreatedKey(null)}>
-            <X className="h-4 w-4 mr-1" /> Fechar
+            <X className="h-4 w-4 mr-1" /> {t("close")}
           </Button>
         </div>
       )}
@@ -154,17 +155,17 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
       {showCreate && (
         <div className="p-4 border border-[var(--border)] rounded-lg space-y-3">
           <div>
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">Nome</label>
+            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.name")}</label>
             <input
               type="text"
               value={newKeyName}
               onChange={(e) => setNewKeyName(e.target.value)}
-              placeholder="Ex: produção-ci"
+              placeholder={t("form.namePlaceholder")}
               className="w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm font-mono"
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">Scopes</label>
+            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.scopes")}</label>
             <div className="grid grid-cols-2 gap-2">
               {AVAILABLE_SCOPES.map((scope) => (
                 <label key={scope.value} className={`flex items-center gap-2 text-sm ${scope.enabled ? "" : "opacity-50"}`}>
@@ -182,15 +183,15 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
                     }}
                   />
                   <span className="text-[var(--text-secondary)]">
-                    {scope.label}
-                    {!scope.enabled && " (em breve)"}
+                    {t(`scopes.${scope.key}.label`)}
+                    {!scope.enabled && ` ${t("comingSoon")}`}
                   </span>
                 </label>
               ))}
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">Environment restriction (opcional)</label>
+            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.envRestriction")}</label>
             <input
               type="text"
               value={newKeyEnv}
@@ -200,7 +201,7 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
             />
           </div>
           <div>
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">Expira em (dias, opcional)</label>
+            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.expiresIn")}</label>
             <input
               type="number"
               value={newKeyExpiresDays}
@@ -212,15 +213,15 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
             />
           </div>
           <div className="flex gap-2">
-            <Button size="sm" onClick={handleCreate} loading={creating}>Criar</Button>
-            <Button size="sm" variant="secondary" onClick={() => setShowCreate(false)}>Cancelar</Button>
+            <Button size="sm" onClick={handleCreate} loading={creating}>{t("form.create")}</Button>
+            <Button size="sm" variant="secondary" onClick={() => setShowCreate(false)}>{t("form.cancel")}</Button>
           </div>
         </div>
       )}
 
       {/* Keys list */}
       {keys.length === 0 ? (
-        <p className="text-sm text-[var(--text-muted)] font-mono">Nenhuma API key criada.</p>
+        <p className="text-sm text-[var(--text-muted)] font-mono">{t("empty")}</p>
       ) : (
         <div className="space-y-2">
           {keys.map((key) => (
@@ -240,11 +241,13 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
                   )}
                 </div>
                 <div className="flex items-center gap-2 mt-1 text-xs text-[var(--text-muted)] font-mono">
-                  {key.last_used_at && <span>Usada: {new Date(key.last_used_at).toLocaleDateString("pt-BR")}</span>}
+                  {key.last_used_at && <span>{t("lastUsed", { date: new Date(key.last_used_at).toLocaleDateString("pt-BR") })}</span>}
                   {key.expires_at && (
                     <span className="flex items-center gap-1">
                       <Clock className="h-3 w-3" />
-                      Expira: {new Date(key.expires_at).toLocaleDateString("pt-BR")}
+                      {t("expires", {
+                        date: new Date(key.expires_at).toLocaleDateString("pt-BR"),
+                      })}
                     </span>
                   )}
                 </div>

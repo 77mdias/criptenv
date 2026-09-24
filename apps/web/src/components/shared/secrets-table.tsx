@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useRef } from "react"
+import { useTranslations } from "next-intl"
 import { Lock, Trash2, X } from "lucide-react"
 import { EmptyState } from "@/components/shared/empty-state"
 import { SecretRow, type DecryptedSecret } from "@/components/shared/secret-row"
@@ -33,6 +34,7 @@ function SelectAllCheckbox({
   indeterminate: boolean
   onChange: (checked: boolean) => void
 }) {
+  const t = useTranslations("secrets.table")
   const checkboxRef = useRef<HTMLInputElement>(null)
 
   useEffect(() => {
@@ -45,7 +47,7 @@ function SelectAllCheckbox({
     <input
       ref={checkboxRef}
       type="checkbox"
-      aria-label="Selecionar todas as secrets deste ambiente"
+      aria-label={t("selectAll")}
       checked={checked}
       onChange={(event) => onChange(event.target.checked)}
       className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] accent-[var(--text-primary)]"
@@ -70,6 +72,7 @@ export function SecretsTable({
   onRotate,
   onSetExpiration,
 }: SecretsTableProps) {
+  const t = useTranslations("secrets.table")
   const selectedKeySet = useMemo(() => new Set(selectedKeys), [selectedKeys])
   const selectedCount = selectedKeys.length
   const selectionEnabled = canManageSecrets && Boolean(onSelectChange && onSelectAllChange)
@@ -80,11 +83,11 @@ export function SecretsTable({
     return (
       <EmptyState
         icon={Lock}
-        title="Nenhum secret neste ambiente"
-        description="Adicione ou importe secrets para começar."
+        title={t("emptyTitle")}
+        description={t("emptyDescription")}
         className="py-12"
         action={{
-          label: "Criar Secret",
+          label: t("createSecret"),
           onClick: onCreate,
         }}
       />
@@ -103,8 +106,8 @@ export function SecretsTable({
             />
             <span>
               {selectedCount > 0
-                ? `${selectedCount} de ${secrets.length} selecionadas`
-                : `Selecionar todas (${secrets.length})`}
+                ? t("selectedCount", { selected: selectedCount, total: secrets.length })
+                : t("selectAllCount", { count: secrets.length })}
             </span>
           </label>
 
@@ -118,7 +121,7 @@ export function SecretsTable({
                 className="justify-center"
               >
                 <X className="h-3.5 w-3.5" />
-                Limpar seleção
+                {t("clearSelection")}
               </Button>
             )}
             <Button
@@ -130,7 +133,7 @@ export function SecretsTable({
               className="justify-center"
             >
               <Trash2 className="h-3.5 w-3.5" />
-              Excluir selecionadas
+              {t("deleteSelected")}
             </Button>
           </div>
         </div>

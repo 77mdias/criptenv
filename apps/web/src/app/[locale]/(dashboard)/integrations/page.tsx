@@ -1,6 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { CheckCircle2, Plug, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -18,6 +19,7 @@ function statusVariant(status: string) {
 }
 
 export default function IntegrationsPage() {
+  const t = useTranslations("integrations");
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -52,7 +54,7 @@ export default function IntegrationsPage() {
       .catch((err) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Erro ao carregar projetos",
+            err instanceof Error ? err.message : t("errors.loadProjects"),
           );
         }
       })
@@ -79,7 +81,7 @@ export default function IntegrationsPage() {
       .catch((err) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Erro ao carregar integrações",
+            err instanceof Error ? err.message : t("errors.loadIntegrations"),
           );
           setIntegrations([]);
         }
@@ -117,7 +119,7 @@ export default function IntegrationsPage() {
       setForm((current) => ({ ...current, apiToken: "", vercelProjectId: "" }));
       await refreshIntegrations();
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar integração");
+      setError(err instanceof Error ? err.message : t("errors.create"));
     } finally {
       setSaving(false);
     }
@@ -134,12 +136,12 @@ export default function IntegrationsPage() {
         integration.id,
       );
       if (!result.valid) {
-        setError(result.error || "A conexão não pôde ser validada");
+        setError(result.error || t("errors.validateFailed"));
       }
       await refreshIntegrations();
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Erro ao validar integração",
+        err instanceof Error ? err.message : t("errors.validate"),
       );
     } finally {
       setValidatingId(null);
@@ -148,7 +150,7 @@ export default function IntegrationsPage() {
 
   const handleDelete = async (integration: Integration) => {
     if (!selectedProjectId) return;
-    if (!window.confirm(`Remover integração ${integration.name}?`)) return;
+    if (!window.confirm(t("removeConfirm", { name: integration.name }))) return;
 
     setDeletingId(integration.id);
     setError(null);
@@ -159,7 +161,7 @@ export default function IntegrationsPage() {
       );
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Erro ao remover integração",
+        err instanceof Error ? err.message : t("errors.remove"),
       );
     } finally {
       setDeletingId(null);
@@ -170,9 +172,9 @@ export default function IntegrationsPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Integrações</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="mt-1 font-mono text-sm text-(--text-tertiary)">
-            {selectedProject ? selectedProject.name : "Selecione um projeto"}
+            {selectedProject ? selectedProject.name : t("selectProject")}
           </p>
         </div>
         {projects.length > 0 && (
@@ -199,8 +201,8 @@ export default function IntegrationsPage() {
       {projects.length === 0 && !loading ? (
         <EmptyState
           icon={Plug}
-          title="Nenhum projeto encontrado"
-          description="Crie um projeto antes de conectar integrações."
+          title={t("emptyProjects.title")}
+          description={t("emptyProjects.description")}
         />
       ) : (
         <div className="grid gap-4 lg:grid-cols-[minmax(0,1fr)_360px]">
@@ -213,8 +215,8 @@ export default function IntegrationsPage() {
             ) : integrations.length === 0 ? (
               <EmptyState
                 icon={Plug}
-                title="Nenhuma integração conectada"
-                description="Conecte a Vercel para sincronizar secrets deste projeto."
+                title={t("emptyIntegrations.title")}
+                description={t("emptyIntegrations.description")}
                 className="py-12"
               />
             ) : (
@@ -233,8 +235,12 @@ export default function IntegrationsPage() {
                       </div>
                       <p className="mt-2 font-mono text-xs text-(--text-muted)">
                         {integration.last_sync_at
-                          ? `Último sync: ${new Date(integration.last_sync_at).toLocaleString("pt-BR")}`
-                          : "Sem sync registrado"}
+                          ? t("lastSync", {
+                              date: new Date(
+                                integration.last_sync_at,
+                              ).toLocaleString("pt-BR"),
+                            })
+                          : t("noSync")}
                       </p>
                       {integration.last_error && (
                         <p className="mt-2 font-mono text-xs text-red-600">
@@ -250,14 +256,14 @@ export default function IntegrationsPage() {
                         loading={validatingId === integration.id}
                         onClick={() => handleValidate(integration)}
                       >
-                        Validar
+                        {t("actions.validate")}
                       </Button>
                       <Button
                         variant="ghost"
                         size="icon"
                         className="h-8 w-8 text-red-600"
                         loading={deletingId === integration.id}
-                        aria-label="Remover integração"
+                        aria-label={t("actions.remove")}
                         onClick={() => handleDelete(integration)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
@@ -280,14 +286,14 @@ export default function IntegrationsPage() {
                   variant="ghost"
                   size="icon"
                   className="h-8 w-8"
-                  aria-label="Atualizar integrações"
+                  aria-label={t("actions.refresh")}
                   onClick={() => void refreshIntegrations()}
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                 </Button>
               </div>
               <Input
-                label="Nome"
+                label={t("form.name")}
                 value={form.name}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -298,7 +304,7 @@ export default function IntegrationsPage() {
                 required
               />
               <Input
-                label="Vercel API Token"
+                label={t("form.apiToken")}
                 type="password"
                 value={form.apiToken}
                 onChange={(event) =>
@@ -310,7 +316,7 @@ export default function IntegrationsPage() {
                 required
               />
               <Input
-                label="Vercel Project ID"
+                label={t("form.projectId")}
                 value={form.vercelProjectId}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -326,7 +332,7 @@ export default function IntegrationsPage() {
                 loading={saving}
                 disabled={!selectedProjectId}
               >
-                Conectar Vercel
+                {t("form.submit")}
               </Button>
             </form>
           </Card>

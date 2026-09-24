@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { Check, Clock, Plus, Trash2, UserMinus, Users, X } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -27,9 +28,15 @@ import type {
   MemberListResponse,
 } from "@/lib/api";
 
+// Stable protocol values only — display labels come from the catalogue
+// (`members.roles.<key>`), never from module scope.
 const roles = ["viewer", "developer", "admin"] as const;
+// Probe keys for dynamic `roles.<key>` lookups (mirrors members.roles).
+const roleKeys = ["owner", "admin", "developer", "viewer"] as const;
+const statusKeys = ["pending", "accepted", "revoked", "expired"] as const;
+type InviteStatus = (typeof statusKeys)[number];
 
-function inviteState(invite: Invite) {
+function inviteState(invite: Invite): InviteStatus {
   if (invite.revoked_at) return "revoked";
   if (invite.accepted_at) return "accepted";
   if (new Date(invite.expires_at).getTime() < Date.now()) return "expired";
@@ -91,35 +98,36 @@ function UserAvatar({
   );
 }
 
-function InviteStatusBadge({ state }: { state: ReturnType<typeof inviteState> }) {
-  const config = {
-    pending: {
-      icon: Clock,
-      label: "Pendente",
-      className:
-        "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-400/10 dark:text-amber-400 dark:border-amber-400/20",
-    },
-    accepted: {
-      icon: Check,
-      label: "Aceito",
-      className:
-        "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-400/10 dark:text-emerald-400 dark:border-emerald-400/20",
-    },
-    revoked: {
-      icon: UserMinus,
-      label: "Revogado",
-      className:
-        "bg-red-500/10 text-red-500 border-red-500/20 dark:bg-red-400/10 dark:text-red-400 dark:border-red-400/20",
-    },
-    expired: {
-      icon: Clock,
-      label: "Expirado",
-      className:
-        "bg-neutral-500/10 text-neutral-500 border-neutral-500/20 dark:bg-neutral-400/10 dark:text-neutral-400 dark:border-neutral-400/20",
-    },
-  };
+// Icons and styles only at module scope — labels are catalogue keys.
+const statusConfig: Record<
+  InviteStatus,
+  { icon: typeof Clock; className: string }
+> = {
+  pending: {
+    icon: Clock,
+    className:
+      "bg-amber-500/10 text-amber-600 border-amber-500/20 dark:bg-amber-400/10 dark:text-amber-400 dark:border-amber-400/20",
+  },
+  accepted: {
+    icon: Check,
+    className:
+      "bg-emerald-500/10 text-emerald-600 border-emerald-500/20 dark:bg-emerald-400/10 dark:text-emerald-400 dark:border-emerald-400/20",
+  },
+  revoked: {
+    icon: UserMinus,
+    className:
+      "bg-red-500/10 text-red-500 border-red-500/20 dark:bg-red-400/10 dark:text-red-400 dark:border-red-400/20",
+  },
+  expired: {
+    icon: Clock,
+    className:
+      "bg-neutral-500/10 text-neutral-500 border-neutral-500/20 dark:bg-neutral-400/10 dark:text-neutral-400 dark:border-neutral-400/20",
+  },
+};
 
-  const { icon: Icon, label, className } = config[state];
+function InviteStatusBadge({ state }: { state: InviteStatus }) {
+  const tStatus = useTranslations("members.status");
+  const { icon: Icon, className } = statusConfig[state];
 
   return (
     <span
@@ -129,12 +137,13 @@ function InviteStatusBadge({ state }: { state: ReturnType<typeof inviteState> })
       )}
     >
       <Icon className="h-3 w-3 shrink-0" />
-      {label}
+      {tStatus(state)}
     </span>
   );
 }
 
 export default function MembersPage() {
+  const t = useTranslations("members");
   const params = useParams();
   const projectId = params.id as string;
   const user = useAuthStore((state) => state.user);
@@ -191,7 +200,7 @@ export default function MembersPage() {
       .catch((err) => {
         if (!cancelled) {
           setError(
-            err instanceof Error ? err.message : "Erro ao carregar membros",
+            err instanceof Error ? err.message : t("errors.load"),
           );
         }
       })
@@ -200,10 +209,7 @@ export default function MembersPage() {
           setLoading(false);
         }
       });
-
-    return () => {
-      cancelled = true;
-    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [projectId]);
 
   useEffect(() => {
@@ -233,7 +239,7 @@ export default function MembersPage() {
       role: inviteRole,
     });
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Convite inválido");
+      setError(parsed.error.issues[0]?.message ?? t("errors.invalidInvite"));
       return;
     }
 
@@ -246,9 +252,9 @@ export default function MembersPage() {
       setInviteEmail("");
       setInviteRole("developer");
       await refreshData();
-      setNotice(`Convite enviado para ${parsed.data.email}`);
+      setNotice(t("invite.sentNotice", { email: parsed.data.email }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao enviar convite");
+      setError(err instanceof Error ? err.message : t("errors.send"));
     } finally {
       setInviting(false);
     }
@@ -268,9 +274,9 @@ export default function MembersPage() {
       setMembers((current) =>
         current.map((item) => (item.id === updated.id ? updated : item)),
       );
-      setNotice("Role atualizada");
+      setNotice(t("notices.roleUpdated"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao atualizar role");
+      setError(err instanceof Error ? err.message : t("errors.updateRole"));
     } finally {
       setBusyId(null);
     }
@@ -282,15 +288,15 @@ export default function MembersPage() {
       return;
     }
     const displayName = member.name || member.email || member.user_id;
-    if (!window.confirm(`Remover ${displayName} do projeto?`)) return;
+    if (!window.confirm(t("confirmRemove", { name: displayName }))) return;
     setBusyId(member.id);
     setError(null);
     try {
       await membersApi.remove(projectId, member.id);
       setMembers((current) => current.filter((item) => item.id !== member.id));
-      setNotice("Membro removido");
+      setNotice(t("notices.memberRemoved"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao remover membro");
+      setError(err instanceof Error ? err.message : t("errors.remove"));
     } finally {
       setBusyId(null);
     }
@@ -310,9 +316,9 @@ export default function MembersPage() {
     try {
       await membersApi.revokeInvite(projectId, invite.id);
       setInvites((current) => current.filter((item) => item.id !== invite.id));
-      setNotice("Convite revogado");
+      setNotice(t("notices.inviteRevoked"));
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao revogar convite");
+      setError(err instanceof Error ? err.message : t("errors.revoke"));
     } finally {
       setBusyId(null);
     }
@@ -322,9 +328,11 @@ export default function MembersPage() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Membros</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("page.title")}
+          </h1>
           <p className="mt-1 font-mono text-sm text-(--text-tertiary)">
-            Gerencie os membros do projeto
+            {t("page.subtitle")}
           </p>
         </div>
         <Card className="space-y-4 p-6">
@@ -347,14 +355,18 @@ export default function MembersPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Membros</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("page.title")}
+          </h1>
           <p className="mt-1 font-mono text-sm text-(--text-tertiary)">
-            {members.length} membros · {pendingInvites.length} convites
-            pendentes
+            {t("page.count", {
+              members: members.length,
+              invites: pendingInvites.length,
+            })}
           </p>
         </div>
         <Button icon={Plus} onClick={openInviteDialog}>
-          Convidar
+          {t("invite.button")}
         </Button>
       </div>
 
@@ -374,10 +386,10 @@ export default function MembersPage() {
           <div className="mb-4 flex items-start justify-between">
             <div>
               <h2 className="font-semibold text-(--text-primary)">
-                Convidar novo membro
+                {t("invite.title")}
               </h2>
               <p className="font-mono text-xs text-(--text-muted)">
-                Convites expiram em 7 dias.
+                {t("invite.expiresNotice")}
               </p>
             </div>
             <Button
@@ -391,7 +403,7 @@ export default function MembersPage() {
           <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
             <label className="space-y-1.5">
               <span className="block font-mono text-xs font-bold uppercase tracking-wider text-(--text-muted)">
-                Email
+                {t("invite.emailLabel")}
               </span>
               <input
                 type="email"
@@ -403,7 +415,7 @@ export default function MembersPage() {
             </label>
             <label className="space-y-1.5">
               <span className="block font-mono text-xs font-bold uppercase tracking-wider text-(--text-muted)">
-                Role
+                {t("invite.roleLabel")}
               </span>
               <RolePicker
                 value={inviteRole}
@@ -414,10 +426,10 @@ export default function MembersPage() {
           </div>
           <div className="mt-4 flex justify-end gap-3">
             <Button variant="secondary" onClick={() => setInviteOpen(false)}>
-              Cancelar
+              {t("invite.cancel")}
             </Button>
             <Button loading={inviting} onClick={handleInvite}>
-              Enviar convite
+              {t("invite.submit")}
             </Button>
           </div>
         </Card>
@@ -426,10 +438,10 @@ export default function MembersPage() {
       {members.length === 0 && invites.length === 0 ? (
         <EmptyState
           icon={Users}
-          title="Nenhum membro ainda"
-          description="Convide membros para este projeto."
+          title={t("empty.title")}
+          description={t("empty.description")}
           action={{
-            label: "Convidar membro",
+            label: t("empty.action"),
             onClick: openInviteDialog,
             icon: Plus,
           }}
@@ -460,10 +472,11 @@ export default function MembersPage() {
                           ? member.email
                           : member.email || member.user_id}
                         {" · "}
-                        Entrou em{" "}
-                        {new Date(member.created_at).toLocaleDateString(
-                          "pt-BR",
-                        )}
+                        {t("list.joined", {
+                          date: new Date(member.created_at).toLocaleDateString(
+                            "pt-BR",
+                          ),
+                        })}
                       </p>
                     </div>
                   </div>
@@ -471,7 +484,7 @@ export default function MembersPage() {
                   {/* Right: role + actions */}
                   <div className="flex items-center gap-2 sm:gap-3">
                     {member.role === "owner" ? (
-                      <Badge variant="outline">owner</Badge>
+                      <Badge variant="outline">{t("roles.owner")}</Badge>
                     ) : canManageMembers ? (
                       <RolePicker
                         value={member.role}
@@ -480,7 +493,11 @@ export default function MembersPage() {
                         onChange={(role) => handleRoleChange(member, role)}
                       />
                     ) : (
-                      <Badge variant="outline">{member.role}</Badge>
+                      <Badge variant="outline">
+                        {t(
+                          `roles.${member.role as (typeof roleKeys)[number]}`,
+                        )}
+                      </Badge>
                     )}
                     {canManageMembers && (
                       <Button
@@ -491,7 +508,7 @@ export default function MembersPage() {
                           member.role === "owner" || busyId === member.id
                         }
                         onClick={() => handleRemove(member)}
-                        aria-label="Remover membro"
+                        aria-label={t("list.removeAria")}
                       >
                         <Trash2 className="h-4 w-4" />
                       </Button>
@@ -522,10 +539,11 @@ export default function MembersPage() {
                         {displayName}
                       </p>
                       <p className="font-mono text-xs text-(--text-muted)">
-                        Convite · Expira em{" "}
-                        {new Date(invite.expires_at).toLocaleDateString(
-                          "pt-BR",
-                        )}
+                        {t("list.inviteExpires", {
+                          date: new Date(invite.expires_at).toLocaleDateString(
+                            "pt-BR",
+                          ),
+                        })}
                       </p>
                     </div>
                   </div>
@@ -533,7 +551,11 @@ export default function MembersPage() {
                   {/* Right: status + role + actions */}
                   <div className="flex items-center gap-2 sm:gap-3">
                     <InviteStatusBadge state={state} />
-                    <Badge variant="outline">{invite.role}</Badge>
+                    <Badge variant="outline">
+                      {t(
+                        `roles.${invite.role as (typeof roleKeys)[number]}`,
+                      )}
+                    </Badge>
                     <Button
                       variant="ghost"
                       size="icon"
@@ -548,7 +570,7 @@ export default function MembersPage() {
                           ))
                       }
                       onClick={() => handleRevokeInvite(invite)}
-                      aria-label="Revogar convite"
+                      aria-label={t("list.revokeAria")}
                     >
                       <Trash2 className="h-4 w-4" />
                     </Button>

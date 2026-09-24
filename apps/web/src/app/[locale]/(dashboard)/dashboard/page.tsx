@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { FolderOpen, Key, Clock } from "lucide-react"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
@@ -10,6 +11,7 @@ import { formatRelativeTime } from "@/lib/utils"
 import type { Project, AuditLog, ProjectListResponse } from "@/lib/api"
 
 export default function DashboardPage() {
+  const t = useTranslations("dashboard.home")
   const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects")
   const [projects, setProjects] = useState<Project[]>(cachedProjects?.projects ?? [])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
@@ -59,7 +61,7 @@ export default function DashboardPage() {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(err instanceof Error ? err.message : "Erro ao carregar dashboard")
+          setError(err instanceof Error ? err.message : t("loadError"))
         }
       } finally {
         if (!cancelled) {
@@ -81,7 +83,7 @@ export default function DashboardPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
             <p className="text-red-600 text-sm font-mono mt-1">{error}</p>
           </div>
         </div>
@@ -94,12 +96,12 @@ export default function DashboardPage() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Dashboard</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
-            Bem-vindo de volta. Aqui está o overview dos seus projetos.
+            {t("welcome")}
           </p>
         </div>
-        <StatusBadge status="synced" label="Tudo sincronizado" />
+        <StatusBadge status="synced" label={t("synced")} />
       </div>
 
       {/* Stats */}
@@ -146,7 +148,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
-                    Projects
+                    {t("stats.projects")}
                   </p>
                   <p className="text-2xl font-semibold tracking-tight">
                     {projects.length}
@@ -154,7 +156,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
-                {projects.length === 0 ? "Nenhum projeto ainda" : `${projects.length} ativos`}
+                {projects.length === 0 ? t("stats.projectsNone") : t("stats.projectsActive", { count: projects.length })}
               </p>
             </Card>
 
@@ -165,7 +167,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
-                    Secrets
+                    {t("stats.secrets")}
                   </p>
                   <p className="text-2xl font-semibold tracking-tight">
                     {totalSecrets}
@@ -173,7 +175,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
-                {totalSecrets === 0 ? "Nenhuma secret ainda" : `${totalSecrets} secrets no total`}
+                {totalSecrets === 0 ? t("stats.secretsNone") : t("stats.secretsTotal", { count: totalSecrets })}
               </p>
             </Card>
 
@@ -184,7 +186,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="min-w-0">
                   <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
-                    Last Sync
+                    {t("stats.lastSync")}
                   </p>
                   <p className="text-lg sm:text-2xl font-semibold tracking-tight truncate">
                     {auditLogs.length > 0 && auditLogs[0].created_at
@@ -194,7 +196,7 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
-                Última atividade
+                {t("stats.lastActivity")}
               </p>
             </Card>
           </>
@@ -204,8 +206,8 @@ export default function DashboardPage() {
       {/* Recent Activity */}
       <Card>
         <CardHeader>
-          <CardTitle>Atividade Recente</CardTitle>
-          <CardDescription>Últimas operações nos seus projetos</CardDescription>
+          <CardTitle>{t("activity.title")}</CardTitle>
+          <CardDescription>{t("activity.description")}</CardDescription>
         </CardHeader>
         <div className="space-y-4">
           {activityLoading ? (
@@ -253,7 +255,7 @@ export default function DashboardPage() {
           ) : (
             <div className="text-center py-8">
               <p className="text-sm text-[var(--text-muted)] font-mono">
-                Nenhuma atividade recente
+                {t("activity.empty")}
               </p>
             </div>
           )}

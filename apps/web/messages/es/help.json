@@ -1,0 +1,27 @@
+{
+  "title": "Ayuda",
+  "subtitle": "Encuentra recursos y soporte para usar CriptEnv",
+  "docs": {
+    "title": "Documentación",
+    "description": "Guías completas y referencias de la API"
+  },
+  "support": {
+    "title": "Soporte",
+    "description": "Abre issues y pide ayuda a la comunidad"
+  },
+  "faq": {
+    "title": "Preguntas frecuentes",
+    "q1": "¿Cómo añado secrets a un proyecto?",
+    "a1": "Abre el proyecto, ve a la pestaña \"Secrets\" y pulsa \"Nuevo Secret\". Introduce la clave y el valor. Tus secrets se cifran localmente antes de enviarse.",
+    "q2": "¿Cómo funciona el cifrado?",
+    "a2": "CriptEnv usa cifrado Zero-Knowledge. Tus claves se derivan localmente con PBKDF2 y los datos se cifran con AES-256-GCM antes de salir de tu dispositivo.",
+    "q3": "¿Puedo usarlo en entornos de CI/CD?",
+    "a3": "¡Sí! Genera tokens de API en la pestaña de configuración del proyecto y úsalos en tus pipelines de CI/CD para acceder a los secrets de forma segura.",
+    "q4": "¿Cómo funciona el sistema de invitaciones?",
+    "a4": "En la pestaña \"Team\" del proyecto puedes invitar a miembros con distintos permisos: Owner, Admin, Developer o Viewer. Las invitaciones caducan automáticamente tras 7 días."
+  },
+  "security": {
+    "title": "La seguridad primero",
+    "description": "Nunca compartas tus claves de cifrado ni tus tokens de API. CriptEnv nunca solicita tu contraseña ni tus claves por correo o chat."
+  }
+}

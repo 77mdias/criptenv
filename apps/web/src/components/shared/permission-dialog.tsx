@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -14,13 +15,19 @@ interface PermissionDialogProps {
 
 export function PermissionDialog({
   open,
-  title = "Permissão necessária",
-  description = "Você não tem a permissão necessária para realizar esta ação neste projeto.",
-  actionLabel = "Entendi",
+  title,
+  description,
+  actionLabel,
   onOpenChange,
   onAction,
 }: PermissionDialogProps) {
+  const t = useTranslations("members.dialog")
+
   if (!open) return null
+
+  const resolvedTitle = title ?? t("title")
+  const resolvedDescription = description ?? t("description")
+  const resolvedActionLabel = actionLabel ?? t("action")
 
   const handleAction = () => {
     onAction?.()
@@ -31,7 +38,7 @@ export function PermissionDialog({
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <button
         type="button"
-        aria-label="Fechar aviso de permissão"
+        aria-label={t("closeAria")}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
@@ -47,15 +54,15 @@ export function PermissionDialog({
           </div>
           <div className="min-w-0">
             <h2 id="permission-dialog-title" className="text-lg font-semibold text-[var(--text-primary)]">
-              {title}
+              {resolvedTitle}
             </h2>
             <p className="mt-2 font-mono text-sm leading-relaxed text-[var(--text-tertiary)]">
-              {description}
+              {resolvedDescription}
             </p>
           </div>
         </div>
         <div className="mt-6 flex justify-end">
-          <Button onClick={handleAction}>{actionLabel}</Button>
+          <Button onClick={handleAction}>{resolvedActionLabel}</Button>
         </div>
       </div>
     </div>

@@ -8,6 +8,7 @@ const customJestConfig = {
   clearMocks: true,
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^@messages/(.*)$": "<rootDir>/messages/$1",
   },
   setupFilesAfterEnv: ["<rootDir>/jest.setup.ts"],
   testEnvironment: "jest-environment-jsdom",

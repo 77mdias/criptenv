@@ -1,6 +1,7 @@
 "use client"
 
-import { useId, useState } from "react"
+import { useId, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { FolderPlus } from "lucide-react"
@@ -17,6 +18,8 @@ interface CreateProjectDialogProps {
 }
 
 export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreateProjectDialogProps) {
+  const t = useTranslations("dashboard.createDialog")
+  const tDash = useTranslations("dashboard")
   const descriptionId = useId()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -27,7 +30,8 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
     reset,
     formState: { errors },
   } = useForm<CreateProjectInput>({
-    resolver: zodResolver(createProjectSchema),
+    // Built per locale: Zod bakes messages in at construction time.
+    resolver: zodResolver(useMemo(() => createProjectSchema(tDash), [tDash])),
   })
 
   const onSubmit = async (data: CreateProjectInput) => {
@@ -45,7 +49,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
       onOpenChange(false)
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar projeto")
+      setError(err instanceof Error ? err.message : t("error"))
     } finally {
       setLoading(false)
     }
@@ -69,17 +73,17 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
           </div>
           <div>
             <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Novo Projeto
+              {t("title")}
             </h2>
             <p className="text-xs text-[var(--text-muted)] font-mono">
-              Crie um novo projeto para gerenciar seus secrets
+              {t("subtitle")}
             </p>
           </div>
         </div>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
-            label="Nome do projeto"
+            label={t("nameLabel")}
             placeholder="my-api"
             error={errors.name?.message}
             {...register("name")}
@@ -90,12 +94,12 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
               htmlFor={descriptionId}
               className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono"
             >
-              Descrição
+              {t("descriptionLabel")}
             </label>
             <textarea
               id={descriptionId}
               className="flex min-h-[80px] w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
-              placeholder="Descrição opcional do projeto"
+              placeholder={t("descriptionPlaceholder")}
               {...register("description")}
             />
             {errors.description?.message && (
@@ -104,7 +108,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
           </div>
 
           <Input
-            label="Senha do vault"
+            label={t("vaultPasswordLabel")}
             type="password"
             autoComplete="new-password"
             error={errors.vaultPassword?.message}
@@ -112,7 +116,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
           />
 
           <Input
-            label="Confirmar senha do vault"
+            label={t("confirmVaultPasswordLabel")}
             type="password"
             autoComplete="new-password"
             error={errors.confirmVaultPassword?.message}
@@ -129,10 +133,10 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
               variant="secondary"
               onClick={() => onOpenChange(false)}
             >
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button type="submit" loading={loading} icon={FolderPlus}>
-              Criar Projeto
+              {t("submit")}
             </Button>
           </div>
         </form>

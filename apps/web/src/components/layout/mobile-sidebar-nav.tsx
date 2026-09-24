@@ -1,6 +1,7 @@
 "use client"
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { X } from "lucide-react"
 import { cn } from "@/lib/utils"
@@ -15,6 +16,7 @@ interface MobileSidebarNavProps {
 function MobileSidebarNav({ className }: MobileSidebarNavProps) {
   const pathname = usePathname()
   const { sidebarMobileOpen, setSidebarMobileOpen } = useUIStore()
+  const tNav = useTranslations("dashboard.nav")
   const { mainNavItems, bottomNavItems } = getDashboardNavGroups()
 
   return (
@@ -42,7 +44,7 @@ function MobileSidebarNav({ className }: MobileSidebarNavProps) {
             variant="ghost"
             size="icon"
             onClick={() => setSidebarMobileOpen(false)}
-            aria-label="Close menu"
+            aria-label={tNav("closeMenu")}
           >
             <X className="h-5 w-5" />
           </Button>
@@ -66,7 +68,7 @@ function MobileSidebarNav({ className }: MobileSidebarNavProps) {
                 )}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
-                <span>{item.label}</span>
+                <span>{tNav(item.labelKey)}</span>
               </Link>
             )
           })}
@@ -93,7 +95,7 @@ function MobileSidebarNav({ className }: MobileSidebarNavProps) {
                 )}
               >
                 <item.icon className="h-5 w-5 shrink-0" />
-                <span>{item.label}</span>
+                <span>{tNav(item.labelKey)}</span>
               </Link>
             )
           })}

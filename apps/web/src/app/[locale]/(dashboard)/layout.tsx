@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { AppShell } from "@/components/layout/app-shell";
 import { useAuth } from "@/hooks/use-auth";
@@ -10,6 +11,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations("dashboard.layout");
   const router = useRouter();
   const { isAuthenticated, isLoading } = useAuth();
 
@@ -26,7 +28,7 @@ export default function DashboardLayout({
         <div className="flex flex-col items-center gap-4">
           <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--accent) border-t-transparent" />
           <p className="text-sm text-(--text-muted) font-mono">
-            Verificando sessão...
+            {t("checkingSession")}
           </p>
         </div>
       </div>

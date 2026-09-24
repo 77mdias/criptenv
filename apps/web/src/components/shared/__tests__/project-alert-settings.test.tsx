@@ -1,7 +1,10 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
+import { NextIntlClientProvider } from "next-intl"
 import { ProjectAlertSettings } from "../project-alert-settings"
 import { alertSettingsApi } from "@/lib/api/alert-settings"
+import { renderWithIntl } from "@/test/render-with-intl"
+import settingsPtBR from "../../../../messages/pt-BR/settings.json"
 
 jest.mock("@/lib/api/alert-settings", () => ({
   alertSettingsApi: {
@@ -12,6 +15,13 @@ jest.mock("@/lib/api/alert-settings", () => ({
 }))
 
 const api = alertSettingsApi as jest.Mocked<typeof alertSettingsApi>
+
+const settingsMessages = { settings: settingsPtBR }
+const withProvider = (ui: React.ReactElement) => (
+  <NextIntlClientProvider locale="pt-BR" messages={settingsMessages}>
+    {ui}
+  </NextIntlClientProvider>
+)
 
 const configuredSettings = {
   enabled: true,
@@ -46,7 +56,7 @@ describe("ProjectAlertSettings", () => {
   })
 
   it("loads safe webhook metadata without rendering the saved URL", async () => {
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     expect(await screen.findByText(/webhook configurado/i)).toBeInTheDocument()
     expect(screen.getByText(new RegExp(configuredSettings.webhook_url_preview))).toBeInTheDocument()
@@ -55,7 +65,7 @@ describe("ProjectAlertSettings", () => {
 
   it("updates channels and lead time with the write-only webhook URL", async () => {
     const user = userEvent.setup()
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText(/webhook configurado/i)
     await user.click(screen.getByRole("switch", { name: "Canal email" }))
@@ -76,7 +86,7 @@ describe("ProjectAlertSettings", () => {
 
   it("tests and removes a configured webhook", async () => {
     const user = userEvent.setup()
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText(/webhook configurado/i)
     await user.click(screen.getByRole("button", { name: /testar webhook/i }))
@@ -91,7 +101,7 @@ describe("ProjectAlertSettings", () => {
   it("warns explicitly when all channels are disabled and sanitizes failures", async () => {
     const user = userEvent.setup()
     api.update.mockRejectedValue(new Error("https://private-host/secret-token"))
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText(/webhook configurado/i)
     await user.click(screen.getByRole("switch", { name: "Canal in-app" }))
@@ -106,7 +116,7 @@ describe("ProjectAlertSettings", () => {
     const request = deferred<typeof configuredSettings>()
     api.get.mockReturnValue(request.promise)
 
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     expect(screen.getByLabelText("Carregando configurações de alertas")).toBeInTheDocument()
   })
@@ -114,7 +124,7 @@ describe("ProjectAlertSettings", () => {
   it("shows a safe error when settings cannot be loaded", async () => {
     api.get.mockRejectedValue(new Error("private backend details"))
 
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     expect(await screen.findByText(/não foi possível carregar as configurações/i)).toBeInTheDocument()
     expect(screen.queryByText(/private backend details/i)).not.toBeInTheDocument()
@@ -123,7 +133,7 @@ describe("ProjectAlertSettings", () => {
   it("blocks mutations after a load failure and retries the initial load", async () => {
     const user = userEvent.setup()
     api.get.mockRejectedValueOnce(new Error("private load details")).mockResolvedValueOnce(configuredSettings)
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     expect(await screen.findByRole("alert")).toHaveTextContent(/não foi possível carregar as configurações/i)
     expect(screen.getByRole("button", { name: /tentar novamente/i })).toBeInTheDocument()
@@ -140,7 +150,7 @@ describe("ProjectAlertSettings", () => {
     const user = userEvent.setup()
     const update = deferred<typeof configuredSettings>()
     api.update.mockReturnValue(update.promise)
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText(/webhook configurado/i)
     const saveButton = screen.getByRole("button", { name: /salvar configurações/i })
@@ -156,7 +166,7 @@ describe("ProjectAlertSettings", () => {
     const user = userEvent.setup()
     const update = deferred<typeof configuredSettings>()
     api.update.mockReturnValue(update.promise)
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText(/webhook configurado/i)
     const removeButton = screen.getByRole("button", { name: /remover configuração/i })
@@ -170,7 +180,7 @@ describe("ProjectAlertSettings", () => {
 
   it("does not offer webhook testing when no webhook is configured", async () => {
     api.get.mockResolvedValue(unconfiguredSettings)
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText("Alertas de expiração")
     expect(screen.queryByText(/configuração do webhook/i)).not.toBeInTheDocument()
@@ -178,7 +188,7 @@ describe("ProjectAlertSettings", () => {
   })
 
   it("uses responsive layout guard classes for narrow viewports", async () => {
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByTestId("project-alert-settings")
     expect(screen.getByTestId("project-alert-settings")).toHaveClass("p-4", "sm:p-6")
@@ -188,10 +198,10 @@ describe("ProjectAlertSettings", () => {
   it("resets controls and blocks the previous project while a new project loads", async () => {
     const secondProject = deferred<typeof configuredSettings>()
     api.get.mockResolvedValueOnce(configuredSettings).mockReturnValueOnce(secondProject.promise)
-    const { rerender } = render(<ProjectAlertSettings projectId="project-1" />)
+    const { rerender } = renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText(/webhook configurado/i)
-    rerender(<ProjectAlertSettings projectId="project-2" />)
+    rerender(withProvider(<ProjectAlertSettings projectId="project-2" />))
 
     expect(await screen.findByLabelText("Carregando configurações de alertas")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: /salvar configurações/i })).not.toBeInTheDocument()
@@ -206,7 +216,7 @@ describe("ProjectAlertSettings", () => {
     const user = userEvent.setup()
     const update = deferred<typeof configuredSettings>()
     api.update.mockReturnValue(update.promise)
-    render(<ProjectAlertSettings projectId="project-1" />)
+    renderWithIntl(<ProjectAlertSettings projectId="project-1" />, { messages: settingsMessages })
 
     await screen.findByText(/webhook configurado/i)
     await user.click(screen.getByRole("button", { name: /salvar configurações/i }))

@@ -1,0 +1,23 @@
+{
+  "page": {
+    "title": "Audit Log",
+    "subtitle": "{total} eventos registrados para este proyecto",
+    "exportCsv": "Exportar CSV",
+    "exportJson": "Exportar JSON",
+    "loadMore": "Cargar más"
+  },
+  "filters": {
+    "title": "Filtros",
+    "action": "Acción",
+    "resource": "Recurso",
+    "allActions": "Todas",
+    "allResources": "Todos"
+  },
+  "errors": {
+    "load": "Error al cargar los registros"
+  },
+  "empty": {
+    "title": "Ningún evento encontrado",
+    "description": "Las acciones realizadas en este proyecto aparecerán aquí."
+  }
+}

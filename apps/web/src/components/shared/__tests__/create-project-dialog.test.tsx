@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
 import userEvent from "@testing-library/user-event"
 import { buildProjectVaultConfig } from "@/lib/crypto"
 import { projectsApi } from "@/lib/api"
@@ -24,7 +25,7 @@ describe("CreateProjectDialog", () => {
   })
 
   it("renders nothing when closed", () => {
-    const { container } = render(
+    const { container } = renderWithIntl(
       <CreateProjectDialog open={false} onOpenChange={jest.fn()} onSuccess={jest.fn()} />
     )
 
@@ -32,7 +33,7 @@ describe("CreateProjectDialog", () => {
   })
 
   it("validates vault password confirmation", async () => {
-    render(<CreateProjectDialog open onOpenChange={jest.fn()} onSuccess={jest.fn()} />)
+    renderWithIntl(<CreateProjectDialog open onOpenChange={jest.fn()} onSuccess={jest.fn()} />)
 
     await userEvent.type(screen.getByLabelText("Nome do projeto"), "my-api")
     await userEvent.type(screen.getByLabelText("Senha do vault"), "VaultPassw0rd!")
@@ -61,7 +62,7 @@ describe("CreateProjectDialog", () => {
     })
     mockedCreateProject.mockResolvedValue({ id: "project-id" } as Awaited<ReturnType<typeof projectsApi.create>>)
 
-    render(<CreateProjectDialog open onOpenChange={onOpenChange} onSuccess={onSuccess} />)
+    renderWithIntl(<CreateProjectDialog open onOpenChange={onOpenChange} onSuccess={onSuccess} />)
     await userEvent.type(screen.getByLabelText("Nome do projeto"), "my-api")
     await userEvent.type(screen.getByLabelText("Descrição"), "API project")
     await userEvent.type(screen.getByLabelText("Senha do vault"), "VaultPassw0rd!")

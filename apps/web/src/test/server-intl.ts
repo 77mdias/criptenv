@@ -1,5 +1,6 @@
 import { createTranslator } from "next-intl"
 
+import accountPtBR from "../../messages/pt-BR/account.json"
 import authPtBR from "../../messages/pt-BR/auth.json"
 import commonPtBR from "../../messages/pt-BR/common.json"
 import marketingPtBR from "../../messages/pt-BR/marketing.json"
@@ -29,10 +30,13 @@ export async function mockGetTranslations(
   return createTranslator({
     locale: "pt-BR",
     messages: {
+      account: accountPtBR,
       auth: authPtBR,
       common: commonPtBR,
       marketing: marketingPtBR,
     },
-    namespace,
+    // `namespace` is caller-supplied, so it is not statically known to be one of
+    // next-intl's derived namespace keys — hence the narrowing cast.
+    namespace: namespace as never,
   })
 }

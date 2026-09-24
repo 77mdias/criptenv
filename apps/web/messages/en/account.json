@@ -1,0 +1,94 @@
+{
+  "title": "Account",
+  "subtitle": "Manage your information and sessions",
+  "fallback": {
+    "userName": "User",
+    "userAgent": "Unknown browser",
+    "ipAddress": "Unknown IP"
+  },
+  "messages": {
+    "oauthLinked": "Account {provider} linked successfully.",
+    "loadError": "Failed to load data",
+    "signoutError": "Failed to sign out",
+    "profileUpdated": "Profile updated successfully.",
+    "profileUpdateError": "Failed to update profile",
+    "passwordMismatch": "Passwords do not match.",
+    "passwordTooShort": "The new password must be at least 8 characters.",
+    "passwordChanged": "Password changed. Please sign in again.",
+    "passwordChangeError": "Failed to change password",
+    "twoFASetupError": "Failed to set up 2FA",
+    "twoFAEnabled": "2FA enabled successfully.",
+    "invalidCode": "Invalid code",
+    "disable2FAPrompt": "Enter your password to disable 2FA:",
+    "twoFADisabled": "2FA disabled successfully.",
+    "twoFADisableError": "Failed to disable 2FA",
+    "oauthUnlinked": "Account {provider} unlinked.",
+    "oauthUnlinkError": "Failed to unlink",
+    "deleteConfirmationWord": "Type \"DELETAR\" to confirm.",
+    "deleteError": "Failed to delete account",
+    "verificationResent": "Verification email resent. Check your inbox.",
+    "verificationResendError": "Failed to resend verification"
+  },
+  "profile": {
+    "name": "Name",
+    "email": "Email",
+    "save": "Save",
+    "cancel": "Cancel",
+    "edit": "Edit",
+    "emailVerified": "Email verified",
+    "emailNotVerified": "Email not verified",
+    "resend": "Resend",
+    "twoFactorActive": "2FA active"
+  },
+  "security": {
+    "title": "Security",
+    "currentPassword": "Current password",
+    "newPassword": "New password",
+    "confirmNewPassword": "Confirm new password",
+    "changePassword": "Change password",
+    "twoFASetupInstructions": "Scan the QR code with your authenticator app and enter the 6-digit code.",
+    "backupCodes": "Backup codes (store them somewhere safe)",
+    "twoFACodePlaceholder": "6-digit code",
+    "enable2FA": "Enable 2FA",
+    "disable2FA": "Disable 2FA",
+    "cancel": "Cancel"
+  },
+  "oauth": {
+    "title": "Linked accounts",
+    "empty": "No OAuth accounts linked.",
+    "unlink": "Unlink",
+    "linkNew": "Link a new account",
+    "unlinkTitle": "Unlink account?",
+    "unlinkDescription": "Are you sure you want to unlink your {provider} account? You will no longer be able to use it to sign in."
+  },
+  "sessions": {
+    "title": "Active sessions",
+    "signOutAll": "Sign out of all",
+    "empty": "No active sessions",
+    "active": "Active"
+  },
+  "dangerZone": {
+    "title": "Danger zone",
+    "deleteWarning": "This action cannot be undone. All your data will be permanently removed. Type <strong>DELETAR</strong> to confirm.",
+    "deletePermanently": "Delete permanently",
+    "delete": "Delete account",
+    "cancel": "Cancel"
+  },
+  "avatar": {
+    "invalidType": "Only PNG or JPG images are allowed.",
+    "tooLarge": "The image must be at most 5MB.",
+    "uploadError": "Failed to upload avatar.",
+    "removeConfirm": "Remove profile picture?",
+    "removeError": "Failed to remove avatar.",
+    "changeTitle": "Change picture",
+    "change": "Change picture",
+    "add": "Add picture",
+    "remove": "Remove",
+    "hint": "PNG or JPG · Max 5MB"
+  },
+  "dialog": {
+    "confirm": "Confirm",
+    "cancel": "Cancel",
+    "close": "Close confirmation"
+  }
+}

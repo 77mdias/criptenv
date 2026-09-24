@@ -1,4 +1,6 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
+import settingsPtBR from "@messages/pt-BR/settings.json"
 import SettingsPage from "../page"
 import { peekCached, projectsApi } from "@/lib/api"
 
@@ -92,7 +94,7 @@ describe("SettingsPage project role gate", () => {
     mockPeekCached.mockReturnValue(project)
     mockProjectsGet.mockResolvedValue(project)
 
-    render(<SettingsPage />)
+    renderWithIntl(<SettingsPage />, { messages: { settings: settingsPtBR } })
 
     expect(await screen.findByText("Project alert settings controls")).toBeInTheDocument()
     expect(screen.queryByText("Configurações restritas")).not.toBeInTheDocument()
@@ -103,7 +105,7 @@ describe("SettingsPage project role gate", () => {
     mockPeekCached.mockReturnValue(project)
     mockProjectsGet.mockResolvedValue(project)
 
-    render(<SettingsPage />)
+    renderWithIntl(<SettingsPage />, { messages: { settings: settingsPtBR } })
 
     await waitFor(() => expect(screen.getByText("Configurações restritas")).toBeInTheDocument())
     expect(screen.queryByText("Project alert settings controls")).not.toBeInTheDocument()

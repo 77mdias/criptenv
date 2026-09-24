@@ -1,0 +1,63 @@
+{
+  "page": {
+    "title": "Members",
+    "subtitle": "Manage project members",
+    "count": "{members} members · {invites} pending invites"
+  },
+  "invite": {
+    "button": "Invite",
+    "title": "Invite a new member",
+    "expiresNotice": "Invites expire in 7 days.",
+    "emailLabel": "Email",
+    "roleLabel": "Role",
+    "cancel": "Cancel",
+    "submit": "Send invite",
+    "sentNotice": "Invite sent to {email}"
+  },
+  "status": {
+    "pending": "Pending",
+    "accepted": "Accepted",
+    "revoked": "Revoked",
+    "expired": "Expired"
+  },
+  "roles": {
+    "owner": "Owner",
+    "admin": "Admin",
+    "developer": "Developer",
+    "viewer": "Viewer"
+  },
+  "list": {
+    "joined": "Joined on {date}",
+    "inviteExpires": "Invite · Expires on {date}",
+    "removeAria": "Remove member",
+    "revokeAria": "Revoke invite"
+  },
+  "empty": {
+    "title": "No members yet",
+    "description": "Invite members to this project.",
+    "action": "Invite member"
+  },
+  "errors": {
+    "load": "Failed to load members",
+    "invalidInvite": "Invalid invite",
+    "send": "Failed to send invite",
+    "updateRole": "Failed to update role",
+    "remove": "Failed to remove member",
+    "revoke": "Failed to revoke invite"
+  },
+  "notices": {
+    "roleUpdated": "Role updated",
+    "memberRemoved": "Member removed",
+    "inviteRevoked": "Invite revoked"
+  },
+  "confirmRemove": "Remove {name} from the project?",
+  "dialog": {
+    "title": "Permission required",
+    "description": "You do not have the required permission to perform this action in this project.",
+    "action": "Got it",
+    "closeAria": "Close permission notice"
+  },
+  "rolePicker": {
+    "label": "Role"
+  }
+}

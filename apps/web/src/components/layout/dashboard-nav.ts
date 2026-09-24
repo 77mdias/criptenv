@@ -10,7 +10,8 @@ type MatchMode = "exact" | "prefix"
 
 interface DashboardNavItem {
   icon: LucideIcon
-  label: string
+  /** translation key under the `dashboard.nav` namespace */
+  labelKey: string
   href: string
   matchMode?: MatchMode
 }
@@ -22,13 +23,13 @@ interface DashboardNavGroups {
 
 export function getDashboardNavGroups(): DashboardNavGroups {
   const mainNavItems: DashboardNavItem[] = [
-    { icon: LayoutDashboard, label: "Dashboard", href: "/dashboard" },
-    { icon: FolderOpen, label: "Projects", href: "/projects", matchMode: "prefix" },
+    { icon: LayoutDashboard, labelKey: "dashboard", href: "/dashboard" },
+    { icon: FolderOpen, labelKey: "projects", href: "/projects", matchMode: "prefix" },
   ]
 
   const bottomNavItems: DashboardNavItem[] = [
-    { icon: CircleHelp, label: "Help", href: "/help" },
-    { icon: User, label: "Account", href: "/account" },
+    { icon: CircleHelp, labelKey: "help", href: "/help" },
+    { icon: User, labelKey: "account", href: "/account" },
   ]
 
   return {

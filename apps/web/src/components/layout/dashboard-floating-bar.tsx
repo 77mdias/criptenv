@@ -1,18 +1,20 @@
 "use client"
 
 import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
 import { usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils"
 import { useUIStore } from "@/stores/ui"
 import { getDashboardNavGroups, isDashboardNavItemActive, type DashboardNavItem } from "./dashboard-nav"
 
 function NavIconLink({ item, pathname }: { item: DashboardNavItem; pathname: string }) {
+  const tNav = useTranslations("dashboard.nav")
   const isActive = isDashboardNavItemActive(pathname, item)
 
   return (
     <Link
       href={item.href}
-      aria-label={item.label}
+      aria-label={tNav(item.labelKey)}
       aria-current={isActive ? "page" : undefined}
       className={cn(
         "group relative grid h-10 w-10 place-items-center rounded-full transition-colors",
@@ -24,7 +26,7 @@ function NavIconLink({ item, pathname }: { item: DashboardNavItem; pathname: str
     >
       <item.icon className="h-4 w-4" />
       <span className="pointer-events-none absolute left-12 whitespace-nowrap rounded-md bg-[var(--text-primary)] px-2 py-1 text-xs text-[var(--background)] opacity-0 shadow-sm transition-opacity group-hover:opacity-100">
-        {item.label}
+        {tNav(item.labelKey)}
       </span>
     </Link>
   )
@@ -33,6 +35,7 @@ function NavIconLink({ item, pathname }: { item: DashboardNavItem; pathname: str
 function DashboardFloatingBar() {
   const pathname = usePathname()
   const { desktopSidebarOpen } = useUIStore()
+  const tNav = useTranslations("dashboard.nav")
   const { mainNavItems, bottomNavItems } = getDashboardNavGroups()
 
   return (

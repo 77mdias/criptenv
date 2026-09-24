@@ -1,7 +1,13 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { unlockProjectVault } from "@/lib/crypto"
 import { VaultUnlockPanel } from "../vault-unlock-panel"
+
+import { renderWithIntl } from "@/test/render-with-intl"
+import secretsPtBR from "../../../../messages/pt-BR/secrets.json"
+
+const render = (ui: React.ReactElement) =>
+  renderWithIntl(ui, { messages: { secrets: secretsPtBR } })
 
 jest.mock("@/lib/crypto", () => ({
   unlockProjectVault: jest.fn(),

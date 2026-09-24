@@ -1,7 +1,13 @@
-import { render, screen } from "@testing-library/react"
+import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { SecretsTable } from "../secrets-table"
 import type { DecryptedSecret } from "../secret-row"
+
+import { renderWithIntl } from "@/test/render-with-intl"
+import secretsPtBR from "../../../../messages/pt-BR/secrets.json"
+
+const render = (ui: React.ReactElement) =>
+  renderWithIntl(ui, { messages: { secrets: secretsPtBR } })
 
 const secrets: DecryptedSecret[] = [
   { key: "DATABASE_URL", value: "postgres://localhost" },

@@ -1,0 +1,65 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projetos",
+    "help": "Ajuda",
+    "account": "Conta",
+    "closeMenu": "Fechar menu"
+  },
+  "layout": {
+    "checkingSession": "Verificando sessão..."
+  },
+  "home": {
+    "title": "Dashboard",
+    "welcome": "Bem-vindo de volta. Aqui está o overview dos seus projetos.",
+    "synced": "Tudo sincronizado",
+    "loadError": "Erro ao carregar dashboard",
+    "stats": {
+      "projects": "Projects",
+      "projectsNone": "Nenhum projeto ainda",
+      "projectsActive": "{count} ativos",
+      "secrets": "Secrets",
+      "secretsNone": "Nenhuma secret ainda",
+      "secretsTotal": "{count} secrets no total",
+      "lastSync": "Last Sync",
+      "lastActivity": "Última atividade"
+    },
+    "activity": {
+      "title": "Atividade Recente",
+      "description": "Últimas operações nos seus projetos",
+      "empty": "Nenhuma atividade recente"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "Gerencie seus projetos e secrets",
+    "loadError": "Erro ao carregar projetos",
+    "newProject": "Novo Projeto",
+    "empty": {
+      "title": "Nenhum projeto ainda",
+      "description": "Crie seu primeiro projeto para começar a gerenciar seus secrets de forma segura.",
+      "action": "Criar Primeiro Projeto"
+    },
+    "noDescription": "Sem descrição",
+    "projectLabel": "Projeto",
+    "createNew": "Criar novo projeto"
+  },
+  "createDialog": {
+    "title": "Novo Projeto",
+    "subtitle": "Crie um novo projeto para gerenciar seus secrets",
+    "nameLabel": "Nome do projeto",
+    "descriptionLabel": "Descrição",
+    "descriptionPlaceholder": "Descrição opcional do projeto",
+    "vaultPasswordLabel": "Senha do vault",
+    "confirmVaultPasswordLabel": "Confirmar senha do vault",
+    "cancel": "Cancelar",
+    "submit": "Criar Projeto",
+    "error": "Erro ao criar projeto",
+    "errors": {
+      "nameLength": "Nome deve ter 3-50 caracteres",
+      "nameCharset": "Apenas letras, números e hífens",
+      "vaultPasswordLength": "Senha do vault deve ter pelo menos 8 caracteres",
+      "vaultPasswordMismatch": "Senhas do vault não conferem"
+    }
+  }
+}

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { useParams } from "next/navigation";
 import { Download, Filter } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -10,6 +11,8 @@ import { AuditTimeline } from "@/components/shared/audit-timeline";
 import { auditApi, peekCached } from "@/lib/api";
 import type { AuditLog, AuditLogListResponse } from "@/lib/api";
 
+// Stable protocol values (API action / resource_type identifiers) — the
+// "all" entries map to catalogue keys, the rest render as-is.
 const actions = [
   "",
   "project.created",
@@ -32,6 +35,7 @@ const resourceTypes = [
 ];
 
 export default function AuditPage() {
+  const t = useTranslations("audit");
   const params = useParams();
   const projectId = params.id as string;
   const [action, setAction] = useState("");
@@ -67,13 +71,13 @@ export default function AuditPage() {
         setTotal(data.total);
         setPage(data.page);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao carregar logs");
+        setError(err instanceof Error ? err.message : t("errors.load"));
       } finally {
         setLoading(false);
         setLoadingMore(false);
       }
     },
-    [action, projectId, resourceType],
+    [action, projectId, resourceType, t],
   );
 
   useEffect(() => {
@@ -133,9 +137,11 @@ export default function AuditPage() {
     <div className="space-y-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Audit Log</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">
+            {t("page.title")}
+          </h1>
           <p className="mt-1 font-mono text-sm text-(--text-tertiary)">
-            {total} eventos registrados para este projeto
+            {t("page.subtitle", { total })}
           </p>
         </div>
         <div className="flex gap-2">
@@ -146,7 +152,7 @@ export default function AuditPage() {
             onClick={exportCsv}
             disabled={logs.length === 0}
           >
-            Export CSV
+            {t("page.exportCsv")}
           </Button>
           <Button
             variant="secondary"
@@ -155,7 +161,7 @@ export default function AuditPage() {
             onClick={exportJson}
             disabled={logs.length === 0}
           >
-            Export JSON
+            {t("page.exportJson")}
           </Button>
         </div>
       </div>
@@ -163,12 +169,12 @@ export default function AuditPage() {
       <Card className="p-4">
         <div className="mb-3 flex items-center gap-2 font-mono text-xs font-semibold uppercase tracking-wider text-(--text-muted)">
           <Filter className="h-3.5 w-3.5" />
-          Filtros
+          {t("filters.title")}
         </div>
         <div className="grid grid-cols-1 gap-3 md:grid-cols-2">
           <label className="space-y-1.5">
             <span className="block font-mono text-xs text-(--text-muted)">
-              Action
+              {t("filters.action")}
             </span>
             <select
               className="h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 text-sm text-(--text-primary)"
@@ -180,14 +186,14 @@ export default function AuditPage() {
             >
               {actions.map((item) => (
                 <option key={item || "all"} value={item}>
-                  {item || "Todas"}
+                  {item || t("filters.allActions")}
                 </option>
               ))}
             </select>
           </label>
           <label className="space-y-1.5">
             <span className="block font-mono text-xs text-(--text-muted)">
-              Resource
+              {t("filters.resource")}
             </span>
             <select
               className="h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 text-sm text-(--text-primary)"
@@ -199,7 +205,7 @@ export default function AuditPage() {
             >
               {resourceTypes.map((item) => (
                 <option key={item || "all"} value={item}>
-                  {item || "Todos"}
+                  {item || t("filters.allResources")}
                 </option>
               ))}
             </select>
@@ -238,7 +244,7 @@ export default function AuditPage() {
             loading={loadingMore}
             onClick={() => loadLogs(page + 1, true)}
           >
-            Carregar mais
+            {t("page.loadMore")}
           </Button>
         </div>
       )}

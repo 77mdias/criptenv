@@ -1,6 +1,7 @@
 "use client"
 
 import { AlertTriangle } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
 
 interface ConfirmActionDialogProps {
@@ -19,20 +20,25 @@ export function ConfirmActionDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   loading = false,
   onConfirm,
   onOpenChange,
 }: ConfirmActionDialogProps) {
+  // Hooks must run unconditionally; the early return happens after them.
+  const t = useTranslations("account")
+  const resolvedConfirmLabel = confirmLabel ?? t("dialog.confirm")
+  const resolvedCancelLabel = cancelLabel ?? t("dialog.cancel")
+
   if (!open) return null
 
   return (
     <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
       <button
         type="button"
-        aria-label="Fechar confirmação"
+        aria-label={t("dialog.close")}
         className="absolute inset-0 bg-black/50 backdrop-blur-sm"
         onClick={() => onOpenChange(false)}
       />
@@ -57,14 +63,14 @@ export function ConfirmActionDialog({
         </div>
         <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>
-            {cancelLabel}
+            {resolvedCancelLabel}
           </Button>
           <Button
             variant={destructive ? "danger" : "primary"}
             loading={loading}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </Button>
         </div>
       </div>

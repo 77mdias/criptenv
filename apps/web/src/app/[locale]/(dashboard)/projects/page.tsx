@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Plus, FolderOpen, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +15,7 @@ import { formatRelativeTime } from "@/lib/utils";
 import type { Project, ProjectListResponse } from "@/lib/api";
 
 export default function ProjectsPage() {
+  const t = useTranslations("dashboard.projects");
   const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects");
   const [projects, setProjects] = useState<Project[]>(
     cachedProjects?.projects ?? [],
@@ -34,7 +36,7 @@ export default function ProjectsPage() {
       setProjects(data.projects);
     } catch (err) {
       setError(
-        err instanceof Error ? err.message : "Erro ao carregar projetos",
+        err instanceof Error ? err.message : t("loadError"),
       );
     } finally {
       setLoading(false);
@@ -64,7 +66,7 @@ export default function ProjectsPage() {
       <div className="space-y-8">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+            <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
             <p className="text-red-600 text-sm font-mono mt-1">{error}</p>
           </div>
         </div>
@@ -76,9 +78,9 @@ export default function ProjectsPage() {
     <div className="space-y-8">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
-          <h1 className="text-2xl font-semibold tracking-tight">Projects</h1>
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="text-(--text-tertiary) text-sm font-mono mt-1">
-            Gerencie seus projetos e secrets
+            {t("subtitle")}
           </p>
         </div>
         <Button
@@ -86,7 +88,7 @@ export default function ProjectsPage() {
           onClick={() => setDialogOpen(true)}
           className="self-start sm:self-auto"
         >
-          Novo Projeto
+          {t("newProject")}
         </Button>
       </div>
 
@@ -115,10 +117,10 @@ export default function ProjectsPage() {
       ) : projects.length === 0 ? (
         <EmptyState
           icon={FolderOpen}
-          title="Nenhum projeto ainda"
-          description="Crie seu primeiro projeto para começar a gerenciar seus secrets de forma segura."
+          title={t("empty.title")}
+          description={t("empty.description")}
           action={{
-            label: "Criar Primeiro Projeto",
+            label: t("empty.action"),
             onClick: () => setDialogOpen(true),
             icon: Plus,
           }}
@@ -141,13 +143,13 @@ export default function ProjectsPage() {
                       {project.name}
                     </h3>
                     <p className="truncate text-xs text-(--text-muted) font-mono">
-                      {project.description || "Sem descrição"}
+                      {project.description || t("noDescription")}
                     </p>
                   </div>
                 </div>
                 <div className="flex gap-4 text-xs text-(--text-muted) font-mono">
                   <span className="flex items-center gap-1">
-                    <Key className="h-3 w-3" /> Projeto
+                    <Key className="h-3 w-3" /> {t("projectLabel")}
                   </span>
                 </div>
                 <div className="mt-4 flex items-center justify-between">
@@ -172,7 +174,7 @@ export default function ProjectsPage() {
             <div className="text-center">
               <Plus className="h-8 w-8 mx-auto text-(--text-muted) mb-2" />
               <p className="text-sm text-(--text-tertiary) font-medium">
-                Criar novo projeto
+                {t("createNew")}
               </p>
             </div>
           </Card>

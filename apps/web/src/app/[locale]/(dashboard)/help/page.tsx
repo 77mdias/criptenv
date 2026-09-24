@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   CircleHelp,
   ExternalLink,
@@ -10,12 +11,14 @@ import {
 import { Card } from "@/components/ui/card";
 
 export default function HelpPage() {
+  const t = useTranslations("help");
+
   return (
     <div className="space-y-6 md:space-y-8">
       <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Ajuda</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-(--text-tertiary) text-sm font-mono mt-1">
-          Encontre recursos e suporte para usar o CriptEnv
+          {t("subtitle")}
         </p>
       </div>
 
@@ -30,12 +33,12 @@ export default function HelpPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-(--text-primary)">
-                    Documentação
+                    {t("docs.title")}
                   </h3>
                   <ExternalLink className="h-3 w-3 text-(--text-muted) shrink-0" />
                 </div>
                 <p className="text-sm text-(--text-muted) font-mono mt-1">
-                  Guias completos e referências da API
+                  {t("docs.description")}
                 </p>
               </div>
             </div>
@@ -55,12 +58,12 @@ export default function HelpPage() {
               <div className="flex-1 min-w-0">
                 <div className="flex items-center gap-2">
                   <h3 className="font-semibold text-(--text-primary)">
-                    Suporte
+                    {t("support.title")}
                   </h3>
                   <ExternalLink className="h-3 w-3 text-(--text-muted) shrink-0" />
                 </div>
                 <p className="text-sm text-(--text-muted) font-mono mt-1">
-                  Abra issues e peça ajuda na comunidade
+                  {t("support.description")}
                 </p>
               </div>
             </div>
@@ -72,50 +75,43 @@ export default function HelpPage() {
       <Card className="p-4 md:p-6">
         <div className="flex items-center gap-3 mb-4 md:mb-6">
           <CircleHelp className="h-5 w-5 text-(--accent) shrink-0" />
-          <h2 className="text-lg font-semibold">Perguntas Frequentes</h2>
+          <h2 className="text-lg font-semibold">{t("faq.title")}</h2>
         </div>
 
         <div className="space-y-5 md:space-y-6">
           <div>
             <h3 className="font-medium text-(--text-primary) mb-2">
-              Como adicionar secrets em um projeto?
+              {t("faq.q1")}
             </h3>
             <p className="text-sm text-(--text-muted) font-mono">
-              Acesse o projeto desejado, vá para a aba &quot;Secrets&quot; e
-              clique em &quot;Novo Secret&quot;. Insira a chave e o valor. Seus
-              secrets são criptografados localmente antes de serem enviados.
+              {t("faq.a1")}
             </p>
           </div>
 
           <div>
             <h3 className="font-medium text-(--text-primary) mb-2">
-              Como funciona a criptografia?
+              {t("faq.q2")}
             </h3>
             <p className="text-sm text-(--text-muted) font-mono">
-              O CriptEnv usa criptografia Zero-Knowledge. Suas chaves são
-              derivadas localmente usando PBKDF2 e os dados são criptografados
-              com AES-256-GCM antes de sair do seu dispositivo.
+              {t("faq.a2")}
             </p>
           </div>
 
           <div>
             <h3 className="font-medium text-(--text-primary) mb-2">
-              Posso usar em ambientes CI/CD?
+              {t("faq.q3")}
             </h3>
             <p className="text-sm text-(--text-muted) font-mono">
-              Sim! Gere tokens de API na aba de configurações do projeto e use
-              em seus pipelines de CI/CD para acessar secrets de forma segura.
+              {t("faq.a3")}
             </p>
           </div>
 
           <div>
             <h3 className="font-medium text-(--text-primary) mb-2">
-              Como funciona o sistema de convites?
+              {t("faq.q4")}
             </h3>
             <p className="text-sm text-(--text-muted) font-mono">
-              Na aba &quot;Team&quot; do projeto, você pode invitar membros com
-              diferentes permissões: Owner, Admin, Developer ou Viewer. Convites
-              expiram automaticamente após 7 dias.
+              {t("faq.a4")}
             </p>
           </div>
         </div>
@@ -129,11 +125,10 @@ export default function HelpPage() {
           </div>
           <div className="min-w-0">
             <h3 className="font-semibold text-(--text-primary)">
-              Segurança em primeiro lugar
+              {t("security.title")}
             </h3>
             <p className="text-sm text-(--text-muted) font-mono mt-1">
-              Nunca compartilhe suas chaves de criptografia ou tokens de API. O
-              CriptEnv nunca solicita sua senha ou chaves por email ou chat.
+              {t("security.description")}
             </p>
           </div>
         </div>
