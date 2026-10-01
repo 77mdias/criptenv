@@ -820,19 +820,24 @@ export default function AccountPage() {
                 >
                   <RowIcon icon={isMobile ? Smartphone : Monitor} />
                   <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-2 flex-wrap">
-                      <span className="truncate">
-                        {device.browser}
-                        {device.os && <span className="text-[var(--text-muted)] font-normal"> · {device.os}</span>}
-                      </span>
-                      {isCurrent && <Badge variant="success">Esta sessão</Badge>}
+                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">
+                      {device.browser}
+                      {device.os && <span className="text-[var(--text-muted)] font-normal"> · {device.os}</span>}
                     </p>
-                    <p className="text-xs text-[var(--text-muted)] font-mono truncate">
-                      {session.ip_address || "IP desconhecido"}
-                      {" · "}
-                      {session.last_accessed_at
-                        ? `ativa ${formatRelative(session.last_accessed_at)}`
-                        : `criada em ${formatDate(session.created_at)}`}
+                    <p className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-2 min-w-0">
+                      <span className="truncate">
+                        {session.ip_address || "IP desconhecido"}
+                        {" · "}
+                        {session.last_accessed_at
+                          ? `ativa ${formatRelative(session.last_accessed_at)}`
+                          : `criada em ${formatDate(session.created_at)}`}
+                      </span>
+                      {isCurrent && (
+                        <span className="inline-flex items-center gap-1.5 text-emerald-500 shrink-0" title="Sessão atual deste dispositivo">
+                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden />
+                          Esta sessão
+                        </span>
+                      )}
                     </p>
                   </div>
                   <Button
