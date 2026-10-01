@@ -54,6 +54,7 @@ class SessionResponse(BaseModel):
     last_accessed_at: Optional[datetime] = None
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
+    current: bool = False
 
     class Config:
         from_attributes = True
@@ -63,6 +64,11 @@ class SessionResponse(BaseModel):
         if hasattr(obj, "ip_address") and obj.ip_address is not None:
             obj.ip_address = str(obj.ip_address)
         return super().model_validate(obj, **kwargs)
+
+
+class SessionsRevokedResponse(BaseModel):
+    message: str
+    revoked: int
 
 
 class AuthResponse(BaseModel):

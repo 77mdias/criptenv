@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
+import hashlib
 
 import pytest
 from fastapi import FastAPI
@@ -303,6 +304,114 @@ def test_get_sessions_hides_session_tokens(monkeypatch):
     payload = response.json()
     assert len(payload) == 1
     assert "token" not in payload[0]
+
+
+def test_get_sessions_marks_current_session(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    session = make_session()
+    session.token = hashlib.sha256(b"current-session-token").hexdigest()
+
+    async def fake_get_user_sessions(self, user_id):
+        return [session]
+
+    monkeypatch.setattr(AuthService, "get_user_sessions", fake_get_user_sessions)
+
+    with TestClient(app) as client:
+        client.cookies.set("session_token", "current-session-token")
+        response = client.get("/api/auth/sessions")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]["current"] is True
+
+
+def test_get_sessions_marks_other_sessions_as_not_current(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    session = make_session()
+    session.token = "different-digest"
+
+    async def fake_get_user_sessions(self, user_id):
+        return [session]
+
+    monkeypatch.setattr(AuthService, "get_user_sessions", fake_get_user_sessions)
+
+    with TestClient(app) as client:
+        client.cookies.set("session_token", "current-session-token")
+        response = client.get("/api/auth/sessions")
+
+    assert response.status_code == 200
+    assert response.json()[0]["current"] is False
+
+
+def test_revoke_session_deletes_owned_session(monkeypatch):
+    app = make_app()
+    user = make_user()
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    session = make_session()
+    session.user_id = user.id
+    captured = {}
+
+    async def fake_revoke_session(self, user_id, session_id):
+        captured["user_id"] = user_id
+        captured["session_id"] = session_id
+        return True
+
+    monkeypatch.setattr(AuthService, "revoke_session", fake_revoke_session)
+
+    with TestClient(app) as client:
+        response = client.delete(f"/api/auth/sessions/{session.id}")
+
+    assert response.status_code == 200
+    assert captured["user_id"] == user.id
+    assert captured["session_id"] == session.id
+
+
+def test_revoke_session_returns_404_for_unknown_session(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    async def fake_revoke_session(self, user_id, session_id):
+        return False
+
+    monkeypatch.setattr(AuthService, "revoke_session", fake_revoke_session)
+
+    with TestClient(app) as client:
+        response = client.delete(f"/api/auth/sessions/{uuid4()}")
+
+    assert response.status_code == 404
+
+
+def test_revoke_all_sessions_keeps_current_session(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    current_session = make_session()
+    captured = {}
+
+    async def fake_get_session_by_token(self, token):
+        return current_session
+
+    async def fake_revoke_all_sessions(self, user_id, exclude_session_id=None):
+        captured["exclude_session_id"] = exclude_session_id
+        return 2
+
+    monkeypatch.setattr(AuthService, "get_session_by_token", fake_get_session_by_token)
+    monkeypatch.setattr(AuthService, "revoke_all_sessions", fake_revoke_all_sessions)
+
+    with TestClient(app) as client:
+        client.cookies.set("session_token", "current-session-token")
+        response = client.post("/api/auth/sessions/revoke-all")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["revoked"] == 2
+    assert captured["exclude_session_id"] == current_session.id
 
 
 def _make_email_service(enabled: bool):

@@ -225,6 +225,57 @@ class AuthService:
         await self.db.delete(session)
         return True
 
+    async def get_session_by_token(self, token: str) -> Optional[Session]:
+        """Look up an active (non-expired) session by its plaintext token."""
+        now = datetime.now(timezone.utc)
+        result = await self.db.execute(
+            select(Session).where(
+                Session.token == self.hash_token(token),
+                Session.expires_at > now,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def revoke_session(self, user_id: UUID, session_id: UUID) -> bool:
+        """Revoke a single session owned by the given user.
+
+        Returns True when the session existed and was deleted.
+        """
+        result = await self.db.execute(
+            select(Session).where(
+                Session.id == session_id,
+                Session.user_id == user_id,
+            )
+        )
+        session = result.scalar_one_or_none()
+
+        if not session:
+            return False
+
+        await self.db.delete(session)
+        return True
+
+    async def revoke_all_sessions(
+        self, user_id: UUID, exclude_session_id: Optional[UUID] = None
+    ) -> int:
+        """Revoke every active session of a user, optionally keeping one.
+
+        Returns the number of sessions revoked.
+        """
+        now = datetime.now(timezone.utc)
+        query = select(Session).where(
+            Session.user_id == user_id,
+            Session.expires_at > now,
+        )
+        if exclude_session_id is not None:
+            query = query.where(Session.id != exclude_session_id)
+
+        result = await self.db.execute(query)
+        sessions = list(result.scalars().all())
+        for session in sessions:
+            await self.db.delete(session)
+        return len(sessions)
+
     async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         result = await self.db.execute(
             select(User).where(User.id == user_id)

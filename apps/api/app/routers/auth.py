@@ -1,7 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm.attributes import flag_modified
-from typing import Union
+from typing import Optional, Union
+from uuid import UUID
 
 from app.database import get_db
 from app.services.auth_service import AuthService
@@ -13,6 +14,7 @@ from app.schemas.auth import (
     UpdateProfileRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest, TwoFactorDisableRequest,
     TwoFactorRequiredResponse, TwoFactorChallengeVerifyRequest,
     VerifyEmailRequest, SendVerificationResponse, VerifyEmailResponse,
+    SessionsRevokedResponse,
 )
 from app.middleware.auth import get_current_user
 from app.models.user import User
@@ -245,14 +247,75 @@ async def get_session(
     return _user_to_response(current_user)
 
 
+def _extract_session_token(request: Request) -> Optional[str]:
+    """Read the session token from the cookie or the Authorization header."""
+    token = request.cookies.get(SESSION_COOKIE)
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    return token
+
+
 @router.get("/sessions", response_model=list[SessionResponse])
 async def get_sessions(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     auth_service = AuthService(db)
     sessions = await auth_service.get_user_sessions(current_user.id)
-    return [_session_to_response(s) for s in sessions]
+
+    token = _extract_session_token(request)
+    current_token_hash = auth_service.hash_token(token) if token else None
+
+    responses = []
+    for session in sessions:
+        payload = _session_to_response(session)
+        payload.current = bool(current_token_hash) and session.token == current_token_hash
+        responses.append(payload)
+    return responses
+
+
+@router.delete("/sessions/{session_id}", response_model=MessageResponse)
+async def revoke_session(
+    session_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    deleted = await auth_service.revoke_session(current_user.id, session_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found",
+        )
+    return MessageResponse(message="Session revoked")
+
+
+@router.post("/sessions/revoke-all", response_model=SessionsRevokedResponse)
+async def revoke_all_sessions(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Revoke every active session except the one making the request."""
+    auth_service = AuthService(db)
+
+    token = _extract_session_token(request)
+    current_session_id: Optional[UUID] = None
+    if token:
+        current_session = await auth_service.get_session_by_token(token)
+        if current_session:
+            current_session_id = current_session.id
+
+    revoked = await auth_service.revoke_all_sessions(
+        current_user.id, exclude_session_id=current_session_id
+    )
+    return SessionsRevokedResponse(
+        message=f"{revoked} session(s) revoked",
+        revoked=revoked,
+    )
 
 
 # ─── Password Reset ─────────────────────────────────────────────────────────

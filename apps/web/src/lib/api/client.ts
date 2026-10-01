@@ -186,8 +186,11 @@ export interface SessionResponse {
   user_id: string;
   expires_at: string;
   created_at: string;
+  last_accessed_at?: string | null;
   ip_address: string | null;
   user_agent: string | null;
+  /** True when this row is the session making the request. */
+  current?: boolean;
 }
 
 export interface AuditLog {

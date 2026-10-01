@@ -28,6 +28,14 @@ export const authApi = {
     return request('GET', '/api/auth/sessions');
   },
 
+  revokeSession(sessionId: string): Promise<MessageResponse> {
+    return request('DELETE', `/api/auth/sessions/${sessionId}`);
+  },
+
+  revokeAllSessions(): Promise<MessageResponse & { revoked: number }> {
+    return request('POST', '/api/auth/sessions/revoke-all');
+  },
+
   forgotPassword(body: { email: string }): Promise<MessageResponse> {
     return request('POST', '/api/auth/forgot-password', body);
   },
