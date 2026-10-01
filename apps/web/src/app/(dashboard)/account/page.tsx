@@ -679,14 +679,14 @@ export default function AccountPage() {
                       <span
                         className={cn(
                           "inline-flex items-center gap-1.5 shrink-0",
-                          currentUser?.two_factor_enabled ? "text-emerald-500" : "text-[var(--text-muted)]"
+                          currentUser?.two_factor_enabled ? "text-emerald-500" : "text-red-400"
                         )}
                         title={currentUser?.two_factor_enabled ? "2FA ativo nesta conta" : "2FA não configurado"}
                       >
                         <span
                           className={cn(
                             "h-1.5 w-1.5 rounded-full shrink-0",
-                            currentUser?.two_factor_enabled ? "bg-emerald-500" : "bg-[var(--text-muted)]"
+                            currentUser?.two_factor_enabled ? "bg-emerald-500" : "bg-red-400"
                           )}
                           aria-hidden
                         />
