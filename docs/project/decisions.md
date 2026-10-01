@@ -1558,3 +1558,24 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ Novos uploads aparecem imediatamente (URL nova → cache miss).
 - ✅ Leitura do avatar (`GET /me`, members, invites) não muda; o `?v=` viaja junto pelo `avatar_url` persistido.
 - ⚠️ Objetos antigos já gravados sem `Cache-Control` mantêm o comportamento anterior até serem sobrescritos por um novo upload (que então grava o header).
+
+## DEC-063 — Gestão de Sessões na Página Account (logout por sessão + revoke-all)
+
+**Date:** 2026-10-01 · **Status:** Accepted
+
+**Context:** a página `/account` listava sessões com o user-agent bruto, não identificava qual sessão pertencia ao chamador e não havia logout individual. O botão "Sair de todas" chamava `POST /api/auth/signout`, que invalida apenas a sessão do cookie — label e comportamento divergiam. Requisito veio de revisão de UX do painel.
+
+**Decision:**
+1. **Marcação de sessão atual no backend**, não no cliente: `GET /api/auth/sessions` compara o hash SHA-256 do token (cookie `session_token` ou header `Authorization: Bearer`) com o digest persistido e devolve `current: true` na linha correspondente. Evita heurística client-side (user-agent/IP são spoofáveis e insuficientes).
+2. **Revogação escopada por dono:** `DELETE /api/auth/sessions/{session_id}` e `POST /api/auth/sessions/revoke-all` filtram sempre por `user_id == current_user.id` — impossível revogar sessão de outro usuário (BOLA). `revoke-all` exclui a sessão corrente da revogação (`exclude_session_id`), mantendo o dispositivo em uso logado.
+3. **Frontend:** header da página ganha "Sair da conta" (logout da sessão atual via `POST /signout`, que também limpa o cookie); cada sessão tem "Encerrar" (a atual faz logout completo); "Encerrar outras" usa `revoke-all`. User-agent é parseado no cliente (`lib/device-info.ts`) apenas para exibição — detecção best-effort com fallback genérico.
+
+**Alternatives considered:**
+- Revogar todas as sessões incluindo a atual em `revoke-all`. Rejeitado: derruba o dispositivo que disparou a ação; logout do dispositivo atual já tem fluxo dedicado.
+- Determinar a sessão atual no frontend comparando `localStorage`/fingerprint. Rejeitado: frágil e inseguro; o servidor é a fonte da verdade do token.
+- Endpoint único `DELETE /sessions` com body. Rejeitado: convenção REST por recurso facilita cache, testes e semântica de 404.
+
+**Consequences:**
+- ✅ Usuário audita e encerra sessões individualmente; "Sair de todas" finalmente faz o que diz.
+- ✅ Sem migração de banco: reutiliza a tabela `sessions` e o padrão de token já hasheado (DEC de sessões em digest).
+- ⚠️ Respostas antigas em cache do peek (`GET /api/auth/sessions`, TTL 15s) podem não ter `current` — o frontend trata como `false` (campo opcional).

@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Feat — Redesign da página Account + gestão de sessões (logout por sessão) (2026-10-01)
+
+- **Feat (web):** página `/account` redesenhada seguindo o design system (Cards, badges, fonte mono, CSS vars): cabeçalhos de seção com chip de ícone + descrição; linhas de configuração com ação alinhada à direita (Segurança, Contas vinculadas, Sessões, Zona de perigo) substituindo os botões "soltos"; avatares de provedor OAuth com cores de marca; sessões com user-agent parseado (`Chrome · Linux` via novo `src/lib/device-info.ts`), destaque e badge "Esta sessão" para a sessão atual; zona de perigo com tint vermelho e bloco de confirmação dedicado; estados vazios ilustrados.
+- **Feat (web):** botão **"Sair da conta"** no cabeçalho (logout da sessão atual), botão **"Encerrar"** por sessão (inclui logout na sessão atual) e **"Encerrar outras"** no cabeçalho da seção de sessões — antes, o botão "Sair de todas" chamava `POST /api/auth/signout`, que na prática só encerrava a sessão atual (bug de label/behavior).
+- **Feat (api):** `GET /api/auth/sessions` passa a marcar `current: true` na sessão do chamador (comparação do hash do cookie/bearer); novo `DELETE /api/auth/sessions/{session_id}` (revoga sessão própria, 404 caso inexistente/estranha) e `POST /api/auth/sessions/revoke-all` (revoga todas exceto a atual, retorna `revoked`). Novos métodos `AuthService.get_session_by_token`, `revoke_session`, `revoke_all_sessions` (escopados por `user_id` — sem BOLA entre contas).
+- **Verified:** API **585 passed / 2 skipped** (5 testes novos em `test_auth_routes.py`); CLI **191 passed**; web lint limpo e `vinext build` completo. Detalhes em DEC-063.
+
 ### Fix — Avatar não atualiza na UI após upload (cache de URL estável) (2026-11-19)
 
 - **Fix (api):** `AvatarService.upload_avatar` passa a retornar a URL pública com cache-buster `?v={time.time_ns()}` (backends `r2` e `supabase`) e o upload para o R2 grava `Cache-Control: public, max-age=604800, immutable` (header assinado no SigV4). Causa raiz: o objeto é sobrescrito sob a mesma chave `{user_id}{ext}`, logo a URL nunca mudava e browser/CDN serviam a imagem antiga mesmo com o objeto novo no R2 — sintoma: "o upload vai, a imagem do avatar no site não atualiza". Com o `?v=` no `avatar_url` persistido, o `<img>` do top-nav e da página da conta recarrega naturalmente. Detalhes em DEC-062.

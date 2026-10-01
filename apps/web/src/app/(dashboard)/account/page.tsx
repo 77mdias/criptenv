@@ -1,8 +1,13 @@
 "use client"
 
-import { useEffect, useState, useCallback } from "react"
+import { useEffect, useState, useCallback, type ElementType, type ReactNode } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
-import { Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail } from "lucide-react"
+import {
+  Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail,
+  LogOut, CheckCircle2, AlertCircle, ShieldOff, Smartphone,
+} from "lucide-react"
+import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
+import { faGithubAlt, faGoogle, faDiscord } from "@fortawesome/free-brands-svg-icons"
 import { QRCodeSVG } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
@@ -13,8 +18,94 @@ import { OAuthButton, type OAuthProvider } from "@/components/ui/oauth-button"
 import { authApi, peekCached } from "@/lib/api"
 import { useAuthStore } from "@/stores/auth"
 import type { SessionResponse, User as UserType } from "@/lib/api"
+import { parseUserAgent } from "@/lib/device-info"
+import { cn } from "@/lib/utils"
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { AvatarUpload } from "@/components/shared/avatar-upload"
+
+// ─── Local helpers ────────────────────────────────────────────────────────────
+
+const PROVIDER_META = {
+  github: { label: "GitHub", icon: faGithubAlt, chip: "bg-[#24292e]" },
+  google: { label: "Google", icon: faGoogle, chip: "bg-[#4285F4]" },
+  discord: { label: "Discord", icon: faDiscord, chip: "bg-[#5865F2]" },
+} as const
+
+type ProviderKey = keyof typeof PROVIDER_META
+
+function formatRelative(dateStr: string): string {
+  const diffMs = Date.now() - new Date(dateStr).getTime()
+  if (Number.isNaN(diffMs)) return ""
+  const minutes = Math.floor(diffMs / 60_000)
+  if (minutes < 1) return "agora mesmo"
+  if (minutes < 60) return `${minutes} min atrás`
+  const hours = Math.floor(minutes / 60)
+  if (hours < 24) return `${hours} h atrás`
+  const days = Math.floor(hours / 24)
+  if (days < 30) return `${days} d atrás`
+  return new Date(dateStr).toLocaleDateString("pt-BR")
+}
+
+function formatDate(dateStr: string): string {
+  const date = new Date(dateStr)
+  if (Number.isNaN(date.getTime())) return ""
+  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+}
+
+// Shared section header: icon chip + title + description, optional action slot.
+function SectionHeader({
+  icon: Icon,
+  tone = "default",
+  title,
+  description,
+  action,
+}: {
+  icon: ElementType
+  tone?: "default" | "danger"
+  title: string
+  description: string
+  action?: ReactNode
+}) {
+  return (
+    <div className="flex items-start justify-between gap-4 mb-5">
+      <div className="flex items-center gap-3 min-w-0">
+        <div
+          className={cn(
+            "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 border",
+            tone === "danger"
+              ? "bg-red-500/10 border-red-500/30 text-red-500"
+              : "bg-[var(--background-subtle)] border-[var(--border-subtle)] text-[var(--text-secondary)]"
+          )}
+        >
+          <Icon className="h-[18px] w-[18px]" />
+        </div>
+        <div className="min-w-0">
+          <h3 className="font-semibold text-[var(--text-primary)] leading-tight">{title}</h3>
+          <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">{description}</p>
+        </div>
+      </div>
+      {action && <div className="shrink-0">{action}</div>}
+    </div>
+  )
+}
+
+// Icon chip used by list rows inside sections.
+function RowIcon({ icon: Icon, tone = "default" }: { icon: ElementType; tone?: "default" | "danger" }) {
+  return (
+    <div
+      className={cn(
+        "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 border",
+        tone === "danger"
+          ? "bg-red-500/10 border-red-500/20 text-red-500"
+          : "bg-[var(--background-muted)] border-[var(--border-subtle)] text-[var(--text-secondary)]"
+      )}
+    >
+      <Icon className="h-4 w-4" />
+    </div>
+  )
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AccountPage() {
   const router = useRouter()
@@ -51,8 +142,12 @@ export default function AccountPage() {
   const [unlinkProvider, setUnlinkProvider] = useState<string | null>(null)
   const [isUnlinking, setIsUnlinking] = useState(false)
 
+  // Sessions
+  const [revokingSessionId, setRevokingSessionId] = useState<string | null>(null)
+  const [isRevokingAll, setIsRevokingAll] = useState(false)
+
   // Available OAuth providers
-  const availableProviders = ["github", "google", "discord"]
+  const availableProviders: ProviderKey[] = ["github", "google", "discord"]
   const unlinkedProviders = availableProviders.filter(
     (p) => !oauthAccounts.some((a) => a.provider === p)
   )
@@ -92,6 +187,14 @@ export default function AccountPage() {
   // Delete account
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
   const [deleteConfirmText, setDeleteConfirmText] = useState("")
+
+  const refreshSessions = useCallback(async () => {
+    try {
+      setSessions(await authApi.getSessions())
+    } catch {
+      // Keep the current list on failure; the error banner handles messaging.
+    }
+  }, [])
 
   useEffect(() => {
     let cancelled = false
@@ -142,13 +245,50 @@ export default function AccountPage() {
     return () => { cancelled = true }
   }, [])
 
-  const handleSignOutAll = async () => {
+  // ── Handlers ────────────────────────────────────────────────────────────────
+
+  const handleSignOut = useCallback(async () => {
     try {
       await authApi.signout()
+    } finally {
       clearAuth()
       router.push("/login")
+    }
+  }, [clearAuth, router])
+
+  const handleRevokeSession = async (session: SessionResponse) => {
+    // The current session goes through the signout flow so the cookie is
+    // cleared server-side; other sessions are revoked by id.
+    if (session.current) {
+      await handleSignOut()
+      return
+    }
+    setRevokingSessionId(session.id)
+    try {
+      await authApi.revokeSession(session.id)
+      showMessage("Sessão encerrada.")
+      await refreshSessions()
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao fazer signout")
+      showMessage(err instanceof Error ? err.message : "Erro ao encerrar sessão", true)
+    } finally {
+      setRevokingSessionId(null)
+    }
+  }
+
+  const handleRevokeAll = async () => {
+    setIsRevokingAll(true)
+    try {
+      const result = await authApi.revokeAllSessions()
+      showMessage(
+        result.revoked > 0
+          ? `${result.revoked} sessão(ões) encerrada(s). As outras conexões serão desconectadas.`
+          : "Nenhuma outra sessão ativa para encerrar."
+      )
+      await refreshSessions()
+    } catch (err) {
+      showMessage(err instanceof Error ? err.message : "Erro ao encerrar sessões", true)
+    } finally {
+      setIsRevokingAll(false)
     }
   }
 
@@ -267,47 +407,73 @@ export default function AccountPage() {
     }
   }
 
+  // ── Loading state ───────────────────────────────────────────────────────────
+
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Conta</h1>
-          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
-            Gerencie suas informações e sessões
-          </p>
+      <div className="space-y-6 max-w-3xl">
+        <div className="flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">Conta</h1>
+            <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
+              Gerencie suas informações e sessões
+            </p>
+          </div>
+          <Skeleton className="h-10 w-36 rounded-lg" />
         </div>
         <Card className="p-6 space-y-4">
           <Skeleton className="h-8 w-48" />
           <Skeleton className="h-4 w-64" />
           <Skeleton className="h-4 w-32" />
         </Card>
+        <Card className="p-6 space-y-4">
+          <Skeleton className="h-6 w-32" />
+          <Skeleton className="h-12 w-full" />
+          <Skeleton className="h-12 w-full" />
+        </Card>
       </div>
     )
   }
 
+  const otherSessionsCount = sessions.filter((s) => !s.current).length
+
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-2xl font-semibold tracking-tight">Conta</h1>
-        <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
-          Gerencie suas informações e sessões
-        </p>
+    <div className="space-y-6 max-w-3xl">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Conta</h1>
+          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
+            Gerencie suas informações e sessões
+          </p>
+        </div>
+        <Button variant="secondary" size="sm" className="shrink-0" onClick={handleSignOut}>
+          <LogOut className="h-4 w-4" /> Sair da conta
+        </Button>
       </div>
 
+      {/* Feedback */}
       {error && (
-        <Card className="p-4 border-red-500/50">
+        <Card className="p-4 border-red-500/50 bg-red-500/5 flex items-start gap-3">
+          <AlertCircle className="h-4 w-4 text-red-500 shrink-0 mt-0.5" />
           <p className="text-red-500 text-sm font-mono">{error}</p>
         </Card>
       )}
 
       {success && (
-        <Card className="p-4 border-green-500/50">
+        <Card className="p-4 border-green-500/50 bg-green-500/5 flex items-start gap-3">
+          <CheckCircle2 className="h-4 w-4 text-green-500 shrink-0 mt-0.5" />
           <p className="text-green-500 text-sm font-mono">{success}</p>
         </Card>
       )}
 
-      {/* User Info */}
-      <Card className="p-6">
+      {/* Profile */}
+      <Card>
+        <SectionHeader
+          icon={Edit2}
+          title="Perfil"
+          description="Suas informações públicas"
+        />
         <div className="flex flex-col sm:flex-row items-center sm:items-start gap-6">
           <AvatarUpload
             currentAvatarUrl={currentUser?.avatar_url || null}
@@ -398,141 +564,211 @@ export default function AccountPage() {
       </Card>
 
       {/* Security */}
-      <Card className="p-6 space-y-4">
-        <h3 className="font-semibold text-[var(--text-primary)] flex items-center gap-2">
-          <Shield className="h-5 w-5" /> Segurança
-        </h3>
-
-        {/* Change Password */}
-        <div className="border-t border-[var(--border)] pt-4">
-          {showChangePassword ? (
-            <div className="space-y-3">
-              <Input
-                type="password"
-                placeholder="Senha atual"
-                value={currentPassword}
-                onChange={(e) => setCurrentPassword(e.target.value)}
-                className="font-mono"
-              />
-              <Input
-                type="password"
-                placeholder="Nova senha"
-                value={newPassword}
-                onChange={(e) => setNewPassword(e.target.value)}
-                className="font-mono"
-              />
-              <Input
-                type="password"
-                placeholder="Confirmar nova senha"
-                value={confirmPassword}
-                onChange={(e) => setConfirmPassword(e.target.value)}
-                className="font-mono"
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleChangePassword}>
-                  <KeyRound className="h-4 w-4 mr-1" /> Alterar senha
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => setShowChangePassword(false)}>
-                  Cancelar
-                </Button>
-              </div>
-            </div>
-          ) : (
-            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px] justify-start" onClick={() => setShowChangePassword(true)}>
-              <KeyRound className="h-4 w-4 shrink-0" /> Alterar senha
-            </Button>
-          )}
-        </div>
-
-        {/* 2FA */}
-        <div className="border-t border-[var(--border)] pt-4">
-          {show2FASetup ? (
-            <div className="space-y-3">
-              <p className="text-sm text-[var(--text-tertiary)] font-mono">
-                Escaneie o QR code com seu app autenticador e digite o código de 6 dígitos.
-              </p>
-              {twoFASecretUri && (
-                <div className="p-4 bg-white rounded-lg inline-block">
-                  <QRCodeSVG value={twoFASecretUri} size={180} level="M" includeMargin />
-                  <p className="text-xs text-black font-mono mt-2 break-all">{twoFASecretUri}</p>
+      <Card>
+        <SectionHeader
+          icon={Shield}
+          title="Segurança"
+          description="Proteja o acesso à sua conta"
+        />
+        <div className="divide-y divide-[var(--border-subtle)] border-t border-[var(--border-subtle)]">
+          {/* Password row */}
+          <div className="py-4">
+            {showChangePassword ? (
+              <div className="space-y-3 rounded-xl bg-[var(--background-subtle)] border border-[var(--border-subtle)] p-4">
+                <p className="text-sm font-medium text-[var(--text-primary)]">Alterar senha</p>
+                <Input
+                  type="password"
+                  placeholder="Senha atual"
+                  value={currentPassword}
+                  onChange={(e) => setCurrentPassword(e.target.value)}
+                  className="font-mono"
+                />
+                <Input
+                  type="password"
+                  placeholder="Nova senha (mín. 8 caracteres)"
+                  value={newPassword}
+                  onChange={(e) => setNewPassword(e.target.value)}
+                  className="font-mono"
+                />
+                <Input
+                  type="password"
+                  placeholder="Confirmar nova senha"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  className="font-mono"
+                />
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" onClick={handleChangePassword}>
+                    <KeyRound className="h-4 w-4 mr-1" /> Confirmar nova senha
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShowChangePassword(false)}>
+                    Cancelar
+                  </Button>
                 </div>
-              )}
-              {twoFABackupCodes.length > 0 && (
-                <div className="p-3 bg-[var(--background-subtle)] rounded-lg">
-                  <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-2">
-                    Códigos de backup (salve em local seguro)
-                  </p>
-                  <div className="grid grid-cols-2 gap-2">
-                    {twoFABackupCodes.map((code, i) => (
-                      <span key={i} className="text-sm font-mono text-[var(--text-primary)]">{code}</span>
-                    ))}
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <RowIcon icon={KeyRound} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">Senha</p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono">
+                      Use pelo menos 8 caracteres
+                    </p>
                   </div>
                 </div>
-              )}
-              <Input
-                placeholder="Código de 6 dígitos"
-                value={twoFACode}
-                onChange={(e) => setTwoFACode(e.target.value)}
-                className="font-mono"
-                maxLength={6}
-              />
-              <div className="flex gap-2">
-                <Button size="sm" onClick={handleVerify2FA}>
-                  <Check className="h-4 w-4 mr-1" /> Ativar 2FA
-                </Button>
-                <Button size="sm" variant="secondary" onClick={() => setShow2FASetup(false)}>
-                  Cancelar
+                <Button size="sm" variant="secondary" className="shrink-0" onClick={() => setShowChangePassword(true)}>
+                  Alterar
                 </Button>
               </div>
-            </div>
-          ) : currentUser?.two_factor_enabled ? (
-            <Button size="sm" variant="danger" className="w-full sm:w-auto sm:min-w-[180px] justify-start" onClick={handleDisable2FA}>
-              <Shield className="h-4 w-4 shrink-0" /> Desativar 2FA
-            </Button>
-          ) : (
-            <Button size="sm" variant="secondary" className="w-full sm:w-auto sm:min-w-[180px] justify-start" onClick={handleSetup2FA}>
-              <Shield className="h-4 w-4 shrink-0" /> Ativar 2FA
-            </Button>
-          )}
+            )}
+          </div>
+
+          {/* 2FA row */}
+          <div className="py-4">
+            {show2FASetup ? (
+              <div className="space-y-3 rounded-xl bg-[var(--background-subtle)] border border-[var(--border-subtle)] p-4">
+                <p className="text-sm font-medium text-[var(--text-primary)]">Ativar 2FA</p>
+                <p className="text-sm text-[var(--text-tertiary)] font-mono">
+                  Escaneie o QR code com seu app autenticador e digite o código de 6 dígitos.
+                </p>
+                {twoFASecretUri && (
+                  <div className="p-4 bg-white rounded-lg inline-block">
+                    <QRCodeSVG value={twoFASecretUri} size={180} level="M" includeMargin />
+                    <p className="text-xs text-black font-mono mt-2 break-all">{twoFASecretUri}</p>
+                  </div>
+                )}
+                {twoFABackupCodes.length > 0 && (
+                  <div className="p-3 bg-[var(--background-muted)] rounded-lg border border-[var(--border-subtle)]">
+                    <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-2">
+                      Códigos de backup (salve em local seguro)
+                    </p>
+                    <div className="grid grid-cols-2 gap-2">
+                      {twoFABackupCodes.map((code, i) => (
+                        <span key={i} className="text-sm font-mono text-[var(--text-primary)]">{code}</span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                <Input
+                  placeholder="Código de 6 dígitos"
+                  value={twoFACode}
+                  onChange={(e) => setTwoFACode(e.target.value)}
+                  className="font-mono"
+                  maxLength={6}
+                />
+                <div className="flex gap-2 pt-1">
+                  <Button size="sm" onClick={handleVerify2FA}>
+                    <Check className="h-4 w-4 mr-1" /> Ativar 2FA
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setShow2FASetup(false)}>
+                    Cancelar
+                  </Button>
+                </div>
+              </div>
+            ) : (
+              <div className="flex items-center justify-between gap-4">
+                <div className="flex items-center gap-3 min-w-0">
+                  <RowIcon icon={currentUser?.two_factor_enabled ? Shield : ShieldOff} />
+                  <div className="min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-2">
+                      Autenticação de dois fatores
+                      <Badge variant={currentUser?.two_factor_enabled ? "success" : "outline"}>
+                        {currentUser?.two_factor_enabled ? "Ativa" : "Inativa"}
+                      </Badge>
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono">
+                      Camada extra de proteção no login
+                    </p>
+                  </div>
+                </div>
+                {currentUser?.two_factor_enabled ? (
+                  <Button size="sm" variant="secondary" className="shrink-0 text-red-600 hover:bg-red-500/10" onClick={handleDisable2FA}>
+                    Desativar
+                  </Button>
+                ) : (
+                  <Button size="sm" variant="secondary" className="shrink-0" onClick={handleSetup2FA}>
+                    Ativar
+                  </Button>
+                )}
+              </div>
+            )}
+          </div>
         </div>
       </Card>
 
-      {/* OAuth Accounts */}
-      <Card className="p-6">
-        <h3 className="font-semibold text-[var(--text-primary)] flex items-center gap-2 mb-4">
-          <Link2 className="h-5 w-5" /> Contas vinculadas
-        </h3>
-        {loadingOAuth ? (
-          <Skeleton className="h-12 w-full" />
-        ) : oauthAccounts.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)] font-mono">Nenhuma conta OAuth vinculada.</p>
-        ) : (
-          <div className="space-y-2">
-            {oauthAccounts.map((account) => (
-              <div key={account.provider} className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-lg bg-[var(--background-subtle)]">
-                <div className="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
-                  <div className="h-8 w-8 shrink-0 rounded-full bg-[var(--background-muted)] flex items-center justify-center">
-                    <span className="text-xs font-bold uppercase">{account.provider[0]}</span>
+      {/* Linked accounts */}
+      <Card>
+        <SectionHeader
+          icon={Link2}
+          title="Contas vinculadas"
+          description="Faça login com provedores externos"
+        />
+        <div className="space-y-2">
+          {loadingOAuth ? (
+            <Skeleton className="h-14 w-full rounded-xl" />
+          ) : oauthAccounts.length === 0 ? (
+            <div className="rounded-xl border border-dashed border-[var(--border-subtle)] p-6 text-center">
+              <p className="text-sm text-[var(--text-muted)] font-mono">
+                Nenhuma conta OAuth vinculada.
+              </p>
+            </div>
+          ) : (
+            oauthAccounts.map((account) => {
+              const meta = PROVIDER_META[account.provider as ProviderKey]
+              return (
+                <div
+                  key={account.provider}
+                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--background-subtle)]"
+                >
+                  <div className="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
+                    <div
+                      className={cn(
+                        "h-9 w-9 shrink-0 rounded-lg flex items-center justify-center",
+                        meta?.chip ?? "bg-[var(--background-muted)] text-[var(--text-primary)]",
+                        meta && "text-white"
+                      )}
+                    >
+                      {meta ? (
+                        <FontAwesomeIcon icon={meta.icon} className="h-4 w-4" />
+                      ) : (
+                        <span className="text-xs font-bold uppercase">{account.provider[0]}</span>
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <p className="text-sm font-semibold text-[var(--text-primary)]">
+                        {meta?.label ?? account.provider}
+                      </p>
+                      <p className="text-xs text-[var(--text-muted)] font-mono truncate">
+                        {account.provider_email}
+                      </p>
+                    </div>
                   </div>
-                  <div className="min-w-0 flex-1">
-                    <p className="text-sm font-semibold text-[var(--text-primary)] capitalize">{account.provider}</p>
-                    <p className="text-xs text-[var(--text-muted)] font-mono truncate">{account.provider_email}</p>
+                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
+                    <Badge variant="success">Conectada</Badge>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="text-red-600 hover:bg-red-500/10"
+                      onClick={() => setUnlinkProvider(account.provider)}
+                    >
+                      <Unlink className="h-4 w-4 mr-1" /> Desvincular
+                    </Button>
                   </div>
                 </div>
-                <Button variant="ghost" size="sm" className="text-red-600 w-full sm:w-auto shrink-0 justify-start sm:justify-center" onClick={() => setUnlinkProvider(account.provider)}>
-                  <Unlink className="h-4 w-4 mr-1" /> Desvincular
-                </Button>
-              </div>
-            ))}
-          </div>
-        )}
+              )
+            })
+          )}
+        </div>
 
         {unlinkedProviders.length > 0 && (
-          <div className="mt-6 pt-6 border-t border-[var(--border-subtle)]">
-            <p className="text-sm font-semibold text-[var(--text-primary)] mb-3">Vincular nova conta</p>
+          <div className="mt-5 pt-5 border-t border-[var(--border-subtle)]">
+            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-3">
+              Vincular nova conta
+            </p>
             <div className="flex flex-col sm:flex-row flex-wrap gap-2">
               {unlinkedProviders.map((provider) => (
-                <OAuthButton key={provider} provider={provider as OAuthProvider} action="link" className="w-full sm:w-auto justify-start sm:justify-center" />
+                <OAuthButton key={provider} provider={provider as OAuthProvider} action="link" className="w-full sm:w-auto" />
               ))}
             </div>
           </div>
@@ -540,50 +776,101 @@ export default function AccountPage() {
       </Card>
 
       {/* Sessions */}
-      <Card className="p-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
-          <h3 className="font-semibold text-[var(--text-primary)]">Sessões ativas</h3>
-          <Button variant="danger" size="sm" onClick={handleSignOutAll} className="self-start sm:self-auto">
-            Sair de todas
-          </Button>
-        </div>
+      <Card>
+        <SectionHeader
+          icon={Monitor}
+          title="Sessões ativas"
+          description={
+            sessions.length === 0
+              ? "Nenhum dispositivo conectado"
+              : `${sessions.length} dispositivo(s) conectado(s)`
+          }
+          action={
+            otherSessionsCount > 0 ? (
+              <Button variant="secondary" size="sm" loading={isRevokingAll} onClick={handleRevokeAll} className="text-red-600 hover:bg-red-500/10 shrink-0">
+                {isRevokingAll ? null : <LogOut className="h-4 w-4" />} Encerrar outras
+              </Button>
+            ) : undefined
+          }
+        />
 
         {sessions.length === 0 ? (
-          <p className="text-sm text-[var(--text-muted)] font-mono">
-            Nenhuma sessão ativa
-          </p>
+          <div className="rounded-xl border border-dashed border-[var(--border-subtle)] p-8 text-center">
+            <Monitor className="h-8 w-8 text-[var(--text-muted)] mx-auto mb-2" />
+            <p className="text-sm text-[var(--text-muted)] font-mono">
+              Nenhuma sessão ativa
+            </p>
+          </div>
         ) : (
-          <div className="space-y-3">
-            {sessions.map((session) => (
-              <div
-                key={session.id}
-                className="flex items-center gap-4 p-3 rounded-lg bg-[var(--background-subtle)]"
-              >
-                <Monitor className="h-4 w-4 text-[var(--text-muted)]" />
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-medium text-[var(--text-primary)] truncate font-mono">
-                    {session.user_agent || "Navegador desconhecido"}
-                  </p>
-                  <p className="text-xs text-[var(--text-muted)] font-mono">
-                    {session.ip_address || "IP desconhecido"} ·{" "}
-                    {new Date(session.expires_at).toLocaleDateString("pt-BR")}
-                  </p>
+          <div className="space-y-2">
+            {sessions.map((session) => {
+              const device = parseUserAgent(session.user_agent)
+              const isCurrent = !!session.current
+              const isMobile = /Mobi|Android|iPhone|iPad/i.test(session.user_agent ?? "")
+              const isRevoking = revokingSessionId === session.id
+              return (
+                <div
+                  key={session.id}
+                  className={cn(
+                    "flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-xl border",
+                    isCurrent
+                      ? "border-emerald-500/30 bg-emerald-500/5"
+                      : "border-[var(--border-subtle)] bg-[var(--background-subtle)]"
+                  )}
+                >
+                  <RowIcon icon={isMobile ? Smartphone : Monitor} />
+                  <div className="flex-1 min-w-0">
+                    <p className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-2 flex-wrap">
+                      <span className="truncate">
+                        {device.browser}
+                        {device.os && <span className="text-[var(--text-muted)] font-normal"> · {device.os}</span>}
+                      </span>
+                      {isCurrent && <Badge variant="success">Esta sessão</Badge>}
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono truncate">
+                      {session.ip_address || "IP desconhecido"}
+                      {" · "}
+                      {session.last_accessed_at
+                        ? `ativa ${formatRelative(session.last_accessed_at)}`
+                        : `criada em ${formatDate(session.created_at)}`}
+                    </p>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    loading={isRevoking}
+                    onClick={() => handleRevokeSession(session)}
+                    className={cn(
+                      "shrink-0 self-start sm:self-auto",
+                      isCurrent ? "text-red-600 hover:bg-red-500/10" : "text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-600"
+                    )}
+                  >
+                    {isCurrent ? (
+                      <>
+                        <LogOut className="h-4 w-4" /> Sair
+                      </>
+                    ) : (
+                      "Encerrar"
+                    )}
+                  </Button>
                 </div>
-                <Badge variant="success">Ativa</Badge>
-              </div>
-            ))}
+              )
+            })}
           </div>
         )}
       </Card>
 
-      {/* Delete Account */}
-      <Card className="p-6 border-red-500/30">
-        <h3 className="font-semibold text-red-500 flex items-center gap-2 mb-4">
-          <AlertTriangle className="h-5 w-5" /> Zona de perigo
-        </h3>
+      {/* Danger zone */}
+      <Card className="border-red-500/30 bg-red-500/5">
+        <SectionHeader
+          icon={AlertTriangle}
+          tone="danger"
+          title="Zona de perigo"
+          description="Ações irreversíveis nesta conta"
+        />
 
         {showDeleteConfirm ? (
-          <div className="space-y-3">
+          <div className="space-y-3 rounded-xl border border-red-500/30 bg-[var(--surface)] p-4">
             <p className="text-sm text-[var(--text-tertiary)] font-mono">
               Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos.
               Digite <span className="font-bold text-red-500">DELETAR</span> para confirmar.
@@ -604,9 +891,20 @@ export default function AccountPage() {
             </div>
           </div>
         ) : (
-          <Button size="sm" variant="danger" onClick={() => setShowDeleteConfirm(true)}>
-            <Trash2 className="h-4 w-4 mr-1" /> Deletar conta
-          </Button>
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-red-500/20 bg-[var(--surface)] p-4">
+            <div className="flex items-center gap-3 min-w-0">
+              <RowIcon icon={Trash2} tone="danger" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-[var(--text-primary)]">Excluir conta</p>
+                <p className="text-xs text-[var(--text-muted)] font-mono">
+                  Remove permanentemente seus projetos, segredos e sessões
+                </p>
+              </div>
+            </div>
+            <Button size="sm" variant="danger" className="shrink-0 self-start sm:self-auto" onClick={() => setShowDeleteConfirm(true)}>
+              <Trash2 className="h-4 w-4 mr-1" /> Excluir conta
+            </Button>
+          </div>
         )}
       </Card>
 
