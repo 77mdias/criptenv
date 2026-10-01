@@ -671,14 +671,27 @@ export default function AccountPage() {
                 <div className="flex items-center gap-3 min-w-0">
                   <RowIcon icon={currentUser?.two_factor_enabled ? Shield : ShieldOff} />
                   <div className="min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)] flex items-center gap-2">
+                    <p className="text-sm font-medium text-[var(--text-primary)]">
                       Autenticação de dois fatores
-                      <Badge variant={currentUser?.two_factor_enabled ? "success" : "outline"}>
-                        {currentUser?.two_factor_enabled ? "Ativa" : "Inativa"}
-                      </Badge>
                     </p>
-                    <p className="text-xs text-[var(--text-muted)] font-mono">
-                      Camada extra de proteção no login
+                    <p className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-2 min-w-0">
+                      <span className="truncate">Camada extra de proteção no login</span>
+                      <span
+                        className={cn(
+                          "inline-flex items-center gap-1.5 shrink-0",
+                          currentUser?.two_factor_enabled ? "text-emerald-500" : "text-[var(--text-muted)]"
+                        )}
+                        title={currentUser?.two_factor_enabled ? "2FA ativo nesta conta" : "2FA não configurado"}
+                      >
+                        <span
+                          className={cn(
+                            "h-1.5 w-1.5 rounded-full shrink-0",
+                            currentUser?.two_factor_enabled ? "bg-emerald-500" : "bg-[var(--text-muted)]"
+                          )}
+                          aria-hidden
+                        />
+                        {currentUser?.two_factor_enabled ? "Ativa" : "Inativa"}
+                      </span>
                     </p>
                   </div>
                 </div>
