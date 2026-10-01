@@ -105,6 +105,109 @@ function RowIcon({ icon: Icon, tone = "default" }: { icon: ElementType; tone?: "
   )
 }
 
+// ─── Sidebar cards ────────────────────────────────────────────────────────────
+
+// Compact account summary for the right-hand sidebar.
+function AccountSummaryCard({
+  user,
+  sessionsCount,
+  linkedCount,
+}: {
+  /** Minimal shape satisfied by both the API `User` and the store `AuthUser`. */
+  user: {
+    name: string
+    email: string
+    avatar_url: string | null
+    created_at?: string
+  } | null
+  sessionsCount: number
+  linkedCount: number
+}) {
+  const stats = [
+    { label: "Membro desde", value: user?.created_at ? formatDate(user.created_at) : "—" },
+    { label: "Sessões ativas", value: String(sessionsCount) },
+    { label: "Contas vinculadas", value: String(linkedCount) },
+  ]
+  return (
+    <Card>
+      <div className="flex items-center gap-3 min-w-0">
+        <div className="h-12 w-12 shrink-0 rounded-full bg-[var(--accent)] text-[var(--accent-foreground)] flex items-center justify-center text-sm font-bold overflow-hidden">
+          {user?.avatar_url ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={user.avatar_url} alt={user.name} className="h-full w-full object-cover" />
+          ) : (
+            <span>{user?.name?.charAt(0).toUpperCase() || "U"}</span>
+          )}
+        </div>
+        <div className="min-w-0">
+          <p className="font-semibold text-[var(--text-primary)] truncate">
+            {user?.name || "Usuário"}
+          </p>
+          <p className="text-xs text-[var(--text-muted)] font-mono truncate">{user?.email}</p>
+        </div>
+      </div>
+      <div className="mt-4 pt-4 border-t border-[var(--border-subtle)] divide-y divide-[var(--border-subtle)]">
+        {stats.map((stat) => (
+          <div key={stat.label} className="flex items-center justify-between gap-3 py-2 first:pt-0 last:pb-0">
+            <span className="text-xs text-[var(--text-muted)] font-mono">{stat.label}</span>
+            <span className="text-xs text-[var(--text-primary)] font-mono">{stat.value}</span>
+          </div>
+        ))}
+      </div>
+    </Card>
+  )
+}
+
+// Security checklist mirroring the dot indicator language used across the page.
+function SecuritySummaryCard({
+  emailVerified,
+  twoFactorEnabled,
+  onEnable2FA,
+}: {
+  emailVerified: boolean
+  twoFactorEnabled: boolean
+  onEnable2FA: () => void
+}) {
+  const checks = [
+    { label: "Email verificado", ok: emailVerified, pendingLabel: "Pendente" },
+    { label: "Autenticação 2FA", ok: twoFactorEnabled, pendingLabel: "Inativa" },
+  ]
+  return (
+    <Card>
+      <h3 className="text-sm font-semibold text-[var(--text-primary)] mb-3">Segurança da conta</h3>
+      <div className="space-y-2.5">
+        {checks.map((check) => (
+          <div key={check.label} className="flex items-center justify-between gap-3">
+            <span className="text-xs text-[var(--text-secondary)] font-mono">{check.label}</span>
+            <span
+              className={cn(
+                "inline-flex items-center gap-1.5 text-xs font-mono shrink-0",
+                check.ok ? "text-emerald-500" : "text-red-400"
+              )}
+            >
+              <span
+                className={cn("h-1.5 w-1.5 rounded-full shrink-0", check.ok ? "bg-emerald-500" : "bg-red-400")}
+                aria-hidden
+              />
+              {check.ok ? "Ativa" : check.pendingLabel}
+            </span>
+          </div>
+        ))}
+      </div>
+      {!twoFactorEnabled && (
+        <>
+          <p className="text-xs text-[var(--text-muted)] font-mono mt-4 leading-relaxed">
+            Adicione uma segunda camada de proteção ao login.
+          </p>
+          <Button size="sm" variant="secondary" fullWidth className="mt-3" onClick={onEnable2FA}>
+            <Shield className="h-4 w-4" /> Ativar 2FA
+          </Button>
+        </>
+      )}
+    </Card>
+  )
+}
+
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
 export default function AccountPage() {
@@ -411,7 +514,7 @@ export default function AccountPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6 max-w-3xl">
+      <div className="space-y-6">
         <div className="flex items-start justify-between gap-4">
           <div>
             <h1 className="text-2xl font-semibold tracking-tight">Conta</h1>
@@ -438,7 +541,7 @@ export default function AccountPage() {
   const otherSessionsCount = sessions.filter((s) => !s.current).length
 
   return (
-    <div className="space-y-6 max-w-3xl">
+    <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
         <div>
@@ -466,6 +569,10 @@ export default function AccountPage() {
           <p className="text-green-500 text-sm font-mono">{success}</p>
         </Card>
       )}
+
+      {/* Two-column layout: settings (left) + account summary (right) */}
+      <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_300px] lg:items-start">
+        <div className="space-y-6 min-w-0">
 
       {/* Profile */}
       <Card>
@@ -925,6 +1032,23 @@ export default function AccountPage() {
           </div>
         )}
       </Card>
+
+        </div>
+
+        {/* Sidebar */}
+        <aside className="space-y-6 lg:sticky lg:top-6">
+          <AccountSummaryCard
+            user={currentUser}
+            sessionsCount={sessions.length}
+            linkedCount={oauthAccounts.length}
+          />
+          <SecuritySummaryCard
+            emailVerified={!!currentUser?.email_verified}
+            twoFactorEnabled={!!currentUser?.two_factor_enabled}
+            onEnable2FA={handleSetup2FA}
+          />
+        </aside>
+      </div>
 
       <ConfirmActionDialog
         open={!!unlinkProvider}
