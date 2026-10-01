@@ -402,3 +402,69 @@ def test_no_trusted_proxies_falls_back_to_peer_address():
     )
 
     assert get_client_ip(request, set()) == "127.0.0.1"
+
+
+# ─── Redis resilience: stale connections must not 500 auth flows ─────────────
+
+
+class ExplodingRedis:
+    """Redis double whose connection dies like an idle socket closed server-side."""
+
+    def __init__(self):
+        self.calls = 0
+
+    async def get(self, key: str):
+        self.calls += 1
+        raise ConnectionError("Error while reading from redis:6379 : (32, 'Broken pipe')")
+
+    async def incr(self, key: str):
+        self.calls += 1
+        raise ConnectionError("Error while reading from redis:6379 : (32, 'Broken pipe')")
+
+
+@pytest.mark.asyncio
+async def test_middleware_fails_open_when_redis_is_down():
+    """A Redis outage must not turn the rate limiter into a 500 on every route."""
+    from starlette.responses import JSONResponse
+
+    from app.middleware.rate_limit import (
+        RateLimitConfig,
+        RateLimitMiddleware,
+        RateLimitStorage,
+    )
+
+    async def call_next(request):
+        return JSONResponse(status_code=200, content={"ok": True})
+
+    middleware = RateLimitMiddleware(
+        app=None,
+        config=RateLimitConfig(storage_backend="memory"),
+    )
+    middleware.storage = RateLimitStorage(
+        storage_backend="redis", redis_client=ExplodingRedis()
+    )
+
+    request = _request("/api/auth/oauth/google/callback")
+    response = await middleware.dispatch(request, call_next)
+
+    assert response.status_code == 200
+    assert response.body == b'{"ok":true}'
+
+
+def test_redis_client_is_created_with_resilient_pool_options():
+    """The built Redis client must detect dead idle connections and retry."""
+    from unittest.mock import patch
+
+    pytest.importorskip("redis")
+    from app.middleware.rate_limit import RateLimitStorage
+
+    with patch("redis.asyncio.Redis.from_url") as from_url:
+        RateLimitStorage(
+            storage_backend="redis", storage_uri="redis://redis:6379/1"
+        )
+
+    kwargs = from_url.call_args.kwargs
+    assert kwargs["health_check_interval"] > 0
+    assert kwargs["socket_keepalive"] is True
+    assert kwargs["retry_on_timeout"] is True
+    assert kwargs["retry"] is not None

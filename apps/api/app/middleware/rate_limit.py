@@ -5,6 +5,7 @@ Uses slowapi for FastAPI integration with X-RateLimit-* headers.
 """
 
 import hashlib
+import logging
 import time
 from typing import Optional
 from datetime import datetime, timezone
@@ -46,6 +47,8 @@ AUTH_RATE_LIMIT_PATHS = (
 
 # Error code
 RATE_LIMIT_ERROR_CODE = "RATE_LIMIT_EXCEEDED"
+
+logger = logging.getLogger(__name__)
 
 # In-memory fallback for local development; VPS production uses Redis storage.
 _rate_limit_storage: dict[str, tuple[int, float]] = {}
@@ -125,11 +128,28 @@ class RateLimitStorage:
                 raise ValueError("REDIS_URL is required when RATE_LIMIT_STORAGE=redis")
             try:
                 from redis.asyncio import Redis
+                from redis.asyncio.retry import Retry
+                from redis.backoff import ExponentialBackoff
+                from redis.exceptions import ConnectionError as RedisConnectionError
+                from redis.exceptions import TimeoutError as RedisTimeoutError
             except ImportError as exc:
                 raise RuntimeError(
                     "redis package is required when RATE_LIMIT_STORAGE=redis"
                 ) from exc
-            self._redis = Redis.from_url(storage_uri, decode_responses=False)
+            # Resilient pool: without these, idle connections get closed by the
+            # server / container NAT and the next request reuses a dead socket
+            # ("Broken pipe") which surfaces as an unhandled 500.
+            self._redis = Redis.from_url(
+                storage_uri,
+                decode_responses=False,
+                health_check_interval=30,
+                socket_keepalive=True,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+                retry_on_timeout=True,
+                retry=Retry(ExponentialBackoff(cap=1.0, base=0.05), 3),
+                retry_on_error=[RedisConnectionError, RedisTimeoutError],
+            )
     
     async def get_count(self, key: str) -> int:
         """Get current request count for key."""
@@ -348,8 +368,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         rate_key = build_rate_limit_key(request, client_ip)
 
         if rate_key:
-            current_count = await self.storage.get_count(rate_key)
-            
+            try:
+                current_count = await self.storage.get_count(rate_key)
+            except Exception:
+                # Fail open: a rate limiter outage must never take down auth
+                # or any other route (e.g. OAuth callback returning 500).
+                logger.warning(
+                    "Rate limit storage unavailable; failing open for key %s",
+                    rate_key,
+                    exc_info=True,
+                )
+                current_count = 0
+
             if current_count >= limit_count:
                 # Rate limit exceeded
                 reset_time = int(time.time()) + window_seconds
@@ -369,7 +399,14 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 return response
             
             # Increment counter
-            await self.storage.increment_count(rate_key, window_seconds)
+            try:
+                await self.storage.increment_count(rate_key, window_seconds)
+            except Exception:
+                logger.warning(
+                    "Rate limit storage unavailable; skipping increment for key %s",
+                    rate_key,
+                    exc_info=True,
+                )
             remaining = limit_count - current_count - 1
         else:
             remaining = limit_count - 1
