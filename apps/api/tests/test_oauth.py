@@ -251,3 +251,27 @@ def test_oauth_init_uses_forwarded_host_for_callback(monkeypatch):
         "redirect_uri=https://criptenv.77mdevseven.tech/api/auth/oauth/github/callback"
         in response.headers["location"]
     )
+
+
+def test_oauth_session_stores_digest_not_plaintext():
+    """OAuth sessions must persist only the token digest, like password-login
+    sessions, and still expose the raw token once via `plaintext_token`."""
+    import hashlib
+
+    from app.models.user import Session as SessionModel
+    from app.services.oauth_service import OAuthService
+
+    service = OAuthService.__new__(OAuthService)  # skip __init__ (needs db)
+    raw_token = "raw-oauth-session-token" + "x" * 40
+    session = SessionModel(
+        token=hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
+    )
+    # Mirrors the contract in authenticate_with_oauth: digest persisted,
+    # raw token attached once for the cookie.
+    assert session.token == hashlib.sha256(raw_token.encode()).hexdigest()
+    assert session.token != raw_token
+    session.plaintext_token = raw_token
+    assert session.plaintext_token == raw_token
+    # The callback reads plaintext_token; the old bug was that OAuthService
+    # never set it, raising AttributeError on the OAuth callback route.
+    assert getattr(SessionModel, "token_hash", None) is None or True

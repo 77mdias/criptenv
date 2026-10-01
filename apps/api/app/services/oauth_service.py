@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from typing import Optional, Protocol, TypedDict
 from uuid import UUID, uuid4
 import base64
+import hashlib
 import secrets
 import httpx
 from urllib.parse import urlsplit, urlunsplit
@@ -415,15 +416,20 @@ class OAuthService:
             await self.db.refresh(user)
             return user, None
 
-        # Create session
+        # Create session. Only the SHA-256 digest is persisted, matching how
+        # password-login sessions are stored; the raw token is handed to the
+        # caller once via `plaintext_token` (never stored) so the OAuth
+        # callback can set the session cookie.
+        raw_token = secrets.token_urlsafe(64)
         session = Session(
             id=uuid4(),
             user_id=user.id,
-            token=secrets.token_urlsafe(64),
+            token=hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),
             expires_at=datetime.now(timezone.utc) + timedelta(days=settings.SESSION_EXPIRE_DAYS),
             ip_address=ip_address,
             user_agent=user_agent,
         )
+        session.plaintext_token = raw_token
         self.db.add(session)
         await self.db.flush()
         
