@@ -646,23 +646,36 @@ export default function AccountPage() {
                     <Edit2 className="h-4 w-4 mr-1" /> Editar
                   </Button>
                 </div>
-                <div className="flex flex-wrap gap-2 pt-2">
-                  {currentUser?.email_verified ? (
-                    <Badge variant="success">Email verificado</Badge>
-                  ) : (
-                    <>
-                      <Badge variant="warning">Email não verificado</Badge>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        className="h-6 px-2 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
-                        onClick={handleResendVerification}
-                      >
-                        <Mail className="h-3 w-3 mr-1" /> Reenviar
-                      </Button>
-                    </>
+                <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 pt-2">
+                  <span
+                    className={cn(
+                      "inline-flex items-center gap-1.5 text-xs font-mono",
+                      currentUser?.email_verified ? "text-emerald-500" : "text-red-400"
+                    )}
+                    title={currentUser?.email_verified ? "Email verificado" : "Verifique seu email para liberar todos os recursos"}
+                  >
+                    <span
+                      className={cn("h-1.5 w-1.5 rounded-full shrink-0", currentUser?.email_verified ? "bg-emerald-500" : "bg-red-400")}
+                      aria-hidden
+                    />
+                    {currentUser?.email_verified ? "Email verificado" : "Email não verificado"}
+                  </span>
+                  {!currentUser?.email_verified && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 px-2 text-xs text-amber-400 hover:text-amber-300 hover:bg-amber-500/10"
+                      onClick={handleResendVerification}
+                    >
+                      <Mail className="h-3 w-3 mr-1" /> Reenviar
+                    </Button>
                   )}
-                  {currentUser?.two_factor_enabled && <Badge>2FA ativo</Badge>}
+                  {currentUser?.two_factor_enabled && (
+                    <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-500" title="2FA ativo nesta conta">
+                      <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-emerald-500" aria-hidden />
+                      2FA ativo
+                    </span>
+                  )}
                 </div>
               </>
             )}
