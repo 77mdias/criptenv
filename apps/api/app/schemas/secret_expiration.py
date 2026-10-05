@@ -85,6 +85,13 @@ class RotationRequest(BaseModel):
     iv: str = Field(..., description="Initialization vector (base64)")
     auth_tag: str = Field(..., description="Authentication tag (base64)")
     reason: Optional[str] = Field(None, max_length=500, description="Reason for rotation")
+    expected_version: Optional[int] = Field(
+        None,
+        description=(
+            "Vault version the client based the rotation on (optimistic "
+            "concurrency). A 409 is returned when the vault changed since."
+        ),
+    )
 
 
 class RotationResponse(BaseModel):

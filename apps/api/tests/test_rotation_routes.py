@@ -207,9 +207,7 @@ class TestRotationRouterIntegration:
     @pytest.mark.asyncio
     async def test_rotate_secret_calls_service(self, mock_db, mock_user):
         """Rotate endpoint should call RotationService.rotate_secret."""
-        from app.routers.rotation import router
         from app.services.rotation_service import RotationService
-        from app.schemas.secret_expiration import RotationRequest
         
         # Mock the service
         mock_rotation = MagicMock()
@@ -265,7 +263,6 @@ class TestRotationRouterIntegration:
     @pytest.mark.asyncio
     async def test_list_expiring_filters_by_days(self, mock_db):
         """List expiring should accept days parameter and filter."""
-        from app.services.rotation_service import RotationService
         
         mock_expirations = [
             MagicMock(expires_at=datetime.now(timezone.utc) + timedelta(days=5)),
@@ -424,7 +421,7 @@ class TestRotationRouterSecurity:
         # Check dependencies include auth
         for route in rotate_routes:
             if hasattr(route, 'dependencies'):
-                has_auth = any(
+                _has_auth = any(
                     'get_current_user' in str(d.dependency) 
                     for d in route.dependencies 
                     if d
@@ -486,17 +483,27 @@ class TestRotationPersistsCiphertext:
     """
 
     def _service_with_blob(self, version: int = 3):
+        from types import SimpleNamespace
+        from uuid import uuid4
+
         from app.services.rotation_service import RotationService
         from app.models.vault import VaultBlob
 
         blob = MagicMock(spec=VaultBlob)
         blob.version = version
 
-        result = MagicMock()
-        result.scalar_one_or_none.return_value = blob
+        blob_result = MagicMock()
+        blob_result.scalar_one_or_none.return_value = blob
+
+        # Environment lookup + atomic version claim (Sprint 2 OCC)
+        env_result = MagicMock()
+        env_result.scalar_one_or_none.return_value = SimpleNamespace(
+            id=uuid4(), secrets_version=version
+        )
+        update_result = SimpleNamespace(rowcount=1)
 
         mock_db = MagicMock()
-        mock_db.execute = AsyncMock(return_value=result)
+        mock_db.execute = AsyncMock(side_effect=[blob_result, env_result, update_result])
         mock_db.add = MagicMock()
         mock_db.commit = AsyncMock()
         mock_db.refresh = AsyncMock()

@@ -18,6 +18,7 @@ from app.database import get_db
 from app.services.rotation_service import RotationService
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
+from app.strategies.exceptions import VaultConflict
 from app.schemas.secret_expiration import (
     ExpirationCreate, ExpirationUpdate, ExpirationResponse,
     ExpirationListResponse, RotationRequest, RotationResponse,
@@ -113,6 +114,16 @@ async def rotate_secret(
         )
     except ValueError as e:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    except VaultConflict as e:
+        raise HTTPException(
+            status_code=status.HTTP_409_CONFLICT,
+            detail={
+                "code": "VERSION_CONFLICT",
+                "message": "Vault was modified concurrently; pull the latest version and retry.",
+                "current_version": e.current_version,
+                "expected_version": e.expected_version,
+            },
+        )
 
     await audit_service.log(
         action="secret.rotated",
