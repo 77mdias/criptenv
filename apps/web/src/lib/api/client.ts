@@ -2,20 +2,21 @@
 // Typed fetch wrapper for the FastAPI backend
 
 import { API_BASE_URL } from "./base-url";
+import { API_STALE_TIME_MS, apiCacheKey, queryClient } from "./query-client";
 
 // Use relative URL in development if no public API URL is configured.
 const BASE_URL = API_BASE_URL;
-const GET_CACHE_TTL_MS = 15_000;
 
-interface CacheEntry {
-  data?: unknown;
-  expiresAt: number;
-  promise?: Promise<unknown>;
-  generation: number;
-}
-
-const responseCache = new Map<string, CacheEntry>();
+// Superseded-response guard: a GET that resolves after a mutation must not
+// repopulate the cache with stale data. React Query remains the store; this
+// counter only decides whether a response is still allowed to be written.
 let cacheGeneration = 0;
+const inflightGets = new Map<string, Promise<unknown>>();
+
+// Server-state caching lives in React Query (see query-client.ts). These
+// helpers keep the existing call sites working while removing the bespoke
+// 15s TTL map that duplicated — and drifted from — React Query
+// (audit P0-1/P1-3, Sprint 2 2026-10).
 
 // ─── Error Class ───────────────────────────────────────────────────────────────
 
@@ -474,8 +475,11 @@ function buildUrl(
 }
 
 function invalidateCache() {
+  // Invalidate the whole cache, preserving the previous blunt-but-correct
+  // semantics until call sites migrate to targeted query keys.
   cacheGeneration += 1;
-  responseCache.clear();
+  inflightGets.clear();
+  void queryClient.invalidateQueries();
 }
 
 export function peekCached<T>(
@@ -483,13 +487,19 @@ export function peekCached<T>(
   params?: Record<string, string | number | undefined>,
 ): T | null {
   const key = buildUrl(path, params).toString();
-  const cached = responseCache.get(key);
+  const state = queryClient.getQueryState<T>(apiCacheKey(key));
 
-  if (!cached || cached.data === undefined || cached.expiresAt <= Date.now()) {
+  // Only fresh, non-invalidated data counts — matching the previous
+  // "15s TTL, cleared on mutation" contract.
+  if (!state || state.isInvalidated || state.data === undefined) {
     return null;
   }
 
-  return cached.data as T;
+  if (Date.now() - state.dataUpdatedAt > API_STALE_TIME_MS) {
+    return null;
+  }
+
+  return state.data;
 }
 
 export async function upload<T>(
@@ -543,36 +553,16 @@ export async function request<T>(
 ): Promise<T> {
   const url = buildUrl(path, params);
   const cacheKey = url.toString();
-  const requestGeneration = cacheGeneration;
 
-  if (method === "GET" && typeof window !== "undefined") {
-    const cached = responseCache.get(cacheKey);
-
-    if (cached?.data !== undefined && cached.expiresAt > Date.now()) {
-      return cached.data as T;
-    }
-
-    if (cached?.promise) {
-      return cached.promise as Promise<T>;
-    }
-  }
-
-  const headers: Record<string, string> = {
-    "Content-Type": "application/json",
-  };
-
-  const fetchPromise = (async () => {
+  const performFetch = async (): Promise<T> => {
     const res = await fetch(cacheKey, {
       method,
-      headers,
+      headers: { "Content-Type": "application/json" },
       credentials: "include",
       body: body ? JSON.stringify(body) : undefined,
     });
 
     if (res.status === 204) {
-      if (method !== "GET") {
-        invalidateCache();
-      }
       return undefined as T;
     }
 
@@ -586,40 +576,42 @@ export async function request<T>(
       );
     }
 
-    if (
-      method === "GET" &&
-      typeof window !== "undefined" &&
-      requestGeneration === cacheGeneration
-    ) {
-      responseCache.set(cacheKey, {
-        data,
-        expiresAt: Date.now() + GET_CACHE_TTL_MS,
-        generation: cacheGeneration,
-      });
-    } else if (method !== "GET") {
-      invalidateCache();
+    return data as T;
+  };
+
+  if (method === "GET") {
+    const fresh = peekCached<T>(path, params);
+    if (fresh !== null) {
+      return fresh;
     }
 
-    return data as T;
-  })();
+    const pending = inflightGets.get(cacheKey);
+    if (pending) {
+      return pending as Promise<T>;
+    }
 
-  if (method === "GET" && typeof window !== "undefined") {
-    responseCache.set(cacheKey, {
-      expiresAt: Date.now() + GET_CACHE_TTL_MS,
-      promise: fetchPromise,
-      generation: requestGeneration,
-    });
-  }
+    const generation = cacheGeneration;
+    const promise = (async () => {
+      const data = await performFetch();
+      // React Query is the single store for server state: component-level
+      // useQuery calls read the very same entry via apiCacheKey().
+      if (generation === cacheGeneration) {
+        queryClient.setQueryData(apiCacheKey(cacheKey), data);
+      }
+      return data;
+    })();
 
-  try {
-    return await fetchPromise;
-  } catch (error) {
-    if (method === "GET" && typeof window !== "undefined") {
-      const cached = responseCache.get(cacheKey);
-      if (cached?.generation === requestGeneration) {
-        responseCache.delete(cacheKey);
+    inflightGets.set(cacheKey, promise);
+    try {
+      return await promise;
+    } finally {
+      if (inflightGets.get(cacheKey) === promise) {
+        inflightGets.delete(cacheKey);
       }
     }
-    throw error;
   }
+
+  const result = await performFetch();
+  invalidateCache();
+  return result;
 }

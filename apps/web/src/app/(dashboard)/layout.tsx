@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { AppShell } from "@/components/layout/app-shell";
+import { QueryProvider } from "@/components/providers/query-provider";
 import { useAuth } from "@/hooks/use-auth";
 
 export default function DashboardLayout({
@@ -38,5 +39,9 @@ export default function DashboardLayout({
     return null;
   }
 
-  return <AppShell>{children}</AppShell>;
+  return (
+    <QueryProvider>
+      <AppShell>{children}</AppShell>
+    </QueryProvider>
+  );
 }
