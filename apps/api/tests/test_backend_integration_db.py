@@ -18,24 +18,61 @@ def _assert_safe_database_url() -> None:
     assert "test" in parsed.path.rsplit("/", 1)[-1]
 
 
-async def _get_verification_token_by_email(email: str) -> str:
-    """Fetch the latest unused verification token for an email directly from the DB."""
+async def _issue_verification_token_for_email(email: str) -> str:
+    """Issue a known verification token by writing its digest to the DB.
+
+    Verification tokens are persisted as SHA-256 digests (audit 2026-10,
+    P1 #2), so the plaintext can no longer be read back from the database.
+    This helper generates a token the test controls, stores its digest in the
+    latest unused row, and asserts the plaintext is never persisted.
+    """
+    import hashlib
+    import secrets
+
+    from sqlalchemy import update
+
     from app.database import engine
     from app.models.user import EmailVerificationToken, User
 
-    async with engine.connect() as conn:
-        result = await conn.execute(
-            select(EmailVerificationToken.token)
-            .join(User, EmailVerificationToken.user_id == User.id)
-            .where(User.email == email)
-            .where(EmailVerificationToken.used_at.is_(None))
-            .order_by(EmailVerificationToken.created_at.desc())
-            .limit(1)
+    plaintext = secrets.token_urlsafe(48)
+    digest = hashlib.sha256(plaintext.encode("utf-8")).hexdigest()
+
+    async with engine.begin() as conn:
+        user_id = (
+            await conn.execute(select(User.id).where(User.email == email))
+        ).scalar()
+        if user_id is None:
+            raise RuntimeError(f"No user found for {email}")
+
+        token_id = (
+            await conn.execute(
+                select(EmailVerificationToken.id)
+                .where(EmailVerificationToken.user_id == user_id)
+                .where(EmailVerificationToken.used_at.is_(None))
+                .order_by(EmailVerificationToken.created_at.desc())
+                .limit(1)
+            )
+        ).scalar()
+        if token_id is None:
+            raise RuntimeError(f"No verification token found for {email}")
+
+        await conn.execute(
+            update(EmailVerificationToken)
+            .where(EmailVerificationToken.id == token_id)
+            .values(token=digest)
         )
-        row = result.scalar()
-    if not row:
-        raise RuntimeError(f"No verification token found for {email}")
-    return row
+
+        stored = (
+            await conn.execute(
+                select(EmailVerificationToken.token).where(
+                    EmailVerificationToken.id == token_id
+                )
+            )
+        ).scalar()
+        assert stored == digest
+        assert stored != plaintext, "plaintext tokens must never be persisted"
+
+    return plaintext
 
 
 @pytest_asyncio.fixture(autouse=True)
@@ -112,7 +149,7 @@ async def test_signup_create_project_and_default_environments_against_postgres()
         assert "session_token" not in signup.cookies
 
         # Verify email (fetch token directly from DB since signup no longer exposes it)
-        verification_token = await _get_verification_token_by_email("db@example.com")
+        verification_token = await _issue_verification_token_for_email("db@example.com")
         verify = await client.post(
             "/api/auth/verify-email",
             json={"token": verification_token},
@@ -161,7 +198,7 @@ async def test_project_create_requires_vault_proof_against_postgres():
             },
         )
         # Verify email and signin to get session
-        verification_token = await _get_verification_token_by_email("proof@example.com")
+        verification_token = await _issue_verification_token_for_email("proof@example.com")
         await client.post(
             "/api/auth/verify-email",
             json={"token": verification_token},
