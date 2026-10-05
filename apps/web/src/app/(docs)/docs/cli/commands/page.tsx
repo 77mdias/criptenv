@@ -288,6 +288,50 @@ criptenv export --format json -o secrets.json
 criptenv export -e production -o .env.production`}
       />
 
+      <h3 className="text-xl font-semibold mt-8 mb-3">
+        <InlineCode>criptenv run</InlineCode>
+      </h3>
+      <p className="mb-4">
+        Executa um comando com os segredos do ambiente injetados como variáveis de
+        ambiente — sem escrever nenhum arquivo em disco. O código de saída do
+        processo filho é propagado.
+      </p>
+      <ParamTable
+        title="Opções"
+        rows={[
+          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de origem' },
+          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de origem' },
+        ]}
+      />
+      <CodeBlock
+        language="bash"
+        code={`criptenv run -- npm start
+criptenv run -e staging -- python manage.py migrate`}
+      />
+
+      <h3 className="text-xl font-semibold mt-8 mb-3">
+        <InlineCode>criptenv diff</InlineCode>
+      </h3>
+      <p className="mb-4">
+        Compara um arquivo <InlineCode>.env</InlineCode> local com o vault remoto
+        (detecção de drift) e sai com status 1 quando houver diferenças — útil como
+        gate de CI. Com <InlineCode>--show-values</InlineCode> exibe apenas um
+        preview mascarado; valores completos nunca são impressos.
+      </p>
+      <ParamTable
+        title="Opções"
+        rows={[
+          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de comparação' },
+          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de comparação' },
+          { name: '--show-values', type: 'boolean', required: false, description: 'Preview mascarado dos valores alterados' },
+        ]}
+      />
+      <CodeBlock
+        language="bash"
+        code={`criptenv diff .env
+criptenv diff .env -e production --show-values`}
+      />
+
       {/* ── ENVIRONMENTS ────────────────────────────────────── */}
       <h2 id="environments" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
         Ambientes

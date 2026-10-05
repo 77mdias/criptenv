@@ -1,109 +1,28 @@
 "use client"
 
-import { useEffect, useState, useCallback, type ElementType, type ReactNode } from "react"
+import { useEffect, useState, useCallback } from "react"
 import { useRouter, useSearchParams } from "next/navigation"
 import {
-  Monitor, KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Link2, Unlink, Mail,
-  LogOut, CheckCircle2, AlertCircle, ShieldOff, Smartphone,
+  KeyRound, Trash2, AlertTriangle, Shield, Edit2, X, Check, Mail,
+  LogOut, CheckCircle2, AlertCircle, ShieldOff,
 } from "lucide-react"
-import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
-import { faGithubAlt, faGoogle, faDiscord } from "@fortawesome/free-brands-svg-icons"
 import { QRCodeSVG } from "qrcode.react"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
-import { Badge } from "@/components/ui/badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { Input } from "@/components/ui/input"
-import { OAuthButton, type OAuthProvider } from "@/components/ui/oauth-button"
 import { authApi, peekCached } from "@/lib/api"
 import { useAuthStore } from "@/stores/auth"
 import type { SessionResponse, User as UserType } from "@/lib/api"
-import { parseUserAgent } from "@/lib/device-info"
 import { cn } from "@/lib/utils"
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { AvatarUpload } from "@/components/shared/avatar-upload"
+import { RowIcon, SectionHeader, formatDate } from "./_components/account-ui"
+import { LinkedAccountsCard } from "./_components/linked-accounts-card"
+import { SessionsCard } from "./_components/sessions-card"
 
 // ─── Local helpers ────────────────────────────────────────────────────────────
 
-const PROVIDER_META = {
-  github: { label: "GitHub", icon: faGithubAlt, chip: "bg-[#24292e]" },
-  google: { label: "Google", icon: faGoogle, chip: "bg-[#4285F4]" },
-  discord: { label: "Discord", icon: faDiscord, chip: "bg-[#5865F2]" },
-} as const
-
-type ProviderKey = keyof typeof PROVIDER_META
-
-function formatRelative(dateStr: string): string {
-  const diffMs = Date.now() - new Date(dateStr).getTime()
-  if (Number.isNaN(diffMs)) return ""
-  const minutes = Math.floor(diffMs / 60_000)
-  if (minutes < 1) return "agora mesmo"
-  if (minutes < 60) return `${minutes} min atrás`
-  const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} h atrás`
-  const days = Math.floor(hours / 24)
-  if (days < 30) return `${days} d atrás`
-  return new Date(dateStr).toLocaleDateString("pt-BR")
-}
-
-function formatDate(dateStr: string): string {
-  const date = new Date(dateStr)
-  if (Number.isNaN(date.getTime())) return ""
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
-}
-
-// Shared section header: icon chip + title + description, optional action slot.
-function SectionHeader({
-  icon: Icon,
-  tone = "default",
-  title,
-  description,
-  action,
-}: {
-  icon: ElementType
-  tone?: "default" | "danger"
-  title: string
-  description: string
-  action?: ReactNode
-}) {
-  return (
-    <div className="flex items-start justify-between gap-4 mb-5">
-      <div className="flex items-center gap-3 min-w-0">
-        <div
-          className={cn(
-            "h-9 w-9 rounded-lg flex items-center justify-center shrink-0 border",
-            tone === "danger"
-              ? "bg-red-500/10 border-red-500/30 text-red-500"
-              : "bg-[var(--background-subtle)] border-[var(--border-subtle)] text-[var(--text-secondary)]"
-          )}
-        >
-          <Icon className="h-[18px] w-[18px]" />
-        </div>
-        <div className="min-w-0">
-          <h3 className="font-semibold text-[var(--text-primary)] leading-tight">{title}</h3>
-          <p className="text-xs text-[var(--text-muted)] font-mono mt-0.5">{description}</p>
-        </div>
-      </div>
-      {action && <div className="shrink-0">{action}</div>}
-    </div>
-  )
-}
-
-// Icon chip used by list rows inside sections.
-function RowIcon({ icon: Icon, tone = "default" }: { icon: ElementType; tone?: "default" | "danger" }) {
-  return (
-    <div
-      className={cn(
-        "h-8 w-8 rounded-lg flex items-center justify-center shrink-0 border",
-        tone === "danger"
-          ? "bg-red-500/10 border-red-500/20 text-red-500"
-          : "bg-[var(--background-muted)] border-[var(--border-subtle)] text-[var(--text-secondary)]"
-      )}
-    >
-      <Icon className="h-4 w-4" />
-    </div>
-  )
-}
 
 // ─── Sidebar cards ────────────────────────────────────────────────────────────
 
@@ -538,7 +457,6 @@ export default function AccountPage() {
     )
   }
 
-  const otherSessionsCount = sessions.filter((s) => !s.current).length
 
   return (
     <div className="space-y-6">
@@ -830,173 +748,20 @@ export default function AccountPage() {
         </div>
       </Card>
 
-      {/* Linked accounts */}
-      <Card>
-        <SectionHeader
-          icon={Link2}
-          title="Contas vinculadas"
-          description="Faça login com provedores externos"
-        />
-        <div className="space-y-2">
-          {loadingOAuth ? (
-            <Skeleton className="h-14 w-full rounded-xl" />
-          ) : oauthAccounts.length === 0 ? (
-            <div className="rounded-xl border border-dashed border-[var(--border-subtle)] p-6 text-center">
-              <p className="text-sm text-[var(--text-muted)] font-mono">
-                Nenhuma conta OAuth vinculada.
-              </p>
-            </div>
-          ) : (
-            oauthAccounts.map((account) => {
-              const meta = PROVIDER_META[account.provider as ProviderKey]
-              return (
-                <div
-                  key={account.provider}
-                  className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 rounded-xl border border-[var(--border-subtle)] bg-[var(--background-subtle)]"
-                >
-                  <div className="flex items-center gap-3 w-full sm:w-auto overflow-hidden">
-                    <div
-                      className={cn(
-                        "h-9 w-9 shrink-0 rounded-lg flex items-center justify-center",
-                        meta?.chip ?? "bg-[var(--background-muted)] text-[var(--text-primary)]",
-                        meta && "text-white"
-                      )}
-                    >
-                      {meta ? (
-                        <FontAwesomeIcon icon={meta.icon} className="h-4 w-4" />
-                      ) : (
-                        <span className="text-xs font-bold uppercase">{account.provider[0]}</span>
-                      )}
-                    </div>
-                    <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-[var(--text-primary)]">
-                        {meta?.label ?? account.provider}
-                      </p>
-                      <p className="text-xs text-[var(--text-muted)] font-mono truncate">
-                        {account.provider_email}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-                    <Badge variant="success">Conectada</Badge>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="text-red-600 hover:bg-red-500/10"
-                      onClick={() => setUnlinkProvider(account.provider)}
-                    >
-                      <Unlink className="h-4 w-4 mr-1" /> Desvincular
-                    </Button>
-                  </div>
-                </div>
-              )
-            })
-          )}
-        </div>
+      <LinkedAccountsCard
+        accounts={oauthAccounts}
+        loading={loadingOAuth}
+        unlinkedProviders={unlinkedProviders}
+        onUnlink={setUnlinkProvider}
+      />
 
-        {unlinkedProviders.length > 0 && (
-          <div className="mt-5 pt-5 border-t border-[var(--border-subtle)]">
-            <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-3">
-              Vincular nova conta
-            </p>
-            <div className="flex flex-col sm:flex-row flex-wrap gap-2">
-              {unlinkedProviders.map((provider) => (
-                <OAuthButton key={provider} provider={provider as OAuthProvider} action="link" className="w-full sm:w-auto" />
-              ))}
-            </div>
-          </div>
-        )}
-      </Card>
-
-      {/* Sessions */}
-      <Card>
-        <SectionHeader
-          icon={Monitor}
-          title="Sessões ativas"
-          description={
-            sessions.length === 0
-              ? "Nenhum dispositivo conectado"
-              : `${sessions.length} dispositivo(s) conectado(s)`
-          }
-          action={
-            otherSessionsCount > 0 ? (
-              <Button variant="secondary" size="sm" loading={isRevokingAll} onClick={handleRevokeAll} className="text-red-600 hover:bg-red-500/10 shrink-0">
-                {isRevokingAll ? null : <LogOut className="h-4 w-4" />} Encerrar outras
-              </Button>
-            ) : undefined
-          }
-        />
-
-        {sessions.length === 0 ? (
-          <div className="rounded-xl border border-dashed border-[var(--border-subtle)] p-8 text-center">
-            <Monitor className="h-8 w-8 text-[var(--text-muted)] mx-auto mb-2" />
-            <p className="text-sm text-[var(--text-muted)] font-mono">
-              Nenhuma sessão ativa
-            </p>
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {sessions.map((session) => {
-              const device = parseUserAgent(session.user_agent)
-              const isCurrent = !!session.current
-              const isMobile = /Mobi|Android|iPhone|iPad/i.test(session.user_agent ?? "")
-              const isRevoking = revokingSessionId === session.id
-              return (
-                <div
-                  key={session.id}
-                  className={cn(
-                    "flex flex-col sm:flex-row sm:items-center gap-3 p-3.5 rounded-xl border",
-                    isCurrent
-                      ? "border-emerald-500/30 bg-emerald-500/5"
-                      : "border-[var(--border-subtle)] bg-[var(--background-subtle)]"
-                  )}
-                >
-                  <RowIcon icon={isMobile ? Smartphone : Monitor} />
-                  <div className="flex-1 min-w-0">
-                    <p className="text-sm font-medium text-[var(--text-primary)] truncate">
-                      {device.browser}
-                      {device.os && <span className="text-[var(--text-muted)] font-normal"> · {device.os}</span>}
-                    </p>
-                    <p className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-2 min-w-0">
-                      <span className="truncate">
-                        {session.ip_address || "IP desconhecido"}
-                        {" · "}
-                        {session.last_accessed_at
-                          ? `ativa ${formatRelative(session.last_accessed_at)}`
-                          : `criada em ${formatDate(session.created_at)}`}
-                      </span>
-                      {isCurrent && (
-                        <span className="inline-flex items-center gap-1.5 text-emerald-500 shrink-0" title="Sessão atual deste dispositivo">
-                          <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden />
-                          Esta sessão
-                        </span>
-                      )}
-                    </p>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    loading={isRevoking}
-                    onClick={() => handleRevokeSession(session)}
-                    className={cn(
-                      "shrink-0 self-start sm:self-auto",
-                      isCurrent ? "text-red-600 hover:bg-red-500/10" : "text-[var(--text-secondary)] hover:bg-red-500/10 hover:text-red-600"
-                    )}
-                  >
-                    {isCurrent ? (
-                      <>
-                        <LogOut className="h-4 w-4" /> Sair
-                      </>
-                    ) : (
-                      "Encerrar"
-                    )}
-                  </Button>
-                </div>
-              )
-            })}
-          </div>
-        )}
-      </Card>
+      <SessionsCard
+        sessions={sessions}
+        revokingSessionId={revokingSessionId}
+        isRevokingAll={isRevokingAll}
+        onRevoke={handleRevokeSession}
+        onRevokeAll={handleRevokeAll}
+      />
 
       {/* Danger zone */}
       <Card className="border-red-500/30 bg-red-500/5">

@@ -1,9 +1,16 @@
 "use client"
 
 import { useMemo, useState } from "react"
-import { Upload, X } from "lucide-react"
+import { Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
-import { Card } from "@/components/ui/card"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { type DecryptedSecret } from "@/components/shared/secret-row"
 import { createSecretSchema } from "@/lib/validators/schemas"
 
@@ -47,47 +54,34 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <button
-        type="button"
-        aria-label="Fechar"
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-      />
-      <Card className="relative z-50 w-full max-w-2xl shadow-xl">
-        <div className="mb-4 flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              Importar .env
-            </h2>
-            <p className="font-mono text-xs text-[var(--text-muted)]">
-              Cole o conteúdo. Linhas inválidas serão ignoradas.
-            </p>
-          </div>
-          <Button type="button" variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Importar .env</DialogTitle>
+          <DialogDescription>
+            Cole o conteúdo. Linhas inválidas serão ignoradas.
+          </DialogDescription>
+        </DialogHeader>
         <textarea
           className="min-h-64 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
           value={text}
           onChange={(event) => setText(event.target.value)}
           placeholder={"DATABASE_URL=postgres://...\nAPI_KEY=sk_..."}
         />
-        <div className="mt-4 flex items-center justify-between gap-4">
+        <div className="mt-4 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-mono text-xs text-[var(--text-muted)]">
             {preview.length} secrets válidos detectados
           </p>
-          <div className="flex gap-3">
+          <DialogFooter className="mt-0">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
               Cancelar
             </Button>
             <Button icon={Upload} loading={loading} disabled={preview.length === 0} onClick={submit}>
               Importar
             </Button>
-          </div>
+          </DialogFooter>
         </div>
-      </Card>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }
