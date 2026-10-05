@@ -33,8 +33,11 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install alembic
-        run: pip install alembic sqlalchemy
+      - name: Install migration dependencies
+        # The migrations import app.config (pydantic-settings) and the models,
+        # so the full API requirements are needed — installing only
+        # alembic+sqlalchemy fails with ModuleNotFoundError at import time.
+        run: pip install -r apps/api/requirements.txt
       - name: Verify exactly one migration head
         working-directory: apps/api
         run: |
@@ -54,11 +57,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
-      - name: Install API dependencies
-        # requirements-dev includes aiosqlite, required by the non-mocked
-        # regression suites (API key eager loading, vault OCC concurrency);
-        # without it those tests skip and CI loses their coverage.
-        run: pip install -r apps/api/requirements-dev.txt
+      # `make api-test` runs `make api-install`, which installs
+      # apps/api/requirements-dev.txt into apps/api/.venv — including
+      # aiosqlite, required by the non-mocked regression suites (API key eager
+      # loading, vault OCC concurrency). Without it those tests silently skip.
       - name: Run API tests
         run: make api-test
 

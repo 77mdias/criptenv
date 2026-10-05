@@ -76,9 +76,9 @@ web-deploy: ## Deploy the frontend to Cloudflare Workers (requires Wrangler auth
 $(API_VENV)/bin/python:
 	$(PYTHON) -m venv $(API_VENV)
 
-api-install: $(API_VENV)/bin/python ## Create API virtualenv and install dependencies
+api-install: $(API_VENV)/bin/python ## Create API virtualenv and install dependencies (incl. dev tooling)
 	$(API_VENV)/bin/pip install --upgrade pip
-	$(API_VENV)/bin/pip install -r $(API_DIR)/requirements.txt pytest
+	$(API_VENV)/bin/pip install -r $(API_DIR)/requirements-dev.txt
 
 api-dev: api-install ## Start the FastAPI development server
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/uvicorn main:app --reload
