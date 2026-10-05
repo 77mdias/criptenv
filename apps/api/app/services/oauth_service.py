@@ -13,8 +13,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.user import User, Session
 from app.models.oauth_account import OAuthAccount
 from app.config import settings
+from app.crypto.oauth_tokens import encrypt_provider_token
 import os
-import base64
 
 
 class OAuthUserInfo(TypedDict):
@@ -22,6 +22,11 @@ class OAuthUserInfo(TypedDict):
     email: str
     name: Optional[str]
     avatar_url: Optional[str]
+    # Whether the provider has verified the user's control of that email.
+    # Synthetic/noreply emails are NOT verified. Auto-linking an OAuth
+    # identity to an existing account by email is only allowed when this
+    # is True (prevents account takeover via unverified provider emails).
+    email_verified: bool
 
 
 class OAuthProvider(Protocol):
@@ -78,6 +83,7 @@ class GitHubOAuthProvider:
             
             # Get primary email
             email = None
+            email_verified = False
             try:
                 emails_response = await client.get(self.emails_url, headers=headers)
                 emails_response.raise_for_status()
@@ -85,6 +91,7 @@ class GitHubOAuthProvider:
                 for e in emails:
                     if e.get("primary") and e.get("verified"):
                         email = e.get("email")
+                        email_verified = True
                         break
             except Exception:
                 pass
@@ -98,6 +105,7 @@ class GitHubOAuthProvider:
                 email=email,
                 name=user_data.get("name") or user_data.get("login"),
                 avatar_url=user_data.get("avatar_url"),
+                email_verified=email_verified,
             )
 
 
@@ -151,6 +159,8 @@ class GoogleOAuthProvider:
                 email=data["email"],
                 name=data.get("name"),
                 avatar_url=data.get("picture"),
+                # Google's userinfo endpoint reports email verification
+                email_verified=bool(data.get("email_verified", False)),
             )
 
 
@@ -206,6 +216,9 @@ class DiscordOAuthProvider:
                 email=email,
                 name=data.get("global_name") or data.get("username"),
                 avatar_url=f"https://cdn.discordapp.com/avatars/{data['id']}/{data.get('avatar', '')}.png" if data.get("avatar") else None,
+                # Discord's /users/@me reports `verified` for the email;
+                # synthetic noreply addresses are never verified.
+                email_verified=bool(data.get("verified", False)),
             )
 
 
@@ -346,8 +359,8 @@ class OAuthService:
             
             # Existing user - update tokens and fetch fresh user
             user_id = oauth_account.user_id
-            oauth_account.access_token = access_token.encode() if access_token else None
-            oauth_account.refresh_token = refresh_token.encode() if refresh_token else None
+            oauth_account.access_token = encrypt_provider_token(access_token)
+            oauth_account.refresh_token = encrypt_provider_token(refresh_token)
             if expires_in:
                 oauth_account.expires_at = datetime.now(timezone.utc) + timedelta(seconds=expires_in)
             
@@ -365,6 +378,15 @@ class OAuthService:
             if existing_user:
                 if link_to_user and existing_user.id != link_to_user.id:
                      raise ValueError(f"An account with email {user_info['email']} already exists and is linked to another user.")
+                # Only link an OAuth identity to an existing account when the
+                # provider verified the user's control of that email. Otherwise
+                # an attacker could register the victim's address at a provider
+                # and take over the account (P0 fix, audit 2026-10).
+                if not user_info.get("email_verified"):
+                    raise ValueError(
+                        f"Your {provider.title()} account does not have a verified email address. "
+                        "Verify your email with the provider or sign in with your password to link accounts."
+                    )
                 # Link OAuth account to existing user
                 user = existing_user
             else:
@@ -379,7 +401,9 @@ class OAuthService:
                         password_hash="",  # OAuth users have no password
                         kdf_salt=self.generate_kdf_salt(),  # Required for OAuth users
                         avatar_url=user_info.get("avatar_url"),
-                        email_verified=True,  # OAuth emails are verified by provider
+                        # Reflect the provider's verification status; synthetic
+                        # noreply addresses stay unverified.
+                        email_verified=bool(user_info.get("email_verified")),
                         # First-use acceptance (Terms clause 0.3): OAuth signups do
                         # not pass through the signup checkbox; the acceptance
                         # notice is displayed beside the provider buttons.
@@ -396,8 +420,8 @@ class OAuthService:
                 provider=provider,
                 provider_user_id=user_info["id"],
                 provider_email=user_info["email"],
-                access_token=access_token.encode() if access_token else None,
-                refresh_token=refresh_token.encode() if refresh_token else None,
+                access_token=encrypt_provider_token(access_token),
+                refresh_token=encrypt_provider_token(refresh_token),
                 expires_at=datetime.now(timezone.utc) + timedelta(seconds=expires_in) if expires_in else None,
             )
             self.db.add(oauth_account)
