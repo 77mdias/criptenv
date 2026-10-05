@@ -1,6 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm.attributes import flag_modified
 from typing import Optional, Union
 from uuid import UUID
 
@@ -146,7 +145,7 @@ async def signup(
     verification = await auth_service.create_email_verification(data.email)
     if verification:
         frontend_url = settings.FRONTEND_URL.rstrip("/")
-        verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+        verification_url = f"{frontend_url}/verify-email?token={verification.plaintext_token}"
         email_service.send_email_verification(data.email, verification_url)
 
     return MessageResponse(
@@ -181,7 +180,7 @@ async def signin(
         verification = await auth_service.create_email_verification(data.email)
         if verification:
             frontend_url = settings.FRONTEND_URL.rstrip("/")
-            verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+            verification_url = f"{frontend_url}/verify-email?token={verification.plaintext_token}"
             email_service.send_email_verification(data.email, verification_url)
 
         raise HTTPException(
@@ -333,14 +332,14 @@ async def forgot_password(
     if reset:
         # Build reset URL
         frontend_url = settings.FRONTEND_URL.rstrip("/")
-        reset_url = f"{frontend_url}/reset-password?token={reset.token}"
+        reset_url = f"{frontend_url}/reset-password?token={reset.plaintext_token}"
         email_service.send_password_reset(data.email, reset_url)
 
         # Dev fallback: expose token when email service is not configured
         if not email_service.enabled and _dev_token_allowed():
             return ForgotPasswordResponse(
                 message="If an account exists with this email, a reset link has been sent.",
-                dev_token=reset.token,
+                dev_token=reset.plaintext_token,
                 dev_warning="Email service is not configured (RESEND_API_KEY is missing). This token is exposed for local development only. In production, configure RESEND_API_KEY to hide this value.",
             )
 
@@ -378,14 +377,14 @@ async def send_verification(
     verification = await auth_service.create_email_verification(data.email)
     if verification:
         frontend_url = settings.FRONTEND_URL.rstrip("/")
-        verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+        verification_url = f"{frontend_url}/verify-email?token={verification.plaintext_token}"
         email_service.send_email_verification(data.email, verification_url)
 
         # Dev fallback: expose token when email service is not configured
         if not email_service.enabled and _dev_token_allowed():
             return SendVerificationResponse(
                 message="If the account exists and is unverified, a verification link has been sent.",
-                dev_token=verification.token,
+                dev_token=verification.plaintext_token,
                 dev_warning="Email service is not configured (RESEND_API_KEY is missing). This token is exposed for local development only.",
             )
 
@@ -658,6 +657,13 @@ async def verify_2fa_challenge(
             user_agent=request.headers.get("User-Agent"),
         )
     except ValueError as e:
+        # The service persists the failed-attempt counter (and challenge
+        # lockout) via flush; commit it explicitly — raising here would make
+        # get_db roll the lockout back (audit P2 #11, 2026-10).
+        try:
+            await db.commit()
+        except Exception:
+            await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)

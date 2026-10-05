@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, DateTime, LargeBinary, ForeignKey, func, Index
+from sqlalchemy import Column, String, Boolean, DateTime, LargeBinary, ForeignKey, func, Index, Integer
 from sqlalchemy.dialects.postgresql import UUID, CITEXT, JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -56,6 +56,10 @@ class TwoFactorChallenge(Base):
     token_hash = Column(String(64), unique=True, nullable=False, index=True)
     expires_at = Column(DateTime(timezone=True), nullable=False)
     consumed_at = Column(DateTime(timezone=True))
+    # Per-challenge brute-force lockout (audit P2 #11, 2026-10): a challenge
+    # is consumed after MAX_2FA_CHALLENGE_ATTEMPTS wrong codes, forcing the
+    # user through a fresh challenge instead of a 10-minute guessing window.
+    failed_attempts = Column(Integer, nullable=False, default=0, server_default="0")
     ip_address = Column(String(45))
     user_agent = Column(String(512))
     created_at = Column(DateTime(timezone=True), server_default=func.now())

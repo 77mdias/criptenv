@@ -69,7 +69,7 @@ def test_signup_returns_message_and_sends_verification(monkeypatch):
         return make_user(), make_session()
 
     async def fake_create_email_verification(self, email):
-        return SimpleNamespace(token="dev-verification-token-123")
+        return SimpleNamespace(token="hashed", plaintext_token="dev-verification-token-123")
 
     monkeypatch.setattr(AuthService, "create_user", fake_create_user)
     monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
@@ -167,7 +167,7 @@ def test_signin_rejects_unverified_email(monkeypatch):
         return unverified_user
 
     async def fake_create_email_verification(self, email):
-        return SimpleNamespace(token="dev-verification-token-456")
+        return SimpleNamespace(token="hashed", plaintext_token="dev-verification-token-456")
 
     monkeypatch.setattr(AuthService, "authenticate_credentials", fake_authenticate_credentials)
     monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
@@ -423,7 +423,7 @@ def _make_email_service(enabled: bool):
 
 def test_forgot_password_exposes_dev_token_when_email_disabled(monkeypatch):
     """When RESEND_API_KEY is not set, the reset token is exposed for local development."""
-    reset_record = SimpleNamespace(token="dev-reset-token-123", email="dev@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="dev-reset-token-123", email="dev@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -447,7 +447,7 @@ def test_forgot_password_exposes_dev_token_when_email_disabled(monkeypatch):
 
 def test_forgot_password_hides_token_when_email_enabled(monkeypatch):
     """When RESEND_API_KEY is set, the reset token is never exposed."""
-    reset_record = SimpleNamespace(token="prod-reset-token-456", email="dev@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="prod-reset-token-456", email="dev@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -494,7 +494,7 @@ def test_forgot_password_returns_generic_message_when_user_not_found(monkeypatch
 
 def test_send_verification_exposes_dev_token_when_email_disabled(monkeypatch):
     """When RESEND_API_KEY is not set, the verification token is exposed for local development."""
-    verification_record = SimpleNamespace(token="dev-verification-token-789")
+    verification_record = SimpleNamespace(token="hashed", plaintext_token="dev-verification-token-789")
 
     async def fake_create_email_verification(self, email):
         return verification_record
@@ -517,7 +517,7 @@ def test_send_verification_exposes_dev_token_when_email_disabled(monkeypatch):
 
 def test_send_verification_hides_token_when_email_enabled(monkeypatch):
     """When RESEND_API_KEY is set, the verification token is never exposed."""
-    verification_record = SimpleNamespace(token="prod-verification-token-abc")
+    verification_record = SimpleNamespace(token="hashed", plaintext_token="prod-verification-token-abc")
 
     async def fake_create_email_verification(self, email):
         return verification_record
@@ -662,7 +662,7 @@ def _force_env(monkeypatch, *, debug: bool, app_env: str):
 @pytest.mark.parametrize("app_env", ["production", "prod", "release", "staging"])
 def test_reset_token_never_exposed_outside_development(monkeypatch, app_env):
     """A production deployment missing RESEND_API_KEY must not echo reset tokens."""
-    reset_record = SimpleNamespace(token="LEAKED-reset-token", email="victim@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="LEAKED-reset-token", email="victim@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -685,7 +685,7 @@ def test_reset_token_never_exposed_outside_development(monkeypatch, app_env):
 
 def test_reset_token_not_exposed_when_debug_is_off(monkeypatch):
     """Even in a development environment, DEBUG=false hides the token."""
-    reset_record = SimpleNamespace(token="LEAKED-reset-token", email="victim@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="LEAKED-reset-token", email="victim@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -706,7 +706,7 @@ def test_reset_token_not_exposed_when_debug_is_off(monkeypatch):
 
 def test_reset_token_exposed_in_local_development(monkeypatch):
     """DEBUG + development keeps the local convenience fallback working."""
-    reset_record = SimpleNamespace(token="local-reset-token", email="dev@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="local-reset-token", email="dev@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -726,7 +726,7 @@ def test_reset_token_exposed_in_local_development(monkeypatch):
 
 def test_verification_token_never_exposed_outside_development(monkeypatch):
     """Same gate applies to the email-verification resend endpoint."""
-    verification_record = SimpleNamespace(token="LEAKED-verification-token")
+    verification_record = SimpleNamespace(token="hashed", plaintext_token="LEAKED-verification-token")
 
     async def fake_create_email_verification(self, email):
         return verification_record
