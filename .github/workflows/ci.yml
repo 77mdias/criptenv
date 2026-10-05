@@ -28,6 +28,14 @@ jobs:
   migrations:
     name: Alembic single head
     runs-on: ubuntu-latest
+    env:
+      # Settings() is instantiated when a migration imports app.config, and
+      # DATABASE_URL/SECRET_KEY are required fields with no defaults. `alembic
+      # heads` only parses the revision scripts and never connects, so these
+      # values exist purely to satisfy configuration validation in a job with
+      # no .env file.
+      DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/ci_placeholder
+      SECRET_KEY: ci-migration-head-check-secret-key-32-chars
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
