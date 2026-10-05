@@ -8,7 +8,6 @@ RED Phase: These tests define the expected behavior for:
 """
 
 import pytest
-import hashlib
 from datetime import datetime, timezone, timedelta
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
@@ -113,7 +112,6 @@ class TestCITokenModelScopes:
     def test_citoken_has_scopes_field(self):
         """CIToken model must have scopes JSONB field"""
         from app.models.member import CIToken
-        import inspect
         
         # Check CIToken has scopes attribute
         assert hasattr(CIToken, 'scopes'), "CIToken must have 'scopes' field"
@@ -121,7 +119,6 @@ class TestCITokenModelScopes:
     def test_citoken_has_environment_scope_field(self):
         """CIToken model must have environment_scope field"""
         from app.models.member import CIToken
-        import inspect
         
         # Check CIToken has environment_scope attribute
         assert hasattr(CIToken, 'environment_scope'), "CIToken must have 'environment_scope' field"
@@ -202,7 +199,6 @@ class TestCITokenSchemaScopes:
     def test_citoken_response_includes_scopes(self):
         """CITokenResponse should include scopes field"""
         from app.schemas.member import CITokenResponse
-        from uuid import UUID
         
         response = CITokenResponse(
             id=uuid4(),
@@ -315,7 +311,7 @@ class TestScopeMiddleware:
     @pytest.mark.asyncio
     async def test_require_ci_scope_allows_valid_scope(self):
         """require_ci_scope should allow access with valid scope"""
-        from app.middleware.ci_auth import require_ci_scope, get_current_ci_user
+        from app.middleware.ci_auth import require_ci_scope
         from unittest.mock import MagicMock, patch
         
         # Create the scope checker from factory
@@ -338,7 +334,7 @@ class TestScopeMiddleware:
     @pytest.mark.asyncio
     async def test_require_ci_scope_blocks_invalid_scope(self):
         """require_ci_scope should block access with invalid scope"""
-        from app.middleware.ci_auth import require_ci_scope, get_current_ci_user
+        from app.middleware.ci_auth import require_ci_scope
         
         # Create the scope checker from factory
         scope_checker = require_ci_scope("write:secrets")
@@ -360,7 +356,7 @@ class TestScopeMiddleware:
     @pytest.mark.asyncio
     async def test_admin_scope_bypasses_all_scope_checks(self):
         """admin:project scope should bypass all scope checks"""
-        from app.middleware.ci_auth import require_ci_scope, get_current_ci_user
+        from app.middleware.ci_auth import require_ci_scope
         
         # Create the scope checker from factory
         scope_checker = require_ci_scope("any:random:scope")
@@ -389,7 +385,6 @@ class TestCITokenCRUDWithScopes:
     async def test_create_token_with_scopes(self):
         """Should create token with specified scopes"""
         from app.schemas.member import CITokenCreate
-        from uuid import uuid4
         
         create_data = CITokenCreate(
             name="Deploy Token",
@@ -434,9 +429,6 @@ class TestCITokenRevocation:
     @pytest.mark.asyncio
     async def test_revoked_token_cannot_login(self):
         """Revoked token should not be able to login"""
-        from app.routers.ci import ci_login
-        from unittest.mock import MagicMock, AsyncMock, patch
-        from app.database import get_db
         
         # This would be an integration test
         # The endpoint should check revoked_at and reject

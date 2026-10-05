@@ -32,7 +32,7 @@ help: ## Show available commands
 
 install: web-install api-install cli-install ## Install dependencies for web, api, and cli
 
-lint: web-lint ## Run frontend lint checks
+lint: web-lint api-lint cli-lint ## Run frontend and Python lint checks
 
 test: api-test cli-test ## Run API and CLI test suites
 
@@ -86,6 +86,9 @@ api-dev: api-install ## Start the FastAPI development server
 api-test: api-install ## Run the API test suite
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python -m pytest tests -q
 
+api-lint: api-install ## Run API lint (ruff)
+	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python -m ruff check app tests
+
 api-test-contributions: api-install ## Run contribution tests only
 	cd $(API_DIR) && $(abspath $(API_VENV))/bin/python -m pytest tests/test_contributions.py tests/test_webhook_security.py -v
 
@@ -131,6 +134,9 @@ cli-install: $(CLI_VENV)/bin/python ## Create CLI virtualenv and install depende
 
 cli-test: cli-install ## Run the CLI test suite
 	cd $(CLI_DIR) && $(abspath $(CLI_VENV))/bin/python -m pytest tests -q
+
+cli-lint: cli-install ## Run CLI lint (ruff)
+	cd $(CLI_DIR) && $(abspath $(CLI_VENV))/bin/python -m ruff check src tests
 
 # ===========================================
 # Docker Commands

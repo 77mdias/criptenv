@@ -6,7 +6,7 @@ Run with: pytest apps/cli/tests/test_rotation_commands.py -v
 
 import pytest
 from click.testing import CliRunner
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 import sys
 from pathlib import Path
@@ -49,7 +49,6 @@ def mock_config_dir(tmp_path, monkeypatch):
 @pytest.fixture
 def mock_session(tmp_path, monkeypatch):
     """Mock session with valid credentials."""
-    import json
     session_data = {
         "token": "test-token-123",
         "email": "test@example.com",

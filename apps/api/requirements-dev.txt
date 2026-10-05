@@ -1,0 +1,7 @@
+# Development/test tooling for apps/api (not needed at runtime).
+-r requirements.txt
+pytest==9.0.3
+ruff==0.16.10
+# Real in-memory/file SQLite driver for non-mocked regression tests
+# (API key eager loading, vault OCC concurrency).
+aiosqlite==0.22.1

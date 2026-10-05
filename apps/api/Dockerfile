@@ -42,9 +42,16 @@ COPY --from=deps /usr/local/bin /usr/local/bin
 
 COPY apps/api/ ./
 
-RUN chmod +x entrypoint.sh
+RUN chmod +x entrypoint.sh \
+    && useradd --create-home --shell /usr/sbin/nologin --uid 10001 criptenv \
+    && chown -R criptenv:criptenv /app
+
+USER criptenv
 
 EXPOSE 8000
+
+HEALTHCHECK --interval=30s --timeout=5s --start-period=20s --retries=3 \
+    CMD curl -fsS http://localhost:8000/health || exit 1
 
 ENTRYPOINT ["./entrypoint.sh"]
 CMD ["gunicorn", "main:app", "-k", "uvicorn.workers.UvicornWorker", "--bind", "0.0.0.0:8000", "--workers", "3", "--timeout", "60", "--access-logfile", "-", "--error-logfile", "-"]

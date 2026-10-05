@@ -5,7 +5,7 @@ HELL TDD - Tests for contribution creation, status tracking, and webhooks.
 
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
-from uuid import uuid4, UUID
+from uuid import uuid4
 from datetime import datetime, timezone, timedelta
 from decimal import Decimal
 from contextlib import contextmanager
@@ -18,14 +18,12 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from main import app
 from app.middleware.auth import get_current_user
 from app.models.contribution import Contribution, ContributionStatus
-from app.services.mercadopago_client import MercadoPagoClient, MercadoPagoError
+from app.services.mercadopago_client import MercadoPagoClient
 from app.services.contribution_service import (
     ContributionService,
     InvalidAmountError,
     ContributionNotFoundError,
     PaymentProviderError,
-    MIN_CONTRIBUTION_AMOUNT,
-    MAX_CONTRIBUTION_AMOUNT,
 )
 
 

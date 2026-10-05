@@ -151,7 +151,7 @@ async def test_project_create_requires_vault_proof_against_postgres():
         transport=ASGITransport(app=app),
         base_url="https://test",
     ) as client:
-        signup = await client.post(
+        _signup = await client.post(
             "/api/auth/signup",
             json={
                 "email": "proof@example.com",

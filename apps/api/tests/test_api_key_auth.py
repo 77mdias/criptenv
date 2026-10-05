@@ -4,9 +4,8 @@ HELL TDD - RED phase: Tests for API key authentication middleware.
 """
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch, PropertyMock
+from unittest.mock import MagicMock, AsyncMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone, timedelta
 from fastapi import HTTPException
 
 import sys

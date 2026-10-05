@@ -5,7 +5,7 @@ TDD RED Phase: Tests for the background job that checks expiring secrets.
 
 import pytest
 from datetime import datetime, timezone, timedelta
-from uuid import UUID, uuid4
+from uuid import uuid4
 from unittest.mock import patch, AsyncMock, MagicMock
 
 import sys
@@ -179,7 +179,7 @@ class TestExpirationCheckerCheck:
         
         checker._get_webhook_url = AsyncMock(return_value="https://example.com/hook")
         
-        results = await checker.check_expirations()
+        _results = await checker.check_expirations()
         
         # mark_notified should NOT be called on failure
         mock_rotation_service.mark_notified.assert_not_called()

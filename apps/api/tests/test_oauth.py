@@ -9,7 +9,7 @@ from app.config import settings
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.routers.oauth import router as oauth_router
-from app.services.oauth_service import OAuthService, OAuthUserInfo
+from app.services.oauth_service import OAuthService
 
 
 async def _dummy_db():
@@ -261,7 +261,7 @@ def test_oauth_session_stores_digest_not_plaintext():
     from app.models.user import Session as SessionModel
     from app.services.oauth_service import OAuthService
 
-    service = OAuthService.__new__(OAuthService)  # skip __init__ (needs db)
+    _service = OAuthService.__new__(OAuthService)  # skip __init__ (needs db)
     raw_token = "raw-oauth-session-token" + "x" * 40
     session = SessionModel(
         token=hashlib.sha256(raw_token.encode("utf-8")).hexdigest(),

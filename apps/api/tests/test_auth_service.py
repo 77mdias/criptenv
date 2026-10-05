@@ -78,7 +78,6 @@ async def test_validate_session_queries_by_digest():
     """Lookups must bind the digest, never the raw token."""
     import hashlib
     from unittest.mock import AsyncMock, MagicMock
-    from uuid import uuid4
 
     captured = {}
 

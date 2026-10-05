@@ -7,11 +7,11 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.api_key import APIKey, generate_api_key, hash_api_key, extract_prefix
-from app.schemas.api_key import ApiKeyCreate, ApiKeyCreateResponse, ApiKeyResponse
+from app.schemas.api_key import ApiKeyCreate
 from app.services.audit_service import AuditService
 
 

@@ -6,7 +6,7 @@ RED Phase: Write tests that describe the expected behavior.
 import pytest
 from datetime import datetime, timezone, timedelta
 from uuid import uuid4
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import patch, AsyncMock
 
 import sys
 from pathlib import Path
@@ -210,8 +210,8 @@ class TestSecretExpirationService:
         mock_db.commit = AsyncMock()
         
         # Should not raise on create
-        project_id = uuid4()
-        env_id = uuid4()
+        _project_id = uuid4()
+        _env_id = uuid4()
         
         # Method signature may vary, just test the service is usable
         assert service is not None
@@ -291,7 +291,7 @@ class TestSecretExpirationValidation:
         
         # Past date should fail if there's validation
         try:
-            schema = ExpirationCreate(
+            _schema = ExpirationCreate(
                 secret_key="TEST",
                 expires_at=datetime.now(timezone.utc) - timedelta(days=1)
             )
