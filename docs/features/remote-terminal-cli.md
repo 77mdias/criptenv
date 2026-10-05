@@ -74,6 +74,26 @@ criptenv pull -p <project-id> -e production --output .env.production
 
 Bare `criptenv push` and bare `criptenv pull` fail with a clear message pointing to `import` and `export`.
 
+### Run and Diff
+
+`run` injects the decrypted environment into a child process without writing a
+plaintext file to disk; `diff` reports drift between a local `.env` and the
+remote vault and exits non-zero when they differ (usable as a CI gate).
+
+```bash
+criptenv run -- npm start
+criptenv run -p <project-id> -e staging -- python manage.py migrate
+
+criptenv diff .env -p <project-id> -e production
+criptenv diff .env --show-values   # masked preview (never prints full values)
+```
+
+Notes:
+- `run` overrides only the keys present in the vault; the rest of the parent
+  environment is inherited, and the child's exit code is propagated.
+- `diff` exits `1` when keys are missing on either side or values differ, and
+  `--show-values` prints only a masked preview so secrets never land in logs.
+
 ## Concurrency Protection
 
 The CLI sends the vault version it read before mutation as `expected_version`.

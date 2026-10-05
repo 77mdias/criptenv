@@ -114,7 +114,7 @@ make api-test       # Run API pytest suite
 make cli-test       # Run CLI pytest suite
 
 # Linting / Checks
-make lint           # Run frontend ESLint
+make lint           # Run frontend ESLint + Python ruff (api-lint, cli-lint)
 make check          # Run web-check-vinext + web-build + api-test + cli-test
 make web-check-vinext   # Vinext compatibility scan
 make web-build      # Build frontend with Vinext
@@ -176,7 +176,7 @@ npm run build         # ncc build src/index.ts -> dist/index.js
 
 ### CLI (`apps/cli`)
 - `src/criptenv/cli.py` — Click entry point, registers all commands
-- `src/criptenv/commands/` — Command implementations: `init`, `login`, `secrets` (set/get/list/delete/rotate), `sync` (push/pull), `environments`, `projects`, `doctor`, `import_export`, `ci`
+- `src/criptenv/commands/` — Command implementations: `init`, `login`, `secrets` (set/get/list/delete/rotate), `sync` (push/pull), `run` (inject secrets into a subprocess), `diff` (drift vs remote vault), `environments`, `projects`, `doctor`, `import_export`, `ci`
 - `src/criptenv/crypto/` — AES-256-GCM encryption, PBKDF2/HKDF key derivation
 - `src/criptenv/vault/` — Local SQLite persistence (models, queries, database)
 - `src/criptenv/api/` — HTTP client wrappers (`CriptEnvClient` via httpx)
@@ -262,12 +262,14 @@ The frontend runs on Cloudflare Workers, which prohibits asynchronous I/O, timer
 | CLI commands | pytest | 85% | `apps/cli/tests/` |
 | UI components | vitest | 70% | `apps/web/src/components/shared/__tests__/` (minimal) |
 
-**Important**: There are no CI/CD pipelines (`.github/workflows` does not exist). Tests must be run locally via `make test`.
+**CI/CD**: GitHub Actions workflows exist in `.github/workflows/`: `ci.yml` (Python ruff lint, exactly-one Alembic head, api/cli/web tests + web lint + build on PRs and pushes to main), `e2e.yml` (Cypress), `security.yml` (Gitleaks, CodeQL, pip-audit, npm audit, Trivy), `docker-build.yml` and `deploy-backend.yml` (Docker image build/publish). Dependabot is configured. Install API dev tooling with `pip install -r apps/api/requirements-dev.txt` (includes ruff and aiosqlite for the non-mocked regression tests). Note: the E2E and Docker workflows only gate merges if branch protection marks them as required checks — configure that in the repository settings.
+
+Ruff config lives in `ruff.toml` (`F` + `E9`: undefined names, unused imports/vars, syntax errors). Keep it green — the F823 rule caught a real `UnboundLocalError` in `integrations connect`.
 
 ### Running tests
 - Backend: `cd apps/api && python -m pytest tests -q`
 - CLI: `cd apps/cli && python -m pytest tests -q`
-- Frontend: Only 2 test files exist; no test runner is configured in `package.json` scripts.
+- Frontend: `npm run test:unit` (Jest, ~26 suites under `src/**/__tests__/`); E2E via `npm run test:e2e` (Cypress).
 
 ---
 
@@ -309,9 +311,10 @@ AES-256-GCM -> Encrypted Blob -> Server (never sees plaintext)
 - **CR-02** Token stored in localStorage — resolved. `useAuthStore` has no
   `persist` middleware; the session is re-validated from the cookie on load.
 
-> Note: `testsprite_tests/TC002..TC010` still assert the pre-fix behaviour
-> (`session_token` in the login response body) and must be updated to read the
-> cookie instead.
+> Note: the stale `testsprite_tests/` suite (which asserted the pre-fix
+> behaviour of `session_token` in the login response body) was removed in the
+> 2026-10 audit Sprint 3; it is superseded by `apps/api/tests/`, `apps/cli/tests/`
+> and the web Jest suites, all of which run in CI.
 
 Additional fixes from the follow-up audit (`hotfix/security-vuln-fix`):
 
@@ -382,12 +385,12 @@ The CLI stores its local vault at `~/.criptenv/vault.db` (SQLite) and configurat
 | Component | Platform | Notes |
 |-----------|----------|-------|
 | Frontend | Cloudflare Pages + Workers | Built with Vinext, deployed via `vinext deploy` |
-| Backend | Railway / Render | FastAPI server with uvicorn/gunicorn |
-| Database | PostgreSQL (free tier) | Manual migrations |
+| Backend | Docker on VPS behind Cloudflare Tunnel | `apps/api/Dockerfile` + `deploy/vps/docker-compose.yml`; image published via `.github/workflows/deploy-backend.yml` |
+| Database | PostgreSQL 15 (VPS compose) | Migrations applied automatically by the API container entrypoint (`alembic upgrade head`) |
 | CLI | PyPI (future) | Distributed as Python wheel |
 | GitHub Action | GitHub Marketplace | Bundled with `ncc` |
 
-There is no containerization (no Dockerfiles or docker-compose.yml).
+Containerization: multi-stage `Dockerfile`s exist for `apps/api` and `apps/web`, with compose files for dev (`docker-compose.dev.yml`), e2e (`docker-compose.e2e.yml`), production (`docker-compose.yml`) and the VPS (`deploy/vps/`). See `docs/development/docker.md`.
 
 ---
 
@@ -442,5 +445,5 @@ There is no containerization (no Dockerfiles or docker-compose.yml).
 
 ---
 
-**Document Version**: 1.1  
-**Last Updated**: 2026-05-11
+**Document Version**: 1.3  
+**Last Updated**: 2026-10 (audit 2026-10 Sprints 1–3: CI/Docker sections corrected, ruff + migrations gates documented, CLI run/diff)

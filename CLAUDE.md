@@ -8,6 +8,10 @@ CriptEnv is a Zero-Knowledge secret management platform (open-source alternative
 - **Backend**: Python FastAPI + SQLAlchemy async + PostgreSQL
 - **Frontend**: Next.js 16 + React 19 + TailwindCSS v4 + Radix UI
 - **Auth**: JWT-like session tokens (no external provider in current implementation)
+- **CI/CD**: GitHub Actions in `.github/workflows/` (ci, e2e, security, docker-build, deploy-backend) + Dependabot
+- **Deploy**: API in Docker on a VPS behind Cloudflare Tunnel (`deploy/vps/docker-compose.yml`); frontend on Cloudflare Workers. Multi-stage Dockerfiles for api and web; Alembic migrations run in the container entrypoint.
+
+See `AGENTS.md` for the full architecture, conventions and deployment details.
 
 ## Commands
 
