@@ -12,8 +12,8 @@ GRASP Patterns:
 import httpx
 import asyncio
 import re
-from datetime import datetime, timezone
-from dataclasses import dataclass, field
+from datetime import datetime
+from dataclasses import dataclass
 from typing import Optional, Dict, Any, Protocol, runtime_checkable
 from uuid import UUID
 
@@ -21,7 +21,8 @@ from app.config import settings
 from app.services.alert_payload import build_alert_payload
 from app.services.alert_settings_service import (
     resolve_webhook_target,
-    ValidatedWebhookTarget,
+    # Re-exported: callers and tests import ValidatedWebhookTarget from here.
+    ValidatedWebhookTarget as ValidatedWebhookTarget,
 )
 from app.models.alert_delivery import AlertDelivery
 

@@ -11,10 +11,8 @@ import hmac
 import json
 import secrets
 import time
-from datetime import datetime, timezone, timedelta
 from typing import Literal, Optional
 from urllib.parse import quote, urlparse
-from uuid import uuid4
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -505,7 +503,7 @@ async def cli_initiate(
     _validate_loopback_callback(request.callback_url)
 
     state = secrets.token_urlsafe(32)
-    auth_code = await _cli_auth_store.create(
+    await _cli_auth_store.create(
         state, request.callback_url, request.code_challenge
     )
 

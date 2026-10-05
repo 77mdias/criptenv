@@ -159,7 +159,7 @@ class IntegrationService:
             error_message = str(e)
             integration.status = "error"
             integration.last_error = error_message
-            await self.db.commit()
+            await self.db.flush()
             return False, error_message
 
         is_valid = await provider.validate_connection(config)
@@ -171,7 +171,7 @@ class IntegrationService:
             integration.status = "error"
             integration.last_error = "Connection validation failed"
         
-        await self.db.commit()
+        await self.db.flush()
         return is_valid, None if is_valid else "Connection validation failed"
     
     async def sync_integration(
@@ -231,7 +231,7 @@ class IntegrationService:
                 integration.status = "error"
                 integration.last_error = f"Sync failed: {direction}"
             
-            await self.db.commit()
+            await self.db.flush()
             return success, None if success else f"Sync failed: {direction}"
             
         except Exception as e:
@@ -248,7 +248,7 @@ class IntegrationService:
                 error_message = self._sanitize_error(str(e), config)
             integration.status = "error"
             integration.last_error = error_message
-            await self.db.commit()
+            await self.db.flush()
             return False, error_message
     
     def get_available_providers(self) -> list[str]:
