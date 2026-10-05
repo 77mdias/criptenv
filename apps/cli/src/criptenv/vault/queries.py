@@ -1,5 +1,6 @@
 """Database query operations for local vault."""
 
+import json
 import time
 from typing import Optional
 
@@ -290,8 +291,6 @@ async def save_ci_session(db: aiosqlite.Connection, session: CISession):
 
 async def get_active_ci_session(db: aiosqlite.Connection) -> Optional[CISession]:
     """Get the most recent non-expired CI session."""
-    import json
-    
     now = int(time.time())
     cursor = await db.execute(
         """SELECT * FROM ci_sessions
