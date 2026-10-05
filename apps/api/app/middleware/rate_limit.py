@@ -8,7 +8,6 @@ import hashlib
 import logging
 import time
 from typing import Optional
-from datetime import datetime, timezone
 
 from fastapi import Request, HTTPException, status
 from starlette.responses import JSONResponse
@@ -184,6 +183,32 @@ class RateLimitStorage:
         self._storage[key] = (count + 1, self._storage[key][1])
         return count + 1
     
+    async def check_and_increment(
+        self, key: str, limit: int, window_seconds: int = 60
+    ) -> tuple[bool, int]:
+        """Atomically increment the counter and report whether the limit holds.
+
+        A separate get_count + increment pair is racy under concurrency: N
+        simultaneous requests all read the same count and all pass, then all
+        increment (audit P2 #10, 2026-10). With Redis this is a single INCR;
+        the memory backend runs on one event loop so the update is likewise
+        atomic.
+        """
+        if self.storage_backend == "redis":
+            count = int(await self._redis.incr(key))
+            if count == 1:
+                await self._redis.expire(key, window_seconds)
+            return count <= limit, count
+
+        now = time.time()
+        if key not in self._storage or self._is_window_expired(self._storage[key][1]):
+            self._storage[key] = (1, now)
+            return True, 1
+        count, timestamp = self._storage[key]
+        new_count = count + 1
+        self._storage[key] = (new_count, timestamp)
+        return new_count <= limit, new_count
+
     async def reset(self, key: str):
         """Reset counter for key."""
         if self.storage_backend == "redis":
@@ -369,7 +394,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
         if rate_key:
             try:
-                current_count = await self.storage.get_count(rate_key)
+                allowed, current_count = await self.storage.check_and_increment(
+                    rate_key, limit_count, window_seconds
+                )
             except Exception:
                 # Fail open: a rate limiter outage must never take down auth
                 # or any other route (e.g. OAuth callback returning 500).
@@ -378,9 +405,9 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                     rate_key,
                     exc_info=True,
                 )
-                current_count = 0
+                allowed, current_count = True, 0
 
-            if current_count >= limit_count:
+            if not allowed:
                 # Rate limit exceeded
                 reset_time = int(time.time()) + window_seconds
                 response = JSONResponse(
@@ -397,17 +424,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 response.headers["X-RateLimit-Remaining"] = "0"
                 response.headers["X-RateLimit-Reset"] = str(reset_time)
                 return response
-            
-            # Increment counter
-            try:
-                await self.storage.increment_count(rate_key, window_seconds)
-            except Exception:
-                logger.warning(
-                    "Rate limit storage unavailable; skipping increment for key %s",
-                    rate_key,
-                    exc_info=True,
-                )
-            remaining = limit_count - current_count - 1
+
+            remaining = limit_count - current_count
         else:
             remaining = limit_count - 1
         

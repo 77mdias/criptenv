@@ -4,8 +4,7 @@ HELL TDD - RED phase: Tests for rate limiting with slowapi.
 """
 
 import pytest
-from unittest.mock import MagicMock, AsyncMock, patch
-from datetime import datetime, timezone
+from unittest.mock import MagicMock, patch
 
 import sys
 from pathlib import Path
@@ -178,7 +177,7 @@ def test_rate_limit_error_code():
 
 def test_get_identifiers_for_different_auth_types():
     """Different auth types get different rate limit treatment."""
-    from app.middleware.rate_limit import get_rate_limit_key, identify_auth_type
+    from app.middleware.rate_limit import identify_auth_type
     
     # API key auth
     request = MagicMock()
@@ -453,7 +452,6 @@ async def test_middleware_fails_open_when_redis_is_down():
 
 def test_redis_client_is_created_with_resilient_pool_options():
     """The built Redis client must detect dead idle connections and retry."""
-    from unittest.mock import patch
 
     pytest.importorskip("redis")
     from app.middleware.rate_limit import RateLimitStorage
