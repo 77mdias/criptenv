@@ -6,13 +6,13 @@ These keys are created by users and have limited scopes.
 
 from dataclasses import dataclass
 from typing import Optional
-from uuid import UUID
 from datetime import datetime, timezone
 
 from fastapi import HTTPException, Request, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.orm import selectinload
 
 from app.database import get_db, async_session_factory
 from app.models.api_key import APIKey, hash_api_key, API_KEY_PREFIX, ScopeValidator
@@ -98,13 +98,20 @@ def extract_api_key_from_auth(auth_header: Optional[str]) -> Optional[str]:
 
 
 async def get_db_api_key(key: str, db: AsyncSession) -> Optional[APIKey]:
-    """Look up API key by hash."""
+    """Look up API key by hash.
+
+    The ``user`` relationship is eager-loaded: accessing it lazily inside
+    async SQLAlchemy raises MissingGreenletError (implicit IO), which the
+    mocked tests never caught (audit P1 #5, 2026-10).
+    """
     key_hash = hash_api_key(key)
-    
+
     result = await db.execute(
-        select(APIKey).where(APIKey.key_hash == key_hash)
+        select(APIKey)
+        .options(selectinload(APIKey.user))
+        .where(APIKey.key_hash == key_hash)
     )
-    
+
     return result.scalar_one_or_none()
 
 
