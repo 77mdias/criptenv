@@ -7,7 +7,7 @@ from cryptography.hazmat.primitives.kdf.pbkdf2 import PBKDF2HMAC
 from cryptography.hazmat.primitives.kdf.hkdf import HKDF
 from cryptography.hazmat.primitives import hashes
 
-from criptenv.config import PBKDF2_ITERATIONS, SALT_LENGTH, KEY_LENGTH
+from criptenv.config import PBKDF2_ITERATIONS, MIN_PBKDF2_ITERATIONS, SALT_LENGTH, KEY_LENGTH
 from criptenv.crypto.core import encrypt, decrypt
 from criptenv.crypto.utils import from_base64, to_base64
 
@@ -99,13 +99,29 @@ def build_project_vault_config(
     return config, derive_vault_proof(password, config["proof_salt"], iterations)
 
 
+def enforce_pbkdf2_floor(vault_config: dict[str, Any]) -> int:
+    """Read PBKDF2 iterations from server-provided config, enforcing a floor.
+
+    A compromised server could otherwise serve `iterations=1` and silently
+    weaken both the password proof and the environment key derivation
+    (audit P2, 2026-10). Values below the floor are rejected outright.
+    """
+    iterations = int(vault_config.get("iterations", PBKDF2_ITERATIONS))
+    if iterations < MIN_PBKDF2_ITERATIONS:
+        raise ValueError(
+            f"Server-provided PBKDF2 iterations ({iterations}) are below the "
+            f"client minimum ({MIN_PBKDF2_ITERATIONS}); refusing to weaken key derivation."
+        )
+    return iterations
+
+
 def verify_project_vault_password(password: str, vault_config: dict[str, Any]) -> bool:
     """Validate a project vault password locally without server round-trip."""
     try:
         project_master_key = derive_master_key(
             password,
             from_base64(vault_config["salt"]),
-            int(vault_config.get("iterations", PBKDF2_ITERATIONS)),
+            enforce_pbkdf2_floor(vault_config),
         )
         plaintext = decrypt(
             from_base64(vault_config["verifier_ciphertext"]),
@@ -124,6 +140,6 @@ def derive_project_env_key(password: str, vault_config: dict[str, Any], env_id: 
     project_master_key = derive_master_key(
         password,
         from_base64(vault_config["salt"]),
-        int(vault_config.get("iterations", PBKDF2_ITERATIONS)),
+        enforce_pbkdf2_floor(vault_config),
     )
     return derive_env_key(project_master_key, env_id)

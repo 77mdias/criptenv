@@ -2,6 +2,7 @@
 
 from criptenv.crypto.core import encrypt, decrypt
 from criptenv.crypto.keys import (
+    enforce_pbkdf2_floor,
     build_project_vault_config,
     derive_env_key,
     derive_master_key,
@@ -15,6 +16,7 @@ from criptenv.crypto.utils import to_base64, from_base64, compute_checksum
 __all__ = [
     "encrypt",
     "decrypt",
+    "enforce_pbkdf2_floor",
     "generate_salt",
     "derive_master_key",
     "derive_env_key",

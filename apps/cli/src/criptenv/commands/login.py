@@ -256,7 +256,7 @@ async def _api_key_login(auth_key: bytes, db, api_key: str) -> dict:
 @click.command()
 @click.option("--email", "email_flag", is_flag=True, help="Use email/password login (legacy)")
 @click.option("--device", "device_flag", is_flag=True, help="Use device authorization flow")
-@click.option("--api-key", "api_key_value", default=None, help="Login with an API key")
+@click.option("--api-key", "api_key_value", default=None, flag_value="ask", help="Login with an API key. Use without a value to be prompted securely.")
 @click.option("--email-address", "email_address", default=None, help="Email for legacy login")
 @click.option("--password", default=None, help="Password for legacy login")
 def login_command(
@@ -278,6 +278,10 @@ def login_command(
         criptenv login --device             # Device code flow (for SSH/headless)
         criptenv login --api-key cek_xxx    # Login with API key
     """
+    if api_key_value == "ask":
+        # Hidden prompt: avoids the key landing in shell history / ps output
+        api_key_value = click.prompt("API key", hide_input=True)
+
     auth_key = get_or_create_auth_key()
 
     with local_vault() as db:

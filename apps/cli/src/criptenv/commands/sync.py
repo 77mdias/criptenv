@@ -1,5 +1,7 @@
 """Remote import/export aliases for cloud vault workflows."""
 
+import os
+
 import click
 
 from criptenv.commands.import_export import (
@@ -8,6 +10,18 @@ from criptenv.commands.import_export import (
     import_entries_remote,
     export_entries_remote,
 )
+
+
+def _write_secret_file(path: str, content: str) -> None:
+    """Write plaintext secrets with owner-only permissions (0600).
+
+    The vault database is 0600; exported plaintext must not be more
+    permissive (audit P1, 2026-10).
+    """
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(content)
+    os.chmod(path, 0o600)
 
 
 @click.command()
@@ -91,7 +105,6 @@ def pull_command(env_name: str | None, project_id: str | None, output: str | Non
         return
 
     content = _format_entries(entries, fmt)
-    with open(output, "w") as f:
-        f.write(content)
+    _write_secret_file(output, content)
 
     click.echo(f"✓ Pulled {len(entries)} secret(s) to {output}")

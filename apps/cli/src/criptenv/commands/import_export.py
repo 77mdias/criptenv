@@ -1,11 +1,25 @@
 """Import/export commands for .env files."""
 
+import os
+
 import click
 import json
 
 from criptenv.context import cli_context, run_async, resolve_project_id
 from criptenv.remote_vault import RemoteVault
 
+
+
+def _write_secret_file(path: str, content: str) -> None:
+    """Write plaintext secrets with owner-only permissions (0600).
+
+    The vault database is 0600; exported plaintext must not be more
+    permissive (audit P1, 2026-10).
+    """
+    fd = os.open(path, os.O_WRONLY | os.O_CREAT | os.O_TRUNC, 0o600)
+    with os.fdopen(fd, "w") as f:
+        f.write(content)
+    os.chmod(path, 0o600)
 
 def import_entries_remote(
     entries: list[tuple[str, str]],
@@ -139,8 +153,7 @@ def export_command(env_name: str | None, project: str | None, output: str | None
 
     # Write output
     if output:
-        with open(output, "w") as f:
-            f.write(content)
+        _write_secret_file(output, content)
         click.echo(f"✓ Exported {len(entries)} secret(s) to {output}")
     else:
         click.echo(content, nl=False)
