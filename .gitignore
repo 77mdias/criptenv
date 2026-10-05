@@ -83,3 +83,4 @@ cookies.txt
 # Relatórios de scanner de segredos (contêm os trechos casados)
 .gl-report.json
 gitleaks-report.json
+/[a-z0-9_-]*.png
