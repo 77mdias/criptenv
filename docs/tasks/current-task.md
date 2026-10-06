@@ -9,6 +9,29 @@
 > incompleta (migração não aplicada e E2E de alertas bloqueado). Foi substituída como
 > task corrente; o histórico e as decisões DEC-057/058 seguem válidos.
 
+## Merge de 2026-10-05 — main (28 commits: auditoria 2026-10, account redesign, React Query)
+
+Conflitos resolvidos no merge:
+- **Account redesign** (página decomposta em `_components/`, logout por sessão):
+  estrutura da main mantida; a conversão i18n da conta precisa ser **refeita**
+  contra o novo formato (follow-up — o catálogo `account.json` de 74+ chaves
+  existe e cobre a maior parte da copy).
+- **Dialogs em Radix** (confirm-action, permission, create-project, secret-form,
+  import/export/expiration modals): estrutura Radix da main + i18n reaplicado.
+  Atenção: a main removeu o botão de fechar manual (Radix fecha), então as
+  chaves `*.close`/`closeAria` ficaram sem uso em alguns catálogos.
+- **Export modal — fix de segurança da main (P0-2)**: sem preview do plaintext
+  (materializa só no download). Catálogo `secrets.export` reformatado:
+  `count` (plural ICU) + `warning` novos; `description`/`closeButton` removidos.
+- **DEC renumerada**: i18n agora é DEC-067 (main assumiu 063-066 na auditoria).
+- Deps: next 16.3.8 + undici 7.30.0 (main) + next-intl 4.14.5 (branch) via
+  `npm install next-intl@4.14.5 --save-exact --min-release-age=0` (o
+  `min-release-age=7` do .npmrc bloqueia pacotes novos; registrar para o
+  próximo bump).
+
+Pendência nova do merge: **reconverter a área de conta para i18n** (página +
+3 `_components`), usando o catálogo `account.json` existente como base.
+
 ## Contexto
 
 Adicionar suporte a Inglês e Espanhol. A auditoria mostrou que a premissa
