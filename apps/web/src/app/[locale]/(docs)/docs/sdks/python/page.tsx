@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import { Breadcrumb, Callout } from '@/components/docs';
 
 export default function PythonSDKPage() {
@@ -30,8 +31,8 @@ export default function PythonSDKPage() {
 
       <p className="text-muted-foreground mt-6">
         Enquanto o SDK não é lançado, você pode usar o{' '}
-        <a href="/docs/cli" className="underline">CLI</a> diretamente
-        ou a <a href="/docs/api" className="underline">API REST</a> para integrações programáticas.
+        <Link href="/docs/cli" className="underline">CLI</Link> diretamente
+        ou a <Link href="/docs/api" className="underline">API REST</Link> para integrações programáticas.
       </p>
     </div>
   );

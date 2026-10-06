@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import {
   CodeBlock,
   InlineCode,
@@ -667,9 +668,9 @@ criptenv rotation history DB_PASS -e staging`}
 
       <Callout type="info">
         Para mais detalhes sobre a configuração do CLI, consulte a{' '}
-        <a href="/docs/cli/configuration" className="underline font-medium">
+        <Link href="/docs/cli/configuration" className="underline font-medium">
           página de Configuração
-        </a>.
+        </Link>.
       </Callout>
     </div>
   );

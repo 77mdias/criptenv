@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import {
   CodeBlock,
   DocCard,
@@ -94,13 +95,13 @@ criptenv login --email you@example.com`}
 
       <Callout type="info">
         Após a instalação, consulte a{' '}
-        <a href="/docs/cli/commands" className="underline font-medium">
+        <Link href="/docs/cli/commands" className="underline font-medium">
           Referência de Comandos
-        </a>{' '}
+        </Link>{' '}
         para ver todas as opções disponíveis, ou a{' '}
-        <a href="/docs/cli/configuration" className="underline font-medium">
+        <Link href="/docs/cli/configuration" className="underline font-medium">
           Configuração
-        </a>{' '}
+        </Link>{' '}
         para entender a estrutura local.
       </Callout>
 

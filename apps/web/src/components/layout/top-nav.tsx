@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { Link } from "@/i18n/navigation";
 import { Menu, Search, ChevronRight } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -30,11 +30,12 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
   } = useUIStore();
   const authUser = useAuthStore((state) => state.user);
   // A broken avatar URL would render the raw `alt` text (the full name) inside
-  // the tiny circle — fall back to the initial instead.
-  const [avatarFailed, setAvatarFailed] = useState(false);
-  useEffect(() => {
-    setAvatarFailed(false);
-  }, [authUser?.avatar_url]);
+  // the tiny circle — fall back to the initial instead. Tracking WHICH url
+  // failed (instead of a boolean + effect reset) retries automatically when the
+  // avatar changes and avoids setState inside an effect.
+  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+  const avatarBroken =
+    !!authUser?.avatar_url && failedAvatarUrl === authUser.avatar_url;
 
   return (
     <header
@@ -111,13 +112,13 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
           <ThemeSwitch />
         </div>
         <div className="ml-0.5 sm:ml-2 flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-(--accent) text-(--accent-foreground) text-[10px] sm:text-xs font-bold overflow-hidden">
-          {authUser?.avatar_url && !avatarFailed ? (
+          {authUser?.avatar_url && !avatarBroken ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={authUser.avatar_url}
               alt={authUser.name}
               className="h-full w-full object-cover"
-              onError={() => setAvatarFailed(true)}
+              onError={() => setFailedAvatarUrl(authUser.avatar_url)}
             />
           ) : (
             <span>{authUser?.name?.charAt(0).toUpperCase() || "U"}</span>

@@ -2,7 +2,7 @@
 
 import { useEffect, useState, Suspense } from "react"
 import { useSearchParams } from "next/navigation";
-import { useRouter } from "@/i18n/navigation";
+import { Link, useRouter } from "@/i18n/navigation";
 import { Mail, Check, AlertTriangle, Loader2, ArrowRight, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
@@ -134,12 +134,12 @@ function AcceptInviteForm() {
       </Button>
 
       <div className="text-center">
-        <a
+        <Link
           href="/login"
           className="text-sm font-medium text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
         >
           Entrar com outra conta
-        </a>
+        </Link>
       </div>
     </div>
   )

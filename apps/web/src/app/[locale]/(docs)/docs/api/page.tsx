@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import {
   Breadcrumb,
   Callout,
@@ -76,9 +77,9 @@ export default function ApiOverviewPage() {
 
       <p className="text-muted-foreground mb-4">
         Para mais detalhes sobre cada método, consulte a{' '}
-        <a href="/docs/api/authentication" className="text-emerald-500 hover:underline">
+        <Link href="/docs/api/authentication" className="text-emerald-500 hover:underline">
           documentação de autenticação
-        </a>.
+        </Link>.
       </p>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">Formato de Resposta</h2>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import {
   Breadcrumb,
   CodeBlock,
@@ -112,21 +113,21 @@ criptenv set API_KEY="your_api_key_here"`}
       <h2 className="text-2xl font-semibold mt-10 mb-4">Próximos passos</h2>
       <ul className="list-disc list-inside text-muted-foreground space-y-2">
         <li>
-          <a href="/docs/integrations/github-action" className="underline">
+          <Link href="/docs/integrations/github-action" className="underline">
             Configure o GitHub Action
-          </a>{' '}
+          </Link>{' '}
           para sincronizar secrets no CI/CD
         </li>
         <li>
-          <a href="/docs/guides/team-setup" className="underline">
+          <Link href="/docs/guides/team-setup" className="underline">
             Convide sua equipe
-          </a>{' '}
+          </Link>{' '}
           para colaborar no gerenciamento de secrets
         </li>
         <li>
-          <a href="/docs/cli/commands" className="underline">
+          <Link href="/docs/cli/commands" className="underline">
             Explore a referência completa de comandos
-          </a>
+          </Link>
         </li>
       </ul>
     </div>

@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import {
   Breadcrumb,
   CodeBlock,
@@ -30,9 +31,9 @@ export default function GitHubActionPage() {
       <Callout type="info">
         A GitHub Action do CriptEnv requer um token de API válido. Você pode
         gerar um em{' '}
-        <a href="/dashboard/tokens" className="underline">
+        <Link href="/dashboard/tokens" className="underline">
           Painel → Tokens
-        </a>
+        </Link>
         .
       </Callout>
 

@@ -23,12 +23,12 @@ export function AvatarUpload({
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   // A broken avatar URL would otherwise render the raw `alt` text (the full
-  // name) inside the circle. Track the failure and fall back to initials.
-  const [imageFailed, setImageFailed] = useState(false);
+  // name) inside the circle. Tracking WHICH url failed (instead of a boolean +
+  // effect reset) retries automatically when the avatar changes and avoids
+  // setState inside an effect.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
 
-  useEffect(() => {
-    setImageFailed(false);
-  }, [previewUrl]);
+
 
   const getInitials = (name: string) => {
     return name
@@ -116,13 +116,13 @@ export function AvatarUpload({
             isUploading ? "opacity-70" : "opacity-100"
           }`}
         >
-          {previewUrl && !imageFailed ? (
+          {previewUrl && failedSrc !== previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewUrl}
               alt={userName}
               className="h-full w-full object-cover"
-              onError={() => setImageFailed(true)}
+              onError={() => setFailedSrc(previewUrl)}
             />
           ) : (
             <span className="text-2xl font-bold text-[var(--text-muted)]">

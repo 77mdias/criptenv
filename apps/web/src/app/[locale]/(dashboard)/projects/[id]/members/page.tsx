@@ -189,7 +189,7 @@ export default function MembersPage() {
   }, [canInviteMembers]);
 
   useEffect(() => {
-    let cancelled = false;
+    const cancelled = false;
 
     Promise.all([membersApi.list(projectId), membersApi.listInvites(projectId)])
       .then(([membersData, invitesData]) => {

@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import { Breadcrumb, Callout } from '@/components/docs';
 
 export default function JavaScriptSDKPage() {
@@ -32,8 +33,8 @@ export default function JavaScriptSDKPage() {
 
       <p className="text-muted-foreground mt-6">
         Enquanto o SDK não é lançado, você pode usar a{' '}
-        <a href="/docs/api" className="underline">API REST</a> diretamente
-        ou a <a href="/docs/integrations/github-action" className="underline">GitHub Action</a> para CI/CD.
+        <Link href="/docs/api" className="underline">API REST</Link> diretamente
+        ou a <Link href="/docs/integrations/github-action" className="underline">GitHub Action</Link> para CI/CD.
       </p>
     </div>
   );

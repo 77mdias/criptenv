@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import {
   Breadcrumb,
   CodeBlock,
@@ -132,22 +133,22 @@ criptenv pull -p <project-id> --output .env.production`}
       <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
         <li>
           Aprenda os{' '}
-          <a
+          <Link
             href="/docs/getting-started/concepts"
             className="text-primary hover:underline"
           >
             conceitos fundamentais
-          </a>{' '}
+          </Link>{' '}
           do CriptEnv
         </li>
         <li>
           Explore a{' '}
-          <a
+          <Link
             href="/docs/cli/commands"
             className="text-primary hover:underline"
           >
             referência completa de comandos
-          </a>
+          </Link>
         </li>
         <li>
           Importe e exporte arquivos com{' '}
@@ -156,9 +157,9 @@ criptenv pull -p <project-id> --output .env.production`}
         </li>
         <li>
           Integre com seu{' '}
-          <a href="/docs/guides/cicd-setup" className="text-primary hover:underline">
+          <Link href="/docs/guides/cicd-setup" className="text-primary hover:underline">
             pipeline de CI/CD
-          </a>
+          </Link>
         </li>
       </ul>
     </div>

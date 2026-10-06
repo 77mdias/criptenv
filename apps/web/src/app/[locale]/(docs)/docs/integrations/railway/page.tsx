@@ -1,5 +1,6 @@
 'use client';
 
+import { Link } from "@/i18n/navigation"
 import { Breadcrumb, Callout } from '@/components/docs';
 
 export default function RailwayIntegrationPage() {
@@ -20,8 +21,8 @@ export default function RailwayIntegrationPage() {
       <Callout type="info">
         A integração com Railway está em desenvolvimento e será disponibilizada em breve.
         Atualmente, o CriptEnv suporta integrações com{' '}
-        <a href="/docs/integrations/vercel" className="underline">Vercel</a> e{' '}
-        <a href="/docs/integrations/render" className="underline">Render</a>.
+        <Link href="/docs/integrations/vercel" className="underline">Vercel</Link> e{' '}
+        <Link href="/docs/integrations/render" className="underline">Render</Link>.
       </Callout>
 
       <p className="text-muted-foreground mt-6">
