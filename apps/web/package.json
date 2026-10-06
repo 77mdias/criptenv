@@ -91,6 +91,7 @@
     "wrangler": "^4.87.0"
   },
   "overrides": {
+    "sharp": "0.35.5",
     "undici": "7.30.0",
     "postcss": "^8.5.12",
     "tmp": ">=0.2.6",
