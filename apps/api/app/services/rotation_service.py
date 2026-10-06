@@ -12,12 +12,14 @@ from datetime import datetime, timezone, timedelta
 from typing import Optional, List, Tuple
 from uuid import UUID
 
-from sqlalchemy import select, and_, or_
+from sqlalchemy import select, and_, or_, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.secret_expiration import SecretExpiration, SecretRotation
 from app.models.vault import VaultBlob
 from app.models.project import Project
+from app.models.environment import Environment
+from app.strategies.exceptions import VaultConflict
 from app.services.alert_settings_service import AlertSettingsService
 from app.services.vault_service import compute_blob_checksum
 from app.schemas.secret_expiration import (
@@ -71,8 +73,12 @@ class RotationService:
             notify_days_before=notify_days_before,
         )
         
+        # Transaction boundary belongs to the caller (get_db commits at the
+        # end of the request; scheduler jobs commit per unit). Committing here
+        # would persist the mutation before the audit-log write, leaving an
+        # operation without a trail if the later write fails (audit P2 #8).
         self.db.add(expiration)
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(expiration)
         
         return expiration
@@ -114,7 +120,7 @@ class RotationService:
         if payload.notify_days_before is not None:
             expiration.notify_days_before = payload.notify_days_before
         
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(expiration)
         
         return expiration
@@ -185,17 +191,16 @@ class RotationService:
                     pending.append(expiration)
         return pending
     
-    async def mark_notified(self, expiration_id: UUID, *, commit: bool = True) -> None:
-        """Mark an expiration record as notified."""
+    async def mark_notified(self, expiration_id: UUID) -> None:
+        """Mark an expiration record as notified (caller owns the commit)."""
         result = await self.db.execute(
             select(SecretExpiration).where(SecretExpiration.id == expiration_id)
         )
         expiration = result.scalar_one_or_none()
-        
+
         if expiration:
             expiration.last_notified_at = datetime.now(timezone.utc)
-            if commit:
-                await self.db.commit()
+            await self.db.flush()
     
     async def rotate_secret(
         self,
@@ -231,7 +236,38 @@ class RotationService:
         
         if not vault_blob:
             raise ValueError(f"Secret {secret_key} not found in vault")
-        
+
+        # Bump the environment vault version atomically so clients that cache
+        # by version (GET /vault/version) detect the rotation, and so a
+        # concurrent push/rotate cannot silently interleave (audit P1 #4,
+        # 2026-10). With `expected_version` this is full optimistic
+        # concurrency; without it, it still bumps under the version guard of
+        # the currently observed value.
+        env_result = await self.db.execute(
+            select(Environment).where(Environment.id == environment_id)
+        )
+        environment = env_result.scalar_one_or_none()
+        if not environment:
+            raise ValueError("Environment not found")
+
+        observed_version = environment.secrets_version
+        guard = payload.expected_version if payload.expected_version is not None else observed_version
+        claim = await self.db.execute(
+            update(Environment)
+            .where(
+                Environment.id == environment_id,
+                Environment.secrets_version == guard,
+            )
+            .values(secrets_version=Environment.secrets_version + 1)
+            .execution_options(synchronize_session=False)
+        )
+        if claim.rowcount == 0:
+            await self.db.refresh(environment)
+            raise VaultConflict(
+                current_version=environment.secrets_version,
+                expected_version=payload.expected_version if payload.expected_version is not None else observed_version,
+            )
+
         previous_version = vault_blob.version
         
         # Update vault blob with the new encrypted value. `ciphertext` is the
@@ -265,7 +301,7 @@ class RotationService:
         if expiration:
             expiration.rotated_at = datetime.now(timezone.utc)
         
-        await self.db.commit()
+        await self.db.flush()
         await self.db.refresh(rotation)
         
         return rotation, vault_blob.version
@@ -356,6 +392,6 @@ class RotationService:
             return False
         
         await self.db.delete(expiration)
-        await self.db.commit()
+        await self.db.flush()
         
         return True

@@ -151,7 +151,7 @@ class ExpirationChecker:
         if not await self._deliveries_complete([delivery.id for delivery in deliveries]):
             return DeliveryResult(False, 0, "delivery_error")
 
-        await self.rotation_service.mark_notified(expiration.id, commit=False)
+        await self.rotation_service.mark_notified(expiration.id)
         return DeliveryResult(True, 1)
 
     async def _deliveries_complete(self, delivery_ids: list[UUID]) -> bool:

@@ -16,7 +16,7 @@ import sys
 from datetime import datetime, timezone, timedelta
 from pathlib import Path
 from uuid import uuid4
-from unittest.mock import patch, AsyncMock, MagicMock
+from unittest.mock import AsyncMock, MagicMock
 
 CLI_SRC = Path(__file__).resolve().parents[3] / "apps" / "cli" / "src"
 if str(CLI_SRC) not in sys.path:
@@ -88,9 +88,7 @@ class TestRotationE2EFlow:
             RotationRequest,
             RotationResponse,
             ExpirationCreate,
-            ExpirationResponse,
             ExpirationUpdate,
-            RotationStatus,
         )
 
         # RotationRequest should have required fields
@@ -132,7 +130,7 @@ class TestRotationE2EFlow:
     @pytest.mark.asyncio
     async def test_webhook_service_integration(self):
         """Verify WebhookService can be used with ExpirationChecker."""
-        from app.services.webhook_service import WebhookService, WebhookChannel, DeliveryResult
+        from app.services.webhook_service import WebhookService
 
         # WebhookService should be instantiable
         service = WebhookService()

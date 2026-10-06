@@ -12,6 +12,7 @@ import click
 
 from criptenv.api.client import CriptEnvAPIError
 from criptenv.crypto import (
+    enforce_pbkdf2_floor,
     decrypt,
     derive_project_env_key,
     derive_vault_proof,
@@ -118,7 +119,7 @@ class RemoteVault:
         return derive_vault_proof(
             password,
             vault_config["proof_salt"],
-            int(vault_config.get("iterations", 100000)),
+            enforce_pbkdf2_floor(vault_config),
         )
 
     async def environment_key(self, environment_id: str) -> bytes:

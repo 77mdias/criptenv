@@ -6,6 +6,14 @@ import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
 import { FolderPlus } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { createProjectSchema, type CreateProjectInput } from "@/lib/validators/schemas"
 import { projectsApi } from "@/lib/api"
@@ -55,31 +63,20 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
     }
   }
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center">
-      {/* Backdrop */}
-      <div
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-      />
-
-      {/* Dialog */}
-      <div className="relative z-50 w-full max-w-md rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
-        <div className="mb-6 flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
-            <FolderPlus className="h-5 w-5 text-[var(--text-tertiary)]" />
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <div className="flex items-center gap-3">
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
+              <FolderPlus className="h-5 w-5 text-[var(--text-tertiary)]" />
+            </div>
+            <div>
+              <DialogTitle>{t("title")}</DialogTitle>
+              <DialogDescription>{t("subtitle")}</DialogDescription>
+            </div>
           </div>
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              {t("title")}
-            </h2>
-            <p className="text-xs text-[var(--text-muted)] font-mono">
-              {t("subtitle")}
-            </p>
-          </div>
-        </div>
+        </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <Input
@@ -127,7 +124,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
             <p className="text-xs text-red-600 font-mono">{error}</p>
           )}
 
-          <div className="flex justify-end gap-3 pt-2">
+          <DialogFooter>
             <Button
               type="button"
               variant="secondary"
@@ -138,9 +135,9 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
             <Button type="submit" loading={loading} icon={FolderPlus}>
               {t("submit")}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

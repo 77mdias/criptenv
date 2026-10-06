@@ -16,6 +16,11 @@ class FakeResult:
         return self.value
 
 
+class FakeUpdateResult:
+    def __init__(self, rowcount=1):
+        self.rowcount = rowcount
+
+
 class FakeDb:
     def __init__(self, execute_results=None):
         self.execute_results = list(execute_results or [])
@@ -78,8 +83,8 @@ def test_replace_all_vault_blobs_strategy_deletes_and_creates_blobs():
 
 
 def test_vault_service_push_uses_replace_all_strategy_and_increments_version():
-    environment = SimpleNamespace(secrets_version=2)
-    db = FakeDb(execute_results=[FakeResult(environment)])
+    environment = SimpleNamespace(id=uuid4(), secrets_version=2)
+    db = FakeDb(execute_results=[FakeResult(environment), FakeUpdateResult(rowcount=1)])
     service = VaultService(db)
 
     blobs, conflict = run(
@@ -91,7 +96,7 @@ def test_vault_service_push_uses_replace_all_strategy_and_increments_version():
     )
 
     assert conflict is False
-    assert environment.secrets_version == 3
+    # The atomic version claim (conditional UPDATE) ran before the strategy
     assert len(blobs) == 1
     assert blobs[0].version == 3
     assert db.flushed

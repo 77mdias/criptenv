@@ -1559,7 +1559,97 @@ would have combined a wildcard with `allow_credentials=True`.
 - ✅ Leitura do avatar (`GET /me`, members, invites) não muda; o `?v=` viaja junto pelo `avatar_url` persistido.
 - ⚠️ Objetos antigos já gravados sem `Cache-Control` mantêm o comportamento anterior até serem sobrescritos por um novo upload (que então grava o header).
 
-## DEC-063 — i18n (pt-BR · en · es): next-intl no Web, Catálogo JSON na API e na CLI
+## DEC-063 — Gestão de Sessões na Página Account (logout por sessão + revoke-all)
+
+**Date:** 2026-10-01 · **Status:** Accepted
+
+**Context:** a página `/account` listava sessões com o user-agent bruto, não identificava qual sessão pertencia ao chamador e não havia logout individual. O botão "Sair de todas" chamava `POST /api/auth/signout`, que invalida apenas a sessão do cookie — label e comportamento divergiam. Requisito veio de revisão de UX do painel.
+
+**Decision:**
+1. **Marcação de sessão atual no backend**, não no cliente: `GET /api/auth/sessions` compara o hash SHA-256 do token (cookie `session_token` ou header `Authorization: Bearer`) com o digest persistido e devolve `current: true` na linha correspondente. Evita heurística client-side (user-agent/IP são spoofáveis e insuficientes).
+2. **Revogação escopada por dono:** `DELETE /api/auth/sessions/{session_id}` e `POST /api/auth/sessions/revoke-all` filtram sempre por `user_id == current_user.id` — impossível revogar sessão de outro usuário (BOLA). `revoke-all` exclui a sessão corrente da revogação (`exclude_session_id`), mantendo o dispositivo em uso logado.
+3. **Frontend:** header da página ganha "Sair da conta" (logout da sessão atual via `POST /signout`, que também limpa o cookie); cada sessão tem "Encerrar" (a atual faz logout completo); "Encerrar outras" usa `revoke-all`. User-agent é parseado no cliente (`lib/device-info.ts`) apenas para exibição — detecção best-effort com fallback genérico.
+
+**Alternatives considered:**
+- Revogar todas as sessões incluindo a atual em `revoke-all`. Rejeitado: derruba o dispositivo que disparou a ação; logout do dispositivo atual já tem fluxo dedicado.
+- Determinar a sessão atual no frontend comparando `localStorage`/fingerprint. Rejeitado: frágil e inseguro; o servidor é a fonte da verdade do token.
+- Endpoint único `DELETE /sessions` com body. Rejeitado: convenção REST por recurso facilita cache, testes e semântica de 404.
+
+**Consequences:**
+- ✅ Usuário audita e encerra sessões individualmente; "Sair de todas" finalmente faz o que diz.
+- ✅ Sem migração de banco: reutiliza a tabela `sessions` e o padrão de token já hasheado (DEC de sessões em digest).
+- ⚠️ Respostas antigas em cache do peek (`GET /api/auth/sessions`, TTL 15s) podem não ter `current` — o frontend trata como `false` (campo opcional).
+
+---
+
+## DEC-064 — Sprint 1 da Auditoria 2026-10: OAuth email_verified, export sem preview e correções de runtime
+
+**Date:** 2026-10 · **Status:** Accepted
+
+**Context:** a auditoria completa (`docs/audits/2026-10-auditoria-completa.md`) identificou um P0 de account takeover (link automático de conta OAuth por e-mail sem checar verificação do provider), um P0 de exposição (ExportModal renderizava todos os segredos em plaintext), um bug de runtime no CLI (`ci login` com NameError por import faltante) e um provável `MissingGreenletError` no auth por API key (encoberto por testes 100% mockados).
+
+**Decision:**
+- `OAuthUserInfo` passa a carregar `email_verified`; o link por e-mail só ocorre quando o provider garante a verificação; novas contas espelham o status real (noreply sintéticos ficam `False`).
+- `ExportModal` gera o `.env` apenas em memória no clique de download; nenhum preview em tela.
+- `APIKey.user` é eager-carregado com `selectinload` em `get_db_api_key`.
+- `import json` movido para o topo de `vault/queries.py`.
+- Dockerfile da API: usuário não-root `criptenv` (uid 10001) + `HEALTHCHECK`; 56 PNGs de preview removidos da raiz com bloqueio no `.gitignore`; AGENTS.md/CLAUDE.md sincronizados com o estado real de CI/Docker.
+
+**Consequences:**
+- ✅ Vetores P0 fechados com regressões dedicadas (OAuth: 4 testes com stub de provider/DB; export: 3 testes jest; CI session: 3 testes; API key: 3 testes contra SQLite in-memory com modelos reais — primeira suíte não-mockada dessa middleware).
+- ⚠️ Contas OAuth existentes criadas com e-mails sintéticos/não verificados mantêm `email_verified=True` retroativo; reavaliar em migração futura se necessário.
+- ⚠️ Login OAuth com e-mail não verificado que colida com conta existente agora falha com mensagem acionável (comportamento intencional de segurança).
+- ⚠️ O container da API muda de usuário; volumes host com owner root exigirão ajuste de permissão no deploy.
+
+---
+
+## DEC-065 — Sprint 2 da Auditoria 2026-10: Concorrência Real, Tokens em Digest, Lockout 2FA e Observabilidade
+
+**Date:** 2026-10 · **Status:** Accepted
+
+**Context:** a auditoria (`docs/audits/2026-10-auditoria-completa.md`) apontou: race no `expected_version` do vault (lost update silencioso), rotação que não incrementava `secrets_version`, tokens de reset/verificação e tokens OAuth de provider em plaintext, 2FA sem lockout por desafio, rate limit não atômico, ausência total de observabilidade e um cache caseiro no web que duplicava o React Query (que estava declarado e nunca usado).
+
+**Decision:**
+- OCC atômico: a versão do vault é reivindicada com `UPDATE ... WHERE secrets_version = <esperado>`; rotação passa pela mesma via e incrementa a versão do ambiente, aceitando `expected_version` opcional (409 no router).
+- Bearer tokens de reset/verificação viram digest SHA-256 (`plaintext_token` entregue uma vez); tokens OAuth de provider são cifrados com AES-256-GCM sob `INTEGRATION_CONFIG_SECRET`, com fallback de leitura legada e re-escrita no próximo login.
+- 2FA: `failed_attempts` por desafio (limite 5) consome o desafio; o endpoint commita o contador antes do 401 para o rollback do `get_db` não descartar o lockout.
+- Rate limit passa a usar `check_and_increment` (INCR único).
+- Observabilidade: logging JSON com `request_id` via contextvar + middleware, INFO em produção, Sentry opcional por DSN (soft dependency).
+- CLI: prompts ocultos para segredos, export 0600, 401 acionável, piso de iterações PBKDF2.
+- Web: React Query como store único de server-state, com `peekCached`/invalidação lendo/escrevendo o mesmo cache e provider no dashboard.
+
+**Consequences:**
+- ✅ 23 testes novos na API, 7 no CLI e 3 no web (total: API 615, CLI 201, Web 113).
+- ⚠️ Tokens de reset/verificação emitidos antes do deploy param de funcionar (curta duração; reenvio resolve).
+- ⚠️ `two_factor_challenges.failed_attempts` exige `alembic upgrade head` (revisão `20261015_0012`).
+- ⚠️ O web mantém os call sites existentes usando `peekCached`; migrar para `useQuery`/`useMutation` (chaves por recurso, invalidação direcionada) é follow-up declarado — o cache agora é um só, mas a semântica de invalidação global permanece até lá.
+- ⚠️ Com `SENTRY_DSN` unset o comportamento é idêntico ao anterior (sem error tracking); `LOG_FORMAT=text` restaura o formato antigo se necessário.
+
+---
+
+## DEC-066 — Sprint 3 da Auditoria 2026-10: Transações Unificadas, Acessibilidade, `run`/`diff` e Gates de CI
+
+**Date:** 2026-10 · **Status:** Accepted
+
+**Context:** a auditoria apontou fronteiras transacionais inconsistentes (services commitando antes do audit log), ausência de lint Python e de checagem de heads no CI, modais sem acessibilidade, `account/page.tsx` monolítico, e a falta dos comandos de ergonomia `run`/`diff` presentes nos concorrentes.
+
+**Decision:**
+- `RotationService`/`IntegrationService` só fazem `flush()`; o commit é do chamador (`get_db` por request, job por unidade no scheduler).
+- CI ganha job de lint Python (ruff com `F`+`E9`) e um job que exige exatamente uma head Alembic; `make lint` passa a incluir Python.
+- Confirmado que a diretiva `E` não é adotada agora — a config é deliberadamente estreita para não forçar reformatação em massa; ampliar incrementalmente.
+- Web adota uma primitiva Radix Dialog compartilhada e os 7 overlays hand-rolled são migrados; a página de conta é decomposta em `_components/`.
+- CLI ganha `run` (injeção de env em subprocesso) e `diff` (drift contra o vault, exit 1).
+- A suíte obsoleta `testsprite_tests/` é removida e 14 branches mergeadas são limpas.
+
+**Consequences:**
+- ✅ A fronteira transacional única garante mutação + audit log atômicos; o comportamento do scheduler foi preservado (testes de commit por unidade continuam verdes).
+- ✅ O gate do ruff pagou-se imediatamente: revelou um `UnboundLocalError` que quebrava `integrations connect` em 100% das execuções (F823), agora com teste de regressão que falha sem o fix.
+- ✅ `run` mantém a promessa zero-knowledge (nenhum arquivo plaintext em disco); `diff` vira gate de CI com valores sempre mascarados.
+- ⚠️ Migrar os modais para Radix muda o DOM (portal) — testes de componente continuaram verdes, mas snapshots/e2e futuros devem considerar o portal.
+- ⚠️ Remoção de `testsprite_tests/` e de branches é reversível pelo histórico do git, mas o time deve confirmar que não dependia daquela suíte.
+- ⚠️ E2E e Docker Build só bloqueiam merge se forem marcados como required checks no GitHub (configuração de repositório, fora do código).
+
+## DEC-067 — i18n (pt-BR · en · es): next-intl no Web, Catálogo JSON na API e na CLI
 
 **Date:** 2026-09-23 · **Status:** Accepted (piloto web executado e verificado) · **Branch:** `feature/i18n-support` · **Plan:** `plans/i18n-en-es-support.md` (§8.bis)
 

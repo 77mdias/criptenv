@@ -2,7 +2,6 @@
 
 import click
 import getpass
-import webbrowser
 
 from criptenv.context import cli_context, run_async
 

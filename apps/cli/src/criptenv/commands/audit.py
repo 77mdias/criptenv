@@ -39,7 +39,6 @@ def audit_list(project_id: str | None, action: str | None, resource: str | None,
             logs = result.get("logs", [])
             total = result.get("total", 0)
             page_num = result.get("page", 1)
-            per_page = result.get("per_page", 50)
 
             if not logs:
                 click.echo("No audit logs found.")
@@ -74,7 +73,6 @@ def audit_export(project_id: str | None, format: str, output: str | None):
     """
     import json
     import csv
-    import sys
 
     async def _do_export():
         with cli_context(require_auth=True) as (db, _mk, client):

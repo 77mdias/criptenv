@@ -4,7 +4,7 @@ Provides endpoints for CI/CD workflows to authenticate with CI tokens
 and retrieve secrets from the vault.
 """
 
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from typing import Optional
 from uuid import UUID
 
@@ -27,7 +27,7 @@ from app.middleware.ci_auth import (
     ScopeValidator,
     validate_ci_session,
 )
-from app.schemas.vault import VaultBlobPull, VaultPullResponse
+from app.schemas.vault import VaultBlobPull
 
 
 router = APIRouter(prefix="/api/v1", tags=["CI/CD"])

@@ -5,9 +5,9 @@ Uses slowapi for FastAPI integration with X-RateLimit-* headers.
 """
 
 import hashlib
+import logging
 import time
 from typing import Optional
-from datetime import datetime, timezone
 
 from fastapi import Request, HTTPException, status
 from starlette.responses import JSONResponse
@@ -46,6 +46,8 @@ AUTH_RATE_LIMIT_PATHS = (
 
 # Error code
 RATE_LIMIT_ERROR_CODE = "RATE_LIMIT_EXCEEDED"
+
+logger = logging.getLogger(__name__)
 
 # In-memory fallback for local development; VPS production uses Redis storage.
 _rate_limit_storage: dict[str, tuple[int, float]] = {}
@@ -125,11 +127,28 @@ class RateLimitStorage:
                 raise ValueError("REDIS_URL is required when RATE_LIMIT_STORAGE=redis")
             try:
                 from redis.asyncio import Redis
+                from redis.asyncio.retry import Retry
+                from redis.backoff import ExponentialBackoff
+                from redis.exceptions import ConnectionError as RedisConnectionError
+                from redis.exceptions import TimeoutError as RedisTimeoutError
             except ImportError as exc:
                 raise RuntimeError(
                     "redis package is required when RATE_LIMIT_STORAGE=redis"
                 ) from exc
-            self._redis = Redis.from_url(storage_uri, decode_responses=False)
+            # Resilient pool: without these, idle connections get closed by the
+            # server / container NAT and the next request reuses a dead socket
+            # ("Broken pipe") which surfaces as an unhandled 500.
+            self._redis = Redis.from_url(
+                storage_uri,
+                decode_responses=False,
+                health_check_interval=30,
+                socket_keepalive=True,
+                socket_connect_timeout=5,
+                socket_timeout=5,
+                retry_on_timeout=True,
+                retry=Retry(ExponentialBackoff(cap=1.0, base=0.05), 3),
+                retry_on_error=[RedisConnectionError, RedisTimeoutError],
+            )
     
     async def get_count(self, key: str) -> int:
         """Get current request count for key."""
@@ -164,6 +183,32 @@ class RateLimitStorage:
         self._storage[key] = (count + 1, self._storage[key][1])
         return count + 1
     
+    async def check_and_increment(
+        self, key: str, limit: int, window_seconds: int = 60
+    ) -> tuple[bool, int]:
+        """Atomically increment the counter and report whether the limit holds.
+
+        A separate get_count + increment pair is racy under concurrency: N
+        simultaneous requests all read the same count and all pass, then all
+        increment (audit P2 #10, 2026-10). With Redis this is a single INCR;
+        the memory backend runs on one event loop so the update is likewise
+        atomic.
+        """
+        if self.storage_backend == "redis":
+            count = int(await self._redis.incr(key))
+            if count == 1:
+                await self._redis.expire(key, window_seconds)
+            return count <= limit, count
+
+        now = time.time()
+        if key not in self._storage or self._is_window_expired(self._storage[key][1]):
+            self._storage[key] = (1, now)
+            return True, 1
+        count, timestamp = self._storage[key]
+        new_count = count + 1
+        self._storage[key] = (new_count, timestamp)
+        return new_count <= limit, new_count
+
     async def reset(self, key: str):
         """Reset counter for key."""
         if self.storage_backend == "redis":
@@ -348,9 +393,21 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
         rate_key = build_rate_limit_key(request, client_ip)
 
         if rate_key:
-            current_count = await self.storage.get_count(rate_key)
-            
-            if current_count >= limit_count:
+            try:
+                allowed, current_count = await self.storage.check_and_increment(
+                    rate_key, limit_count, window_seconds
+                )
+            except Exception:
+                # Fail open: a rate limiter outage must never take down auth
+                # or any other route (e.g. OAuth callback returning 500).
+                logger.warning(
+                    "Rate limit storage unavailable; failing open for key %s",
+                    rate_key,
+                    exc_info=True,
+                )
+                allowed, current_count = True, 0
+
+            if not allowed:
                 # Rate limit exceeded
                 reset_time = int(time.time()) + window_seconds
                 response = JSONResponse(
@@ -367,10 +424,8 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 response.headers["X-RateLimit-Remaining"] = "0"
                 response.headers["X-RateLimit-Reset"] = str(reset_time)
                 return response
-            
-            # Increment counter
-            await self.storage.increment_count(rate_key, window_seconds)
-            remaining = limit_count - current_count - 1
+
+            remaining = limit_count - current_count
         else:
             remaining = limit_count - 1
         

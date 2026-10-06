@@ -10,6 +10,53 @@ permissions:
   contents: read
 
 jobs:
+  python-lint:
+    name: Python lint (ruff)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install ruff
+        run: pip install ruff
+      - name: Ruff (API)
+        run: ruff check apps/api/app apps/api/tests
+      - name: Ruff (CLI)
+        run: ruff check apps/cli/src apps/cli/tests
+
+  migrations:
+    name: Alembic single head
+    runs-on: ubuntu-latest
+    env:
+      # Settings() is instantiated when a migration imports app.config, and
+      # DATABASE_URL/SECRET_KEY are required fields with no defaults. `alembic
+      # heads` only parses the revision scripts and never connects, so these
+      # values exist purely to satisfy configuration validation in a job with
+      # no .env file.
+      DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/ci_placeholder
+      SECRET_KEY: ci-migration-head-check-secret-key-32-chars
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Install migration dependencies
+        # The migrations import app.config (pydantic-settings) and the models,
+        # so the full API requirements are needed — installing only
+        # alembic+sqlalchemy fails with ModuleNotFoundError at import time.
+        run: pip install -r apps/api/requirements.txt
+      - name: Verify exactly one migration head
+        working-directory: apps/api
+        run: |
+          set -eu
+          heads=$(alembic -c alembic.ini heads | grep -c "(head)")
+          echo "heads=$heads"
+          if [ "$heads" -ne 1 ]; then
+            echo "::error::Expected exactly one Alembic head, found $heads (multiple heads break 'upgrade head')"
+            exit 1
+          fi
+
   api:
     name: API tests
     runs-on: ubuntu-latest
@@ -18,6 +65,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: "3.11"
+      # `make api-test` runs `make api-install`, which installs
+      # apps/api/requirements-dev.txt into apps/api/.venv — including
+      # aiosqlite, required by the non-mocked regression suites (API key eager
+      # loading, vault OCC concurrency). Without it those tests silently skip.
       - name: Run API tests
         run: make api-test
 

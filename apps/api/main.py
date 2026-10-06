@@ -32,11 +32,10 @@ from app.routers import (
 from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
 from app.middleware.rate_limit import RateLimitConfig, RateLimitMiddleware  # M3.4: Rate limiting
+from app.middleware.request_context import RequestContextMiddleware
+from app.observability import configure_logging, init_error_tracking
 
-logging.basicConfig(
-    level=logging.INFO if settings.DEBUG else logging.WARNING,
-    format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+configure_logging()
 logger = logging.getLogger(__name__)
 
 
@@ -57,6 +56,10 @@ api_key_header = APIKeyHeader(
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     logger.info("Starting CriptEnv API...")
+
+    # Optional error tracking (no-op unless SENTRY_DSN is configured)
+    if init_error_tracking():
+        logger.info("Sentry error tracking enabled")
     
     # M3.6: Start scheduler if enabled
     scheduler_manager = None
@@ -160,6 +163,11 @@ app.add_middleware(
 
 # Add API Version middleware (M3.4)
 app.add_middleware(APIVersionMiddleware)
+
+# Request correlation: assigns/propagates X-Request-ID and binds it to logs.
+# Added last so it wraps the other middlewares (outermost) and every log line
+# in the request — including rate limit and auth decisions — carries the id.
+app.add_middleware(RequestContextMiddleware)
 
 # Add Rate Limit middleware (M3.4)
 app.add_middleware(

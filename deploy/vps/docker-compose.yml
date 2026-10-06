@@ -107,6 +107,11 @@ services:
     image: containrrr/watchtower:latest
     restart: always
     environment:
+      # Watchtower's pinned Docker client negotiates API 1.25, which Docker
+      # Engine 29+ rejects ("Minimum supported API version is 1.40") — the
+      # container then crash-loops and auto-updates silently stop. Pin a
+      # supported API version instead.
+      DOCKER_API_VERSION: "1.44"
       WATCHTOWER_CLEANUP: "true"
       WATCHTOWER_POLL_INTERVAL: "300"
       WATCHTOWER_INCLUDE_STOPPED: "false"

@@ -2,7 +2,6 @@
 
 import os
 import aiosqlite
-from pathlib import Path
 
 from criptenv.config import CONFIG_DIR, DB_FILE
 

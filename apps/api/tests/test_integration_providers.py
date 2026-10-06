@@ -4,7 +4,6 @@ import pytest
 from abc import ABC
 from unittest.mock import AsyncMock, MagicMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone
 
 from app.models.oauth_account import OAuthAccount  # noqa: F401
 
@@ -301,6 +300,7 @@ class TestIntegrationService:
         
         mock_db = MagicMock()
         mock_db.commit = AsyncMock()
+        mock_db.flush = AsyncMock()
         service = IntegrationService(db=mock_db)
         
         # Mock integration
@@ -349,6 +349,7 @@ class TestIntegrationService:
 
         mock_db = MagicMock()
         mock_db.commit = AsyncMock()
+        mock_db.flush = AsyncMock()
         service = IntegrationService(db=mock_db)
 
         plain_config = {"api_token": "tok_xxx", "project_id": "prj_123"}
@@ -382,6 +383,7 @@ class TestIntegrationService:
 
         mock_db = MagicMock()
         mock_db.commit = AsyncMock()
+        mock_db.flush = AsyncMock()
         service = IntegrationService(db=mock_db)
 
         plain_config = {"api_token": "tok_xxx", "project_id": "prj_123"}
@@ -415,6 +417,7 @@ class TestIntegrationService:
 
         mock_db = MagicMock()
         mock_db.commit = AsyncMock()
+        mock_db.flush = AsyncMock()
         service = IntegrationService(db=mock_db)
         mock_integration = MagicMock()
         mock_integration.id = uuid4()

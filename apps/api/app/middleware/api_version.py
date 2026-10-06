@@ -4,7 +4,7 @@ Adds X-API-Version header to all responses and handles invalid version requests.
 Implements M3.4 API versioning requirements.
 """
 
-from fastapi import Request, Response
+from fastapi import Request
 from starlette.middleware.base import BaseHTTPMiddleware
 from starlette.responses import JSONResponse
 

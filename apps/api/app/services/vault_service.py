@@ -2,7 +2,7 @@ import hashlib
 from typing import Optional
 from uuid import UUID
 
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.vault import VaultBlob
@@ -44,6 +44,43 @@ class VaultService:
 
         return environment
 
+    async def _claim_next_version(
+        self,
+        environment: Environment,
+        expected_version: Optional[int] = None,
+    ) -> int:
+        """Atomically claim the next vault version (optimistic concurrency).
+
+        A read-then-write check is racy: two concurrent pushes with the same
+        ``expected_version`` would both pass and one write would be lost
+        silently. This bumps the version with a single conditional
+        ``UPDATE ... WHERE secrets_version = <expected>``, so exactly one
+        concurrent writer can win (audit P1 #3, 2026-10).
+        """
+        observed = environment.secrets_version
+        guard = expected_version if expected_version is not None else observed
+
+        result = await self.db.execute(
+            update(Environment)
+            .where(
+                Environment.id == environment.id,
+                Environment.secrets_version == guard,
+            )
+            .values(secrets_version=Environment.secrets_version + 1)
+            .execution_options(synchronize_session=False)
+        )
+
+        if result.rowcount == 0:
+            # Another writer bumped the version between our read and this
+            # UPDATE — report the live version to the loser.
+            await self.db.refresh(environment)
+            raise ConflictError(
+                current_version=environment.secrets_version,
+                expected_version=expected_version if expected_version is not None else observed,
+            )
+
+        return guard + 1
+
     async def push_blobs(
         self,
         project_id: UUID,
@@ -59,7 +96,9 @@ class VaultService:
                 expected_version=expected_version
             )
 
-        new_version = environment.secrets_version + 1
+        # Atomic OCC claim — concurrent pushes with the same expected_version
+        # cannot both proceed (see _claim_next_version).
+        new_version = await self._claim_next_version(environment, expected_version)
 
         created_blobs = await self.push_strategy.push(
             db=self.db,

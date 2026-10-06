@@ -1,8 +1,16 @@
 "use client"
 
-import { AlertTriangle } from "lucide-react"
 import { useTranslations } from "next-intl"
+import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface ConfirmActionDialogProps {
   open: boolean
@@ -27,41 +35,26 @@ export function ConfirmActionDialog({
   onConfirm,
   onOpenChange,
 }: ConfirmActionDialogProps) {
-  // Hooks must run unconditionally; the early return happens after them.
+  // Label defaults resolve per locale; callers may still pass their own.
   const t = useTranslations("account")
   const resolvedConfirmLabel = confirmLabel ?? t("dialog.confirm")
   const resolvedCancelLabel = cancelLabel ?? t("dialog.cancel")
 
-  if (!open) return null
-
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label={t("dialog.close")}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="confirm-action-title"
-        className="relative z-[81] w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-xl"
-      >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md" showClose={false}>
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--background-muted)] text-[var(--text-primary)]">
             <AlertTriangle className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h2 id="confirm-action-title" className="text-lg font-semibold text-[var(--text-primary)]">
-              {title}
-            </h2>
-            <p className="mt-2 font-mono text-sm leading-relaxed text-[var(--text-tertiary)]">
-              {description}
-            </p>
+            <DialogHeader className="mb-0 pr-0">
+              <DialogTitle>{title}</DialogTitle>
+              <DialogDescription className="mt-2">{description}</DialogDescription>
+            </DialogHeader>
           </div>
         </div>
-        <div className="mt-6 flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
+        <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>
             {resolvedCancelLabel}
           </Button>
@@ -72,8 +65,8 @@ export function ConfirmActionDialog({
           >
             {resolvedConfirmLabel}
           </Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -2,8 +2,16 @@
 
 import { FormEvent, useState } from "react"
 import { useTranslations } from "next-intl"
-import { KeyRound, X } from "lucide-react"
+import { KeyRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { createSecretSchema } from "@/lib/validators/schemas"
 
@@ -68,27 +76,12 @@ function SecretFormDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center px-4">
-      <button
-        type="button"
-        aria-label={t("close")}
-        className="fixed inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-      />
-      <div className="relative z-50 w-full max-w-lg rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-6 shadow-xl">
-        <div className="mb-6 flex items-start justify-between gap-4">
-          <div>
-            <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-              {title}
-            </h2>
-            <p className="font-mono text-xs text-[var(--text-muted)]">
-              {t("encryptNote")}
-            </p>
-          </div>
-          <Button type="button" variant="ghost" size="icon" onClick={() => onOpenChange(false)}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-lg">
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{t("encryptNote")}</DialogDescription>
+        </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
           <Input
@@ -107,16 +100,16 @@ function SecretFormDialog({
             onChange={(event) => setValue(event.target.value)}
           />
           {error && <p className="font-mono text-xs text-red-600">{error}</p>}
-          <div className="flex justify-end gap-3 pt-2">
+          <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
               {t("cancel")}
             </Button>
             <Button type="submit" loading={loading}>
               {t("save")}
             </Button>
-          </div>
+          </DialogFooter>
         </form>
-      </div>
-    </div>
+      </DialogContent>
+    </Dialog>
   )
 }

@@ -24,6 +24,9 @@ from app.config import settings
 
 
 class AuthService:
+    # Wrong codes allowed per 2FA challenge before it is locked out.
+    MAX_2FA_CHALLENGE_ATTEMPTS = 5
+
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -225,6 +228,57 @@ class AuthService:
         await self.db.delete(session)
         return True
 
+    async def get_session_by_token(self, token: str) -> Optional[Session]:
+        """Look up an active (non-expired) session by its plaintext token."""
+        now = datetime.now(timezone.utc)
+        result = await self.db.execute(
+            select(Session).where(
+                Session.token == self.hash_token(token),
+                Session.expires_at > now,
+            )
+        )
+        return result.scalar_one_or_none()
+
+    async def revoke_session(self, user_id: UUID, session_id: UUID) -> bool:
+        """Revoke a single session owned by the given user.
+
+        Returns True when the session existed and was deleted.
+        """
+        result = await self.db.execute(
+            select(Session).where(
+                Session.id == session_id,
+                Session.user_id == user_id,
+            )
+        )
+        session = result.scalar_one_or_none()
+
+        if not session:
+            return False
+
+        await self.db.delete(session)
+        return True
+
+    async def revoke_all_sessions(
+        self, user_id: UUID, exclude_session_id: Optional[UUID] = None
+    ) -> int:
+        """Revoke every active session of a user, optionally keeping one.
+
+        Returns the number of sessions revoked.
+        """
+        now = datetime.now(timezone.utc)
+        query = select(Session).where(
+            Session.user_id == user_id,
+            Session.expires_at > now,
+        )
+        if exclude_session_id is not None:
+            query = query.where(Session.id != exclude_session_id)
+
+        result = await self.db.execute(query)
+        sessions = list(result.scalars().all())
+        for session in sessions:
+            await self.db.delete(session)
+        return len(sessions)
+
     async def get_user_by_id(self, user_id: UUID) -> Optional[User]:
         result = await self.db.execute(
             select(User).where(User.id == user_id)
@@ -296,6 +350,18 @@ class AuthService:
 
     # ─── Password Reset ──────────────────────────────────────────────────────
 
+    @staticmethod
+    def _hash_bearer_token(token: str) -> str:
+        """Hash a bearer token (reset/verification) for storage.
+
+        These tokens grant account access; persisting them in plaintext means
+        a database leak equals account takeover. Same pattern as session
+        digests (audit P1 #2, 2026-10).
+        """
+        import hashlib
+
+        return hashlib.sha256(token.encode("utf-8")).hexdigest()
+
     async def create_password_reset(self, email: str) -> Optional[PasswordResetToken]:
         """Create a password reset token for the given email."""
         result = await self.db.execute(select(User).where(User.email == email))
@@ -318,9 +384,12 @@ class AuthService:
         reset = PasswordResetToken(
             id=uuid4(),
             user_id=user.id,
-            token=token,
+            token=self._hash_bearer_token(token),
             expires_at=expires_at,
         )
+        # Plaintext is handed to the caller (router/email) once and never
+        # persisted — same contract as Session.plaintext_token.
+        reset.plaintext_token = token
         self.db.add(reset)
         await self.db.flush()
         return reset
@@ -329,7 +398,7 @@ class AuthService:
         """Validate a password reset token and return the associated user."""
         result = await self.db.execute(
             select(PasswordResetToken)
-            .where(PasswordResetToken.token == token)
+            .where(PasswordResetToken.token == self._hash_bearer_token(token))
             .where(PasswordResetToken.expires_at > datetime.now(timezone.utc))
             .where(PasswordResetToken.used_at.is_(None))
         )
@@ -355,7 +424,7 @@ class AuthService:
         # Mark token as used
         await self.db.execute(
             update(PasswordResetToken)
-            .where(PasswordResetToken.token == token)
+            .where(PasswordResetToken.token == self._hash_bearer_token(token))
             .values(used_at=datetime.now(timezone.utc))
         )
 
@@ -560,12 +629,25 @@ class AuthService:
         if not user or not user.two_factor_enabled:
             raise ValueError("Invalid or expired 2FA challenge")
 
+        # Per-challenge brute-force lockout: once the attempt budget is
+        # spent the challenge is consumed and the user must start a new one
+        # (audit P2 #11, 2026-10 — the IP rate limit alone allowed
+        # distributed guessing within the 10-minute window).
+        if (challenge.failed_attempts or 0) >= self.MAX_2FA_CHALLENGE_ATTEMPTS:
+            challenge.consumed_at = datetime.now(timezone.utc)
+            await self.db.flush()
+            raise ValueError("Too many invalid attempts; start a new 2FA challenge")
+
         normalized_code = code.strip().replace(" ", "").upper()
         verified = self._verify_totp_code(user, normalized_code)
         if not verified:
             verified = await self.verify_backup_code(user, normalized_code)
 
         if not verified:
+            challenge.failed_attempts = (challenge.failed_attempts or 0) + 1
+            if challenge.failed_attempts >= self.MAX_2FA_CHALLENGE_ATTEMPTS:
+                challenge.consumed_at = datetime.now(timezone.utc)
+            await self.db.flush()
             raise ValueError("Invalid verification code")
 
         challenge.consumed_at = datetime.now(timezone.utc)
@@ -639,9 +721,10 @@ class AuthService:
         verification = EmailVerificationToken(
             id=uuid4(),
             user_id=user.id,
-            token=token,
+            token=self._hash_bearer_token(token),
             expires_at=expires_at,
         )
+        verification.plaintext_token = token
         self.db.add(verification)
         await self.db.flush()
         return verification
@@ -650,7 +733,7 @@ class AuthService:
         """Verify an email using a valid token and return the associated user."""
         result = await self.db.execute(
             select(EmailVerificationToken)
-            .where(EmailVerificationToken.token == token)
+            .where(EmailVerificationToken.token == self._hash_bearer_token(token))
             .where(EmailVerificationToken.expires_at > datetime.now(timezone.utc))
             .where(EmailVerificationToken.used_at.is_(None))
         )

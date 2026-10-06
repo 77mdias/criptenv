@@ -146,7 +146,7 @@ def ci():
 
 
 @ci.command("login")
-@click.option("--token", required=True, help="CI token from CriptEnv (starts with 'ci_')")
+@click.option("--token", default=None, help="CI token from CriptEnv (starts with 'ci_'). Omit to be prompted securely (avoids shell history / ps exposure).")
 @click.option("--project", help="Project ID (optional, uses default from token)")
 def ci_login(token: str, project: Optional[str]):
     """Login with CI token and save session locally.
@@ -157,7 +157,12 @@ def ci_login(token: str, project: Optional[str]):
 
     Example:
         criptenv ci login --token ci_abc123xyz
+
+    Security: prefer omitting --token and entering it at the hidden prompt —
+    flag values are recorded in shell history and visible in `ps` output.
     """
+    if not token:
+        token = click.prompt("CI token", hide_input=True)
     with cli_context(require_master_key=False) as (db, _master_key, _):
         manager = _ci_manager(db)
         result = asyncio.run(manager.ci_login(token, project))

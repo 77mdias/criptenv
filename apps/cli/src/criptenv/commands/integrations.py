@@ -89,6 +89,12 @@ def integrations_connect(
         criptenv integrations connect render --token tok_xxx --project-id srv_xxx --project prj_xxx
     """
     async def _do_connect():
+        # `token`/`project_id_opt` are outer-function parameters; without
+        # `nonlocal` the assignments below make them locals of this closure
+        # and `if not token` raises UnboundLocalError on every invocation
+        # (found by the ruff F823 gate, Sprint 3 2026-10).
+        nonlocal token, project_id_opt
+
         with cli_context(require_auth=True) as (db, master_key, client):
             try:
                 resolved_project_id = resolve_project_id(db, project_id_arg)
@@ -232,7 +238,7 @@ def integrations_sync(provider: str, environment: str, direction: str, project_i
 
                 click.echo(f"Syncing secrets {direction} to {provider} ({environment})...")
                 await client.sync_integration(resolved_project_id, provider_integration["id"], direction=direction)
-                click.echo(f"✓ Sync complete")
+                click.echo("✓ Sync complete")
 
             except Exception as e:
                 click.echo(f"Error syncing: {e}", err=True)

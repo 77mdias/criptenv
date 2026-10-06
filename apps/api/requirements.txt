@@ -17,3 +17,4 @@ gunicorn==26.2.0
 redis==8.1.0
 resend==2.47.0
 pyotp==2.10.0
+sentry-sdk==2.43.0

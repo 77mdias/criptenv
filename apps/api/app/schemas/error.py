@@ -5,7 +5,6 @@ Implements M3.4.6 OpenAPI documentation with standardized error formats.
 
 from pydantic import BaseModel, Field
 from typing import Optional, Any
-from datetime import datetime
 
 
 class APIErrorDetail(BaseModel):

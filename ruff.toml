@@ -1,0 +1,16 @@
+# Ruff configuration (CI gate).
+#
+# Deliberately narrow: `F` (pyflakes: undefined names, unused imports/vars) and
+# `E9` (syntax/runtime errors) catch real bugs without imposing a formatting
+# overhaul across the codebase. Broaden rule sets incrementally as the
+# remaining backlog is cleaned up.
+
+target-version = "py311"
+line-length = 120
+
+[lint]
+select = ["F", "E9"]
+
+[lint.per-file-ignores]
+# Barrel/re-export modules intentionally use star imports.
+"__init__.py" = ["F403", "F405"]

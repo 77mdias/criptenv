@@ -1,7 +1,6 @@
 """Tests for notification routes."""
 from datetime import datetime, timezone
 from types import SimpleNamespace
-from unittest.mock import AsyncMock, patch
 from uuid import uuid4
 
 from fastapi import FastAPI

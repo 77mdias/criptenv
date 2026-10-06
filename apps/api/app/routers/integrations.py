@@ -16,7 +16,6 @@ from app.middleware.ci_auth import (
     require_ci_session_scope,
 )
 from app.models.user import User
-from app.models.project import Project
 from app.crypto.integration_config import IntegrationConfigEncryptionError
 from app.services.integration_service import IntegrationService
 from app.services.project_service import ProjectService

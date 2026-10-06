@@ -3,7 +3,6 @@
 Tests for webhook signature parsing and HMAC-SHA256 verification.
 """
 
-import pytest
 from unittest.mock import patch
 
 import sys
@@ -13,7 +12,6 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 from app.services.webhook_security import (
     validate_mercadopago_signature,
     _extract_signature_parts,
-    WebhookSignatureError,
 )
 
 

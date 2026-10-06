@@ -2,24 +2,32 @@
 
 import { useState } from "react";
 import { useTranslations } from "next-intl";
-import { Clock, X } from "lucide-react";
+import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 
 interface ExpirationModalProps {
   secretKey: string;
+  hasExpiration: boolean;
   onClose: () => void;
   onSave: (days: number, policy: string, notifyDays: number) => void;
   onDelete: () => void;
-  hasExpiration: boolean;
 }
 
 export function ExpirationModal({
   secretKey,
+  hasExpiration,
   onClose,
   onSave,
   onDelete,
-  hasExpiration,
 }: ExpirationModalProps) {
   const t = useTranslations("secrets.expiration");
   const [days, setDays] = useState("30");
@@ -52,22 +60,18 @@ export function ExpirationModal({
 
   return (
     <>
-      <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4">
-        <div className="w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--background)] p-6 shadow-lg">
-        <div className="flex items-center justify-between mb-4">
+      <Dialog open onOpenChange={(next) => { if (!next) onClose(); }}>
+        <DialogContent className="max-w-md">
+        <DialogHeader>
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[var(--accent)]" />
-            <h3 className="font-semibold text-[var(--text-primary)]">{t("title")}</h3>
+            <DialogTitle>{t("title")}</DialogTitle>
           </div>
-          <Button variant="ghost" size="icon" className="h-8 w-8" onClick={onClose}>
-            <X className="h-4 w-4" />
-          </Button>
-        </div>
-
-        <p className="text-sm text-[var(--text-tertiary)] font-mono mb-4">
-          {t("secretLabel")}{" "}
-          <span className="font-semibold text-[var(--text-primary)]">{secretKey}</span>
-        </p>
+          <DialogDescription>
+            {t("secretLabel")}{" "}
+            <span className="font-semibold text-[var(--text-primary)]">{secretKey}</span>
+          </DialogDescription>
+        </DialogHeader>
 
         <div className="space-y-4">
           <div>
@@ -114,7 +118,7 @@ export function ExpirationModal({
           </div>
         </div>
 
-        <div className="flex gap-2 mt-6">
+        <DialogFooter className="justify-start">
           <Button onClick={handleSave} loading={loading}>
             {t("save")}
           </Button>
@@ -126,9 +130,9 @@ export function ExpirationModal({
           <Button variant="secondary" onClick={onClose}>
             {t("cancel")}
           </Button>
-        </div>
-        </div>
-      </div>
+        </DialogFooter>
+        </DialogContent>
+      </Dialog>
       <ConfirmActionDialog
         open={confirmDeleteOpen}
         title={t("removeConfirmTitle")}

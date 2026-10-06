@@ -4,8 +4,6 @@ Tracks Pix contributions from creation through payment lifecycle.
 """
 
 import uuid
-from datetime import datetime, timezone
-from typing import Optional
 
 from sqlalchemy import Column, String, DateTime, Numeric, Index, func, Text
 from sqlalchemy.dialects.postgresql import UUID, JSONB

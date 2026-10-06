@@ -520,7 +520,6 @@ class TestNotificationChannelInterface:
     def test_notification_channel_is_protocol(self):
         """NotificationChannel should be a Protocol (structural typing)."""
         from app.services.webhook_service import NotificationChannel
-        import typing
         
         # Check it's a Protocol class
         assert hasattr(NotificationChannel, '__protocol_attrs__') or hasattr(NotificationChannel, '_is_protocol')

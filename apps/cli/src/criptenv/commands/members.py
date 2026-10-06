@@ -1,7 +1,6 @@
 """Team member management commands."""
 
 import asyncio
-from typing import Optional
 
 import click
 

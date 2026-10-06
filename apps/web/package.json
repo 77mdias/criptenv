@@ -16,7 +16,8 @@
     "test:e2e": "npm run e2e:db:up && npm run e2e:db:reset && concurrently -k -s first -n api,web,cypress -c blue,green,magenta \"npm run e2e:api\" \"npm run e2e:web\" \"wait-on tcp:127.0.0.1:8000 tcp:localhost:3000 && env -u ELECTRON_RUN_AS_NODE cypress run\"",
     "test:e2e:open": "npm run e2e:db:up && npm run e2e:db:reset && concurrently -k -n api,web,cypress -c blue,green,magenta \"npm run e2e:api\" \"npm run e2e:web\" \"wait-on tcp:127.0.0.1:8000 tcp:localhost:3000 && env -u ELECTRON_RUN_AS_NODE cypress open\"",
     "check:vinext": "vinext check",
-    "deploy": "vinext deploy",
+    "deploy": "vinext build && node scripts/check-deploy-env.mjs && vinext deploy",
+    "check:deploy-env": "node scripts/check-deploy-env.mjs",
     "deploy:dry-run": "vinext deploy --dry-run",
     "dev:next": "next dev",
     "build:next": "next build",
@@ -53,7 +54,7 @@
     "framer-motion": "^12.38.0",
     "gsap": "^3.15.0",
     "lucide-react": "^1.14.0",
-    "next": "16.3.5",
+    "next": "16.3.8",
     "next-intl": "4.14.5",
     "pagefind": "^1.5.2",
     "qrcode.react": "^4.2.0",
@@ -92,6 +93,7 @@
     "wrangler": "^4.87.0"
   },
   "overrides": {
+    "undici": "7.30.0",
     "postcss": "^8.5.12",
     "tmp": ">=0.2.6",
     "ws": ">=8.21.0",

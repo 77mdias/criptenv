@@ -159,6 +159,28 @@ The compose stack runs API workers with `SCHEDULER_ENABLED=false` and a separate
 
 ---
 
+### Watchtower — auto-update da API (manutenção)
+
+O serviço `watchtower` faz pull automático da imagem `criptenv-api:latest`
+publicada pela GitHub Action (`deploy-backend.yml`) a cada 5 minutos.
+
+Se o container entrar em crash-loop com
+`client version 1.25 is too old. Minimum supported API version is 1.40`,
+o cliente Docker fixado pelo Watchtower é rejeitado pelo Engine 29+. Corrija
+fixando a versão da API no environment do serviço (já aplicado neste
+repositório em `deploy/vps/docker-compose.yml`):
+
+```yaml
+    environment:
+      DOCKER_API_VERSION: "1.44"
+```
+
+Depois: `docker compose up -d watchtower` e valide com
+`docker compose logs -f watchtower` (não deve mais reiniciar).
+
+Sem esse fix, o pipeline zero-touch (push em main -> Action -> Docker Hub ->
+Watchtower -> VPS) para silenciosamente e a produção só atualiza com pull manual.
+
 ## 4. Render Rollback
 
 `apps/api/render.yaml`, `apps/api/Procfile`, and `apps/api/railway.toml` are retained as rollback/legacy references. If the VPS has an outage, redeploying a hosted API is acceptable after updating Cloudflare Pages `API_URL` to the rollback API URL.

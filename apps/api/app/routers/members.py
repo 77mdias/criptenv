@@ -11,7 +11,6 @@ from app.models.user import User
 from app.models.member import ProjectMember
 
 from sqlalchemy import select
-from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/members", tags=["Members"])
 

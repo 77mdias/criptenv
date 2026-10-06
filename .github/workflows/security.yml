@@ -58,14 +58,30 @@ jobs:
       - name: Audit CLI Python dependencies
         working-directory: apps/cli
         run: |
-          python -m pip install --upgrade setuptools
+          # pip-audit with no arguments audits the whole environment, so the
+          # runner's own pip is included: keep it current or its advisories
+          # fail the job. (Dependencies resolve fresh from the >= ranges.)
+          python -m pip install --upgrade pip setuptools
           python -m pip install -e .
           pip-audit
-      - name: Audit web npm dependencies
+      # Production dependencies are gated strictly. Dev-only advisories are
+      # reported below without failing the build: they never ship in the
+      # frontend bundle or the Action dist, and some (e.g. braces via
+      # eslint-config-next) have no published fix yet — `npm audit fix --force`
+      # would only downgrade the toolchain. Production audit is the gate.
+      - name: Audit web npm production dependencies
         working-directory: apps/web
-        run: npm audit --audit-level=high
-      - name: Audit GitHub Action npm dependencies
+        run: npm audit --omit=dev --audit-level=high
+      - name: Audit GitHub Action npm production dependencies
         working-directory: packages/github-action
+        run: npm audit --omit=dev --audit-level=high
+      - name: Report web npm development advisories (non-blocking)
+        working-directory: apps/web
+        continue-on-error: true
+        run: npm audit --audit-level=high
+      - name: Report GitHub Action npm development advisories (non-blocking)
+        working-directory: packages/github-action
+        continue-on-error: true
         run: npm audit --audit-level=high
 
   trivy:

@@ -14,6 +14,8 @@ API_BASE_URL = os.getenv("CRIPTENV_API_URL", "https://criptenv-api.77mdevseven.t
 
 # Crypto defaults
 PBKDF2_ITERATIONS = 100_000
+# Client-enforced floor: server-provided values below this are rejected (downgrade guard)
+MIN_PBKDF2_ITERATIONS = 100_000
 SALT_LENGTH = 32
 IV_LENGTH = 12
 KEY_LENGTH = 32  # 256 bits

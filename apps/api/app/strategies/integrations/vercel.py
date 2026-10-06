@@ -4,7 +4,6 @@ Integration with Vercel environment variables API.
 https://vercel.com/docs/rest-api#endpoints/projects-environment-variables
 """
 
-from typing import Optional
 import httpx
 
 from app.strategies.integrations.base import IntegrationProvider, register_provider

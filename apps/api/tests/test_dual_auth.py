@@ -6,7 +6,7 @@ Tests that read endpoints accept both session tokens (JWT) and API keys (cek_ pr
 import pytest
 from unittest.mock import MagicMock, AsyncMock, patch
 from uuid import uuid4
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from contextlib import contextmanager
 from httpx import AsyncClient, ASGITransport
 
@@ -15,7 +15,7 @@ from pathlib import Path
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from main import app
-from app.middleware.auth import get_current_user, get_current_user_or_api_key, get_current_auth_context, AuthContext
+from app.middleware.auth import get_current_user_or_api_key, get_current_auth_context, AuthContext
 
 
 @contextmanager

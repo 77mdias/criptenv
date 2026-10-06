@@ -7,7 +7,7 @@ SHA-256 hashing, scopes, and optional expiration.
 import secrets
 import hashlib
 import re
-from datetime import datetime, timezone, timedelta
+from datetime import datetime, timezone
 from uuid import uuid4
 from typing import Optional
 

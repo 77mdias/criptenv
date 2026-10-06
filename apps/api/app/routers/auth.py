@@ -1,7 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response, UploadFile
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy.orm.attributes import flag_modified
-from typing import Union
+from typing import Optional, Union
+from uuid import UUID
 
 from app.database import get_db
 from app.services.auth_service import AuthService
@@ -13,6 +13,7 @@ from app.schemas.auth import (
     UpdateProfileRequest, TwoFactorSetupResponse, TwoFactorVerifyRequest, TwoFactorDisableRequest,
     TwoFactorRequiredResponse, TwoFactorChallengeVerifyRequest,
     VerifyEmailRequest, SendVerificationResponse, VerifyEmailResponse,
+    SessionsRevokedResponse,
 )
 from app.middleware.auth import get_current_user
 from app.models.user import User
@@ -144,7 +145,7 @@ async def signup(
     verification = await auth_service.create_email_verification(data.email)
     if verification:
         frontend_url = settings.FRONTEND_URL.rstrip("/")
-        verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+        verification_url = f"{frontend_url}/verify-email?token={verification.plaintext_token}"
         email_service.send_email_verification(data.email, verification_url)
 
     return MessageResponse(
@@ -179,7 +180,7 @@ async def signin(
         verification = await auth_service.create_email_verification(data.email)
         if verification:
             frontend_url = settings.FRONTEND_URL.rstrip("/")
-            verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+            verification_url = f"{frontend_url}/verify-email?token={verification.plaintext_token}"
             email_service.send_email_verification(data.email, verification_url)
 
         raise HTTPException(
@@ -245,14 +246,75 @@ async def get_session(
     return _user_to_response(current_user)
 
 
+def _extract_session_token(request: Request) -> Optional[str]:
+    """Read the session token from the cookie or the Authorization header."""
+    token = request.cookies.get(SESSION_COOKIE)
+    if not token:
+        auth_header = request.headers.get("Authorization")
+        if auth_header and auth_header.startswith("Bearer "):
+            token = auth_header[7:]
+    return token
+
+
 @router.get("/sessions", response_model=list[SessionResponse])
 async def get_sessions(
+    request: Request,
     current_user: User = Depends(get_current_user),
     db: AsyncSession = Depends(get_db)
 ):
     auth_service = AuthService(db)
     sessions = await auth_service.get_user_sessions(current_user.id)
-    return [_session_to_response(s) for s in sessions]
+
+    token = _extract_session_token(request)
+    current_token_hash = auth_service.hash_token(token) if token else None
+
+    responses = []
+    for session in sessions:
+        payload = _session_to_response(session)
+        payload.current = bool(current_token_hash) and session.token == current_token_hash
+        responses.append(payload)
+    return responses
+
+
+@router.delete("/sessions/{session_id}", response_model=MessageResponse)
+async def revoke_session(
+    session_id: UUID,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    auth_service = AuthService(db)
+    deleted = await auth_service.revoke_session(current_user.id, session_id)
+    if not deleted:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Session not found",
+        )
+    return MessageResponse(message="Session revoked")
+
+
+@router.post("/sessions/revoke-all", response_model=SessionsRevokedResponse)
+async def revoke_all_sessions(
+    request: Request,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Revoke every active session except the one making the request."""
+    auth_service = AuthService(db)
+
+    token = _extract_session_token(request)
+    current_session_id: Optional[UUID] = None
+    if token:
+        current_session = await auth_service.get_session_by_token(token)
+        if current_session:
+            current_session_id = current_session.id
+
+    revoked = await auth_service.revoke_all_sessions(
+        current_user.id, exclude_session_id=current_session_id
+    )
+    return SessionsRevokedResponse(
+        message=f"{revoked} session(s) revoked",
+        revoked=revoked,
+    )
 
 
 # ─── Password Reset ─────────────────────────────────────────────────────────
@@ -270,14 +332,14 @@ async def forgot_password(
     if reset:
         # Build reset URL
         frontend_url = settings.FRONTEND_URL.rstrip("/")
-        reset_url = f"{frontend_url}/reset-password?token={reset.token}"
+        reset_url = f"{frontend_url}/reset-password?token={reset.plaintext_token}"
         email_service.send_password_reset(data.email, reset_url)
 
         # Dev fallback: expose token when email service is not configured
         if not email_service.enabled and _dev_token_allowed():
             return ForgotPasswordResponse(
                 message="If an account exists with this email, a reset link has been sent.",
-                dev_token=reset.token,
+                dev_token=reset.plaintext_token,
                 dev_warning="Email service is not configured (RESEND_API_KEY is missing). This token is exposed for local development only. In production, configure RESEND_API_KEY to hide this value.",
             )
 
@@ -315,14 +377,14 @@ async def send_verification(
     verification = await auth_service.create_email_verification(data.email)
     if verification:
         frontend_url = settings.FRONTEND_URL.rstrip("/")
-        verification_url = f"{frontend_url}/verify-email?token={verification.token}"
+        verification_url = f"{frontend_url}/verify-email?token={verification.plaintext_token}"
         email_service.send_email_verification(data.email, verification_url)
 
         # Dev fallback: expose token when email service is not configured
         if not email_service.enabled and _dev_token_allowed():
             return SendVerificationResponse(
                 message="If the account exists and is unverified, a verification link has been sent.",
-                dev_token=verification.token,
+                dev_token=verification.plaintext_token,
                 dev_warning="Email service is not configured (RESEND_API_KEY is missing). This token is exposed for local development only.",
             )
 
@@ -595,6 +657,13 @@ async def verify_2fa_challenge(
             user_agent=request.headers.get("User-Agent"),
         )
     except ValueError as e:
+        # The service persists the failed-attempt counter (and challenge
+        # lockout) via flush; commit it explicitly — raising here would make
+        # get_db roll the lockout back (audit P2 #11, 2026-10).
+        try:
+            await db.commit()
+        except Exception:
+            await db.rollback()
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail=str(e)

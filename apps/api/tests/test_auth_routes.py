@@ -2,6 +2,7 @@ from datetime import datetime, timedelta, timezone
 from types import SimpleNamespace
 from unittest.mock import AsyncMock
 from uuid import uuid4
+import hashlib
 
 import pytest
 from fastapi import FastAPI
@@ -68,7 +69,7 @@ def test_signup_returns_message_and_sends_verification(monkeypatch):
         return make_user(), make_session()
 
     async def fake_create_email_verification(self, email):
-        return SimpleNamespace(token="dev-verification-token-123")
+        return SimpleNamespace(token="hashed", plaintext_token="dev-verification-token-123")
 
     monkeypatch.setattr(AuthService, "create_user", fake_create_user)
     monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
@@ -166,7 +167,7 @@ def test_signin_rejects_unverified_email(monkeypatch):
         return unverified_user
 
     async def fake_create_email_verification(self, email):
-        return SimpleNamespace(token="dev-verification-token-456")
+        return SimpleNamespace(token="hashed", plaintext_token="dev-verification-token-456")
 
     monkeypatch.setattr(AuthService, "authenticate_credentials", fake_authenticate_credentials)
     monkeypatch.setattr(AuthService, "create_email_verification", fake_create_email_verification)
@@ -305,6 +306,114 @@ def test_get_sessions_hides_session_tokens(monkeypatch):
     assert "token" not in payload[0]
 
 
+def test_get_sessions_marks_current_session(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    session = make_session()
+    session.token = hashlib.sha256(b"current-session-token").hexdigest()
+
+    async def fake_get_user_sessions(self, user_id):
+        return [session]
+
+    monkeypatch.setattr(AuthService, "get_user_sessions", fake_get_user_sessions)
+
+    with TestClient(app) as client:
+        client.cookies.set("session_token", "current-session-token")
+        response = client.get("/api/auth/sessions")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert len(payload) == 1
+    assert payload[0]["current"] is True
+
+
+def test_get_sessions_marks_other_sessions_as_not_current(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    session = make_session()
+    session.token = "different-digest"
+
+    async def fake_get_user_sessions(self, user_id):
+        return [session]
+
+    monkeypatch.setattr(AuthService, "get_user_sessions", fake_get_user_sessions)
+
+    with TestClient(app) as client:
+        client.cookies.set("session_token", "current-session-token")
+        response = client.get("/api/auth/sessions")
+
+    assert response.status_code == 200
+    assert response.json()[0]["current"] is False
+
+
+def test_revoke_session_deletes_owned_session(monkeypatch):
+    app = make_app()
+    user = make_user()
+    app.dependency_overrides[get_current_user] = lambda: user
+
+    session = make_session()
+    session.user_id = user.id
+    captured = {}
+
+    async def fake_revoke_session(self, user_id, session_id):
+        captured["user_id"] = user_id
+        captured["session_id"] = session_id
+        return True
+
+    monkeypatch.setattr(AuthService, "revoke_session", fake_revoke_session)
+
+    with TestClient(app) as client:
+        response = client.delete(f"/api/auth/sessions/{session.id}")
+
+    assert response.status_code == 200
+    assert captured["user_id"] == user.id
+    assert captured["session_id"] == session.id
+
+
+def test_revoke_session_returns_404_for_unknown_session(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    async def fake_revoke_session(self, user_id, session_id):
+        return False
+
+    monkeypatch.setattr(AuthService, "revoke_session", fake_revoke_session)
+
+    with TestClient(app) as client:
+        response = client.delete(f"/api/auth/sessions/{uuid4()}")
+
+    assert response.status_code == 404
+
+
+def test_revoke_all_sessions_keeps_current_session(monkeypatch):
+    app = make_app()
+    app.dependency_overrides[get_current_user] = lambda: make_user()
+
+    current_session = make_session()
+    captured = {}
+
+    async def fake_get_session_by_token(self, token):
+        return current_session
+
+    async def fake_revoke_all_sessions(self, user_id, exclude_session_id=None):
+        captured["exclude_session_id"] = exclude_session_id
+        return 2
+
+    monkeypatch.setattr(AuthService, "get_session_by_token", fake_get_session_by_token)
+    monkeypatch.setattr(AuthService, "revoke_all_sessions", fake_revoke_all_sessions)
+
+    with TestClient(app) as client:
+        client.cookies.set("session_token", "current-session-token")
+        response = client.post("/api/auth/sessions/revoke-all")
+
+    assert response.status_code == 200
+    payload = response.json()
+    assert payload["revoked"] == 2
+    assert captured["exclude_session_id"] == current_session.id
+
+
 def _make_email_service(enabled: bool):
     """Factory for mocked EmailService instances."""
     svc = object.__new__(EmailService)
@@ -314,7 +423,7 @@ def _make_email_service(enabled: bool):
 
 def test_forgot_password_exposes_dev_token_when_email_disabled(monkeypatch):
     """When RESEND_API_KEY is not set, the reset token is exposed for local development."""
-    reset_record = SimpleNamespace(token="dev-reset-token-123", email="dev@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="dev-reset-token-123", email="dev@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -338,7 +447,7 @@ def test_forgot_password_exposes_dev_token_when_email_disabled(monkeypatch):
 
 def test_forgot_password_hides_token_when_email_enabled(monkeypatch):
     """When RESEND_API_KEY is set, the reset token is never exposed."""
-    reset_record = SimpleNamespace(token="prod-reset-token-456", email="dev@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="prod-reset-token-456", email="dev@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -385,7 +494,7 @@ def test_forgot_password_returns_generic_message_when_user_not_found(monkeypatch
 
 def test_send_verification_exposes_dev_token_when_email_disabled(monkeypatch):
     """When RESEND_API_KEY is not set, the verification token is exposed for local development."""
-    verification_record = SimpleNamespace(token="dev-verification-token-789")
+    verification_record = SimpleNamespace(token="hashed", plaintext_token="dev-verification-token-789")
 
     async def fake_create_email_verification(self, email):
         return verification_record
@@ -408,7 +517,7 @@ def test_send_verification_exposes_dev_token_when_email_disabled(monkeypatch):
 
 def test_send_verification_hides_token_when_email_enabled(monkeypatch):
     """When RESEND_API_KEY is set, the verification token is never exposed."""
-    verification_record = SimpleNamespace(token="prod-verification-token-abc")
+    verification_record = SimpleNamespace(token="hashed", plaintext_token="prod-verification-token-abc")
 
     async def fake_create_email_verification(self, email):
         return verification_record
@@ -553,7 +662,7 @@ def _force_env(monkeypatch, *, debug: bool, app_env: str):
 @pytest.mark.parametrize("app_env", ["production", "prod", "release", "staging"])
 def test_reset_token_never_exposed_outside_development(monkeypatch, app_env):
     """A production deployment missing RESEND_API_KEY must not echo reset tokens."""
-    reset_record = SimpleNamespace(token="LEAKED-reset-token", email="victim@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="LEAKED-reset-token", email="victim@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -576,7 +685,7 @@ def test_reset_token_never_exposed_outside_development(monkeypatch, app_env):
 
 def test_reset_token_not_exposed_when_debug_is_off(monkeypatch):
     """Even in a development environment, DEBUG=false hides the token."""
-    reset_record = SimpleNamespace(token="LEAKED-reset-token", email="victim@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="LEAKED-reset-token", email="victim@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -597,7 +706,7 @@ def test_reset_token_not_exposed_when_debug_is_off(monkeypatch):
 
 def test_reset_token_exposed_in_local_development(monkeypatch):
     """DEBUG + development keeps the local convenience fallback working."""
-    reset_record = SimpleNamespace(token="local-reset-token", email="dev@example.com")
+    reset_record = SimpleNamespace(token="hashed", plaintext_token="local-reset-token", email="dev@example.com")
 
     async def fake_create_password_reset(self, email):
         return reset_record
@@ -617,7 +726,7 @@ def test_reset_token_exposed_in_local_development(monkeypatch):
 
 def test_verification_token_never_exposed_outside_development(monkeypatch):
     """Same gate applies to the email-verification resend endpoint."""
-    verification_record = SimpleNamespace(token="LEAKED-verification-token")
+    verification_record = SimpleNamespace(token="hashed", plaintext_token="LEAKED-verification-token")
 
     async def fake_create_email_verification(self, email):
         return verification_record

@@ -6,7 +6,6 @@ more than SESSION_INACTIVITY_DAYS (default: 7 days).
 """
 
 import logging
-from typing import Optional
 
 from sqlalchemy.ext.asyncio import AsyncSession
 

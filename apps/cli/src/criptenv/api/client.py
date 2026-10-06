@@ -75,6 +75,16 @@ class CriptEnvClient:
                 detail = response.json().get("detail", response.text)
             except Exception:
                 detail = response.text
+            if response.status_code == 401 and not url.rstrip("/").endswith(
+                ("/api/auth/signin", "/api/auth/signup")
+            ):
+                # Actionable message: a revoked/expired session used to surface
+                # as a generic "API error 401" (audit P2, 2026-10).
+                raise CriptEnvAPIError(
+                    401,
+                    "Your session has expired or been revoked. "
+                    "Run `criptenv login` to authenticate again.",
+                )
             raise CriptEnvAPIError(response.status_code, str(detail))
         return response
 
@@ -332,7 +342,7 @@ class CriptEnvClient:
         """
         resp = await self._request(
             "GET",
-            f"/api/v1/ci/secrets",
+            "/api/v1/ci/secrets",
             params={"project_id": project_id, "environment": environment}
         )
         return resp.json()

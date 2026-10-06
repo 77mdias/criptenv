@@ -4,7 +4,6 @@ Integration with Render environment variables API.
 https://render.com/docs/api
 """
 
-from typing import Optional
 import httpx
 
 from app.strategies.integrations.base import IntegrationProvider, register_provider

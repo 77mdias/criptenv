@@ -154,9 +154,9 @@ por terceiros**, então vale uma revisão de dados, não só de código.
 - **Logs de acesso**: tokens de convite e de reset trafegam em query string e
   aparecem no access log do gunicorn. Reduza no formato do log ou na borda
   (ex.: remover `?query` do log, ou mascarar via Cloudflare).
-- **Testes desatualizados**: `testsprite_tests/TC002..TC010` ainda esperam
-  `session_token` no corpo do login (comportamento pré-CR-01). Devem ser ajustados
-  para ler o cookie, senão essa suíte falha e polui o relatório.
+- ~~**Testes desatualizados**: `testsprite_tests/TC002..TC010` ainda esperam
+  `session_token` no corpo do login.~~ Resolvido na Sprint 3 da auditoria 2026-10:
+  a suíte obsoleta foi removida (coberta pelas suítes de API/CLI/Web que rodam no CI).
 - **Dependências**: o `apps/web` ainda tem 2 erros de tipo pré-existentes
   (`variant="outline"` não existe no componente `Button`) — vale corrigir.
 

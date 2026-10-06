@@ -8,7 +8,7 @@ from app.config import settings
 from app.database import get_db
 from app.services.auth_service import AuthService
 from app.services.oauth_service import OAuthService
-from app.schemas.auth import AuthResponse, UserResponse, SessionResponse
+from app.schemas.auth import UserResponse, SessionResponse
 from app.middleware.auth import get_current_user
 from app.models.user import User
 

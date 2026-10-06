@@ -3,6 +3,14 @@
 import { useTranslations } from "next-intl"
 import { ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog"
 
 interface PermissionDialogProps {
   open: boolean
@@ -21,10 +29,8 @@ export function PermissionDialog({
   onOpenChange,
   onAction,
 }: PermissionDialogProps) {
+  // Label defaults resolve per locale; callers may still pass their own.
   const t = useTranslations("members.dialog")
-
-  if (!open) return null
-
   const resolvedTitle = title ?? t("title")
   const resolvedDescription = description ?? t("description")
   const resolvedActionLabel = actionLabel ?? t("action")
@@ -35,36 +41,23 @@ export function PermissionDialog({
   }
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center p-4">
-      <button
-        type="button"
-        aria-label={t("closeAria")}
-        className="absolute inset-0 bg-black/50 backdrop-blur-sm"
-        onClick={() => onOpenChange(false)}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="permission-dialog-title"
-        className="relative z-[81] w-full max-w-md rounded-xl border border-[var(--border)] bg-[var(--surface-elevated)] p-6 shadow-xl"
-      >
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-w-md" showClose={false}>
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--background-muted)] text-[var(--text-primary)]">
             <ShieldAlert className="h-5 w-5" />
           </div>
           <div className="min-w-0">
-            <h2 id="permission-dialog-title" className="text-lg font-semibold text-[var(--text-primary)]">
-              {resolvedTitle}
-            </h2>
-            <p className="mt-2 font-mono text-sm leading-relaxed text-[var(--text-tertiary)]">
-              {resolvedDescription}
-            </p>
+            <DialogHeader className="mb-0 pr-0">
+              <DialogTitle>{resolvedTitle}</DialogTitle>
+              <DialogDescription className="mt-2">{resolvedDescription}</DialogDescription>
+            </DialogHeader>
           </div>
         </div>
-        <div className="mt-6 flex justify-end">
+        <DialogFooter className="sm:justify-end">
           <Button onClick={handleAction}>{resolvedActionLabel}</Button>
-        </div>
-      </div>
-    </div>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
   )
 }

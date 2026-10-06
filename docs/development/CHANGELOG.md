@@ -7,6 +7,68 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Refactor/Security/CI — Sprint 3 da auditoria completa 2026-10
+
+**Backend (API):**
+- **Transações unificadas**: `RotationService` e `IntegrationService` não fazem mais `commit()` interno — usam `flush()` e a fronteira transacional fica com `get_db` (request) ou com o job do scheduler, garantindo que a mutação e o audit log caiam na mesma transação. O job de expiração continua commitando por unidade (testes confirmam).
+- **Lint Python no CI**: `ruff.toml` (`F` + `E9`), job `python-lint` no `ci.yml`, alvos `make api-lint`/`make cli-lint` (incluídos em `make lint`) e `apps/api/requirements-dev.txt` (pytest, ruff, aiosqlite). A limpeza removeu 87 imports não usados na API e 16 no CLI, além de variáveis mortas.
+- **Gate de migrações**: job que falha quando o Alembic tem mais de uma head.
+- **Re-export preservado**: `ValidatedWebhookTarget` continua exportado por `webhook_service` (o autofix do ruff o havia removido e quebrava 5 testes).
+
+**CLI:**
+- **Bug de runtime corrigido** (encontrado pelo gate do ruff, F823): `criptenv integrations connect` sempre falhava com `UnboundLocalError` — as atribuições a `token`/`project_id_opt` dentro da closure `_do_connect()` os tornavam locais, então `if not token` estourava antes de qualquer prompt. Corrigido com `nonlocal` + teste de regressão (validado: falha sem o fix).
+- **`criptenv run -- <cmd>`**: injeta os segredos do ambiente no subprocesso sem gravar plaintext em disco, propaga o exit code do filho e reporta binário inexistente com mensagem clara.
+- **`criptenv diff [arquivo]`**: compara o `.env` local com o vault remoto (chaves só locais, só remotas e valores divergentes), sai com status 1 em caso de drift (gate de CI) e com `--show-values` imprime apenas preview mascarado.
+- 8 testes novos cobrindo injeção de env, propagação de exit code, os três tipos de diferença e o mascaramento de valores.
+
+**Web:**
+- **Primitiva Radix Dialog** (`components/ui/dialog.tsx`) com focus trap, Esc, `aria-modal`, scroll lock e restauração de foco; migrados `ExportModal`, `SecretForm`, `ImportModal`, `ConfirmActionDialog`, `PermissionDialog`, `CreateProjectDialog` e `ExpirationModal` (antes overlays `fixed inset-0` sem acessibilidade).
+- **`account/page.tsx` decomposto** de 1078 → 843 linhas: helpers em `account/_components/account-ui.tsx` e seções em `linked-accounts-card.tsx` e `sessions-card.tsx` (apresentacionais, com a lógica de dados preservada na página).
+
+**Limpeza:**
+- Removida a suíte obsoleta `testsprite_tests/` (afirmava o comportamento pré-CR-01); coberta pelas suítes mantidas que rodam no CI.
+- 14 branches locais já mergeadas na `main` removidas; `backup/*` e branches com worktree ativo preservadas. Permanecem 3 branches com trabalho não mergeado (`feature/i18n-support` 10 commits à frente, `dependabot-web-dependencies` 2, `feature/project-rbac-invites-modals` 1) para decisão do time.
+- `AGENTS.md` v1.3: alvos de lint Python, gate de ruff, nota de que E2E/Docker só bloqueiam merge se marcados como required checks no GitHub.
+
+### Security/Reliability — Sprint 2 da auditoria completa 2026-10
+
+**Backend (API):**
+- **Concorrência (OCC real)**: `VaultService.push_blobs` troca o read-then-write por um `UPDATE ... WHERE secrets_version = <esperado>` atômico — pushes concorrentes com o mesmo `expected_version` não podem mais ambos vencer (lost update silencioso). `RotationService.rotate_secret` agora incrementa `environments.secrets_version` pela mesma via e aceita `expected_version` opcional (409 `VERSION_CONFLICT` no router). Regressões em `tests/test_vault_concurrency.py` (3 testes com SQLite em arquivo e sessões concorrentes reais).
+- **Tokens bearer em repouso**: tokens de reset de senha e verificação de e-mail passam a ser persistidos como digest SHA-256 (plaintext exposto uma única vez via `plaintext_token`, como nas sessões); tokens OAuth de provider (access/refresh) são selados com AES-256-GCM sob `INTEGRATION_CONFIG_SECRET` com leitura retrocompatível de linhas legadas (`app/crypto/oauth_tokens.py`). Migração: tokens de reset/verificação emitidos antes do deploy deixam de valer (curta duração).
+- **Lockout de 2FA**: `two_factor_challenges.failed_attempts` (migração `20261015_0012`) consome o desafio após 5 códigos errados, fechando a janela de 10 minutos para brute force distribuído; o endpoint commita o contador antes de responder 401 (antes o rollback do `get_db` descartaria o lockout).
+- **Rate limit atômico**: `check_and_increment` faz um único INCR no Redis (e atualização atômica no backend em memória), eliminando a corrida em que N requisições simultâneas liam o mesmo contador e passavam juntas.
+- **Observabilidade**: logging JSON estruturado com `request_id` de correlação (`X-Request-ID` gerado/propagado por `RequestContextMiddleware`), nível INFO em produção (antes só WARNING+), `LOG_FORMAT`/`LOG_LEVEL` configuráveis e Sentry opcional via `SENTRY_DSN` (no-op sem DSN ou SDK).
+- **Integrações**: `sentry-sdk==2.43.0` adicionado ao `requirements.txt`.
+
+**CLI:**
+- `ci login` aceita o token por prompt oculto (evita shell history/`ps`); `login --api-key` sem valor também pergunta de forma oculta.
+- `pull`/`export` gravam arquivos plaintext com permissão **0600** (antes 0644).
+- Resposta 401 vira mensagem acionável (`run criptenv login`) em vez de "API error 401".
+- Piso de iterações PBKDF2 aplicado no cliente (`MIN_PBKDF2_ITERATIONS = 100_000`): um servidor comprometido não consegue mais servir `iterations=1` e enfraquecer a derivação.
+- Corrigido bug em que os helpers de exportação `sync`/`import_export` quebravam os decorators do Click.
+- Regressões em `tests/test_security_hardening.py` (7 testes).
+
+**Web:**
+- Cache caseiro de 15s do `lib/api/client.ts` substituído pelo **React Query** como store único de server-state: `peekCached` lê o mesmo cache das queries de componente, mutações invalidam via `queryClient`, e o guard de geração continua impedindo que respostas obsoletas repovoem o cache. `QueryProvider` montado no layout do dashboard (`src/lib/api/query-client.ts`, `src/components/providers/query-provider.tsx`). Migração dos call sites para `useQuery` permanece como follow-up.
+
+### Security — Sprint 1 da auditoria completa 2026-10 (P0s + quick wins)
+
+- **Security (api):** fechado vetor de account takeover via OAuth — o link automático de conta OAuth a usuário existente por e-mail agora exige `email_verified=true` do provider. `OAuthUserInfo` ganha `email_verified`; Google lê `email_verified` do userinfo, Discord lê `verified`, GitHub só marca `True` quando há e-mail primário verificado (endereços noreply sintéticos ficam `False`). Novas contas espelham o status do provider em vez de marcar `True` às cegas. Regressões em `apps/api/tests/test_oauth_email_verification.py` (4 testes).
+- **Security (web):** `ExportModal` não renderiza mais os segredos em plaintext num `<textarea>` — o `.env` é materializado em memória apenas no clique de download, com aviso de manuseio seguro e contagem de segredos no lugar do preview. Testes em `src/components/shared/__tests__/export-modal.test.tsx` (3 testes).
+- **Fix (cli):** `save_ci_session` quebrava com `NameError` (`json.dumps` sem import no escopo do módulo) — qualquer `criptenv ci login` falhava ao persistir a sessão. Import movido para o topo de `vault/queries.py`; regressões em `tests/test_ci_session_queries.py` (3 testes).
+- **Fix (api):** `get_db_api_key` agora eager-carrega `APIKey.user` (`selectinload`) — o acesso lazy levantava `MissingGreenletError` em produção (testes antigos só usavam mocks e nunca pegaram). Provado por script contra sessão async real; regressões em `tests/test_api_key_auth_real_db.py` (3 testes contra SQLite in-memory com os modelos reais).
+- **Chore (docker):** imagem da API roda como usuário não-root `criptenv` (uid 10001) e ganha `HEALTHCHECK` no Dockerfile (antes só no compose).
+- **Chore (repo):** removidos 56 PNGs de preview commitados na raiz; `.gitignore` bloqueia novos PNGs na raiz.
+- **Docs:** `AGENTS.md` e `CLAUDE.md` corrigidos — afirmavam que não havia CI nem containerização; agora documentam os 5 workflows, Dockerfiles multi-stage, compose files e deploy VPS. Auditoria completa em `docs/audits/2026-10-auditoria-completa.md`.
+
+### Feat — Redesign da página Account + gestão de sessões (logout por sessão) (2026-10-01)
+
+- **Feat (web):** página `/account` redesenhada seguindo o design system (Cards, badges, fonte mono, CSS vars): cabeçalhos de seção com chip de ícone + descrição; linhas de configuração com ação alinhada à direita (Segurança, Contas vinculadas, Sessões, Zona de perigo) substituindo os botões "soltos"; avatares de provedor OAuth com cores de marca; sessões com user-agent parseado (`Chrome · Linux` via novo `src/lib/device-info.ts`); zona de perigo com tint vermelho e bloco de confirmação dedicado; estados vazios ilustrados. Layout em duas colunas no desktop (`lg:[1fr_300px]`): cards de configuração à esquerda e sidebar à direita com resumo da conta (avatar, membro desde, sessões ativas, contas vinculadas — sticky no scroll) e checklist de segurança com indicadores de ponto (verde ok / vermelho suave pendente) + atalho "Ativar 2FA" quando inativo. Status discretos em linha (dot + label) para "Esta sessão", 2FA Ativa/Inativa e verificação de email no card de Perfil, mantendo altura das rows uniforme.
+- **Feat (web):** botão **"Sair da conta"** no cabeçalho (logout da sessão atual), botão **"Encerrar"** por sessão (inclui logout na sessão atual) e **"Encerrar outras"** no cabeçalho da seção de sessões — antes, o botão "Sair de todas" chamava `POST /api/auth/signout`, que na prática só encerrava a sessão atual (bug de label/behavior).
+- **Feat (api):** `GET /api/auth/sessions` passa a marcar `current: true` na sessão do chamador (comparação do hash do cookie/bearer); novo `DELETE /api/auth/sessions/{session_id}` (revoga sessão própria, 404 caso inexistente/estranha) e `POST /api/auth/sessions/revoke-all` (revoga todas exceto a atual, retorna `revoked`). Novos métodos `AuthService.get_session_by_token`, `revoke_session`, `revoke_all_sessions` (escopados por `user_id` — sem BOLA entre contas).
+- **Verified:** API **585 passed / 2 skipped** (5 testes novos em `test_auth_routes.py`); CLI **191 passed**; web lint limpo e `vinext build` completo. Detalhes em DEC-063.
+
+
 ### Feat — i18n da área autenticada do dashboard (pt-BR/en/es) (2026-09-24)
 
 - **Conversão completa do `(dashboard)`:** shell (nav, "Verificando sessão..."), home do dashboard, lista de projetos, diálogo de novo projeto, conta, membros, auditoria, configurações do projeto, integrações, ajuda e secrets — um catálogo por área (`messages/<locale>/{dashboard,account,members,audit,settings,integrations,help,secrets}.json`) para que migrações paralelas nunca tocassem o mesmo arquivo.
