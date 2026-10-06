@@ -1,0 +1,10 @@
+{
+  "PROJECT_PREFERENCES": {
+    "web": {
+      "lastBrowser": {
+        "name": "electron",
+        "channel": "stable"
+      }
+    }
+  }
+}
