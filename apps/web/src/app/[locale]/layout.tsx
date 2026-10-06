@@ -115,7 +115,7 @@ export default async function LocaleLayout({
             })()`,
           }}
         />
-        <NextIntlClientProvider locale={locale} messages={messages}>
+        <NextIntlClientProvider>
           {children}
         </NextIntlClientProvider>
       </body>
