@@ -27,7 +27,12 @@
     "deleteConfirmationWord": "Digite \"DELETAR\" para confirmar.",
     "deleteError": "Erro ao deletar conta",
     "verificationResent": "Email de verificação reenviado. Verifique sua caixa de entrada.",
-    "verificationResendError": "Erro ao reenviar verificação"
+    "verificationResendError": "Erro ao reenviar verificação",
+    "sessionRevoked": "Sessão encerrada.",
+    "sessionRevokeError": "Erro ao encerrar sessão",
+    "sessionsRevoked": "{count} sessão(ões) encerrada(s). As outras conexões serão desconectadas.",
+    "noOtherSessions": "Nenhuma outra sessão ativa para encerrar.",
+    "sessionsRevokeError": "Erro ao encerrar sessões"
   },
   "profile": {
     "name": "Nome",
@@ -38,7 +43,11 @@
     "emailVerified": "Email verificado",
     "emailNotVerified": "Email não verificado",
     "resend": "Reenviar",
-    "twoFactorActive": "2FA ativo"
+    "twoFactorActive": "2FA ativo",
+    "title": "Perfil",
+    "publicInfo": "Suas informações públicas",
+    "verifyEmailTitle": "Verifique seu email para liberar todos os recursos",
+    "twoFAActiveTitle": "2FA ativo nesta conta"
   },
   "security": {
     "title": "Segurança",
@@ -51,7 +60,22 @@
     "twoFACodePlaceholder": "Código de 6 dígitos",
     "enable2FA": "Ativar 2FA",
     "disable2FA": "Desativar 2FA",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "description": "Proteja o acesso à sua conta",
+    "pending": "Pendente",
+    "twoFactor": "Autenticação 2FA",
+    "active": "Ativa",
+    "inactive": "Inativa",
+    "passwordLabel": "Senha",
+    "passwordHint": "Use pelo menos 8 caracteres",
+    "change": "Alterar",
+    "newPasswordPlaceholder": "Nova senha (mín. 8 caracteres)",
+    "confirmNewPasswordButton": "Confirmar nova senha",
+    "twoFactorAuth": "Autenticação de dois fatores",
+    "extraLayerLogin": "Camada extra de proteção no login",
+    "twoFANotConfigured": "2FA não configurado",
+    "activate": "Ativar",
+    "deactivate": "Desativar"
   },
   "oauth": {
     "title": "Contas vinculadas",
@@ -59,20 +83,34 @@
     "unlink": "Desvincular",
     "linkNew": "Vincular nova conta",
     "unlinkTitle": "Desvincular conta?",
-    "unlinkDescription": "Tem certeza que deseja desvincular sua conta {provider}? Você não poderá mais usá-la para fazer login."
+    "unlinkDescription": "Tem certeza que deseja desvincular sua conta {provider}? Você não poderá mais usá-la para fazer login.",
+    "description": "Faça login com provedores externos",
+    "connected": "Conectada"
   },
   "sessions": {
     "title": "Sessões ativas",
     "signOutAll": "Sair de todas",
     "empty": "Nenhuma sessão ativa",
-    "active": "Ativa"
+    "active": "Ativa",
+    "deviceCount": "{count, plural, =0 {Nenhum dispositivo conectado} one {# dispositivo conectado} other {# dispositivos conectados}}",
+    "revokeOthers": "Encerrar outras",
+    "currentSessionBadge": "Esta sessão",
+    "currentSessionTitle": "Sessão atual deste dispositivo",
+    "signOut": "Sair",
+    "end": "Encerrar",
+    "ipUnknown": "IP desconhecido",
+    "lastActive": "ativa {time}",
+    "createdOn": "criada em {date}"
   },
   "dangerZone": {
     "title": "Zona de perigo",
     "deleteWarning": "Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos. Digite <strong>DELETAR</strong> para confirmar.",
     "deletePermanently": "Deletar permanentemente",
     "delete": "Deletar conta",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "description": "Ações irreversíveis nesta conta",
+    "deleteAccount": "Excluir conta",
+    "deleteAccountDescription": "Remove permanentemente seus projetos, segredos e sessões"
   },
   "avatar": {
     "invalidType": "Apenas imagens PNG ou JPG são permitidas.",
@@ -90,5 +128,17 @@
     "confirm": "Confirmar",
     "cancel": "Cancelar",
     "close": "Fechar confirmação"
+  },
+  "header": {
+    "signOut": "Sair da conta"
+  },
+  "summary": {
+    "memberSince": "Membro desde",
+    "activeSessions": "Sessões ativas",
+    "linkedAccounts": "Contas vinculadas"
+  },
+  "securityCard": {
+    "title": "Segurança da conta",
+    "addLayer": "Adicione uma segunda camada de proteção ao login."
   }
 }

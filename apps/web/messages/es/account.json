@@ -27,7 +27,12 @@
     "deleteConfirmationWord": "Escribe \"DELETAR\" para confirmar.",
     "deleteError": "Error al eliminar la cuenta",
     "verificationResent": "Email de verificación reenviado. Revisa tu bandeja de entrada.",
-    "verificationResendError": "Error al reenviar la verificación"
+    "verificationResendError": "Error al reenviar la verificación",
+    "sessionRevoked": "Sesión cerrada.",
+    "sessionRevokeError": "Error al cerrar la sesión",
+    "sessionsRevoked": "{count} sesión(es) cerrada(s). Las demás conexiones se desconectarán.",
+    "noOtherSessions": "No hay otras sesiones activas para cerrar.",
+    "sessionsRevokeError": "Error al cerrar las sesiones"
   },
   "profile": {
     "name": "Nombre",
@@ -38,7 +43,11 @@
     "emailVerified": "Email verificado",
     "emailNotVerified": "Email no verificado",
     "resend": "Reenviar",
-    "twoFactorActive": "2FA activo"
+    "twoFactorActive": "2FA activo",
+    "title": "Perfil",
+    "publicInfo": "Tu información pública",
+    "verifyEmailTitle": "Verifica tu correo para desbloquear todas las funciones",
+    "twoFAActiveTitle": "2FA activo en esta cuenta"
   },
   "security": {
     "title": "Seguridad",
@@ -51,7 +60,22 @@
     "twoFACodePlaceholder": "Código de 6 dígitos",
     "enable2FA": "Activar 2FA",
     "disable2FA": "Desactivar 2FA",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "description": "Protege el acceso a tu cuenta",
+    "pending": "Pendiente",
+    "twoFactor": "Autenticación 2FA",
+    "active": "Activa",
+    "inactive": "Inactiva",
+    "passwordLabel": "Contraseña",
+    "passwordHint": "Usa al menos 8 caracteres",
+    "change": "Cambiar",
+    "newPasswordPlaceholder": "Nueva contraseña (mín. 8 caracteres)",
+    "confirmNewPasswordButton": "Confirmar nueva contraseña",
+    "twoFactorAuth": "Autenticación de dos factores",
+    "extraLayerLogin": "Capa extra de protección en el inicio de sesión",
+    "twoFANotConfigured": "2FA no configurado",
+    "activate": "Activar",
+    "deactivate": "Desactivar"
   },
   "oauth": {
     "title": "Cuentas vinculadas",
@@ -59,20 +83,34 @@
     "unlink": "Desvincular",
     "linkNew": "Vincular nueva cuenta",
     "unlinkTitle": "¿Desvincular cuenta?",
-    "unlinkDescription": "¿Seguro que deseas desvincular tu cuenta {provider}? Ya no podrás usarla para iniciar sesión."
+    "unlinkDescription": "¿Seguro que deseas desvincular tu cuenta {provider}? Ya no podrás usarla para iniciar sesión.",
+    "description": "Inicia sesión con proveedores externos",
+    "connected": "Conectada"
   },
   "sessions": {
     "title": "Sesiones activas",
     "signOutAll": "Cerrar todas las sesiones",
     "empty": "Ninguna sesión activa",
-    "active": "Activa"
+    "active": "Activa",
+    "deviceCount": "{count, plural, =0 {Ningún dispositivo conectado} one {# dispositivo conectado} other {# dispositivos conectados}}",
+    "revokeOthers": "Cerrar otras",
+    "currentSessionBadge": "Esta sesión",
+    "currentSessionTitle": "Sesión actual de este dispositivo",
+    "signOut": "Salir",
+    "end": "Cerrar",
+    "ipUnknown": "IP desconocida",
+    "lastActive": "activa {time}",
+    "createdOn": "creada el {date}"
   },
   "dangerZone": {
     "title": "Zona de peligro",
     "deleteWarning": "Esta acción no se puede deshacer. Todos tus datos serán eliminados permanentemente. Escribe <strong>DELETAR</strong> para confirmar.",
     "deletePermanently": "Eliminar permanentemente",
     "delete": "Eliminar cuenta",
-    "cancel": "Cancelar"
+    "cancel": "Cancelar",
+    "description": "Acciones irreversibles en esta cuenta",
+    "deleteAccount": "Eliminar cuenta",
+    "deleteAccountDescription": "Elimina permanentemente tus proyectos, secrets y sesiones"
   },
   "avatar": {
     "invalidType": "Solo se permiten imágenes PNG o JPG.",
@@ -90,5 +128,17 @@
     "confirm": "Confirmar",
     "cancel": "Cancelar",
     "close": "Cerrar confirmación"
+  },
+  "header": {
+    "signOut": "Cerrar sesión"
+  },
+  "summary": {
+    "memberSince": "Miembro desde",
+    "activeSessions": "Sesiones activas",
+    "linkedAccounts": "Cuentas vinculadas"
+  },
+  "securityCard": {
+    "title": "Seguridad de la cuenta",
+    "addLayer": "Añade una segunda capa de protección al inicio de sesión."
   }
 }

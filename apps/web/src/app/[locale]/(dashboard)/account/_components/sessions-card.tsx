@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { LogOut, Monitor, Smartphone } from "lucide-react"
 
 import { RowIcon, SectionHeader, formatDate, formatRelative } from "./account-ui"
@@ -25,18 +26,15 @@ export function SessionsCard({
   onRevoke,
   onRevokeAll,
 }: SessionsCardProps) {
+  const t = useTranslations("account.sessions")
   const otherSessionsCount = sessions.filter((session) => !session.current).length
 
   return (
     <Card>
       <SectionHeader
         icon={Monitor}
-        title="Sessões ativas"
-        description={
-          sessions.length === 0
-            ? "Nenhum dispositivo conectado"
-            : `${sessions.length} dispositivo(s) conectado(s)`
-        }
+        title={t("title")}
+        description={t("deviceCount", { count: sessions.length })}
         action={
           otherSessionsCount > 0 ? (
             <Button
@@ -46,7 +44,7 @@ export function SessionsCard({
               onClick={onRevokeAll}
               className="text-red-600 hover:bg-red-500/10 shrink-0"
             >
-              {isRevokingAll ? null : <LogOut className="h-4 w-4" />} Encerrar outras
+              {isRevokingAll ? null : <LogOut className="h-4 w-4" />} {t("revokeOthers")}
             </Button>
           ) : undefined
         }
@@ -55,7 +53,7 @@ export function SessionsCard({
       {sessions.length === 0 ? (
         <div className="rounded-xl border border-dashed border-[var(--border-subtle)] p-8 text-center">
           <Monitor className="h-8 w-8 text-[var(--text-muted)] mx-auto mb-2" />
-          <p className="text-sm text-[var(--text-muted)] font-mono">Nenhuma sessão ativa</p>
+          <p className="text-sm text-[var(--text-muted)] font-mono">{t("empty")}</p>
         </div>
       ) : (
         <div className="space-y-2">
@@ -84,19 +82,19 @@ export function SessionsCard({
                   </p>
                   <p className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-2 min-w-0">
                     <span className="truncate">
-                      {session.ip_address || "IP desconhecido"}
+                      {session.ip_address || t("ipUnknown")}
                       {" · "}
                       {session.last_accessed_at
-                        ? `ativa ${formatRelative(session.last_accessed_at)}`
-                        : `criada em ${formatDate(session.created_at)}`}
+                        ? t("lastActive", { time: formatRelative(session.last_accessed_at) })
+                        : t("createdOn", { date: formatDate(session.created_at) })}
                     </span>
                     {isCurrent && (
                       <span
                         className="inline-flex items-center gap-1.5 text-emerald-500 shrink-0"
-                        title="Sessão atual deste dispositivo"
+                        title={t("currentSessionTitle")}
                       >
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 shrink-0" aria-hidden />
-                        Esta sessão
+                        {t("currentSessionBadge")}
                       </span>
                     )}
                   </p>
@@ -115,10 +113,10 @@ export function SessionsCard({
                 >
                   {isCurrent ? (
                     <>
-                      <LogOut className="h-4 w-4" /> Sair
+                      <LogOut className="h-4 w-4" /> {t("signOut")}
                     </>
                   ) : (
-                    "Encerrar"
+                    t("end")
                   )}
                 </Button>
               </div>

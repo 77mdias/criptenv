@@ -29,8 +29,10 @@ Conflitos resolvidos no merge:
   `min-release-age=7` do .npmrc bloqueia pacotes novos; registrar para o
   próximo bump).
 
-Pendência nova do merge: **reconverter a área de conta para i18n** (página +
-3 `_components`), usando o catálogo `account.json` existente como base.
+**Conta reconvertida (2026-10-05, pós-merge):** página + `_components/` com
+i18n reaplicado à estrutura redesignada; catálogo cresceu de 74 para 118 chaves
+(session management, security checklist, summary sidebar). Padrão dos dialogs:
+estrutura Radix da main + i18n da branch.
 
 ## Contexto
 

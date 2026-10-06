@@ -76,7 +76,7 @@ export default function DashboardPage() {
     return () => {
       cancelled = true
     }
-  }, [])
+  }, [t])
 
   if (error) {
     return (

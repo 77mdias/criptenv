@@ -2,6 +2,7 @@
 
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faDiscord, faGithubAlt, faGoogle } from "@fortawesome/free-brands-svg-icons"
+import { useTranslations } from "next-intl"
 import { Link2, Unlink } from "lucide-react"
 
 import { SectionHeader } from "./account-ui"
@@ -39,12 +40,14 @@ export function LinkedAccountsCard({
   unlinkedProviders,
   onUnlink,
 }: LinkedAccountsCardProps) {
+  const t = useTranslations("account.oauth")
+
   return (
     <Card>
       <SectionHeader
         icon={Link2}
-        title="Contas vinculadas"
-        description="Faça login com provedores externos"
+        title={t("title")}
+        description={t("description")}
       />
       <div className="space-y-2">
         {loading ? (
@@ -52,7 +55,7 @@ export function LinkedAccountsCard({
         ) : accounts.length === 0 ? (
           <div className="rounded-xl border border-dashed border-[var(--border-subtle)] p-6 text-center">
             <p className="text-sm text-[var(--text-muted)] font-mono">
-              Nenhuma conta OAuth vinculada.
+              {t("empty")}
             </p>
           </div>
         ) : (
@@ -87,14 +90,14 @@ export function LinkedAccountsCard({
                   </div>
                 </div>
                 <div className="flex items-center gap-2 shrink-0 self-start sm:self-auto">
-                  <Badge variant="success">Conectada</Badge>
+                  <Badge variant="success">{t("connected")}</Badge>
                   <Button
                     variant="ghost"
                     size="sm"
                     className="text-red-600 hover:bg-red-500/10"
                     onClick={() => onUnlink(account.provider)}
                   >
-                    <Unlink className="h-4 w-4 mr-1" /> Desvincular
+                    <Unlink className="h-4 w-4 mr-1" /> {t("unlink")}
                   </Button>
                 </div>
               </div>
@@ -106,7 +109,7 @@ export function LinkedAccountsCard({
       {unlinkedProviders.length > 0 && (
         <div className="mt-5 pt-5 border-t border-[var(--border-subtle)]">
           <p className="text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-3">
-            Vincular nova conta
+            {t("linkNew")}
           </p>
           <div className="flex flex-col sm:flex-row flex-wrap gap-2">
             {unlinkedProviders.map((provider) => (
