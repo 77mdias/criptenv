@@ -28,5 +28,10 @@
   "localeSwitcher": {
     "label": "Idioma",
     "aria": "Cambiar idioma"
+  },
+  "oauth": {
+    "continueWith": "Continuar con",
+    "linkWith": "Vincular con",
+    "linkShort": "Vincular"
   }
 }

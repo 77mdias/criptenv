@@ -4,6 +4,7 @@ import * as React from "react"
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome"
 import { faGithubAlt, faGoogle, faDiscord } from "@fortawesome/free-brands-svg-icons"
 import { Button, type ButtonProps } from "@/components/ui/button"
+import { useTranslations } from "next-intl"
 import { buildApiUrl } from "@/lib/api/base-url"
 import { cn } from "@/lib/utils"
 
@@ -44,6 +45,7 @@ export function OAuthButton({
   action = "login",
   ...props
 }: OAuthButtonProps) {
+  const t = useTranslations("common.oauth")
   const providerConfig = OAUTH_PROVIDERS[provider]
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
@@ -73,11 +75,11 @@ export function OAuthButton({
       onClick={handleClick}
       disabled={disabled || loading}
       loading={loading}
-      aria-label={`${action === 'link' ? 'Vincular com' : 'Continuar com'} ${providerConfig.name}`}
+      aria-label={`${action === 'link' ? t('linkWith') : t('continueWith')} ${providerConfig.name}`}
       {...props}
     >
       <FontAwesomeIcon icon={providerConfig.icon} className="h-4 w-4 shrink-0" />
-      <span className="whitespace-nowrap max-[360px]:sr-only">{action === 'link' ? 'Vincular ' : ''}{providerConfig.name}</span>
+      <span className="whitespace-nowrap max-[360px]:sr-only">{action === 'link' ? `${t('linkShort')} ` : ''}{providerConfig.name}</span>
     </Button>
   )
 }

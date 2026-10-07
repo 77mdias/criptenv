@@ -4,6 +4,18 @@ import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import SignupPage from "../page"
 
+// OAuthButton resolve os labels de `common.oauth`; a página de signup em si
+// ainda não é internationalizada, então provemos os labels via mock pontual.
+jest.mock("next-intl", () => ({
+  useTranslations:
+    () => (key: string) =>
+      ({
+        continueWith: "Continuar com",
+        linkWith: "Vincular com",
+        linkShort: "Vincular",
+      })[key] ?? key,
+}));
+
 jest.mock("@/hooks/use-auth")
 
 const mockedUseAuth = jest.mocked(useAuth)
