@@ -13,6 +13,8 @@ const eslintConfig = defineConfig([
     "build/**",
     "dist/**",
     "next-env.d.ts",
+    // Cypress binary/runtime cache (compiled bundles, not project source):
+    ".cypress-home/**",
   ]),
 ]);
 

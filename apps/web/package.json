@@ -87,14 +87,13 @@
     "react-server-dom-webpack": "19.2.8",
     "tailwindcss": "^4",
     "typescript": "^5",
-    "vinext": "^0.0.45",
+    "vinext": "1.0.1",
     "vite": "^8.0.10",
     "wait-on": "^9.0.5",
     "wrangler": "^4.87.0"
   },
   "overrides": {
     "sharp": "0.35.5",
-    "source-map-js": "1.2.2",
     "undici": "7.30.0",
     "postcss": "^8.5.12",
     "tmp": ">=0.2.6",
