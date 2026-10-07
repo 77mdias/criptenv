@@ -473,7 +473,7 @@ export default function AccountPage() {
           </p>
         </div>
         <Button variant="secondary" size="sm" className="shrink-0" onClick={handleSignOut}>
-          <LogOut className="h-4 w-4" /> Sair da conta
+          <LogOut className="h-4 w-4" /> {t("header.signOut")}
         </Button>
       </div>
 
