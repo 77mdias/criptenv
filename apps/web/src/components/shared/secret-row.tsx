@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2, RotateCcw, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -46,6 +47,7 @@ export function SecretRow({
   onSetExpiration,
 }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
+  const t = useTranslations("secrets.row")
   const masked = "••••••••••••••••"
 
   const showSelection = Boolean(canManageSecrets && selectable && onSelectChange)
@@ -63,7 +65,7 @@ export function SecretRow({
         <div className="flex items-center md:justify-center">
           <input
             type="checkbox"
-            aria-label={`Selecionar secret ${secret.key}`}
+            aria-label={t("select", { key: secret.key })}
             checked={selected}
             onChange={(event) => onSelectChange?.(secret, event.target.checked)}
             className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] accent-[var(--text-primary)]"
@@ -110,7 +112,7 @@ export function SecretRow({
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          aria-label={revealed ? "Ocultar secret" : "Revelar secret"}
+          aria-label={revealed ? t("hide") : t("reveal")}
           onClick={() => setRevealed((current) => !current)}
         >
           {revealed ? <EyeOff className="h-3.5 w-3.5" /> : <Eye className="h-3.5 w-3.5" />}
@@ -119,7 +121,7 @@ export function SecretRow({
           variant="ghost"
           size="icon"
           className="h-8 w-8"
-          aria-label="Copiar valor"
+          aria-label={t("copy")}
           onClick={() => onCopy(secret)}
         >
           <Clipboard className="h-3.5 w-3.5" />
@@ -129,7 +131,7 @@ export function SecretRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            aria-label="Editar secret"
+            aria-label={t("edit")}
             onClick={() => onEdit(secret)}
           >
             <Pencil className="h-3.5 w-3.5" />
@@ -140,7 +142,7 @@ export function SecretRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            aria-label="Rotacionar secret"
+            aria-label={t("rotate")}
             onClick={() => onRotate(secret)}
           >
             <RotateCcw className="h-3.5 w-3.5" />
@@ -151,7 +153,7 @@ export function SecretRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            aria-label="Configurar expiração"
+            aria-label={t("setExpiration")}
             onClick={() => onSetExpiration(secret)}
           >
             <Clock className="h-3.5 w-3.5" />
@@ -162,14 +164,14 @@ export function SecretRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-red-600"
-            aria-label="Remover secret"
+            aria-label={t("remove")}
             onClick={() => onDelete(secret)}
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
         )}
         {copied && (
-          <span className="ml-2 font-mono text-xs text-green-700">copiado</span>
+          <span className="ml-2 font-mono text-xs text-green-700">{t("copied")}</span>
         )}
       </div>
     </div>

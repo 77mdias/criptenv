@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
+import { useTranslations } from "next-intl";
 import {
   Key,
   Plus,
@@ -18,40 +19,22 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { ciTokensApi, peekCached } from "@/lib/api";
 import type { CIToken, CITokenListResponse, CITokenWithPlaintext } from "@/lib/api/client";
 
+// Keys, not copy: this is module scope, so no hook can run here.
 const AVAILABLE_SCOPES = [
-  {
-    value: "read:secrets",
-    label: "Read Secrets",
-    description: "Read secrets from environments",
-  },
-  {
-    value: "write:secrets",
-    label: "Write Secrets",
-    description: "Create/update secrets",
-  },
-  {
-    value: "delete:secrets",
-    label: "Delete Secrets",
-    description: "Delete secrets",
-  },
-  { value: "read:audit", label: "Read Audit", description: "Read audit logs" },
-  {
-    value: "write:integrations",
-    label: "Manage Integrations",
-    description: "Manage integrations",
-  },
-  {
-    value: "admin:project",
-    label: "Admin Project",
-    description: "Full project access (dangerous)",
-  },
-];
+  { value: "read:secrets", key: "readSecrets" },
+  { value: "write:secrets", key: "writeSecrets" },
+  { value: "delete:secrets", key: "deleteSecrets" },
+  { value: "read:audit", key: "readAudit" },
+  { value: "write:integrations", key: "writeIntegrations" },
+  { value: "admin:project", key: "adminProject" },
+] as const;
 
 interface CITokensPanelProps {
   projectId: string;
 }
 
 export function CITokensPanel({ projectId }: CITokensPanelProps) {
+  const t = useTranslations("settings");
   const cachedTokens = peekCached<CITokenListResponse>(`/api/v1/projects/${projectId}/tokens`, {
     include_revoked: "true",
   });
@@ -72,7 +55,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
       setTokens(data.tokens);
       setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao carregar tokens");
+      setError(err instanceof Error ? err.message : t("ciTokens.loadError"));
     } finally {
       setLoading(false);
     }
@@ -112,7 +95,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
       await fetchTokens();
       setConfirmRevokeId(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao revogar token");
+      setError(err instanceof Error ? err.message : t("ciTokens.revokeError"));
     } finally {
       setRevokingId(null);
     }
@@ -159,11 +142,11 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
           <div className="flex items-center gap-2 mb-4">
             <Check className="h-5 w-5 text-green-500" />
             <h3 className="font-semibold text-green-500">
-              Token criado com sucesso!
+              {t("ciTokens.created.title")}
             </h3>
           </div>
           <p className="text-sm text-[var(--text-tertiary)] font-mono mb-3">
-            ⚠️ Copie este token agora. Ele não será exibido novamente.
+            {t("ciTokens.created.warning")}
           </p>
           <div className="flex items-center gap-2">
             <code className="flex-1 p-3 bg-[var(--surface)] rounded-lg text-sm font-mono break-all border border-[var(--border)]">
@@ -175,7 +158,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
               onClick={handleCopyToken}
               icon={copiedToken ? Check : Copy}
             >
-              {copiedToken ? "Copiado!" : "Copiar"}
+              {copiedToken ? t("ciTokens.copied") : t("ciTokens.copy")}
             </Button>
           </div>
           <div className="mt-3 flex justify-end">
@@ -184,7 +167,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
               size="sm"
               onClick={() => setNewTokenResult(null)}
             >
-              Fechar
+              {t("ciTokens.close")}
             </Button>
           </div>
         </Card>
@@ -196,7 +179,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
           <div className="flex items-center gap-2">
             <Key className="h-5 w-5 text-[var(--text-muted)]" />
             <h2 className="font-semibold text-[var(--text-primary)]">
-              CI Tokens
+              {t("ciTokens.modal.title")}
             </h2>
           </div>
           <Button
@@ -204,13 +187,11 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
             onClick={() => setShowCreateModal(true)}
             icon={Plus}
           >
-            Novo Token
+            {t("ciTokens.newToken")}
           </Button>
         </div>
         <p className="mb-4 text-xs text-[var(--text-muted)] font-mono">
-          Use CI Tokens para automações como deploy, escrita de secrets e sync
-          com providers. Gestão de tokens e API Keys continua restrita à sessão
-          humana do dashboard ou CLI.
+          {t("ciTokens.modal.description")}
         </p>
 
         {error && (
@@ -223,10 +204,10 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
           <div className="text-center py-8">
             <Key className="h-12 w-12 text-[var(--text-muted)] mx-auto mb-3 opacity-50" />
             <p className="text-[var(--text-tertiary)] font-mono text-sm">
-              Nenhum CI token criado ainda.
+              {t("ciTokens.empty.title")}
             </p>
             <p className="text-[var(--text-muted)] font-mono text-xs mt-1">
-              Crie tokens para integrar com CI/CD pipelines.
+              {t("ciTokens.empty.hint")}
             </p>
           </div>
         ) : (
@@ -249,13 +230,13 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
                         {token.name}
                       </span>
                       {isRevoked(token) && (
-                        <Badge variant="danger">Revogado</Badge>
+                        <Badge variant="danger">{t("ciTokens.badge.revoked")}</Badge>
                       )}
                       {isExpired(token) && !isRevoked(token) && (
-                        <Badge variant="warning">Expirado</Badge>
+                        <Badge variant="warning">{t("ciTokens.badge.expired")}</Badge>
                       )}
                       {!isRevoked(token) && !isExpired(token) && (
-                        <Badge variant="success">Ativo</Badge>
+                        <Badge variant="success">{t("ciTokens.badge.active")}</Badge>
                       )}
                     </div>
 
@@ -285,12 +266,12 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
                       )}
                       <span className="flex items-center gap-1">
                         <Clock className="h-3 w-3" />
-                        Último uso: {formatDate(token.last_used_at)}
+                        {t("ciTokens.lastUsed", { date: formatDate(token.last_used_at) })}
                       </span>
                       {token.expires_at && (
-                        <span>Expira: {formatDate(token.expires_at)}</span>
+                        <span>{t("ciTokens.expires", { date: formatDate(token.expires_at) })}</span>
                       )}
-                      <span>Criado: {formatDate(token.created_at)}</span>
+                      <span>{t("ciTokens.createdAt", { date: formatDate(token.created_at) })}</span>
                     </div>
                   </div>
 
@@ -299,7 +280,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
                       {confirmRevokeId === token.id ? (
                         <div className="flex items-center gap-1">
                           <span className="text-xs text-red-500 font-mono mr-1">
-                            Revogar?
+                            {t("ciTokens.revokeConfirm")}
                           </span>
                           <Button
                             variant="danger"
@@ -307,14 +288,14 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
                             onClick={() => handleRevoke(token.id)}
                             loading={revokingId === token.id}
                           >
-                            Sim
+                            {t("ciTokens.yes")}
                           </Button>
                           <Button
                             variant="ghost"
                             size="sm"
                             onClick={() => setConfirmRevokeId(null)}
                           >
-                            Não
+                            {t("ciTokens.no")}
                           </Button>
                         </div>
                       ) : (
@@ -325,7 +306,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
                           icon={Trash2}
                           className="text-red-500 hover:text-red-600"
                         >
-                          Revogar
+                          {t("ciTokens.revoke")}
                         </Button>
                       )}
                     </div>
@@ -362,6 +343,7 @@ function CreateTokenModal({
   onClose,
   onCreated,
 }: CreateTokenModalProps) {
+  const t = useTranslations("settings");
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
   const [selectedScopes, setSelectedScopes] = useState<string[]>([
@@ -380,11 +362,11 @@ function CreateTokenModal({
 
   const handleCreate = async () => {
     if (!name.trim()) {
-      setError("Nome é obrigatório");
+      setError(t("ciTokens.modal.nameRequired"));
       return;
     }
     if (selectedScopes.length === 0) {
-      setError("Selecione pelo menos um scope");
+      setError(t("ciTokens.modal.scopeRequired"));
       return;
     }
 
@@ -420,7 +402,7 @@ function CreateTokenModal({
       const result = await ciTokensApi.create(projectId, payload);
       onCreated(result);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao criar token");
+      setError(err instanceof Error ? err.message : t("ciTokens.modal.createError"));
     } finally {
       setCreating(false);
     }
@@ -431,7 +413,7 @@ function CreateTokenModal({
       <Card className="w-full max-w-lg mx-4 p-6 max-h-[90vh] overflow-y-auto">
         <div className="flex items-center justify-between mb-6">
           <h3 className="font-semibold text-[var(--text-primary)]">
-            Novo CI Token
+            {t("ciTokens.modal.title")}
           </h3>
           <Button variant="ghost" size="sm" onClick={onClose} icon={X} />
         </div>
@@ -446,35 +428,35 @@ function CreateTokenModal({
           {/* Name */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-              Nome *
+              {t("ciTokens.modal.name")}
             </label>
             <input
               type="text"
               className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
               value={name}
               onChange={(e) => setName(e.target.value)}
-              placeholder="ex: GitHub Actions Deploy"
+              placeholder={t("ciTokens.modal.namePlaceholder")}
             />
           </div>
 
           {/* Description */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-              Descrição
+              {t("ciTokens.modal.description")}
             </label>
             <input
               type="text"
               className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              placeholder="Descrição opcional"
+              placeholder={t("ciTokens.modal.descriptionPlaceholder")}
             />
           </div>
 
           {/* Scopes */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-              Scopes *
+              {t("ciTokens.modal.scopes")}
             </label>
             <div className="space-y-2">
               {AVAILABLE_SCOPES.map((scope) => (
@@ -494,10 +476,10 @@ function CreateTokenModal({
                   />
                   <div>
                     <span className="text-sm font-mono font-medium text-[var(--text-primary)]">
-                      {scope.label}
+                      {t(`ciTokens.scopes.${scope.key}.label`)}
                     </span>
                     <p className="text-xs text-[var(--text-muted)] font-mono">
-                      {scope.description}
+                      {t(`ciTokens.scopes.${scope.key}.description`)}
                     </p>
                   </div>
                 </label>
@@ -508,7 +490,7 @@ function CreateTokenModal({
           {/* Environment Scope */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-              Restrição de Ambiente
+              {t("ciTokens.modal.envRestriction")}
             </label>
             <input
               type="text"
@@ -519,17 +501,17 @@ function CreateTokenModal({
                   e.target.value.toLowerCase().replace(/\s+/g, "-"),
                 )
               }
-              placeholder="ex: production (vazio = todos)"
+              placeholder={t("ciTokens.modal.envPlaceholder")}
             />
             <p className="text-xs text-[var(--text-muted)] font-mono">
-              Deixe vazio para permitir acesso a todos os ambientes.
+              {t("ciTokens.modal.envHint")}
             </p>
           </div>
 
           {/* Expiration */}
           <div className="space-y-1.5">
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-              Expiração (dias)
+              {t("ciTokens.modal.expiration")}
             </label>
             <input
               type="number"
@@ -537,17 +519,17 @@ function CreateTokenModal({
               className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
               value={expiresDays}
               onChange={(e) => setExpiresDays(e.target.value)}
-              placeholder="Vazio = sem expiração"
+              placeholder={t("ciTokens.modal.expirationPlaceholder")}
             />
           </div>
         </div>
 
         <div className="flex justify-end gap-2 mt-6 pt-4 border-t border-[var(--border)]">
           <Button variant="ghost" onClick={onClose}>
-            Cancelar
+            {t("ciTokens.modal.cancel")}
           </Button>
           <Button onClick={handleCreate} loading={creating}>
-            Criar Token
+            {t("ciTokens.modal.create")}
           </Button>
         </div>
       </Card>

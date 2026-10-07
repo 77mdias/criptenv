@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { useTranslations } from "next-intl";
 import { Clock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import {
@@ -15,19 +16,20 @@ import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 
 interface ExpirationModalProps {
   secretKey: string;
+  hasExpiration: boolean;
   onClose: () => void;
   onSave: (days: number, policy: string, notifyDays: number) => void;
   onDelete: () => void;
-  hasExpiration: boolean;
 }
 
 export function ExpirationModal({
   secretKey,
+  hasExpiration,
   onClose,
   onSave,
   onDelete,
-  hasExpiration,
 }: ExpirationModalProps) {
+  const t = useTranslations("secrets.expiration");
   const [days, setDays] = useState("30");
   const [policy, setPolicy] = useState("notify");
   const [notifyDays, setNotifyDays] = useState("7");
@@ -63,17 +65,18 @@ export function ExpirationModal({
         <DialogHeader>
           <div className="flex items-center gap-2">
             <Clock className="h-5 w-5 text-[var(--accent)]" />
-            <DialogTitle>Expiração de Secret</DialogTitle>
+            <DialogTitle>{t("title")}</DialogTitle>
           </div>
           <DialogDescription>
-            Secret: <span className="font-semibold text-[var(--text-primary)]">{secretKey}</span>
+            {t("secretLabel")}{" "}
+            <span className="font-semibold text-[var(--text-primary)]">{secretKey}</span>
           </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">
-              Expira em (dias)
+              {t("expiresInDays")}
             </label>
             <input
               type="number"
@@ -87,22 +90,22 @@ export function ExpirationModal({
 
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">
-              Política de rotação
+              {t("rotationPolicy")}
             </label>
             <select
               value={policy}
               onChange={(e) => setPolicy(e.target.value)}
               className="w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm font-mono"
             >
-              <option value="manual">Manual — apenas notificar</option>
-              <option value="notify">Notificar antes de expirar</option>
-              <option value="auto">Auto-rotacionar ao expirar</option>
+              <option value="manual">{t("policies.manual")}</option>
+              <option value="notify">{t("policies.notify")}</option>
+              <option value="auto">{t("policies.auto")}</option>
             </select>
           </div>
 
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">
-              Notificar antes (dias)
+              {t("notifyBefore")}
             </label>
             <input
               type="number"
@@ -117,24 +120,24 @@ export function ExpirationModal({
 
         <DialogFooter className="justify-start">
           <Button onClick={handleSave} loading={loading}>
-            Salvar
+            {t("save")}
           </Button>
           {hasExpiration && (
             <Button variant="danger" onClick={() => setConfirmDeleteOpen(true)} loading={loading}>
-              Remover expiração
+              {t("remove")}
             </Button>
           )}
           <Button variant="secondary" onClick={onClose}>
-            Cancelar
+            {t("cancel")}
           </Button>
         </DialogFooter>
         </DialogContent>
       </Dialog>
       <ConfirmActionDialog
         open={confirmDeleteOpen}
-        title="Remover expiração"
-        description={`Remover a configuração de expiração de ${secretKey}? O valor da secret não será alterado.`}
-        confirmLabel="Remover"
+        title={t("removeConfirmTitle")}
+        description={t("removeConfirmDescription", { key: secretKey })}
+        confirmLabel={t("confirmRemove")}
         destructive
         loading={loading}
         onOpenChange={setConfirmDeleteOpen}

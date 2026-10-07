@@ -419,3 +419,74 @@ export function renderEmergencyPage(request: Request): Response {
     });
   }
 }
+
+/**
+ * Renders the branded 404 page for routes that the router rejects with
+ * NEXT_NOT_FOUND. Kept separate from the emergency page on purpose: a missing
+ * route is an expected outcome and must not answer 503 + Retry-After (which
+ * tells crawlers and browsers to retry a path that will never exist).
+ * Never throws.
+ */
+export function renderNotFoundPage(request: Request): Response {
+  let rayId: string | null = null;
+  try {
+    rayId = extractRayId(request);
+  } catch {
+    rayId = null;
+  }
+
+  const rayIdRow = rayId
+    ? `<div class="ray">Ray ID: ${rayId}</div>`
+    : "";
+
+  try {
+    return new Response(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex">
+<title>404 · Página não encontrada — CriptEnv</title>
+<style>
+  :root{color-scheme:dark}
+  *{box-sizing:border-box}
+  body{margin:0;min-height:100vh;display:grid;place-items:center;background:#0a0a0b;color:#fafafa;
+       font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;padding:24px}
+  main{text-align:center;max-width:30rem}
+  .badge{display:inline-flex;align-items:center;gap:.5rem;border:1px solid #2a2a2d;border-radius:999px;
+         padding:.35rem .8rem;font-size:.72rem;letter-spacing:.08em;text-transform:uppercase;color:#a1a1aa}
+  h1{font-size:1.6rem;margin:1.1rem 0 .4rem;letter-spacing:-.02em}
+  h1 em{color:#ff4500;font-style:normal}
+  p{color:#a1a1aa;font-size:.85rem;line-height:1.6;margin:.35rem 0}
+  .ray{margin-top:1.2rem;font-size:.7rem;color:#52525b}
+  a.btn{display:inline-block;margin-top:1.4rem;padding:.6rem 1.1rem;border-radius:.6rem;text-decoration:none;
+        font-size:.85rem;font-weight:600;background:#ff4500;color:#fff}
+  a.btn:hover{filter:brightness(1.08)}
+  code{color:#d4d4d8}
+</style>
+</head>
+<body>
+<main>
+  <span class="badge">Erro 404 · não encontrado</span>
+  <h1>Esta página <em>não existe</em></h1>
+  <p>O endereço acessado não corresponde a nenhuma rota do CriptEnv.</p>
+  <p>Verifique o link ou volte para a página inicial.</p>
+  ${rayIdRow}
+  <a class="btn" href="/">Voltar ao início</a>
+</main>
+</body>
+</html>`, {
+      status: 404,
+      statusText: "Not Found",
+      headers: {
+        "content-type": "text/html; charset=utf-8",
+        "cache-control": "no-store",
+      },
+    });
+  } catch {
+    return new Response("CriptEnv — 404: página nao encontrada.", {
+      status: 404,
+      headers: { "content-type": "text/plain; charset=utf-8" },
+    });
+  }
+}

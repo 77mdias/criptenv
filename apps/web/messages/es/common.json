@@ -1,0 +1,32 @@
+{
+  "meta": {
+    "title": "CriptEnv — Gestión de secretos para desarrolladores",
+    "description": "Gestión de secretos Zero-Knowledge con cifrado AES-GCM de 256 bits. CLI-first, cifrado en el cliente y pensado para equipos.",
+    "ogAlt": "CriptEnv — gestión de secretos Zero-Knowledge con cifrado en el cliente"
+  },
+  "header": {
+    "nav": {
+      "features": "Funciones",
+      "howItWorks": "Cómo funciona",
+      "security": "Seguridad",
+      "pricing": "Precios"
+    },
+    "menu": "Menú",
+    "openMenu": "Abrir menú",
+    "closeMenu": "Cerrar menú",
+    "login": "Iniciar sesión",
+    "getStarted": "Empezar"
+  },
+  "footer": {
+    "tagline": "Gestión de secretos para desarrolladores",
+    "status": "Todos los sistemas operativos",
+    "docs": "Docs",
+    "terms": "Términos de uso",
+    "privacy": "Privacidad",
+    "github": "GitHub"
+  },
+  "localeSwitcher": {
+    "label": "Idioma",
+    "aria": "Cambiar idioma"
+  }
+}

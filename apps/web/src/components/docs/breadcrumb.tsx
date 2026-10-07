@@ -1,5 +1,6 @@
 import * as React from "react"
-import Link from "next/link"
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { ChevronRight } from "lucide-react"
 
@@ -14,6 +15,7 @@ interface BreadcrumbProps {
 }
 
 function Breadcrumb({ items, className }: BreadcrumbProps) {
+  const t = useTranslations("docs.breadcrumb")
   return (
     <nav
       aria-label="Breadcrumb"
@@ -23,7 +25,7 @@ function Breadcrumb({ items, className }: BreadcrumbProps) {
         href="/docs"
         className="hover:text-[var(--text-primary)] transition-colors"
       >
-        Docs
+        {t("docs")}
       </Link>
       {items.map((item, index) => (
         <React.Fragment key={index}>

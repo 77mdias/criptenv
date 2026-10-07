@@ -1,0 +1,49 @@
+"use client";
+
+import { useEffect } from "react";
+import { useTranslations } from "next-intl";
+import { useRouter } from "@/i18n/navigation";
+import { AppShell } from "@/components/layout/app-shell";
+import { QueryProvider } from "@/components/providers/query-provider";
+import { useAuth } from "@/hooks/use-auth";
+
+export default function DashboardLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const t = useTranslations("dashboard.layout");
+  const router = useRouter();
+  const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (!isLoading && !isAuthenticated) {
+      router.push("/login");
+    }
+  }, [isLoading, isAuthenticated, router]);
+
+  // Show loading while checking session
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-(--background-subtle)">
+        <div className="flex flex-col items-center gap-4">
+          <div className="h-8 w-8 animate-spin rounded-full border-4 border-(--accent) border-t-transparent" />
+          <p className="text-sm text-(--text-muted) font-mono">
+            {t("checkingSession")}
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  // Don't render anything if not authenticated (will redirect)
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <QueryProvider>
+      <AppShell>{children}</AppShell>
+    </QueryProvider>
+  );
+}

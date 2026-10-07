@@ -1,8 +1,13 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Shield } from "lucide-react"
 import { cn } from "@/lib/utils"
 import type { ProjectRole } from "@/lib/project-permissions"
+
+// Stable protocol values only — display labels come from the catalogue
+// (`members.roles.<key>`), never from module scope.
+type RoleKey = "owner" | "admin" | "developer" | "viewer"
 
 interface RolePickerProps {
   value: string
@@ -12,8 +17,10 @@ interface RolePickerProps {
 }
 
 export function RolePicker({ value, options, disabled = false, onChange }: RolePickerProps) {
+  const t = useTranslations("members")
+
   return (
-    <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label="Role">
+    <div className="flex flex-wrap items-center gap-2" role="radiogroup" aria-label={t("rolePicker.label")}>
       <Shield className="h-4 w-4 text-[var(--text-muted)]" aria-hidden="true" />
       <div className="flex rounded-lg border border-[var(--border)] bg-[var(--surface)] p-1">
         {options.map((role) => {
@@ -35,7 +42,7 @@ export function RolePicker({ value, options, disabled = false, onChange }: RoleP
               )}
               onClick={() => onChange(role)}
             >
-              {role}
+              {t(`roles.${role as RoleKey}`)}
             </button>
           )
         })}

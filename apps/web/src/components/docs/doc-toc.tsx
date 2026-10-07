@@ -1,7 +1,8 @@
 "use client"
 
 import * as React from "react"
-import { usePathname } from "next/navigation"
+import { usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
 interface TOCItem {
@@ -14,8 +15,21 @@ interface DocTOCProps {
   className?: string
 }
 
+// Slug seguro para âncoras: apenas [a-z0-9-], sem metacaracteres de HTML/URL.
+// Deriva de textContent dos headings; sanitizar evita que texto arbitrário
+// seja reinterpretado como HTML/URL no `href` do TOC (alerta CodeQL).
+function headingSlug(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "secao"
+  )
+}
+
 function DocTOC({ className }: DocTOCProps) {
   const pathname = usePathname()
+  const t = useTranslations("docs.toc")
   const [activeId, setActiveId] = React.useState<string>("")
   const [headings, setHeadings] = React.useState<TOCItem[]>([])
 
@@ -27,7 +41,7 @@ function DocTOC({ className }: DocTOCProps) {
       )
 
       const items: TOCItem[] = Array.from(elements).map((el) => ({
-        id: el.id || el.textContent?.toLowerCase().replace(/\s+/g, "-") || "",
+        id: el.id || headingSlug(el.textContent || ""),
         title: el.textContent || "",
         level: parseInt(el.tagName.charAt(1)),
       }))
@@ -35,7 +49,7 @@ function DocTOC({ className }: DocTOCProps) {
       // Set IDs on headings that don't have them
       elements.forEach((el) => {
         if (!el.id) {
-          el.id = el.textContent?.toLowerCase().replace(/\s+/g, "-") || ""
+          el.id = headingSlug(el.textContent || "")
         }
       })
 
@@ -77,7 +91,7 @@ function DocTOC({ className }: DocTOCProps) {
       )}
     >
       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
-        Nesta página
+        {t("onThisPage")}
       </p>
       <nav className="space-y-1 border-l border-[var(--border)] pb-16">
         {headings.map((heading) => (

@@ -1,11 +1,16 @@
 import {
   createEnvironmentSchema,
+  createLoginSchema,
   createProjectSchema,
   createSecretSchema,
   contributionSchema,
-  loginSchema,
   signupSchema,
 } from "../schemas"
+
+// createLoginSchema takes a translator; the messages themselves are covered by
+// the login page test — here we only assert the validation rules.
+const loginSchema = createLoginSchema((key) => key)
+const projectSchema = createProjectSchema((key) => key)
 
 describe("validators", () => {
   it("accepts valid login data and rejects invalid email", () => {
@@ -56,7 +61,7 @@ describe("validators", () => {
 
   it("validates project vault password confirmation", () => {
     expect(
-      createProjectSchema.safeParse({
+      projectSchema.safeParse({
         name: "my-api",
         description: "API",
         vaultPassword: "VaultPassw0rd!",
@@ -65,7 +70,7 @@ describe("validators", () => {
     ).toBe(true)
 
     expect(
-      createProjectSchema.safeParse({
+      projectSchema.safeParse({
         name: "my api",
         vaultPassword: "VaultPassw0rd!",
         confirmVaultPassword: "OtherPassw0rd!",

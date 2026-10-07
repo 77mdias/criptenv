@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { useTranslations } from "next-intl"
 import { KeyRound, Lock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -13,6 +14,7 @@ interface VaultUnlockPanelProps {
 }
 
 export function VaultUnlockPanel({ vaultConfig, onUnlock }: VaultUnlockPanelProps) {
+  const t = useTranslations("secrets.unlock")
   const [password, setPassword] = useState("")
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -28,7 +30,7 @@ export function VaultUnlockPanel({ vaultConfig, onUnlock }: VaultUnlockPanelProp
       setPassword("")
       onUnlock(material)
     } catch {
-      setError("Não foi possível desbloquear o vault com essa senha.")
+      setError(t("unlockError"))
     } finally {
       setLoading(false)
     }
@@ -42,17 +44,17 @@ export function VaultUnlockPanel({ vaultConfig, onUnlock }: VaultUnlockPanelProp
         </div>
         <div>
           <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-            Desbloquear vault
+            {t("title")}
           </h2>
           <p className="font-mono text-xs text-[var(--text-muted)]">
-            Use a senha do vault deste projeto. A chave fica apenas no browser e some ao recarregar.
+            {t("description")}
           </p>
         </div>
       </div>
 
       <form onSubmit={submit} className="space-y-4">
         <Input
-          label="Senha mestra"
+          label={t("masterPassword")}
           type="password"
           autoComplete="current-password"
           value={password}
@@ -62,11 +64,11 @@ export function VaultUnlockPanel({ vaultConfig, onUnlock }: VaultUnlockPanelProp
         />
         {!vaultConfig && (
           <p className="font-mono text-xs text-red-600">
-            Este projeto ainda não tem configuração de vault por projeto.
+            {t("noConfig")}
           </p>
         )}
         <Button type="submit" loading={loading} disabled={!password || !vaultConfig} fullWidth>
-          Desbloquear
+          {t("submit")}
         </Button>
       </form>
     </Card>

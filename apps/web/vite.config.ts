@@ -1,6 +1,7 @@
 import { cloudflare } from "@cloudflare/vite-plugin";
 import rsc from "@vitejs/plugin-rsc";
 import { defineConfig } from "vite";
+import { fileURLToPath } from "node:url";
 import vinext from "vinext";
 
 export default defineConfig({
@@ -20,6 +21,23 @@ export default defineConfig({
       },
     }),
   ],
+  resolve: {
+    alias: {
+      // Jest-only alias (@messages → messages/) also known to Vite, so the
+      // dependency scanner does not abort pre-bundling when it reaches test
+      // files that import catalogues directly (a failed scan leaves
+      // NextIntlClientProvider's virtual proxy un-bundled and crashes the
+      // browser at runtime — seen in CI).
+      "@messages": fileURLToPath(new URL("./messages", import.meta.url)),
+    },
+  },
+  optimizeDeps: {
+    entries: [
+      "src/**/*.{ts,tsx}",
+      "!src/**/__tests__/**",
+      "!cypress/**",
+    ],
+  },
   server: {
     proxy: {
       "/api": {

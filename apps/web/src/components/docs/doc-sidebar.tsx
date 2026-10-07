@@ -1,9 +1,10 @@
 "use client"
 
 import * as React from "react"
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link } from "@/i18n/navigation";
+import { usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils"
+import { useTranslations } from "next-intl"
 import {
   BookOpen,
   Terminal,
@@ -17,7 +18,10 @@ import {
 } from "lucide-react"
 
 interface SidebarItem {
-  title: string
+  /** Key under the `docs.sidebar` namespace (e.g. "home.welcome"). */
+  titleKey: string
+  /** Group identifier (e.g. "home") — used to resolve the group label key. */
+  groupKey?: string
   href?: string
   icon?: LucideIcon
   items?: SidebarItem[]
@@ -25,87 +29,95 @@ interface SidebarItem {
 
 const sidebarNav: SidebarItem[] = [
   {
-    title: "Início",
+    titleKey: "home.label",
+    groupKey: "home",
     icon: Compass,
     items: [
-      { title: "Bem-vindo", href: "/docs" },
-      { title: "Guia Rápido", href: "/docs/getting-started/quickstart" },
-      { title: "Instalação", href: "/docs/getting-started/installation" },
-      { title: "Conceitos", href: "/docs/getting-started/concepts" },
+      { titleKey: "home.welcome", href: "/docs" },
+      { titleKey: "home.quickstart", href: "/docs/getting-started/quickstart" },
+      { titleKey: "home.installation", href: "/docs/getting-started/installation" },
+      { titleKey: "home.concepts", href: "/docs/getting-started/concepts" },
     ],
   },
   {
-    title: "CLI",
+    titleKey: "cli.label",
+    groupKey: "cli",
     icon: Terminal,
     items: [
-      { title: "Visão Geral", href: "/docs/cli" },
-      { title: "Referência de Comandos", href: "/docs/cli/commands" },
-      { title: "Configuração", href: "/docs/cli/configuration" },
+      { titleKey: "cli.overview", href: "/docs/cli" },
+      { titleKey: "cli.commands", href: "/docs/cli/commands" },
+      { titleKey: "cli.configuration", href: "/docs/cli/configuration" },
     ],
   },
   {
-    title: "API Reference",
+    titleKey: "api.label",
+    groupKey: "api",
     icon: Code2,
     items: [
-      { title: "Introdução", href: "/docs/api" },
-      { title: "Autenticação", href: "/docs/api/authentication" },
-      { title: "Projetos", href: "/docs/api/projects" },
-      { title: "Ambientes", href: "/docs/api/environments" },
-      { title: "Vault", href: "/docs/api/vault" },
-      { title: "Membros", href: "/docs/api/members" },
-      { title: "Convites", href: "/docs/api/invites" },
-      { title: "Auditoria", href: "/docs/api/audit" },
-      { title: "Rotação", href: "/docs/api/rotation" },
-      { title: "Integrações", href: "/docs/api/integrations" },
-      { title: "CI Tokens", href: "/docs/api/ci-tokens" },
-      { title: "Health", href: "/docs/api/health" },
+      { titleKey: "api.overview", href: "/docs/api" },
+      { titleKey: "api.authentication", href: "/docs/api/authentication" },
+      { titleKey: "api.projects", href: "/docs/api/projects" },
+      { titleKey: "api.environments", href: "/docs/api/environments" },
+      { titleKey: "api.vault", href: "/docs/api/vault" },
+      { titleKey: "api.members", href: "/docs/api/members" },
+      { titleKey: "api.invites", href: "/docs/api/invites" },
+      { titleKey: "api.audit", href: "/docs/api/audit" },
+      { titleKey: "api.rotation", href: "/docs/api/rotation" },
+      { titleKey: "api.integrations", href: "/docs/api/integrations" },
+      { titleKey: "api.ciTokens", href: "/docs/api/ci-tokens" },
+      { titleKey: "api.health", href: "/docs/api/health" },
     ],
   },
   {
-    title: "Segurança",
+    titleKey: "security.label",
+    groupKey: "security",
     icon: Shield,
     items: [
-      { title: "Visão Geral", href: "/docs/security" },
-      { title: "Protocolo de Criptografia", href: "/docs/security/encryption" },
-      { title: "Zero-Knowledge", href: "/docs/security/zero-knowledge" },
-      { title: "Modelo de Ameaças", href: "/docs/security/threat-model" },
+      { titleKey: "security.overview", href: "/docs/security" },
+      { titleKey: "security.encryption", href: "/docs/security/encryption" },
+      { titleKey: "security.zeroKnowledge", href: "/docs/security/zero-knowledge" },
+      { titleKey: "security.threatModel", href: "/docs/security/threat-model" },
     ],
   },
   {
-    title: "Integrações",
+    titleKey: "integrations.label",
+    groupKey: "integrations",
     icon: Puzzle,
     items: [
-      { title: "Visão Geral", href: "/docs/integrations" },
-      { title: "GitHub Action", href: "/docs/integrations/github-action" },
-      { title: "Vercel", href: "/docs/integrations/vercel" },
-      { title: "Railway", href: "/docs/integrations/railway" },
-      { title: "Render", href: "/docs/integrations/render" },
+      { titleKey: "integrations.overview", href: "/docs/integrations" },
+      { titleKey: "integrations.githubAction", href: "/docs/integrations/github-action" },
+      { titleKey: "integrations.vercel", href: "/docs/integrations/vercel" },
+      { titleKey: "integrations.railway", href: "/docs/integrations/railway" },
+      { titleKey: "integrations.render", href: "/docs/integrations/render" },
     ],
   },
   {
-    title: "SDKs",
+    titleKey: "sdks.label",
+    groupKey: "sdks",
     icon: Package,
     items: [
-      { title: "Visão Geral", href: "/docs/sdks" },
-      { title: "JavaScript / TypeScript", href: "/docs/sdks/javascript" },
-      { title: "Python", href: "/docs/sdks/python" },
+      { titleKey: "sdks.overview", href: "/docs/sdks" },
+      { titleKey: "sdks.javascript", href: "/docs/sdks/javascript" },
+      { titleKey: "sdks.python", href: "/docs/sdks/python" },
     ],
   },
   {
-    title: "Guias",
+    titleKey: "guides.label",
+    groupKey: "guides",
     icon: BookOpen,
     items: [
-      { title: "Seu Primeiro Projeto", href: "/docs/guides/first-project" },
-      { title: "Configurar Time", href: "/docs/guides/team-setup" },
-      { title: "CI/CD com CriptEnv", href: "/docs/guides/cicd-setup" },
-      { title: "Rotação de Secrets", href: "/docs/guides/secret-rotation" },
-      { title: "Migrando do .env", href: "/docs/guides/migration" },
+      { titleKey: "guides.firstProject", href: "/docs/guides/first-project" },
+      { titleKey: "guides.teamSetup", href: "/docs/guides/team-setup" },
+      { titleKey: "guides.cicd", href: "/docs/guides/cicd-setup" },
+      { titleKey: "guides.secretRotation", href: "/docs/guides/secret-rotation" },
+      { titleKey: "guides.migration", href: "/docs/guides/migration" },
     ],
   },
 ]
 
 function SidebarGroup({ item }: { item: SidebarItem }) {
   const pathname = usePathname()
+  const t = useTranslations("docs.sidebar")
   const isActive = item.items?.some((sub) => sub.href === pathname)
   const [open, setOpen] = React.useState(isActive ?? true)
 
@@ -120,7 +132,7 @@ function SidebarGroup({ item }: { item: SidebarItem }) {
       >
         <span className="flex items-center gap-2">
           {item.icon && <item.icon className="h-4 w-4" />}
-          {item.title}
+          {t(item.titleKey)}
         </span>
         <ChevronDown
           className={cn(
@@ -143,6 +155,7 @@ function SidebarGroup({ item }: { item: SidebarItem }) {
 
 function SidebarLink({ item }: { item: SidebarItem }) {
   const pathname = usePathname()
+  const t = useTranslations("docs.sidebar")
   const isActive = pathname === item.href
 
   if (!item.href) return null
@@ -157,7 +170,7 @@ function SidebarLink({ item }: { item: SidebarItem }) {
           : "text-[var(--text-tertiary)] hover:text-[var(--text-primary)] hover:bg-[var(--background-muted)]"
       )}
     >
-      {item.title}
+      {t(item.titleKey)}
     </Link>
   )
 }
@@ -179,7 +192,7 @@ function DocSidebar({ className }: DocSidebarProps) {
     >
       <nav className="space-y-1 pb-16">
         {sidebarNav.map((group) => (
-          <SidebarGroup key={group.title} item={group} />
+          <SidebarGroup key={group.titleKey} item={group} />
         ))}
       </nav>
     </aside>
@@ -189,6 +202,7 @@ function DocSidebar({ className }: DocSidebarProps) {
 /* Mobile sidebar drawer */
 function MobileDocSidebar({ className }: DocSidebarProps) {
   const [open, setOpen] = React.useState(false)
+  const tDocs = useTranslations("docs")
 
   return (
     <>
@@ -202,7 +216,7 @@ function MobileDocSidebar({ className }: DocSidebarProps) {
         )}
       >
         <BookOpen className="h-4 w-4" />
-        Navegação
+        {tDocs("nav.navigation")}
       </button>
 
       {open && (
@@ -213,7 +227,7 @@ function MobileDocSidebar({ className }: DocSidebarProps) {
           />
           <div className="fixed inset-y-0 left-0 z-50 w-[280px] bg-[var(--background)] border-r border-[var(--border)] overflow-y-auto p-4">
             <div className="flex items-center justify-between mb-4">
-              <span className="text-sm font-semibold text-[var(--text-primary)]">Documentação</span>
+              <span className="text-sm font-semibold text-[var(--text-primary)]">{tDocs("nav.documentation")}</span>
               <button
                 onClick={() => setOpen(false)}
                 className="text-[var(--text-tertiary)] hover:text-[var(--text-primary)]"
@@ -223,7 +237,7 @@ function MobileDocSidebar({ className }: DocSidebarProps) {
             </div>
             <nav className="space-y-1">
               {sidebarNav.map((group) => (
-                <SidebarGroup key={group.title} item={group} />
+                <SidebarGroup key={group.titleKey} item={group} />
               ))}
             </nav>
           </div>

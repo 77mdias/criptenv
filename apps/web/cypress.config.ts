@@ -11,6 +11,10 @@ export default defineConfig({
     baseUrl: process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000",
     setupNodeEvents(on) {
       on("task", {
+        log(message) {
+          console.log(message)
+          return null
+        },
         resetDb() {
           const apiRoot = resolve(configDir, "../api")
           const venvPython = join(apiRoot, ".venv", "bin", "python")

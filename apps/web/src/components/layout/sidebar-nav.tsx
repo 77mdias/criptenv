@@ -1,7 +1,8 @@
 "use client"
 
-import Link from "next/link"
-import { usePathname } from "next/navigation"
+import { Link } from "@/i18n/navigation";
+import { useTranslations } from "next-intl";
+import { usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils"
 import { useUIStore } from "@/stores/ui"
 import { getDashboardNavGroups, isDashboardNavItemActive } from "./dashboard-nav"
@@ -13,6 +14,7 @@ interface SidebarNavProps {
 function SidebarNav({ className }: SidebarNavProps) {
   const pathname = usePathname()
   const { desktopSidebarOpen } = useUIStore()
+  const tNav = useTranslations("dashboard.nav")
   const { mainNavItems, bottomNavItems } = getDashboardNavGroups()
 
   return (
@@ -42,7 +44,7 @@ function SidebarNav({ className }: SidebarNavProps) {
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
+              <span>{tNav(item.labelKey)}</span>
             </Link>
           )
         })}
@@ -68,7 +70,7 @@ function SidebarNav({ className }: SidebarNavProps) {
               )}
             >
               <item.icon className="h-4 w-4 shrink-0" />
-              <span>{item.label}</span>
+              <span>{tNav(item.labelKey)}</span>
             </Link>
           )
         })}

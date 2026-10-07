@@ -1,6 +1,9 @@
 "use client";
 
 import { useEffect } from "react";
+// NOTE: global-error renders outside the [locale] layout and therefore outside
+// NextIntlClientProvider — next-intl's Link requires that context, so this file
+// keeps the plain next/link import.
 import Link from "next/link";
 import { OctagonAlert, RotateCcw, ShieldCheck } from "lucide-react";
 import "./globals.css";

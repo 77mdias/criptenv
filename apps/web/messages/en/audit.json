@@ -1,0 +1,23 @@
+{
+  "page": {
+    "title": "Audit Log",
+    "subtitle": "{total} events recorded for this project",
+    "exportCsv": "Export CSV",
+    "exportJson": "Export JSON",
+    "loadMore": "Load more"
+  },
+  "filters": {
+    "title": "Filters",
+    "action": "Action",
+    "resource": "Resource",
+    "allActions": "All",
+    "allResources": "All"
+  },
+  "errors": {
+    "load": "Failed to load logs"
+  },
+  "empty": {
+    "title": "No events found",
+    "description": "Actions performed in this project will appear here."
+  }
+}

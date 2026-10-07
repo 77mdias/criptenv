@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { useTranslations } from "next-intl"
 import { KeyRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -57,6 +58,7 @@ function SecretFormDialog({
   onOpenChange,
   onSubmit,
 }: Omit<SecretFormProps, "open">) {
+  const t = useTranslations("secrets.form")
   const [keyName, setKeyName] = useState(initialValue?.key ?? "")
   const [value, setValue] = useState(initialValue?.value ?? "")
   const [error, setError] = useState<string | null>(null)
@@ -65,7 +67,7 @@ function SecretFormDialog({
     event.preventDefault()
     const parsed = createSecretSchema.safeParse({ key: keyName, value })
     if (!parsed.success) {
-      setError(parsed.error.issues[0]?.message ?? "Secret inválido")
+      setError(parsed.error.issues[0]?.message ?? t("invalid"))
       return
     }
 
@@ -78,14 +80,12 @@ function SecretFormDialog({
       <DialogContent className="max-w-lg">
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
-          <DialogDescription>
-            O valor será cifrado no browser antes do envio.
-          </DialogDescription>
+          <DialogDescription>{t("encryptNote")}</DialogDescription>
         </DialogHeader>
 
         <form onSubmit={submit} className="space-y-4">
           <Input
-            label="Chave"
+            label={t("keyLabel")}
             placeholder="DATABASE_URL"
             value={keyName}
             onChange={(event) => setKeyName(event.target.value.toUpperCase())}
@@ -93,8 +93,8 @@ function SecretFormDialog({
             icon={KeyRound}
           />
           <Input
-            label="Valor"
-            placeholder="Valor secreto"
+            label={t("valueLabel")}
+            placeholder={t("valuePlaceholder")}
             type="password"
             value={value}
             onChange={(event) => setValue(event.target.value)}
@@ -102,10 +102,10 @@ function SecretFormDialog({
           {error && <p className="font-mono text-xs text-red-600">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button type="submit" loading={loading}>
-              Salvar
+              {t("save")}
             </Button>
           </DialogFooter>
         </form>

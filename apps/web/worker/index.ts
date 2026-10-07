@@ -3,10 +3,16 @@
  * Removes IMAGES binding dependency that may not be available on free plan
  */
 import handler from "vinext/server/app-router-entry";
-import { renderEmergencyPage } from "./error-page";
+import { renderEmergencyPage, renderNotFoundPage } from "./error-page";
+
+/** Minimal shape of the Workers Assets binding (avoids importing the full
+ *  @cloudflare/workers-types just for one field). */
+interface AssetsFetcher {
+  fetch: (input: RequestInfo | URL, init?: RequestInit) => Promise<Response>;
+}
 
 interface Env {
-  ASSETS: Fetcher;
+  ASSETS: AssetsFetcher;
   API_URL?: string;
   NEXT_PUBLIC_API_URL?: string;
   /**
@@ -117,6 +123,18 @@ function withSecurityHeaders(response: Response, url: URL, env: Env): Response {
   });
 }
 
+
+/**
+ * true when the thrown error is the router's own "not found" signal rather than
+ * a rendering crash. Covers both the error-object form (`digest`) and the
+ * message-only form that arrives across the RSC edge boundary.
+ */
+function isNotFoundError(err: unknown): boolean {
+  if (!(err instanceof Error)) return false;
+  const digest = (err as { digest?: unknown }).digest;
+  return digest === "NEXT_NOT_FOUND" || err.message === "NEXT_NOT_FOUND";
+}
+
 const worker = {
   async fetch(request: Request, env: Env, ctx: ExecutionContext): Promise<Response> {
     const url = new URL(request.url);
@@ -196,6 +214,14 @@ const worker = {
       const response = await handler.fetch(request, env, ctx);
       return withSecurityHeaders(response, url, env);
     } catch (err) {
+      // A route that does not exist is an expected outcome, not a crash: the
+      // router surfaces it as NEXT_NOT_FOUND (notFound() / no matching route).
+      // Answering 503 + Retry-After here made every stray path — /sw.js, bots
+      // probing URLs — look like an outage.
+      if (isNotFoundError(err)) {
+        return withSecurityHeaders(renderNotFoundPage(request), url, env);
+      }
+
       console.error(
         "[worker] Unhandled error:",
         err instanceof Error ? err.stack : err,

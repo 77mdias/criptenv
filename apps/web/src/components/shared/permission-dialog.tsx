@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { ShieldAlert } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -22,12 +23,18 @@ interface PermissionDialogProps {
 
 export function PermissionDialog({
   open,
-  title = "Permissão necessária",
-  description = "Você não tem a permissão necessária para realizar esta ação neste projeto.",
-  actionLabel = "Entendi",
+  title,
+  description,
+  actionLabel,
   onOpenChange,
   onAction,
 }: PermissionDialogProps) {
+  // Label defaults resolve per locale; callers may still pass their own.
+  const t = useTranslations("members.dialog")
+  const resolvedTitle = title ?? t("title")
+  const resolvedDescription = description ?? t("description")
+  const resolvedActionLabel = actionLabel ?? t("action")
+
   const handleAction = () => {
     onAction?.()
     onOpenChange(false)
@@ -42,13 +49,13 @@ export function PermissionDialog({
           </div>
           <div className="min-w-0">
             <DialogHeader className="mb-0 pr-0">
-              <DialogTitle>{title}</DialogTitle>
-              <DialogDescription className="mt-2">{description}</DialogDescription>
+              <DialogTitle>{resolvedTitle}</DialogTitle>
+              <DialogDescription className="mt-2">{resolvedDescription}</DialogDescription>
             </DialogHeader>
           </div>
         </div>
         <DialogFooter className="sm:justify-end">
-          <Button onClick={handleAction}>{actionLabel}</Button>
+          <Button onClick={handleAction}>{resolvedActionLabel}</Button>
         </DialogFooter>
       </DialogContent>
     </Dialog>

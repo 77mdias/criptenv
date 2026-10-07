@@ -24,7 +24,8 @@
     "start:next": "next start",
     "dev:vinext": "vinext dev --port 3001",
     "build:vinext": "vinext build",
-    "start:vinext": "vinext start"
+    "start:vinext": "vinext start",
+    "check:i18n": "node scripts/audit-i18n-keys.mjs"
   },
   "dependencies": {
     "@fortawesome/free-brands-svg-icons": "^6.7.2",
@@ -54,6 +55,7 @@
     "gsap": "^3.15.0",
     "lucide-react": "^1.14.0",
     "next": "16.3.8",
+    "next-intl": "4.14.5",
     "pagefind": "^1.5.2",
     "qrcode.react": "^4.2.0",
     "react": "19.2.8",
@@ -92,6 +94,7 @@
   },
   "overrides": {
     "sharp": "0.35.5",
+    "source-map-js": "1.2.2",
     "undici": "7.30.0",
     "postcss": "^8.5.12",
     "tmp": ">=0.2.6",

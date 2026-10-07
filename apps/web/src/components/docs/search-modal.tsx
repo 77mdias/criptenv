@@ -1,10 +1,48 @@
 "use client"
 
 import * as React from "react"
-import { useRouter } from "next/navigation"
+import { useRouter } from "@/i18n/navigation";
 import { cn } from "@/lib/utils"
 import { Search, FileText, ArrowRight } from "lucide-react"
+import { useTranslations } from "next-intl"
 import { sidebarNav } from "./doc-sidebar"
+
+/**
+ * Extra searchable entries. Titles/descriptions resolve from the
+ * `docs.searchIndex` catalogue; `sectionKey` points at a sidebar group label.
+ */
+const searchExtras: { key: string; href: string; sectionKey: string }[] = [
+  { key: "cliInit", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliLogin", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliSet", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliGet", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliList", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliPush", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliPull", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliDoctor", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliImport", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliExport", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "cliRotate", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "ciLogin", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "ciDeploy", href: "/docs/cli/commands", sectionKey: "cli" },
+  { key: "aes", href: "/docs/security/encryption", sectionKey: "security" },
+  { key: "pbkdf2", href: "/docs/security/encryption", sectionKey: "security" },
+  { key: "hkdf", href: "/docs/security/encryption", sectionKey: "security" },
+  { key: "zeroKnowledge", href: "/docs/security/zero-knowledge", sectionKey: "security" },
+  { key: "githubAction", href: "/docs/integrations/github-action", sectionKey: "integrations" },
+  { key: "vercel", href: "/docs/integrations/vercel", sectionKey: "integrations" },
+  { key: "railway", href: "/docs/integrations/railway", sectionKey: "integrations" },
+  { key: "render", href: "/docs/integrations/render", sectionKey: "integrations" },
+  { key: "apiKey", href: "/docs/api/authentication", sectionKey: "api" },
+  { key: "ciToken", href: "/docs/api/ci-tokens", sectionKey: "api" },
+  { key: "sessionToken", href: "/docs/api/authentication", sectionKey: "api" },
+  { key: "oauth", href: "/docs/api/authentication", sectionKey: "api" },
+  { key: "vault", href: "/docs/api/vault", sectionKey: "api" },
+  { key: "rotation", href: "/docs/api/rotation", sectionKey: "api" },
+  { key: "audit", href: "/docs/api/audit", sectionKey: "api" },
+  { key: "members", href: "/docs/api/members", sectionKey: "api" },
+  { key: "invites", href: "/docs/api/invites", sectionKey: "api" },
+]
 
 const DOC_SEARCH_OPEN_EVENT = "criptenv:open-doc-search"
 
@@ -19,68 +57,36 @@ interface SearchResult {
   description?: string
 }
 
-// Build flat search index from sidebar nav
-function buildSearchIndex(): SearchResult[] {
-  const results: SearchResult[] = []
-
-  for (const group of sidebarNav) {
-    if (group.items) {
-      for (const item of group.items) {
-        if (item.href) {
-          results.push({
-            title: item.title,
-            href: item.href,
-            section: group.title,
-          })
-        }
-      }
-    }
-  }
-
-  // Add extra searchable entries
-  const extras: SearchResult[] = [
-    { title: "criptenv init", href: "/docs/cli/commands", section: "CLI", description: "Inicializar diretório e vault" },
-    { title: "criptenv login", href: "/docs/cli/commands", section: "CLI", description: "Autenticar com conta CriptEnv" },
-    { title: "criptenv set", href: "/docs/cli/commands", section: "CLI", description: "Definir um secret" },
-    { title: "criptenv get", href: "/docs/cli/commands", section: "CLI", description: "Obter um secret" },
-    { title: "criptenv list", href: "/docs/cli/commands", section: "CLI", description: "Listar secrets" },
-    { title: "criptenv push", href: "/docs/cli/commands", section: "CLI", description: "Sincronizar secrets com cloud" },
-    { title: "criptenv pull", href: "/docs/cli/commands", section: "CLI", description: "Baixar secrets da cloud" },
-    { title: "criptenv doctor", href: "/docs/cli/commands", section: "CLI", description: "Verificar configuração" },
-    { title: "criptenv import", href: "/docs/cli/commands", section: "CLI", description: "Importar de arquivo .env" },
-    { title: "criptenv export", href: "/docs/cli/commands", section: "CLI", description: "Exportar secrets" },
-    { title: "criptenv rotate", href: "/docs/cli/commands", section: "CLI", description: "Rotacionar um secret" },
-    { title: "criptenv ci login", href: "/docs/cli/commands", section: "CLI", description: "Login com token CI" },
-    { title: "criptenv ci deploy", href: "/docs/cli/commands", section: "CLI", description: "Deploy via CI/CD" },
-    { title: "AES-256-GCM", href: "/docs/security/encryption", section: "Segurança", description: "Algoritmo de criptografia" },
-    { title: "PBKDF2", href: "/docs/security/encryption", section: "Segurança", description: "Derivação de chave mestra" },
-    { title: "HKDF", href: "/docs/security/encryption", section: "Segurança", description: "Derivação por ambiente" },
-    { title: "Zero-Knowledge", href: "/docs/security/zero-knowledge", section: "Segurança", description: "Arquitetura zero-knowledge" },
-    { title: "GitHub Action", href: "/docs/integrations/github-action", section: "Integrações", description: "@criptenv/action para CI/CD" },
-    { title: "Vercel", href: "/docs/integrations/vercel", section: "Integrações", description: "Sincronizar com Vercel" },
-    { title: "Railway", href: "/docs/integrations/railway", section: "Integrações", description: "Sincronizar com Railway" },
-    { title: "Render", href: "/docs/integrations/render", section: "Integrações", description: "Sincronizar com Render" },
-    { title: "API Key", href: "/docs/api/authentication", section: "API", description: "Tokens cek_ para API" },
-    { title: "CI Token", href: "/docs/api/ci-tokens", section: "API", description: "Tokens ci_ para CI/CD" },
-    { title: "Session Token", href: "/docs/api/authentication", section: "API", description: "Cookie de sessão HTTP-only" },
-    { title: "OAuth", href: "/docs/api/authentication", section: "API", description: "GitHub, Google, Discord" },
-    { title: "Vault", href: "/docs/api/vault", section: "API", description: "Push/pull de secrets criptografados" },
-    { title: "Rotação de secrets", href: "/docs/api/rotation", section: "API", description: "Políticas manual, notify, auto" },
-    { title: "Auditoria", href: "/docs/api/audit", section: "API", description: "Logs de todas as operações" },
-    { title: "Membros", href: "/docs/api/members", section: "API", description: "Gestão de time e roles" },
-    { title: "Convites", href: "/docs/api/invites", section: "API", description: "Sistema de convites por email" },
-  ]
-
-  return [...results, ...extras]
-}
-
 function SearchModal() {
+  const t = useTranslations("docs")
   const [open, setOpen] = React.useState(false)
   const [query, setQuery] = React.useState("")
   const [selectedIndex, setSelectedIndex] = React.useState(0)
   const inputRef = React.useRef<HTMLInputElement>(null)
   const router = useRouter()
-  const index = React.useMemo(() => buildSearchIndex(), [])
+  // Search index resolved from the sidebar nav + extras via the catalogue.
+  const index = React.useMemo<SearchResult[]>(() => {
+    const fromNav: SearchResult[] = []
+    for (const group of sidebarNav) {
+      for (const item of group.items ?? []) {
+        if (item.href) {
+          fromNav.push({
+            title: t(`sidebar.${item.titleKey}`),
+            href: item.href,
+            section: t(`sidebar.${group.groupKey}.label`),
+          })
+        }
+      }
+    }
+    const extras = searchExtras.map((e) => ({
+      title: t(`searchIndex.${e.key}.title`),
+      href: e.href,
+      section: t(`sidebar.${e.sectionKey}.label`),
+      description: t(`searchIndex.${e.key}.description`),
+    }))
+    return [...fromNav, ...extras]
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   const handleOpen = React.useCallback(() => {
     setQuery("")
@@ -173,7 +179,7 @@ function SearchModal() {
                 setSelectedIndex(0)
               }}
               onKeyDown={handleKeyDown}
-              placeholder="Buscar na documentação..."
+              placeholder={t("search.placeholder")}
               className="flex-1 bg-transparent text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] outline-none"
             />
             <kbd className="hidden sm:inline-flex items-center px-1.5 py-0.5 text-[10px] font-mono text-[var(--text-muted)] bg-[var(--background-muted)] rounded border border-[var(--border)]">
@@ -185,7 +191,7 @@ function SearchModal() {
           <div className="max-h-[360px] overflow-y-auto py-2">
             {results.length === 0 ? (
               <div className="px-4 py-8 text-center text-sm text-[var(--text-tertiary)]">
-                Nenhum resultado encontrado para &ldquo;{query}&rdquo;
+                {t("search.noResults", { query })}
               </div>
             ) : (
               results.map((result, index) => (

@@ -1,6 +1,7 @@
 "use client";
 
-import { useRef, useState, useCallback } from "react";
+import { useCallback, useRef, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Camera, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { authApi } from "@/lib/api";
@@ -16,10 +17,18 @@ export function AvatarUpload({
   userName,
   onAvatarChange,
 }: AvatarUploadProps) {
+  const t = useTranslations("account");
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // A broken avatar URL would otherwise render the raw `alt` text (the full
+  // name) inside the circle. Tracking WHICH url failed (instead of a boolean +
+  // effect reset) retries automatically when the avatar changes and avoids
+  // setState inside an effect.
+  const [failedSrc, setFailedSrc] = useState<string | null>(null);
+
+
 
   const getInitials = (name: string) => {
     return name
@@ -37,13 +46,13 @@ export function AvatarUpload({
 
       // Validate file type
       if (!file.type.match(/^image\/(png|jpeg|jpg)$/)) {
-        setError("Apenas imagens PNG ou JPG são permitidas.");
+        setError(t("avatar.invalidType"));
         return;
       }
 
       // Validate file size (5MB)
       if (file.size > 5 * 1024 * 1024) {
-        setError("A imagem deve ter no máximo 5MB.");
+        setError(t("avatar.tooLarge"));
         return;
       }
 
@@ -59,7 +68,7 @@ export function AvatarUpload({
         onAvatarChange(updatedUser.avatar_url);
         setPreviewUrl(updatedUser.avatar_url);
       } catch (err) {
-        setError(err instanceof Error ? err.message : "Erro ao fazer upload do avatar.");
+        setError(err instanceof Error ? err.message : t("avatar.uploadError"));
         // Revert to previous avatar on error
         setPreviewUrl(currentAvatarUrl);
       } finally {
@@ -72,13 +81,13 @@ export function AvatarUpload({
         }
       }
     },
-    [currentAvatarUrl, onAvatarChange]
+    [currentAvatarUrl, onAvatarChange, t]
   );
 
   const handleDelete = useCallback(async () => {
     if (!previewUrl) return;
 
-    if (!window.confirm("Remover foto de perfil?")) return;
+    if (!window.confirm(t("avatar.removeConfirm"))) return;
 
     setIsUploading(true);
     setError(null);
@@ -88,11 +97,11 @@ export function AvatarUpload({
       onAvatarChange(updatedUser.avatar_url);
       setPreviewUrl(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao remover avatar.");
+      setError(err instanceof Error ? err.message : t("avatar.removeError"));
     } finally {
       setIsUploading(false);
     }
-  }, [previewUrl, onAvatarChange]);
+  }, [previewUrl, onAvatarChange, t]);
 
   const triggerFileInput = () => {
     fileInputRef.current?.click();
@@ -107,12 +116,13 @@ export function AvatarUpload({
             isUploading ? "opacity-70" : "opacity-100"
           }`}
         >
-          {previewUrl ? (
+          {previewUrl && failedSrc !== previewUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
               src={previewUrl}
               alt={userName}
               className="h-full w-full object-cover"
+              onError={() => setFailedSrc(previewUrl)}
             />
           ) : (
             <span className="text-2xl font-bold text-[var(--text-muted)]">
@@ -126,7 +136,7 @@ export function AvatarUpload({
           <button
             onClick={triggerFileInput}
             className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-            title="Alterar foto"
+            title={t("avatar.changeTitle")}
           >
             <Camera className="h-6 w-6 text-white" />
           </button>
@@ -159,7 +169,7 @@ export function AvatarUpload({
           className="text-xs"
         >
           <Camera className="h-3.5 w-3.5 mr-1" />
-          {previewUrl ? "Trocar foto" : "Adicionar foto"}
+          {previewUrl ? t("avatar.change") : t("avatar.add")}
         </Button>
 
         {previewUrl && (
@@ -171,7 +181,7 @@ export function AvatarUpload({
             className="text-xs text-red-500 hover:text-red-400 hover:bg-red-500/10"
           >
             <Trash2 className="h-3.5 w-3.5 mr-1" />
-            Remover
+            {t("avatar.remove")}
           </Button>
         )}
       </div>
@@ -184,7 +194,7 @@ export function AvatarUpload({
       )}
 
       <p className="text-[10px] text-[var(--text-muted)] font-mono text-center">
-        PNG ou JPG · Máx 5MB
+        {t("avatar.hint")}
       </p>
     </div>
   );

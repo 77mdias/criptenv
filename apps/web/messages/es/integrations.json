@@ -1,0 +1,34 @@
+{
+  "title": "Integraciones",
+  "selectProject": "Selecciona un proyecto",
+  "errors": {
+    "loadProjects": "Error al cargar proyectos",
+    "loadIntegrations": "Error al cargar integraciones",
+    "create": "Error al crear la integración",
+    "validate": "Error al validar la integración",
+    "remove": "Error al eliminar la integración",
+    "validateFailed": "No se pudo validar la conexión"
+  },
+  "emptyProjects": {
+    "title": "No se encontraron proyectos",
+    "description": "Crea un proyecto antes de conectar integraciones."
+  },
+  "emptyIntegrations": {
+    "title": "No hay integraciones conectadas",
+    "description": "Conecta Vercel para sincronizar los secrets de este proyecto."
+  },
+  "lastSync": "Última sincronización: {date}",
+  "noSync": "Sin sincronización registrada",
+  "actions": {
+    "validate": "Validar",
+    "remove": "Eliminar integración",
+    "refresh": "Actualizar integraciones"
+  },
+  "removeConfirm": "¿Eliminar la integración {name}?",
+  "form": {
+    "name": "Nombre",
+    "apiToken": "Vercel API Token",
+    "projectId": "Vercel Project ID",
+    "submit": "Conectar Vercel"
+  }
+}

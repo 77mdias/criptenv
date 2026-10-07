@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { AlertTriangle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -27,13 +28,18 @@ export function ConfirmActionDialog({
   open,
   title,
   description,
-  confirmLabel = "Confirmar",
-  cancelLabel = "Cancelar",
+  confirmLabel,
+  cancelLabel,
   destructive = false,
   loading = false,
   onConfirm,
   onOpenChange,
 }: ConfirmActionDialogProps) {
+  // Label defaults resolve per locale; callers may still pass their own.
+  const t = useTranslations("account")
+  const resolvedConfirmLabel = confirmLabel ?? t("dialog.confirm")
+  const resolvedCancelLabel = cancelLabel ?? t("dialog.cancel")
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-md" showClose={false}>
@@ -50,14 +56,14 @@ export function ConfirmActionDialog({
         </div>
         <DialogFooter>
           <Button variant="secondary" onClick={() => onOpenChange(false)} disabled={loading}>
-            {cancelLabel}
+            {resolvedCancelLabel}
           </Button>
           <Button
             variant={destructive ? "danger" : "primary"}
             loading={loading}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {resolvedConfirmLabel}
           </Button>
         </DialogFooter>
       </DialogContent>

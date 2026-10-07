@@ -1,0 +1,65 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "help": "Help",
+    "account": "Account",
+    "closeMenu": "Close menu"
+  },
+  "layout": {
+    "checkingSession": "Checking session..."
+  },
+  "home": {
+    "title": "Dashboard",
+    "welcome": "Welcome back. Here is the overview of your projects.",
+    "synced": "All synced",
+    "loadError": "Failed to load dashboard",
+    "stats": {
+      "projects": "Projects",
+      "projectsNone": "No projects yet",
+      "projectsActive": "{count} active",
+      "secrets": "Secrets",
+      "secretsNone": "No secrets yet",
+      "secretsTotal": "{count} secrets in total",
+      "lastSync": "Last Sync",
+      "lastActivity": "Last activity"
+    },
+    "activity": {
+      "title": "Recent Activity",
+      "description": "Latest operations across your projects",
+      "empty": "No recent activity"
+    }
+  },
+  "projects": {
+    "title": "Projects",
+    "subtitle": "Manage your projects and secrets",
+    "loadError": "Failed to load projects",
+    "newProject": "New Project",
+    "empty": {
+      "title": "No projects yet",
+      "description": "Create your first project to start managing your secrets securely.",
+      "action": "Create First Project"
+    },
+    "noDescription": "No description",
+    "projectLabel": "Project",
+    "createNew": "Create new project"
+  },
+  "createDialog": {
+    "title": "New Project",
+    "subtitle": "Create a new project to manage your secrets",
+    "nameLabel": "Project name",
+    "descriptionLabel": "Description",
+    "descriptionPlaceholder": "Optional project description",
+    "vaultPasswordLabel": "Vault password",
+    "confirmVaultPasswordLabel": "Confirm vault password",
+    "cancel": "Cancel",
+    "submit": "Create Project",
+    "error": "Failed to create project",
+    "errors": {
+      "nameLength": "Name must be 3-50 characters",
+      "nameCharset": "Letters, numbers and hyphens only",
+      "vaultPasswordLength": "Vault password must be at least 8 characters",
+      "vaultPasswordMismatch": "Vault passwords do not match"
+    }
+  }
+}

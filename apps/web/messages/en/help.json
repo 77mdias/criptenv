@@ -1,0 +1,27 @@
+{
+  "title": "Help",
+  "subtitle": "Find resources and support for using CriptEnv",
+  "docs": {
+    "title": "Documentation",
+    "description": "Complete guides and API references"
+  },
+  "support": {
+    "title": "Support",
+    "description": "Open issues and ask the community for help"
+  },
+  "faq": {
+    "title": "Frequently Asked Questions",
+    "q1": "How do I add secrets to a project?",
+    "a1": "Open the project, go to the \"Secrets\" tab and click \"New Secret\". Enter the key and the value. Your secrets are encrypted locally before they are sent.",
+    "q2": "How does the encryption work?",
+    "a2": "CriptEnv uses Zero-Knowledge encryption. Your keys are derived locally with PBKDF2 and the data is encrypted with AES-256-GCM before it leaves your device.",
+    "q3": "Can I use it in CI/CD environments?",
+    "a3": "Yes! Generate API tokens in the project settings tab and use them in your CI/CD pipelines to access secrets securely.",
+    "q4": "How does the invite system work?",
+    "a4": "In the project \"Team\" tab you can invite members with different permissions: Owner, Admin, Developer or Viewer. Invites expire automatically after 7 days."
+  },
+  "security": {
+    "title": "Security first",
+    "description": "Never share your encryption keys or API tokens. CriptEnv never asks for your password or keys over email or chat."
+  }
+}

@@ -1,6 +1,12 @@
-import { render, screen } from "@testing-library/react"
+import { screen } from "@testing-library/react"
 import userEvent from "@testing-library/user-event"
 import { SecretRow, type DecryptedSecret } from "../secret-row"
+
+import { renderWithIntl } from "@/test/render-with-intl"
+import secretsPtBR from "../../../../messages/pt-BR/secrets.json"
+
+const render = (ui: React.ReactElement) =>
+  renderWithIntl(ui, { messages: { secrets: secretsPtBR } })
 
 const secret: DecryptedSecret = {
   key: "DATABASE_URL",

@@ -1,4 +1,5 @@
-import { fireEvent, render, screen } from "@testing-library/react"
+import { fireEvent, screen } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
 
 import { ExportModal } from "@/components/shared/export-modal"
 import { type DecryptedSecret } from "@/components/shared/secret-row"
@@ -10,7 +11,7 @@ const secrets: DecryptedSecret[] = [
 
 describe("ExportModal", () => {
   it("never renders secret values on screen (no plaintext preview)", () => {
-    render(<ExportModal open secrets={secrets} onOpenChange={() => {}} />)
+    renderWithIntl(<ExportModal open secrets={secrets} onOpenChange={() => {}} />)
 
     expect(screen.queryByRole("textbox")).toBeNull()
     expect(document.body.textContent).not.toContain("super-secret-value")
@@ -33,7 +34,7 @@ describe("ExportModal", () => {
       return document.createElementNS("http://www.w3.org/1999/xhtml", tag) as never
     }) as typeof document.createElement)
 
-    render(<ExportModal open secrets={secrets} onOpenChange={() => {}} />)
+    renderWithIntl(<ExportModal open secrets={secrets} onOpenChange={() => {}} />)
     fireEvent.click(screen.getByRole("button", { name: /baixar/i }))
 
     expect(createObjectURL).toHaveBeenCalledTimes(1)
@@ -42,7 +43,7 @@ describe("ExportModal", () => {
   })
 
   it("disables download when there are no secrets", () => {
-    render(<ExportModal open secrets={[]} onOpenChange={() => {}} />)
+    renderWithIntl(<ExportModal open secrets={[]} onOpenChange={() => {}} />)
     expect(screen.getByRole("button", { name: /baixar/i })).toBeDisabled()
   })
 })

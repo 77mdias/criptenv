@@ -1,6 +1,7 @@
 "use client"
 
 import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Upload } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
@@ -36,6 +37,7 @@ function parseEnv(text: string): DecryptedSecret[] {
 }
 
 export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) {
+  const t = useTranslations("secrets.import")
   const [text, setText] = useState("")
   const [loading, setLoading] = useState(false)
   const preview = useMemo(() => parseEnv(text), [text])
@@ -57,10 +59,8 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl">
         <DialogHeader>
-          <DialogTitle>Importar .env</DialogTitle>
-          <DialogDescription>
-            Cole o conteúdo. Linhas inválidas serão ignoradas.
-          </DialogDescription>
+          <DialogTitle>{t("title")}</DialogTitle>
+          <DialogDescription>{t("description")}</DialogDescription>
         </DialogHeader>
         <textarea
           className="min-h-64 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 font-mono text-xs text-[var(--text-primary)] focus:outline-none focus:ring-2 focus:ring-[var(--accent)]"
@@ -70,14 +70,14 @@ export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) 
         />
         <div className="mt-4 flex flex-col-reverse items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
           <p className="font-mono text-xs text-[var(--text-muted)]">
-            {preview.length} secrets válidos detectados
+            {t("validCount", { count: preview.length })}
           </p>
           <DialogFooter className="mt-0">
             <Button variant="secondary" onClick={() => onOpenChange(false)}>
-              Cancelar
+              {t("cancel")}
             </Button>
             <Button icon={Upload} loading={loading} disabled={preview.length === 0} onClick={submit}>
-              Importar
+              {t("submit")}
             </Button>
           </DialogFooter>
         </div>

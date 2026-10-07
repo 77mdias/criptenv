@@ -1,25 +1,29 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import Link from "next/link";
+import { useTranslations } from "next-intl";
+import { Link } from "@/i18n/navigation";
 import { Menu, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/layout/brand";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 
+// Keys, not copy: this is module scope, so no hook can run here.
 const navLinks = [
-  { label: "Features", href: "#features" },
-  { label: "How It Works", href: "#how-it-works" },
-  { label: "Security", href: "#security" },
-  { label: "Pricing", href: "#pricing" },
-];
+  { key: "features", href: "#features" },
+  { key: "howItWorks", href: "#how-it-works" },
+  { key: "security", href: "#security" },
+  { key: "pricing", href: "#pricing" },
+] as const;
 
 interface MarketingHeaderProps {
   className?: string;
 }
 
 function MarketingHeader({ className }: MarketingHeaderProps) {
+  const t = useTranslations("common.header");
   const [visible, setVisible] = useState(true);
   const [lastScrollY, setLastScrollY] = useState(0);
   const [mobileOpen, setMobileOpen] = useState(false);
@@ -75,7 +79,7 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
                 href={link.href}
                 className="px-3 py-1.5 text-sm text-(--text-tertiary) hover:text-(--text-primary) transition-colors rounded-md hover:bg-(--background-subtle)"
               >
-                {link.label}
+                {t(`nav.${link.key}`)}
               </Link>
             ))}
           </nav>
@@ -85,10 +89,13 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
             <div className="scale-90 sm:scale-100">
               <ThemeSwitch />
             </div>
+            <div className="scale-90 sm:scale-100">
+              <LocaleSwitcher />
+            </div>
             <div className="hidden sm:flex items-center gap-2">
               <Link href="/login">
                 <Button variant="ghost" size="sm">
-                  Entrar
+                  {t("login")}
                 </Button>
               </Link>
               <Link href="/signup">
@@ -96,7 +103,7 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
                   size="sm"
                   className="bg-(--accent) text-(--accent-foreground) hover:bg-(--accent-hover)"
                 >
-                  Começar
+                  {t("getStarted")}
                 </Button>
               </Link>
             </div>
@@ -106,7 +113,7 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
               size="icon"
               className="md:hidden"
               onClick={() => setMobileOpen(true)}
-              aria-label="Open menu"
+              aria-label={t("openMenu")}
             >
               <Menu className="h-5 w-5" />
             </Button>
@@ -126,7 +133,7 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
         id="mobile-menu"
         role="dialog"
         aria-modal="true"
-        aria-label="Menu"
+        aria-label={t("menu")}
         hidden={!mobileOpen}
         className={cn(
           "fixed top-0 right-0 z-50 h-screen w-70 flex-col border-l border-(--border) bg-(--background) transition-transform duration-300 ease-out motion-reduce:transform-none motion-reduce:transition-none md:hidden",
@@ -134,12 +141,12 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
         )}
       >
         <div className="flex items-center justify-between h-14 px-4 border-b border-(--border)">
-          <span className="font-semibold text-(--text-primary)">Menu</span>
+          <span className="font-semibold text-(--text-primary)">{t("menu")}</span>
           <Button
             variant="ghost"
             size="icon"
             onClick={() => setMobileOpen(false)}
-            aria-label="Close menu"
+            aria-label={t("closeMenu")}
           >
             <X className="h-5 w-5" />
           </Button>
@@ -152,19 +159,19 @@ function MarketingHeader({ className }: MarketingHeaderProps) {
               onClick={() => setMobileOpen(false)}
               className="px-3 py-3 text-sm font-medium text-(--text-tertiary) hover:text-(--text-primary) transition-colors rounded-md hover:bg-(--background-subtle)"
             >
-              {link.label}
+              {t(`nav.${link.key}`)}
             </Link>
           ))}
         </nav>
         <div className="p-4 border-t border-(--border) flex flex-col gap-2">
           <Link href="/login" className="w-full">
             <Button variant="ghost" className="w-full justify-center">
-              Entrar
+              {t("login")}
             </Button>
           </Link>
           <Link href="/signup" className="w-full">
             <Button className="w-full justify-center bg-(--accent) text-(--accent-foreground) hover:bg-(--accent-hover)">
-              Começar
+              {t("getStarted")}
             </Button>
           </Link>
         </div>

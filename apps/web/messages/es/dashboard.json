@@ -1,0 +1,65 @@
+{
+  "nav": {
+    "dashboard": "Dashboard",
+    "projects": "Proyectos",
+    "help": "Ayuda",
+    "account": "Cuenta",
+    "closeMenu": "Cerrar menú"
+  },
+  "layout": {
+    "checkingSession": "Verificando sesión..."
+  },
+  "home": {
+    "title": "Dashboard",
+    "welcome": "Bienvenido de nuevo. Aquí tienes el resumen de tus proyectos.",
+    "synced": "Todo sincronizado",
+    "loadError": "Error al cargar el dashboard",
+    "stats": {
+      "projects": "Proyectos",
+      "projectsNone": "Aún no hay proyectos",
+      "projectsActive": "{count} activos",
+      "secrets": "Secrets",
+      "secretsNone": "Aún no hay secrets",
+      "secretsTotal": "{count} secrets en total",
+      "lastSync": "Última sincronización",
+      "lastActivity": "Última actividad"
+    },
+    "activity": {
+      "title": "Actividad reciente",
+      "description": "Últimas operaciones en tus proyectos",
+      "empty": "Sin actividad reciente"
+    }
+  },
+  "projects": {
+    "title": "Proyectos",
+    "subtitle": "Gestiona tus proyectos y secrets",
+    "loadError": "Error al cargar los proyectos",
+    "newProject": "Nuevo proyecto",
+    "empty": {
+      "title": "Aún no hay proyectos",
+      "description": "Crea tu primer proyecto para empezar a gestionar tus secrets de forma segura.",
+      "action": "Crear primer proyecto"
+    },
+    "noDescription": "Sin descripción",
+    "projectLabel": "Proyecto",
+    "createNew": "Crear nuevo proyecto"
+  },
+  "createDialog": {
+    "title": "Nuevo proyecto",
+    "subtitle": "Crea un nuevo proyecto para gestionar tus secrets",
+    "nameLabel": "Nombre del proyecto",
+    "descriptionLabel": "Descripción",
+    "descriptionPlaceholder": "Descripción opcional del proyecto",
+    "vaultPasswordLabel": "Contraseña del vault",
+    "confirmVaultPasswordLabel": "Confirmar contraseña del vault",
+    "cancel": "Cancelar",
+    "submit": "Crear proyecto",
+    "error": "Error al crear el proyecto",
+    "errors": {
+      "nameLength": "El nombre debe tener 3-50 caracteres",
+      "nameCharset": "Solo letras, números y guiones",
+      "vaultPasswordLength": "La contraseña del vault debe tener al menos 8 caracteres",
+      "vaultPasswordMismatch": "Las contraseñas del vault no coinciden"
+    }
+  }
+}

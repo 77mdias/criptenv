@@ -1,0 +1,266 @@
+"use client"
+
+import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
+import { FolderOpen, Key, Clock } from "lucide-react"
+import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { StatusBadge } from "@/components/ui/status-badge"
+import { Skeleton } from "@/components/ui/skeleton"
+import { peekCached, projectsApi, auditApi, environmentsApi, vaultApi } from "@/lib/api"
+import { formatRelativeTime } from "@/lib/utils"
+import type { Project, AuditLog, ProjectListResponse } from "@/lib/api"
+
+export default function DashboardPage() {
+  const t = useTranslations("dashboard.home")
+  const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects")
+  const [projects, setProjects] = useState<Project[]>(cachedProjects?.projects ?? [])
+  const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
+  const [totalSecrets, setTotalSecrets] = useState(0)
+  const [loading, setLoading] = useState(!cachedProjects)
+  const [activityLoading, setActivityLoading] = useState(!cachedProjects)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+
+    async function fetchDashboardData() {
+      try {
+        const projectData = await projectsApi.list()
+        if (cancelled) return
+        setProjects(projectData.projects)
+
+        const environmentResponses = await Promise.all(
+          projectData.projects.map((project) => environmentsApi.list(project.id))
+        )
+        if (cancelled) return
+
+        const vaultMetadata = await Promise.all(
+          environmentResponses.flatMap((response) =>
+            response.environments.map((environment) =>
+              vaultApi.getVersion(environment.project_id, environment.id)
+            )
+          )
+        )
+        if (cancelled) return
+
+        const secretsSum = vaultMetadata.reduce(
+          (sum, metadata) => sum + metadata.blob_count,
+          0
+        )
+
+        setTotalSecrets(secretsSum)
+        setLoading(false)
+
+        if (projectData.projects.length > 0) {
+          setActivityLoading(true)
+          const logData = await auditApi.getLogs(projectData.projects[0].id, { per_page: 5 })
+          if (cancelled) return
+          setAuditLogs(logData.logs)
+        } else {
+          setAuditLogs([])
+        }
+      } catch (err) {
+        if (!cancelled) {
+          setError(err instanceof Error ? err.message : t("loadError"))
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false)
+          setActivityLoading(false)
+        }
+      }
+    }
+
+    void fetchDashboardData()
+
+    return () => {
+      cancelled = true
+    }
+  }, [t])
+
+  if (error) {
+    return (
+      <div className="space-y-8">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+            <p className="text-red-600 text-sm font-mono mt-1">{error}</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-8">
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <div className="min-w-0">
+          <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
+          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
+            {t("welcome")}
+          </p>
+        </div>
+        <StatusBadge status="synced" label={t("synced")} />
+      </div>
+
+      {/* Stats */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+        {loading ? (
+          <>
+            <Card>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-7 w-8" />
+                </div>
+              </div>
+              <Skeleton className="mt-2 h-3 w-24" />
+            </Card>
+            <Card>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-7 w-8" />
+                </div>
+              </div>
+              <Skeleton className="mt-2 h-3 w-24" />
+            </Card>
+            <Card>
+              <div className="flex items-center gap-3">
+                <Skeleton className="h-10 w-10 rounded-lg" />
+                <div className="space-y-2">
+                  <Skeleton className="h-3 w-16" />
+                  <Skeleton className="h-7 w-8" />
+                </div>
+              </div>
+              <Skeleton className="mt-2 h-3 w-24" />
+            </Card>
+          </>
+        ) : (
+          <>
+            <Card>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
+                  <FolderOpen className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
+                    {t("stats.projects")}
+                  </p>
+                  <p className="text-2xl font-semibold tracking-tight">
+                    {projects.length}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
+                {projects.length === 0 ? t("stats.projectsNone") : t("stats.projectsActive", { count: projects.length })}
+              </p>
+            </Card>
+
+            <Card>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
+                  <Key className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
+                    {t("stats.secrets")}
+                  </p>
+                  <p className="text-2xl font-semibold tracking-tight">
+                    {totalSecrets}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
+                {totalSecrets === 0 ? t("stats.secretsNone") : t("stats.secretsTotal", { count: totalSecrets })}
+              </p>
+            </Card>
+
+            <Card>
+              <div className="flex items-center gap-3">
+                <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-[var(--background-muted)]">
+                  <Clock className="h-5 w-5 text-[var(--text-tertiary)]" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
+                    {t("stats.lastSync")}
+                  </p>
+                  <p className="text-lg sm:text-2xl font-semibold tracking-tight truncate">
+                    {auditLogs.length > 0 && auditLogs[0].created_at
+                      ? formatRelativeTime(auditLogs[0].created_at)
+                      : "—"}
+                  </p>
+                </div>
+              </div>
+              <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
+                {t("stats.lastActivity")}
+              </p>
+            </Card>
+          </>
+        )}
+      </div>
+
+      {/* Recent Activity */}
+      <Card>
+        <CardHeader>
+          <CardTitle>{t("activity.title")}</CardTitle>
+          <CardDescription>{t("activity.description")}</CardDescription>
+        </CardHeader>
+        <div className="space-y-4">
+          {activityLoading ? (
+            <>
+              {[1, 2, 3].map((i) => (
+                <div key={i} className="flex items-center gap-4 py-3 border-b border-[var(--border)] last:border-0">
+                  <Skeleton className="h-8 w-8 rounded-full" />
+                  <div className="flex-1 space-y-2">
+                    <Skeleton className="h-4 w-48" />
+                    <Skeleton className="h-3 w-32" />
+                  </div>
+                  <Skeleton className="h-3 w-16" />
+                </div>
+              ))}
+            </>
+          ) : auditLogs.length > 0 ? (
+            auditLogs.map((log) => {
+              const metadata = log.meta ?? log.metadata ?? {}
+              const description =
+                typeof metadata.description === "string"
+                  ? metadata.description
+                  : log.resource_type
+
+              return (
+                <div key={log.id} className="flex items-center gap-4 py-3 border-b border-[var(--border)] last:border-0">
+                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background-muted)]">
+                    <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                  </div>
+                  <div className="flex-1 min-w-0 overflow-hidden">
+                    <p className="text-sm text-[var(--text-primary)] truncate">
+                      <span className="font-medium">{log.action}</span>
+                      {" · "}
+                      <span className="font-mono text-[var(--text-secondary)]">{log.resource_type}</span>
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] font-mono truncate">
+                      {description}
+                    </p>
+                  </div>
+                  <span className="text-xs text-[var(--text-muted)] font-mono whitespace-nowrap">
+                    {log.created_at ? formatRelativeTime(log.created_at) : "—"}
+                  </span>
+                </div>
+              )
+            })
+          ) : (
+            <div className="text-center py-8">
+              <p className="text-sm text-[var(--text-muted)] font-mono">
+                {t("activity.empty")}
+              </p>
+            </div>
+          )}
+        </div>
+      </Card>
+    </div>
+  )
+}

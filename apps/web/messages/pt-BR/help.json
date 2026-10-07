@@ -1,0 +1,27 @@
+{
+  "title": "Ajuda",
+  "subtitle": "Encontre recursos e suporte para usar o CriptEnv",
+  "docs": {
+    "title": "Documentação",
+    "description": "Guias completos e referências da API"
+  },
+  "support": {
+    "title": "Suporte",
+    "description": "Abra issues e peça ajuda na comunidade"
+  },
+  "faq": {
+    "title": "Perguntas Frequentes",
+    "q1": "Como adicionar secrets em um projeto?",
+    "a1": "Acesse o projeto desejado, vá para a aba \"Secrets\" e clique em \"Novo Secret\". Insira a chave e o valor. Seus secrets são criptografados localmente antes de serem enviados.",
+    "q2": "Como funciona a criptografia?",
+    "a2": "O CriptEnv usa criptografia Zero-Knowledge. Suas chaves são derivadas localmente usando PBKDF2 e os dados são criptografados com AES-256-GCM antes de sair do seu dispositivo.",
+    "q3": "Posso usar em ambientes CI/CD?",
+    "a3": "Sim! Gere tokens de API na aba de configurações do projeto e use em seus pipelines de CI/CD para acessar secrets de forma segura.",
+    "q4": "Como funciona o sistema de convites?",
+    "a4": "Na aba \"Team\" do projeto, você pode invitar membros com diferentes permissões: Owner, Admin, Developer ou Viewer. Convites expiram automaticamente após 7 dias."
+  },
+  "security": {
+    "title": "Segurança em primeiro lugar",
+    "description": "Nunca compartilhe suas chaves de criptografia ou tokens de API. O CriptEnv nunca solicita sua senha ou chaves por email ou chat."
+  }
+}
