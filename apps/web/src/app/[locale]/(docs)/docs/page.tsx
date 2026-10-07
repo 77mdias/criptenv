@@ -1,4 +1,5 @@
-import { Link } from "@/i18n/navigation";
+import { getTranslations } from "next-intl/server"
+import { Link } from "@/i18n/navigation"
 import {
   Terminal,
   Key,
@@ -19,35 +20,86 @@ import {
 } from "lucide-react"
 import { DocCard, CardGrid, CodeBlock } from "@/components/docs"
 
-export default function DocsPage() {
+// Prose lives in `messages/<locale>/docs.json` under `home`; these
+// module-scope literals only carry stable keys, never user-facing copy.
+const principleItems = [
+  { icon: Lock, key: "zeroKnowledge" },
+  { icon: Zap, key: "consistent" },
+  { icon: Shield, key: "secureByDefault" },
+  { icon: CheckCircle2, key: "openSource" },
+] as const
+
+const capabilityItems = [
+  { icon: Terminal, key: "cli", href: "/docs/cli" },
+  { icon: GitBranch, key: "cloudSync", href: "/docs/cli/commands" },
+  { icon: Users, key: "teams", href: "/docs/guides/team-setup" },
+  { icon: Zap, key: "cicd", href: "/docs/integrations/github-action" },
+  { icon: RefreshCw, key: "cloudIntegrations", href: "/docs/integrations" },
+  { icon: RefreshCw, key: "rotation", href: "/docs/api/rotation" },
+  { icon: Eye, key: "audit", href: "/docs/api/audit" },
+  { icon: FileText, key: "importExport", href: "/docs/cli/commands" },
+  { icon: Key, key: "restApi", href: "/docs/api" },
+] as const
+
+const firstStepItems = [
+  { icon: Terminal, key: "installation", href: "/docs/getting-started/installation" },
+  { icon: Zap, key: "quickstart", href: "/docs/getting-started/quickstart" },
+  { icon: GitBranch, key: "cicd", href: "/docs/guides/cicd-setup" },
+  { icon: Shield, key: "encryption", href: "/docs/security/encryption" },
+] as const
+
+const learnMoreItems = [
+  { icon: BookOpen, key: "security", href: "/docs/security" },
+  { icon: Globe, key: "apiReference", href: "/docs/api" },
+  {
+    icon: null,
+    key: "github",
+    href: "https://github.com/77mdias/criptenv",
+    external: true,
+  },
+  {
+    icon: MessageCircle,
+    key: "community",
+    href: "https://github.com/criptenv/criptenv/issues",
+    external: true,
+  },
+  { icon: ExternalLink, key: "llmsTxt", href: "/llms.txt" },
+  { icon: ArrowRight, key: "dashboard", href: "/dashboard" },
+] as const
+
+export default async function DocsPage() {
+  const t = await getTranslations("docs.home")
+
   return (
     <div>
       {/* Hero — AbacatePay style */}
       <div className="text-center pt-8 pb-12">
         <h1 className="text-4xl md:text-5xl font-bold tracking-tight text-[var(--text-primary)] mb-4">
-          Bem-vindo à Documentação do CriptEnv
+          {t("hero.title")}
         </h1>
         <p className="text-lg text-[var(--text-secondary)] max-w-2xl mx-auto leading-relaxed">
-          Aqui você encontra tudo o que precisa para gerenciar seus secrets com segurança
-          de nível militar — do CLI ao dashboard, da API às integrações CI/CD.
+          {t("hero.subtitle")}
         </p>
       </div>
 
       {/* O que é o CriptEnv */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-3">
-          O que é o CriptEnv?
+          {t("whatIs.title")}
         </h2>
         <p className="text-[var(--text-secondary)] leading-relaxed mb-4">
-          O CriptEnv é uma plataforma open-source de gerenciamento de secrets com
-          arquitetura <strong className="text-[var(--text-primary)]">Zero-Knowledge</strong>. Alternativa ao Doppler e Infisical,
-          permite que desenvolvedores e times gerenciem variáveis de ambiente, API keys e
-          credenciais sensíveis com criptografia de ponta a ponta.
+          {t.rich("whatIs.paragraph1", {
+            strong: (chunks) => (
+              <strong className="text-[var(--text-primary)]">{chunks}</strong>
+            ),
+          })}
         </p>
         <p className="text-[var(--text-secondary)] leading-relaxed mb-6">
-          Todos os secrets são criptografados <strong className="text-[var(--text-primary)]">100% no lado do cliente</strong> com
-          AES-256-GCM. O servidor nunca recebe dados em plaintext — mesmo com acesso total
-          ao banco de dados, é impossível descriptografar suas credenciais.
+          {t.rich("whatIs.paragraph2", {
+            strong: (chunks) => (
+              <strong className="text-[var(--text-primary)]">{chunks}</strong>
+            ),
+          })}
         </p>
 
         <CodeBlock language="bash" title="Exemplo rápido">
@@ -66,172 +118,72 @@ $ criptenv list`}
       {/* Princípios — AbacatePay card style */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-5">
-          Princípios da API
+          {t("principles.title")}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <PrincipleCard
-            icon={Lock}
-            title="Zero-Knowledge"
-            description="Secrets são criptografados 100% client-side. O servidor armazena apenas ciphertext — nunca vê seus dados reais."
-          />
-          <PrincipleCard
-            icon={Zap}
-            title="Consistente"
-            description="CLI e API compartilham a mesma semântica. O que você faz no terminal, pode fazer via HTTP e vice-versa."
-          />
-          <PrincipleCard
-            icon={Shield}
-            title="Seguro por padrão"
-            description="AES-256-GCM com PBKDF2-HKDF. Sem plaintext em logs, sem exposição de tokens, sem comprometimento de dados."
-          />
-          <PrincipleCard
-            icon={CheckCircle2}
-            title="Open Source"
-            description="Código aberto sob licença MIT. Audite, contribua e execute self-hosted quando precisar."
-          />
+          {principleItems.map((item) => (
+            <PrincipleCard
+              key={item.key}
+              icon={item.icon}
+              title={t(`principles.${item.key}.title`)}
+              description={t(`principles.${item.key}.description`)}
+            />
+          ))}
         </div>
       </section>
 
       {/* O que você pode fazer */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-5">
-          O que você pode fazer
+          {t("capabilities.title")}
         </h2>
         <CardGrid cols={3}>
-          <DocCard
-            title="Gerenciar via CLI"
-            description="Terminal-first: set, get, list, delete, push, pull — tudo no seu fluxo natural de desenvolvimento."
-            icon={Terminal}
-            href="/docs/cli"
-          />
-          <DocCard
-            title="Sincronizar com Cloud"
-            description="CLI e web usam o mesmo vault remoto criptografado. Push importa arquivos; pull exporta para arquivos locais."
-            icon={GitBranch}
-            href="/docs/cli/commands"
-          />
-          <DocCard
-            title="Gerenciar Times"
-            description="Convites, roles (admin, developer, viewer) e permissões granulares por projeto."
-            icon={Users}
-            href="/docs/guides/team-setup"
-          />
-          <DocCard
-            title="CI/CD Integrado"
-            description="Tokens CI para pipelines. GitHub Action oficial. Secrets como variáveis de ambiente."
-            icon={Zap}
-            href="/docs/integrations/github-action"
-          />
-          <DocCard
-            title="Integrações Cloud"
-            description="Push direto para Vercel, Railway e Render. Sincronize secrets com seus providers."
-            icon={RefreshCw}
-            href="/docs/integrations"
-          />
-          <DocCard
-            title="Rotação de Secrets"
-            description="Políticas manual, notify e auto. Alertas de expiração e histórico de rotações."
-            icon={RefreshCw}
-            href="/docs/api/rotation"
-          />
-          <DocCard
-            title="Auditoria Completa"
-            description="Log de todas as operações: quem, quando, o que. Filtrável por ação e recurso."
-            icon={Eye}
-            href="/docs/api/audit"
-          />
-          <DocCard
-            title="Importar/Exportar"
-            description="Importe de arquivos .env existentes. Exporte em .env ou JSON."
-            icon={FileText}
-            href="/docs/cli/commands"
-          />
-          <DocCard
-            title="API REST"
-            description="API versionada com API keys, CI tokens e rate limiting. Documentação OpenAPI completa."
-            icon={Key}
-            href="/docs/api"
-          />
+          {capabilityItems.map((item) => (
+            <DocCard
+              key={item.key}
+              title={t(`capabilities.items.${item.key}.title`)}
+              description={t(`capabilities.items.${item.key}.description`)}
+              icon={item.icon}
+              href={item.href}
+            />
+          ))}
         </CardGrid>
       </section>
 
       {/* Primeiros passos */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-5">
-          Primeiros passos
+          {t("firstSteps.title")}
         </h2>
         <CardGrid cols={2}>
-          <DocCard
-            title="Instalação do CLI"
-            description="Instale via Homebrew, pip, ou script de instalação. Suporte a macOS, Linux e Windows."
-            icon={Terminal}
-            href="/docs/getting-started/installation"
-          />
-          <DocCard
-            title="Guia Rápido"
-            description="Em 5 minutos, crie seu primeiro projeto e gerencie seus primeiros secrets."
-            icon={Zap}
-            href="/docs/getting-started/quickstart"
-          />
-          <DocCard
-            title="Configurar CI/CD"
-            description="Integre com GitHub Actions, GitLab CI ou qualquer pipeline usando tokens CI."
-            icon={GitBranch}
-            href="/docs/guides/cicd-setup"
-          />
-          <DocCard
-            title="Entender a Criptografia"
-            description="Como funciona o protocolo AES-256-GCM com derivação PBKDF2/HKDF."
-            icon={Shield}
-            href="/docs/security/encryption"
-          />
+          {firstStepItems.map((item) => (
+            <DocCard
+              key={item.key}
+              title={t(`firstSteps.items.${item.key}.title`)}
+              description={t(`firstSteps.items.${item.key}.description`)}
+              icon={item.icon}
+              href={item.href}
+            />
+          ))}
         </CardGrid>
       </section>
 
       {/* Saiba mais — links externos */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-5">
-          Saiba mais sobre o CriptEnv
+          {t("learnMore.title")}
         </h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <ExternalCard
-            icon={BookOpen}
-            title="Guia de Segurança"
-            description="Protocolo de criptografia, zero-knowledge architecture e modelo de ameaças."
-            href="/docs/security"
-          />
-          <ExternalCard
-            icon={Globe}
-            title="API Reference"
-            description="Documentação completa dos endpoints da API REST."
-            href="/docs/api"
-          />
-          <ExternalCard
-            icon={GithubIcon}
-            title="GitHub (Open Source)"
-            description="Código fonte aberto, issues, contribuições. Licença MIT."
-            href="https://github.com/77mdias/criptenv"
-            external
-          />
-          <ExternalCard
-            icon={MessageCircle}
-            title="Suporte & Comunidade"
-            description="Entre em contato para dúvidas, reportar bugs ou sugerir funcionalidades."
-            href="https://github.com/criptenv/criptenv/issues"
-            external
-          />
-          <ExternalCard
-            icon={ExternalLink}
-            title="llms.txt"
-            description="Índice completo da documentação para descoberta por LLMs e agentes."
-            href="/llms.txt"
-          />
-          <ExternalCard
-            icon={ArrowRight}
-            title="Dashboard"
-            description="Acesse o painel web para gerenciar projetos, secrets e membros do time."
-            href="/dashboard"
-          />
+          {learnMoreItems.map((item) => (
+            <ExternalCard
+              key={item.key}
+              icon={item.icon ?? GithubIcon}
+              title={t(`learnMore.items.${item.key}.title`)}
+              description={t(`learnMore.items.${item.key}.description`)}
+              href={item.href}
+              external={"external" in item ? item.external : false}
+            />
+          ))}
         </div>
       </section>
     </div>

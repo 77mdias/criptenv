@@ -2,6 +2,7 @@
 
 import * as React from "react"
 import { usePathname } from "@/i18n/navigation";
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 
 interface TOCItem {
@@ -28,6 +29,7 @@ function headingSlug(text: string): string {
 
 function DocTOC({ className }: DocTOCProps) {
   const pathname = usePathname()
+  const t = useTranslations("docs.toc")
   const [activeId, setActiveId] = React.useState<string>("")
   const [headings, setHeadings] = React.useState<TOCItem[]>([])
 
@@ -89,7 +91,7 @@ function DocTOC({ className }: DocTOCProps) {
       )}
     >
       <p className="text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] mb-3">
-        Nesta página
+        {t("onThisPage")}
       </p>
       <nav className="space-y-1 border-l border-[var(--border)] pb-16">
         {headings.map((heading) => (

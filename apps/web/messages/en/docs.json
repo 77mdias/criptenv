@@ -1,0 +1,464 @@
+{
+  "sidebar": {
+    "home": {
+      "label": "Start",
+      "welcome": "Welcome",
+      "quickstart": "Quickstart",
+      "installation": "Installation",
+      "concepts": "Concepts"
+    },
+    "cli": {
+      "label": "CLI",
+      "overview": "Overview",
+      "commands": "Command Reference",
+      "configuration": "Configuration"
+    },
+    "api": {
+      "label": "API Reference",
+      "overview": "Introduction",
+      "authentication": "Authentication",
+      "projects": "Projects",
+      "environments": "Environments",
+      "vault": "Vault",
+      "members": "Members",
+      "invites": "Invites",
+      "audit": "Audit",
+      "rotation": "Rotation",
+      "integrations": "Integrations",
+      "ciTokens": "CI Tokens",
+      "health": "Health"
+    },
+    "security": {
+      "label": "Security",
+      "overview": "Overview",
+      "encryption": "Encryption Protocol",
+      "zeroKnowledge": "Zero-Knowledge",
+      "threatModel": "Threat Model"
+    },
+    "integrations": {
+      "label": "Integrations",
+      "overview": "Overview",
+      "githubAction": "GitHub Action",
+      "vercel": "Vercel",
+      "railway": "Railway",
+      "render": "Render"
+    },
+    "sdks": {
+      "label": "SDKs",
+      "overview": "Overview",
+      "javascript": "JavaScript / TypeScript",
+      "python": "Python"
+    },
+    "guides": {
+      "label": "Guides",
+      "firstProject": "Your First Project",
+      "teamSetup": "Team Setup",
+      "cicd": "CI/CD with CriptEnv",
+      "secretRotation": "Secret Rotation",
+      "migration": "Migrating from .env"
+    }
+  },
+  "search": {
+    "placeholder": "Search the documentation...",
+    "noResults": "No results found for \"{query}\"",
+    "openLabel": "Search"
+  },
+  "searchIndex": {
+    "cliInit": {
+      "title": "criptenv init",
+      "description": "Initialize directory and vault"
+    },
+    "cliLogin": {
+      "title": "criptenv login",
+      "description": "Authenticate with your CriptEnv account"
+    },
+    "cliSet": {
+      "title": "criptenv set",
+      "description": "Set a secret"
+    },
+    "cliGet": {
+      "title": "criptenv get",
+      "description": "Get a secret"
+    },
+    "cliList": {
+      "title": "criptenv list",
+      "description": "List secrets"
+    },
+    "cliPush": {
+      "title": "criptenv push",
+      "description": "Sync secrets to the cloud"
+    },
+    "cliPull": {
+      "title": "criptenv pull",
+      "description": "Download secrets from the cloud"
+    },
+    "cliDoctor": {
+      "title": "criptenv doctor",
+      "description": "Check your configuration"
+    },
+    "cliImport": {
+      "title": "criptenv import",
+      "description": "Import from a .env file"
+    },
+    "cliExport": {
+      "title": "criptenv export",
+      "description": "Export secrets"
+    },
+    "cliRotate": {
+      "title": "criptenv rotate",
+      "description": "Rotate a secret"
+    },
+    "ciLogin": {
+      "title": "criptenv ci login",
+      "description": "Log in with a CI token"
+    },
+    "ciDeploy": {
+      "title": "criptenv ci deploy",
+      "description": "Deploy via CI/CD"
+    },
+    "aes": {
+      "title": "AES-256-GCM",
+      "description": "Encryption algorithm"
+    },
+    "pbkdf2": {
+      "title": "PBKDF2",
+      "description": "Master key derivation"
+    },
+    "hkdf": {
+      "title": "HKDF",
+      "description": "Per-environment derivation"
+    },
+    "zeroKnowledge": {
+      "title": "Zero-Knowledge",
+      "description": "Zero-knowledge architecture"
+    },
+    "githubAction": {
+      "title": "GitHub Action",
+      "description": "@criptenv/action for CI/CD"
+    },
+    "vercel": {
+      "title": "Vercel",
+      "description": "Sync with Vercel"
+    },
+    "railway": {
+      "title": "Railway",
+      "description": "Sync with Railway"
+    },
+    "render": {
+      "title": "Render",
+      "description": "Sync with Render"
+    },
+    "apiKey": {
+      "title": "API Key",
+      "description": "cek_ tokens for the API"
+    },
+    "ciToken": {
+      "title": "CI Token",
+      "description": "ci_ tokens for CI/CD"
+    },
+    "sessionToken": {
+      "title": "Session Token",
+      "description": "HTTP-only session cookie"
+    },
+    "oauth": {
+      "title": "OAuth",
+      "description": "GitHub, Google, Discord"
+    },
+    "vault": {
+      "title": "Vault",
+      "description": "Encrypted secret push/pull"
+    },
+    "rotation": {
+      "title": "Secret rotation",
+      "description": "Manual, notify and auto policies"
+    },
+    "audit": {
+      "title": "Audit",
+      "description": "Logs of every operation"
+    },
+    "members": {
+      "title": "Members",
+      "description": "Team and role management"
+    },
+    "invites": {
+      "title": "Invites",
+      "description": "Email-based invite system"
+    }
+  },
+  "toc": {
+    "onThisPage": "On this page"
+  },
+  "nav": {
+    "navigation": "Navigation",
+    "documentation": "Documentation",
+    "home": "Home",
+    "repository": "Repository",
+    "tabs": {
+      "start": "Start here",
+      "guides": "Guides",
+      "cli": "CLI",
+      "api": "Reference",
+      "sdks": "SDKs",
+      "security": "Security",
+      "integrations": "Integrations"
+    }
+  },
+  "breadcrumb": {
+    "docs": "Docs"
+  },
+  "home": {
+    "hero": {
+      "title": "Welcome to the CriptEnv Documentation",
+      "subtitle": "Everything you need to manage your secrets with military-grade security — from the CLI to the dashboard, from the API to CI/CD integrations."
+    },
+    "whatIs": {
+      "title": "What is CriptEnv?",
+      "paragraph1": "CriptEnv is an open-source secrets management platform with a <strong>Zero-Knowledge</strong> architecture. An alternative to Doppler and Infisical, it lets developers and teams manage environment variables, API keys and sensitive credentials with end-to-end encryption.",
+      "paragraph2": "All secrets are encrypted <strong>100% client-side</strong> with AES-256-GCM. The server never receives plaintext data — even with full access to the database, it is impossible to decrypt your credentials."
+    },
+    "principles": {
+      "title": "API Principles",
+      "zeroKnowledge": {
+        "title": "Zero-Knowledge",
+        "description": "Secrets are encrypted 100% client-side. The server stores only ciphertext — it never sees your real data."
+      },
+      "consistent": {
+        "title": "Consistent",
+        "description": "CLI and API share the same semantics. What you do in the terminal you can do over HTTP and vice versa."
+      },
+      "secureByDefault": {
+        "title": "Secure by default",
+        "description": "AES-256-GCM with PBKDF2-HKDF. No plaintext in logs, no token exposure, no data compromise."
+      },
+      "openSource": {
+        "title": "Open Source",
+        "description": "Open code under the MIT license. Audit, contribute and self-host whenever you need."
+      }
+    },
+    "capabilities": {
+      "title": "What you can do",
+      "items": {
+        "cli": {
+          "title": "Manage via CLI",
+          "description": "Terminal-first: set, get, list, delete, push, pull — all in your natural development flow."
+        },
+        "cloudSync": {
+          "title": "Sync with the Cloud",
+          "description": "CLI and web use the same encrypted remote vault. Push imports files; pull exports to local files."
+        },
+        "teams": {
+          "title": "Manage Teams",
+          "description": "Invites, roles (admin, developer, viewer) and granular per-project permissions."
+        },
+        "cicd": {
+          "title": "Integrated CI/CD",
+          "description": "CI tokens for pipelines. Official GitHub Action. Secrets as environment variables."
+        },
+        "cloudIntegrations": {
+          "title": "Cloud Integrations",
+          "description": "Push directly to Vercel, Railway and Render. Sync secrets with your providers."
+        },
+        "rotation": {
+          "title": "Secret Rotation",
+          "description": "Manual, notify and auto policies. Expiration alerts and rotation history."
+        },
+        "audit": {
+          "title": "Complete Audit Trail",
+          "description": "A log of every operation: who, when, what. Filterable by action and resource."
+        },
+        "importExport": {
+          "title": "Import/Export",
+          "description": "Import from existing .env files. Export as .env or JSON."
+        },
+        "restApi": {
+          "title": "REST API",
+          "description": "Versioned API with API keys, CI tokens and rate limiting. Complete OpenAPI documentation."
+        }
+      }
+    },
+    "firstSteps": {
+      "title": "First steps",
+      "items": {
+        "installation": {
+          "title": "CLI Installation",
+          "description": "Install via Homebrew, pip, or the install script. Support for macOS, Linux and Windows."
+        },
+        "quickstart": {
+          "title": "Quickstart",
+          "description": "In 5 minutes, create your first project and manage your first secrets."
+        },
+        "cicd": {
+          "title": "Set up CI/CD",
+          "description": "Integrate with GitHub Actions, GitLab CI or any pipeline using CI tokens."
+        },
+        "encryption": {
+          "title": "Understand the Encryption",
+          "description": "How the AES-256-GCM protocol works with PBKDF2/HKDF derivation."
+        }
+      }
+    },
+    "learnMore": {
+      "title": "Learn more about CriptEnv",
+      "items": {
+        "security": {
+          "title": "Security Guide",
+          "description": "Encryption protocol, zero-knowledge architecture and threat model."
+        },
+        "apiReference": {
+          "title": "API Reference",
+          "description": "Complete documentation of the REST API endpoints."
+        },
+        "github": {
+          "title": "GitHub (Open Source)",
+          "description": "Open source code, issues, contributions. MIT license."
+        },
+        "community": {
+          "title": "Support & Community",
+          "description": "Get in touch for questions, bug reports or feature suggestions."
+        },
+        "llmsTxt": {
+          "title": "llms.txt",
+          "description": "Complete documentation index for discovery by LLMs and agents."
+        },
+        "dashboard": {
+          "title": "Dashboard",
+          "description": "Open the web dashboard to manage projects, secrets and team members."
+        }
+      }
+    }
+  },
+  "gettingStarted": {
+    "quickstart": {
+      "breadcrumb": {
+        "gettingStarted": "Getting Started",
+        "quickstart": "Quickstart"
+      },
+      "title": "Quickstart",
+      "subtitle": "Start using CriptEnv in under 5 minutes. This quick guide takes you from installation to reading your first secret.",
+      "prerequisites": "Prerequisites: Python 3.10+ installed on your system.",
+      "steps": {
+        "install": {
+          "title": "Install the CLI",
+          "text": "Install CriptEnv via pip:"
+        },
+        "account": {
+          "title": "Create an account and sign in",
+          "text": "Go to <link>criptenv.77mdevseven.tech</link> and create your free account. Then authenticate the CLI:",
+          "note": "The <code>criptenv init</code> command is optional. It only prepares local metadata in <code>~/.criptenv/</code>."
+        },
+        "project": {
+          "title": "Create a project",
+          "text": "Create a new project to organize your secrets:",
+          "tip": "You will set a Vault password for the project. It protects the secrets and is never sent to the server."
+        },
+        "secrets": {
+          "title": "Set your secrets",
+          "text": "Now add secret environment variables to the project:",
+          "note": "All secrets are encrypted in the CLI with AES-256-GCM before being sent. CriptEnv never receives plaintext data."
+        },
+        "list": {
+          "title": "List your secrets",
+          "text": "See all configured secrets:",
+          "note": "The <code>list</code> command shows only variable names, never values. That makes it safe to use in logs and CI."
+        },
+        "get": {
+          "title": "Read a secret",
+          "text": "Retrieve the value of a specific secret:"
+        },
+        "files": {
+          "title": "Import or export .env files",
+          "text": "The remote vault is already kept in sync. Use files when you need to migrate or materialize variables locally:"
+        }
+      },
+      "nextSteps": {
+        "title": "Next steps",
+        "concepts": "Learn the <link>core concepts</link> of CriptEnv",
+        "commands": "Explore the <link>complete command reference</link>",
+        "files": "Import and export files with <code>criptenv push FILE</code> and <code>criptenv pull --output FILE</code>",
+        "cicd": "Integrate with your <link>CI/CD pipeline</link>"
+      }
+    },
+    "installation": {
+      "breadcrumb": {
+        "gettingStarted": "Getting Started"
+      },
+      "title": "Installation",
+      "intro": "The CriptEnv CLI is distributed via PyPI. Install it on any system with Python 3.10+.",
+      "requirements": "Minimum requirement: Python 3.10 or higher. The CLI is cross-platform and works on macOS, Linux and Windows.",
+      "pip": {
+        "title": "Installing via pip",
+        "text": "The fastest way to install CriptEnv:"
+      },
+      "pipxTip": "We recommend using <code>pipx</code> to install CLI tools globally, avoiding dependency conflicts:",
+      "devTab": {
+        "label": "Development",
+        "text": "To contribute or modify the code, clone the repository and install in editable mode:"
+      },
+      "verify": {
+        "title": "Verifying the Installation",
+        "text": "After installing, check that everything is working correctly with the diagnostic command:"
+      },
+      "doctorNote": "The <code>criptenv doctor</code> command checks the installation, dependencies, configuration and cloud connectivity. If anything is wrong, it will provide instructions to fix it.",
+      "uninstall": {
+        "title": "Uninstallation",
+        "text": "To completely remove CriptEnv from your system:"
+      },
+      "uninstallWarning": "Uninstalling the CLI does not remove your local data automatically. To also remove the vault and local data, delete the <code>~/.criptenv</code> directory."
+    },
+    "concepts": {
+      "breadcrumb": {
+        "gettingStarted": "Getting Started"
+      },
+      "title": "Core Concepts",
+      "subtitle": "Understand how projects, environments, vaults and the remote CLI connect to protect secrets end to end.",
+      "zeroKnowledgeCallout": "CriptEnv is zero-knowledge: secrets are encrypted on the client and the server stores only encrypted blobs.",
+      "cards": {
+        "zeroKnowledge": {
+          "title": "Zero-Knowledge",
+          "description": "All encryption happens on your device. The API never receives plaintext secrets or the project's Vault password."
+        },
+        "projects": {
+          "title": "Projects",
+          "description": "Projects group related secrets and have their own Vault password to protect your data."
+        },
+        "environments": {
+          "title": "Environments",
+          "description": "Environments separate configuration by stage, such as development, staging and production."
+        },
+        "remoteVault": {
+          "title": "Remote Vault",
+          "description": "The remote vault is the source of truth. It stores encrypted blobs and stays in sync across CLI, web and team."
+        },
+        "vaultPassword": {
+          "title": "Vault Password",
+          "description": "Project password used only on the client to derive keys, decrypt in memory and prove vault access."
+        },
+        "importExport": {
+          "title": "Import/Export",
+          "description": "Push imports .env files into the remote vault. Pull exports remote secrets to local files."
+        }
+      },
+      "howItWorks": {
+        "title": "Zero-Knowledge — How does it work?",
+        "step1": "The CLI reads the project Vault password via prompt or <code>CRIPTENV_VAULT_PASSWORD</code>.",
+        "step2": "The environment key is derived locally with PBKDF2-HMAC-SHA256 and HKDF.",
+        "step3": "Secrets are encrypted or decrypted in memory with AES-256-GCM.",
+        "step4": "The API receives only ciphertext, IV, auth tag, checksum and metadata."
+      },
+      "vaultPasswordLostTip": "If the project's Vault password is lost, that project's encrypted secrets cannot be recovered by the server.",
+      "projects": {
+        "title": "Projects and Environments",
+        "text": "Projects are collaboration namespaces. Environments isolate values by stage without mixing production, staging and development."
+      },
+      "remoteCli": {
+        "title": "CLI as a Remote Terminal",
+        "text": "The CLI does not keep a local secrets vault as its main flow. It resolves project and environment through the API, downloads encrypted blobs, operates in memory and sends the new encrypted blobs back."
+      },
+      "importExport": {
+        "title": "Import and Export",
+        "text": "Use files when you need to migrate from an existing <code>.env</code> or materialize secrets for local execution:",
+        "warning": "Files exported as <code>.env</code> contain plaintext. Add them to <code>.gitignore</code> and treat them as local secrets."
+      }
+    }
+  }
+}

@@ -10,6 +10,7 @@ import { FloatingBar } from "@/components/floating-bar/floating-bar";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { Search, ChevronDown, ChevronRight } from "lucide-react";
 import { SearchModal, openDocSearch } from "@/components/docs/search-modal";
+import { useTranslations } from "next-intl";
 
 function GithubIcon({ className }: { className?: string }) {
   return (
@@ -21,14 +22,15 @@ function GithubIcon({ className }: { className?: string }) {
 
 import "./docs.css";
 
+/** Tabs resolve their labels from `docs.nav.tabs` at render time. */
 const topNavTabs = [
-  { href: "/docs", label: "Comece aqui", exact: true },
-  { href: "/docs/guides", label: "Guias" },
-  { href: "/docs/cli", label: "CLI" },
-  { href: "/docs/api", label: "Referência" },
-  { href: "/docs/sdks", label: "SDKs" },
-  { href: "/docs/security", label: "Segurança" },
-  { href: "/docs/integrations", label: "Integrações" },
+  { href: "/docs", labelKey: "start", exact: true },
+  { href: "/docs/guides", labelKey: "guides" },
+  { href: "/docs/cli", labelKey: "cli" },
+  { href: "/docs/api", labelKey: "api" },
+  { href: "/docs/sdks", labelKey: "sdks" },
+  { href: "/docs/security", labelKey: "security" },
+  { href: "/docs/integrations", labelKey: "integrations" },
 ];
 
 export default function DocsLayout({
@@ -36,6 +38,7 @@ export default function DocsLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations("docs");
   return (
     <div className="min-h-screen bg-(--background) text-(--text-primary) docs-root pt-30">
       <SearchModal />
@@ -69,10 +72,10 @@ export default function DocsLayout({
             type="button"
             onClick={openDocSearch}
             className="hidden md:flex items-center gap-2 px-3 py-1.5 text-sm text-(--text-tertiary) border border-(--border) rounded-lg bg-(--background) hover:bg-(--background-muted) transition-colors w-full max-w-md mx-4"
-            aria-label="Buscar documentação"
+            aria-label={t("search.openLabel")}
           >
             <Search className="h-4 w-4 shrink-0" />
-            <span className="flex-1 text-left truncate">Buscar...</span>
+            <span className="flex-1 text-left truncate">{t("search.openLabel")}</span>
             <kbd className="hidden sm:inline-flex items-center gap-0.5 px-1.5 py-0.5 text-[10px] font-mono text-(--text-muted) bg-(--background-subtle) rounded border border-(--border)">
               Ctrl K
             </kbd>
@@ -84,7 +87,7 @@ export default function DocsLayout({
               href="/"
               className="flex items-center text-sm text-(--text-tertiary) hover:text-(--text-primary) transition-colors"
             >
-              Início
+              {t("nav.home")}
             </Link>
             <Link
               href="/llms.txt"
@@ -99,7 +102,7 @@ export default function DocsLayout({
               className="hidden lg:flex items-center gap-1.5 text-sm text-(--text-tertiary) hover:text-(--text-primary) transition-colors"
             >
               <GithubIcon className="h-4 w-4" />
-              Repositório
+              {t("nav.repository")}
             </a>
 
             <ThemeSwitch />
@@ -120,7 +123,7 @@ export default function DocsLayout({
             <nav className="flex items-center gap-1 -mb-px overflow-x-auto scrollbar-hide">
               {topNavTabs.map((tab) => (
                 <DocTab key={tab.href} href={tab.href} exact={tab.exact}>
-                  {tab.label}
+                  {t(`nav.tabs.${tab.labelKey}`)}
                 </DocTab>
               ))}
             </nav>

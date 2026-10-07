@@ -21,6 +21,8 @@ export const NAMESPACES = [
   "integrations",
   "help",
   "secrets",
+  // docs area — sidebar/search chrome and (progressively) page content
+  "docs",
 ] as const;
 
 export type Namespace = (typeof NAMESPACES)[number];

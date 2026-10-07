@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation"
 import {
   Breadcrumb,
@@ -9,87 +10,82 @@ import {
   Step,
 } from '@/components/docs';
 
+const codeClass = "bg-muted px-1 rounded text-sm";
+
 export default function QuickstartPage() {
+  const t = useTranslations("docs.gettingStarted.quickstart");
+  const tRoot = useTranslations("docs");
+
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Getting Started', href: '/docs/getting-started' },
-          { label: 'Quickstart' },
+          { label: tRoot("breadcrumb.docs"), href: '/docs' },
+          { label: t("breadcrumb.gettingStarted"), href: '/docs/getting-started' },
+          { label: t("breadcrumb.quickstart") },
         ]}
       />
 
-      <h1 className="text-4xl font-bold mt-6 mb-2">Quickstart</h1>
-      <p className="text-lg text-muted-foreground mb-8">
-        Comece a usar o CriptEnv em menos de 5 minutos. Este guia rápido vai
-        levá-lo da instalação até a leitura do primeiro segredo.
-      </p>
+      <h1 className="text-4xl font-bold mt-6 mb-2">{t("title")}</h1>
+      <p className="text-lg text-muted-foreground mb-8">{t("subtitle")}</p>
 
-      <Callout type="info">
-        Pré-requisitos: Python 3.10+ instalado no seu sistema.
-      </Callout>
+      <Callout type="info">{t("prerequisites")}</Callout>
 
       <Steps>
-        <Step title="Instale o CLI">
-          <p className="mb-4">
-            Instale o CriptEnv via pip:
-          </p>
+        <Step title={t("steps.install.title")}>
+          <p className="mb-4">{t("steps.install.text")}</p>
           <CodeBlock
             language="bash"
             code={`pip install criptenv`}
           />
         </Step>
 
-        <Step title="Crie uma conta e faça login">
+        <Step title={t("steps.account.title")}>
           <p className="mb-4">
-            Acesse{' '}
-            <a href="https://criptenv.77mdevseven.tech" className="underline">
-              criptenv.77mdevseven.tech
-            </a>{' '}
-            e crie sua conta gratuitamente. Depois autentique o CLI:
+            {t.rich("steps.account.text", {
+              link: (chunks) => (
+                <a
+                  href="https://criptenv.77mdevseven.tech"
+                  className="underline"
+                >
+                  {chunks}
+                </a>
+              ),
+            })}
           </p>
           <CodeBlock language="bash" code="criptenv login --email you@example.com" />
           <p className="mt-3 text-sm text-muted-foreground">
-            O comando <code className="bg-muted px-1 rounded text-sm">criptenv init</code>{' '}
-            é opcional. Ele apenas prepara metadata local em{' '}
-            <code className="bg-muted px-1 rounded text-sm">~/.criptenv/</code>.
+            {t.rich("steps.account.note", {
+              code: (chunks) => <code className={codeClass}>{chunks}</code>,
+            })}
           </p>
         </Step>
 
-        <Step title="Crie um projeto">
-          <p className="mb-4">
-            Crie um novo projeto para organizar seus segredos:
-          </p>
+        <Step title={t("steps.project.title")}>
+          <p className="mb-4">{t("steps.project.text")}</p>
           <CodeBlock
             language="bash"
             code={`criptenv projects create meu-projeto`}
           />
           <Callout type="tip" className="mt-3">
-            Você definirá uma Vault password para o projeto. Ela protege os
-            secrets e não é enviada ao servidor.
+            {t("steps.project.tip")}
           </Callout>
         </Step>
 
-        <Step title="Defina seus segredos">
-          <p className="mb-4">
-            Agora adicione variáveis de ambiente secretas ao projeto:
-          </p>
+        <Step title={t("steps.secrets.title")}>
+          <p className="mb-4">{t("steps.secrets.text")}</p>
           <CodeBlock
             language="bash"
             code={`criptenv set DATABASE_URL="postgres://user:pass@host/db"
 criptenv set API_KEY="your_api_key_here"`}
           />
           <p className="mt-3 text-sm text-muted-foreground">
-            Todos os segredos são criptografados no CLI com AES-256-GCM antes
-            do envio. O CriptEnv nunca recebe dados em texto claro.
+            {t("steps.secrets.note")}
           </p>
         </Step>
 
-        <Step title="Liste seus segredos">
-          <p className="mb-4">
-            Veja todos os segredos configurados:
-          </p>
+        <Step title={t("steps.list.title")}>
+          <p className="mb-4">{t("steps.list.text")}</p>
           <CodeBlock
             language="bash"
             code={`criptenv list
@@ -98,17 +94,14 @@ criptenv set API_KEY="your_api_key_here"`}
 # API_KEY`}
           />
           <Callout type="info" className="mt-3">
-            O comando{' '}
-            <code className="bg-muted px-1 rounded text-sm">list</code> mostra
-            apenas os nomes das variáveis, nunca os valores. Assim é seguro usar
-            em logs e CI.
+            {t.rich("steps.list.note", {
+              code: (chunks) => <code className={codeClass}>{chunks}</code>,
+            })}
           </Callout>
         </Step>
 
-        <Step title="Leia um segredo">
-          <p className="mb-4">
-            Recupere o valor de um segredo específico:
-          </p>
+        <Step title={t("steps.get.title")}>
+          <p className="mb-4">{t("steps.get.text")}</p>
           <CodeBlock
             language="bash"
             code={`criptenv get DATABASE_URL
@@ -116,11 +109,8 @@ criptenv set API_KEY="your_api_key_here"`}
           />
         </Step>
 
-        <Step title="Importe ou exporte arquivos .env">
-          <p className="mb-4">
-            O vault remoto já fica sincronizado. Use arquivos quando precisar
-            migrar ou materializar variáveis localmente:
-          </p>
+        <Step title={t("steps.files.title")}>
+          <p className="mb-4">{t("steps.files.text")}</p>
           <CodeBlock
             language="bash"
             code={`criptenv push .env.production -p <project-id>
@@ -129,37 +119,48 @@ criptenv pull -p <project-id> --output .env.production`}
         </Step>
       </Steps>
 
-      <h2 className="text-2xl font-bold mt-12 mb-4">Próximos passos</h2>
+      <h2 className="text-2xl font-bold mt-12 mb-4">{t("nextSteps.title")}</h2>
       <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
         <li>
-          Aprenda os{' '}
-          <Link
-            href="/docs/getting-started/concepts"
-            className="text-primary hover:underline"
-          >
-            conceitos fundamentais
-          </Link>{' '}
-          do CriptEnv
+          {t.rich("nextSteps.concepts", {
+            link: (chunks) => (
+              <Link
+                href="/docs/getting-started/concepts"
+                className="text-primary hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
         </li>
         <li>
-          Explore a{' '}
-          <Link
-            href="/docs/cli/commands"
-            className="text-primary hover:underline"
-          >
-            referência completa de comandos
-          </Link>
+          {t.rich("nextSteps.commands", {
+            link: (chunks) => (
+              <Link
+                href="/docs/cli/commands"
+                className="text-primary hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
         </li>
         <li>
-          Importe e exporte arquivos com{' '}
-          <code className="bg-muted px-1 rounded text-sm">criptenv push FILE</code> e{' '}
-          <code className="bg-muted px-1 rounded text-sm">criptenv pull --output FILE</code>
+          {t.rich("nextSteps.files", {
+            code: (chunks) => <code className={codeClass}>{chunks}</code>,
+          })}
         </li>
         <li>
-          Integre com seu{' '}
-          <Link href="/docs/guides/cicd-setup" className="text-primary hover:underline">
-            pipeline de CI/CD
-          </Link>
+          {t.rich("nextSteps.cicd", {
+            link: (chunks) => (
+              <Link
+                href="/docs/guides/cicd-setup"
+                className="text-primary hover:underline"
+              >
+                {chunks}
+              </Link>
+            ),
+          })}
         </li>
       </ul>
     </div>
