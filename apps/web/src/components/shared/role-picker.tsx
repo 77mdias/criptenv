@@ -6,8 +6,10 @@ import { cn } from "@/lib/utils"
 import type { ProjectRole } from "@/lib/project-permissions"
 
 // Stable protocol values only — display labels come from the catalogue
-// (`members.roles.<key>`), never from module scope.
-type RoleKey = "owner" | "admin" | "developer" | "viewer"
+// (`members.roles.<key>`), never from module scope. The array doubles as the
+// runtime guard for template lookups (see audit-i18n-keys.mjs).
+const roleKeys = ["owner", "admin", "developer", "viewer"] as const
+type RoleKey = (typeof roleKeys)[number]
 
 interface RolePickerProps {
   value: string
@@ -42,7 +44,7 @@ export function RolePicker({ value, options, disabled = false, onChange }: RoleP
               )}
               onClick={() => onChange(role)}
             >
-              {t(`roles.${role as RoleKey}`)}
+              {roleKeys.includes(role as RoleKey) ? t(`roles.${role}`) : t("roles.viewer")}
             </button>
           )
         })}
