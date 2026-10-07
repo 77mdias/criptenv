@@ -9,6 +9,7 @@ import { useAuthStore } from "@/stores/auth";
 import { Button } from "@/components/ui/button";
 import { Brand } from "@/components/layout/brand";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
+import { LocaleSwitcher } from "@/components/i18n/locale-switcher";
 import { NotificationBell } from "./notification-bell";
 
 interface Breadcrumb {
@@ -110,6 +111,9 @@ function TopNav({ breadcrumbs = [], className }: TopNavProps) {
         <NotificationBell />
         <div className="scale-90 sm:scale-100">
           <ThemeSwitch />
+        </div>
+        <div className="scale-90 sm:scale-100">
+          <LocaleSwitcher />
         </div>
         <div className="ml-0.5 sm:ml-2 flex h-7 w-7 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full bg-(--accent) text-(--accent-foreground) text-[10px] sm:text-xs font-bold overflow-hidden">
           {authUser?.avatar_url && !avatarBroken ? (
