@@ -14,6 +14,18 @@ interface DocTOCProps {
   className?: string
 }
 
+// Slug seguro para âncoras: apenas [a-z0-9-], sem metacaracteres de HTML/URL.
+// Deriva de textContent dos headings; sanitizar evita que texto arbitrário
+// seja reinterpretado como HTML/URL no `href` do TOC (alerta CodeQL).
+function headingSlug(text: string): string {
+  return (
+    text
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "") || "secao"
+  )
+}
+
 function DocTOC({ className }: DocTOCProps) {
   const pathname = usePathname()
   const [activeId, setActiveId] = React.useState<string>("")
@@ -27,7 +39,7 @@ function DocTOC({ className }: DocTOCProps) {
       )
 
       const items: TOCItem[] = Array.from(elements).map((el) => ({
-        id: el.id || el.textContent?.toLowerCase().replace(/\s+/g, "-") || "",
+        id: el.id || headingSlug(el.textContent || ""),
         title: el.textContent || "",
         level: parseInt(el.tagName.charAt(1)),
       }))
@@ -35,7 +47,7 @@ function DocTOC({ className }: DocTOCProps) {
       // Set IDs on headings that don't have them
       elements.forEach((el) => {
         if (!el.id) {
-          el.id = el.textContent?.toLowerCase().replace(/\s+/g, "-") || ""
+          el.id = headingSlug(el.textContent || "")
         }
       })
 
