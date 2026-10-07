@@ -1707,3 +1707,37 @@ Descobertas estruturais que condicionam a decisão:
 - ⚠️ Esforço estimado de engenharia: **~19–28 dias**, dos quais ~10–14 só na CLI (rewire de 398 echoes, ~200 fragmentos de f-string e 9 tabelas). O volume de **tradução** é paralelo e não é trabalho de engenharia.
 - ✅ Fase 0 + Fase A (piloto) **concluídas**: infraestrutura completa, rotas sob `[locale]`, seletor de idioma, login/auth/marketing traduzidos nos 3 idiomas, hreflang e guard de auth ciente de locale — todas verificadas em runtime (§8.bis do plano).
 - ⚠️ Todas as rotas saíram como `ƒ Dynamic` no build. Continua entregando HTML server-rendered e indexável (o que DEC-055 protege), mas sob demanda em vez de estático — medir impacto no cache do Cloudflare antes do deploy.
+
+## DEC-068 — i18n da área de docs: chrome trilíngue, conteúdo em fases
+
+**Data**: 2026-10-07 · **Status**: aceita · **Contexto**: continuação da DEC-067 (PR #46)
+
+A área de docs (`(docs)` sob `[locale]`) tem ~36 páginas de referência com
+grande volume de prosa técnica. Traduzir tudo de uma vez atrasaria o merge do
+PR #46 sem valor proporcional. Decisão de escopo em fases:
+
+1. **Chrome 100% trilíngue (já no PR #46)**: namespace `docs` com sidebar,
+   busca (modal + índice pesquisável), TOC ("Nesta página"), breadcrumb,
+   navbar e tabs. Novo namespace registrado em `src/i18n/messages.ts`.
+2. **Hub + getting-started trilíngues** (docs/page.tsx, quickstart,
+   installation, concepts) — primeira superfície de conteúdo.
+3. **Referência profunda (CLI/API/segurança/integrações/SDKs/guides)**:
+   conteúdo permanece pt-BR por enquanto — mesmo critério das páginas
+   legais (DEC-067 §legal). Migração em follow-ups.
+
+**Detalhes técnicos**:
+- `doc-sidebar.tsx`: itens agora carregam `titleKey` (+`groupKey` nos
+  grupos); labels resolvidos via `useTranslations("docs.sidebar")`.
+- `search-modal.tsx`: índice construído a partir do sidebar + extras
+  (`docs.searchIndex.*`), tudo resolvido do catálogo — busca funciona nos
+  3 idiomas.
+- O auditor `check:i18n` valida chaves estáticas; chaves dinâmicas
+  (`t(\`sidebar.${...}\`)`) são cobertas pelos testes de runtime, não pelo
+  auditor (limitação documentada).
+- `doc-toc.tsx`: slugs de heading sanitizados (`[a-z0-9-]`) — corrige
+  alerta CodeQL de texto DOM reinterpretado no `href`.
+
+**Notável do merge com a main (contexto)**: main adotou vinext 1.0.1
+(PR #47), o que **resolveu o bug de perda de contexto do next-intl no
+runtime dev** que bloqueava o E2E (todas as 3 specs agora verdes; CI do
+PR #46 100% verde em 56e875d).

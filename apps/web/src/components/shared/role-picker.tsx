@@ -7,7 +7,7 @@ import type { ProjectRole } from "@/lib/project-permissions"
 
 // Stable protocol values only — display labels come from the catalogue
 // (`members.roles.<key>`), never from module scope.
-const roleKeys = ["owner", "admin", "developer", "viewer"] as const
+type RoleKey = "owner" | "admin" | "developer" | "viewer"
 
 interface RolePickerProps {
   value: string
@@ -42,7 +42,7 @@ export function RolePicker({ value, options, disabled = false, onChange }: RoleP
               )}
               onClick={() => onChange(role)}
             >
-              {t(`roles.${role as (typeof roleKeys)[number]}`)}
+              {t(`roles.${role as RoleKey}`)}
             </button>
           )
         })}
