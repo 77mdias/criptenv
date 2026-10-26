@@ -463,10 +463,10 @@ criptenv projects create meusite --description "Backend do MeuSite"`}
       <p className="mb-4">
         Importa um arquivo de secrets para o vault remoto no contexto de CI.
       </p>
-      <Callout variant="warning">
-        Ainda indisponível: a API não aceita a sessão de CI para escrita no vault.
-        Para ler secrets em CI, use <InlineCode>CRIPTENV_API_KEY</InlineCode> com{' '}
-        <InlineCode>criptenv run</InlineCode> ou o GitHub Action.
+      <Callout variant="info">
+        Requer CLI 0.2.2+, um token de CI com escopo <InlineCode>write:secrets</InlineCode>{' '}
+        e <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode>: os valores são cifrados no runner
+        e a API só recebe os blobs. Tokens restritos a um ambiente só podem fazer deploy nele.
       </Callout>
       <ParamTable
         title="Opções"
@@ -504,7 +504,9 @@ criptenv projects create meusite --description "Backend do MeuSite"`}
           />
           <CodeBlock
             language="bash"
-            code={`criptenv ci tokens create --name "GitHub Actions"`}
+            code={`criptenv ci tokens create --name "GitHub Actions"
+# Para ci deploy: escrita, restrito a um ambiente
+criptenv ci tokens create --name "Deploy" --scopes read:secrets,write:secrets --environment production`}
           />
         </Tab>
         <Tab value="revoke" label="revoke">

@@ -175,6 +175,26 @@ class RemoteVault:
             version=int(result.get("version", 0)),
         )
 
+    def load_ci_state(self, ci_secrets: dict[str, Any], env_name: str) -> RemoteVaultState:
+        """Build state from a GET /ci/secrets response.
+
+        CI sessions cannot call the project, environments or vault/pull routes,
+        but /ci/secrets returns everything they would: blobs, version,
+        environment id and the public vault config.
+        """
+        vault_config = ci_secrets.get("vault_config")
+        if not vault_config:
+            raise click.ClickException(
+                "Project does not have vault password configuration."
+            )
+        self._vault_config = vault_config
+        return RemoteVaultState(
+            project_id=self.project_id,
+            environment=RemoteEnvironment(id=ci_secrets["environment_id"], name=env_name),
+            blobs=list(ci_secrets.get("blobs", [])),
+            version=int(ci_secrets.get("version", 0)),
+        )
+
     async def decrypt_blob(self, blob: dict[str, Any], environment_id: str) -> bytes:
         env_key = await self.environment_key(environment_id)
         plaintext = decrypt(

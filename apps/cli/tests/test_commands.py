@@ -20,7 +20,7 @@ class TestCLIHelp:
     def test_version(self, runner):
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "0.2.1" in result.output
+        assert "0.2.2" in result.output
 
     def test_init_help(self, runner):
         result = runner.invoke(main, ["init", "--help"])
