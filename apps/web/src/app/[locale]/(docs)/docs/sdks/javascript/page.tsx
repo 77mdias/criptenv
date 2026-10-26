@@ -18,7 +18,7 @@ export default function JavaScriptSDKPage() {
         SDK JavaScript / TypeScript
       </h1>
 
-      <Callout type="info">
+      <Callout variant="info">
         O SDK oficial para JavaScript/TypeScript está em desenvolvimento.
         Acompanhe o progresso no{' '}
         <a

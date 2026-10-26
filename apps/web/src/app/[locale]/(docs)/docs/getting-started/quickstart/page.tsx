@@ -29,7 +29,7 @@ export default function QuickstartPage() {
       <h1 className="text-4xl font-bold mt-6 mb-2">{t("title")}</h1>
       <p className="text-lg text-muted-foreground mb-8">{t("subtitle")}</p>
 
-      <Callout type="info">{t("prerequisites")}</Callout>
+      <Callout variant="info">{t("prerequisites")}</Callout>
 
       <Steps>
         <Step title={t("steps.install.title")}>
@@ -53,7 +53,7 @@ export default function QuickstartPage() {
               ),
             })}
           </p>
-          <CodeBlock language="bash" code="criptenv login --email you@example.com" />
+          <CodeBlock language="bash" code="criptenv login --email-address you@example.com" />
           <p className="mt-3 text-sm text-muted-foreground">
             {t.rich("steps.account.note", {
               code: (chunks) => <code className={codeClass}>{chunks}</code>,
@@ -67,7 +67,7 @@ export default function QuickstartPage() {
             language="bash"
             code={`criptenv projects create meu-projeto`}
           />
-          <Callout type="tip" className="mt-3">
+          <Callout variant="tip" className="mt-3">
             {t("steps.project.tip")}
           </Callout>
         </Step>
@@ -93,7 +93,7 @@ criptenv set API_KEY="your_api_key_here"`}
 # DATABASE_URL
 # API_KEY`}
           />
-          <Callout type="info" className="mt-3">
+          <Callout variant="info" className="mt-3">
             {t.rich("steps.list.note", {
               code: (chunks) => <code className={codeClass}>{chunks}</code>,
             })}

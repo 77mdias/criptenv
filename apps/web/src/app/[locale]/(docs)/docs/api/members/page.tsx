@@ -133,7 +133,7 @@ export default function ApiMembersPage() {
         </CodeBlock>
       </ResponseBlock>
 
-      <Callout type="info">
+      <Callout variant="info">
         Quando o papel é <InlineCode>admin</InlineCode> ou <InlineCode>developer</InlineCode>,
         o membro precisa da Vault password do projeto (compartilhada criptograficamente) para
         acessar os segredos. O papel <InlineCode>viewer</InlineCode> não necessita da senha,
@@ -255,7 +255,7 @@ export default function ApiMembersPage() {
         </CodeBlock>
       </ResponseBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Ao promover um membro para <InlineCode>admin</InlineCode>, ele terá acesso a
         gerenciar outros membros e re-criptografar o vault. Certifique-se de que essa
         pessoa é de confiança.
@@ -294,7 +294,7 @@ export default function ApiMembersPage() {
         </p>
       </ResponseBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Após remover um membro que tinha acesso aos segredos (admin ou developer),
         execute <InlineCode>POST /v1/projects/{'{id}'}/vault/re-key</InlineCode> para
         re-criptografar todos os segredos com uma nova chave. Isso garante que o membro

@@ -28,7 +28,7 @@ export default function ZeroKnowledgePage() {
         do usuário, usando a Vault password do projeto que nunca é transmitida.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         Em termos simples: mesmo que o servidor seja completamente comprometido,
         os atacantes só teriam acesso a dados criptografados que são inúteis sem
         a Vault password do projeto.
@@ -154,7 +154,7 @@ Se não coincidir → acesso negado.
 • São dois caminhos criptográficos independentes`}
       />
 
-      <Callout type="warning">
+      <Callout variant="warning">
         O vault proof usa um salt constante (&quot;proof_salt&quot;) porque seu propósito é
         autenticação, não proteção de dados. Isso é seguro porque o proof não pode
         ser revertido para obter a chave de criptografia.

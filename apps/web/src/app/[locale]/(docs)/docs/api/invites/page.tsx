@@ -27,7 +27,7 @@ export default function InvitesPage() {
         específico.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         Todos os endpoints abaixo requerem autenticação e pertencem à rota base{' '}
         <code className="bg-muted px-1 rounded text-sm">
           /api/v1/projects/{'{pid}'}/invites

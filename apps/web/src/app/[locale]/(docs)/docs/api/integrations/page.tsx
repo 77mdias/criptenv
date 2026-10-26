@@ -26,7 +26,7 @@ export default function IntegrationsPage() {
         automaticamente. Suportados: Vercel, Railway e Render.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         As integrações permitem sincronização bidirecional — você pode enviar
         segredos do CriptEnv para o provedor (push) ou importar do provedor para
         o CriptEnv (pull).

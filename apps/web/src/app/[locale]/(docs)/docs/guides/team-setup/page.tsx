@@ -140,12 +140,12 @@ criptenv team update dev@empresa.com --role admin
 criptenv team remove dev@empresa.com`}
       </CodeBlock>
 
-      <Callout type="tip">
+      <Callout variant="tip">
         Recomendamos seguir o princípio do menor privilegio: conceda apenas as
         permissões necessárias para cada membro realizar suas tarefas.
       </Callout>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Membros com papel <strong>Owner</strong> têm acesso total à conta,
         incluindo cobrança e exclusão de projetos. Limite este papel a
         pessoas de extrema confiança.

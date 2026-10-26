@@ -27,7 +27,7 @@ export default function RotationPage() {
          está planejada, mas ainda não foi implementada.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         <strong>Políticas disponíveis:</strong>
         <br />• <strong>manual</strong> — você rotaciona quando quiser
          <br />• <strong>notify</strong> — alerta quando o segredo expira
@@ -312,7 +312,7 @@ export default function RotationPage() {
           </div>
         </div>
 
-        <Callout type="info">
+        <Callout variant="info">
           <strong>Entrega e segurança:</strong> o owner e membros owner/admin
           aceitos são destinatários; email exige <code>email_verified=true</code>.
           Cada entrega tem identidade única, fencing token e até três tentativas

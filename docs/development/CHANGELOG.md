@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CLI 0.2.1 (PyPI) + API — 2026-10-26
+
+Login por API key nunca funcionou (caminho recomendado para CI fora do GitHub Actions):
+- **CLI:** `--api-key` estava declarado com `flag_value` e o Click o tratava como flag pura, então `criptenv login --api-key cek_xxx` falhava com "unexpected extra argument". Agora aceita valor, prompt quando omitido e a variável `CRIPTENV_API_KEY`.
+- **API:** `GET /api/auth/session` aceitava só sessão de usuário; o CLI valida a key ali e recebia 401. Passou a usar `get_current_user_or_api_key`.
+- **Docs:** exemplos corrigidos (`login --email-address`, `ci ... --env`, referência do GitHub Action `77mdias/criptenv/packages/github-action@github-action-v1`); guias de GitLab/CircleCI passam a usar `CRIPTENV_API_KEY` + `criptenv run`, já que `ci deploy` ainda não tem endpoint na API.
+- **Release:** workflow `release-cli.yml` publica no PyPI por Trusted Publishing ao criar a tag `cli-v*`.
+
 ### CLI 0.2.0 (PyPI) — 2026-10-26
 
 Primeira publicação no PyPI desde a 0.1.0 (2026-05), que ainda usava o modelo de vault local. A 0.2.0 alinha o pacote ao vault remoto descrito em `/docs`.

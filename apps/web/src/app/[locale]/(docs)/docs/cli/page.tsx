@@ -85,15 +85,15 @@ export default function CliOverviewPage() {
 pip install criptenv
 
 # Autenticar a CLI
-criptenv login --email you@example.com`}
+criptenv login --email-address you@example.com`}
       />
 
-      <Callout type="info">
+      <Callout variant="info">
         Requer Python 3.10 ou superior. O CLI é multiplataforma e
         funciona em macOS, Linux e Windows.
       </Callout>
 
-      <Callout type="info">
+      <Callout variant="info">
         Após a instalação, consulte a{' '}
         <Link href="/docs/cli/commands" className="underline font-medium">
           Referência de Comandos

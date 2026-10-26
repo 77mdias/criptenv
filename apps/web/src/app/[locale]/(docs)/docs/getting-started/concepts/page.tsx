@@ -37,7 +37,7 @@ export default function ConceptsPage() {
       <h1 className="text-4xl font-bold mt-6 mb-2">{t("title")}</h1>
       <p className="text-lg text-muted-foreground mb-8">{t("subtitle")}</p>
 
-      <Callout type="info">{t("zeroKnowledgeCallout")}</Callout>
+      <Callout variant="info">{t("zeroKnowledgeCallout")}</Callout>
 
       <CardGrid columns={2} className="mt-10">
         {conceptItems.map((item) => (
@@ -61,7 +61,7 @@ export default function ConceptsPage() {
         <li>{t("howItWorks.step3")}</li>
         <li>{t("howItWorks.step4")}</li>
       </ol>
-      <Callout type="tip">{t("vaultPasswordLostTip")}</Callout>
+      <Callout variant="tip">{t("vaultPasswordLostTip")}</Callout>
 
       <h2 className="text-2xl font-bold mt-14 mb-4">{t("projects.title")}</h2>
       <p className="text-muted-foreground mb-4">{t("projects.text")}</p>
@@ -93,7 +93,7 @@ criptenv rotate API_KEY -p <project-id> -e production`}
 criptenv pull -p <project-id> -e production --output .env.production`}
       />
 
-      <Callout type="warning" className="mt-8">
+      <Callout variant="warning" className="mt-8">
         {t.rich("importExport.warning", {
           code: (chunks) => <code className={codeClass}>{chunks}</code>,
         })}

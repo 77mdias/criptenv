@@ -59,7 +59,7 @@ export default function FirstProjectPage() {
 
         <Step title="Faça login">
           <CodeBlock language="bash" title="Autenticar CLI">
-{`criptenv login --email you@example.com`}
+{`criptenv login --email-address you@example.com`}
           </CodeBlock>
         </Step>
 
@@ -70,7 +70,7 @@ export default function FirstProjectPage() {
           <CodeBlock language="bash" title="Criar projeto">
 {`criptenv projects create meu-app`}
           </CodeBlock>
-          <Callout type="tip" className="mt-3">
+          <Callout variant="tip" className="mt-3">
             Você será solicitado a definir uma senha de vault para o projeto.
             Essa senha é usada para criptografar os secrets deste projeto.
           </Callout>
@@ -105,7 +105,7 @@ criptenv set API_KEY="your_api_key_here"`}
         </Step>
       </Steps>
 
-      <Callout type="success">
+      <Callout variant="tip">
         Parabéns! Seu primeiro projeto está configurado. Agora seus secrets
         estão criptografados e seguros no CriptEnv.
       </Callout>
