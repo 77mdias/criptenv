@@ -4,7 +4,7 @@ import asyncio
 
 import click
 
-from criptenv.context import cli_context, resolve_project_id
+from criptenv.context import async_cli_context, resolve_project_id_async
 
 
 @click.group("members")
@@ -23,8 +23,8 @@ def members_list(project_id: str | None):
         criptenv members list -p <project-id>
     """
     async def _do_list():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.list_members(resolved_project_id)
             items = result.get("members", [])
 
@@ -60,8 +60,8 @@ def members_add(user_id: str, role: str, project_id: str | None):
         criptenv members add <user-id> --role admin -p <project-id>
     """
     async def _do_add():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.add_member(resolved_project_id, user_id, role)
             click.echo(f"✓ Added member ({result.get('id', 'unknown')})")
             click.echo(f"  User: {user_id}")
@@ -84,8 +84,8 @@ def members_update(member_id: str, role: str, project_id: str | None):
         criptenv members update <member-id> --role viewer -p <project-id>
     """
     async def _do_update():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.update_member(resolved_project_id, member_id, role)
             click.echo(f"✓ Updated member ({result.get('id', 'unknown')})")
             click.echo(f"  New role: {role}")
@@ -110,8 +110,8 @@ def members_remove(member_id: str, project_id: str | None, force: bool):
             return
 
     async def _do_remove():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             await client.remove_member(resolved_project_id, member_id)
             click.echo(f"✓ Removed member {member_id}")
 

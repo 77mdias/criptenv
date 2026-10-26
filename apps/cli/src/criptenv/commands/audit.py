@@ -4,7 +4,7 @@ import asyncio
 
 import click
 
-from criptenv.context import cli_context, resolve_project_id
+from criptenv.context import async_cli_context, resolve_project_id_async
 
 
 @click.group("audit")
@@ -28,8 +28,8 @@ def audit_list(project_id: str | None, action: str | None, resource: str | None,
         criptenv audit list -p <project-id> --action secret.created --limit 20
     """
     async def _do_list():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.list_audit(resolved_project_id,
                 action=action,
                 resource_type=resource,
@@ -75,8 +75,8 @@ def audit_export(project_id: str | None, format: str, output: str | None):
     import csv
 
     async def _do_export():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.list_audit(resolved_project_id, page=1, per_page=100)
             logs = result.get("logs", [])
 

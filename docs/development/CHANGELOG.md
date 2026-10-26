@@ -7,6 +7,17 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CLI 0.2.0 (PyPI) — 2026-10-26
+
+Primeira publicação no PyPI desde a 0.1.0 (2026-05), que ainda usava o modelo de vault local. A 0.2.0 alinha o pacote ao vault remoto descrito em `/docs`.
+
+**Fixes:**
+- `members`, `invites`, `audit`, `api-keys`, `sessions` e `integrations` quebravam com `asyncio.run() cannot be called from a running event loop`: usavam o `cli_context` síncrono dentro de corrotinas. Migrados para `async_cli_context`/`resolve_project_id_async`; os mocks dos testes passaram a ser async context managers.
+- `sessions` esperava `{"sessions": [...]}` e os campos `device_info`/`is_current`; a API devolve uma lista de `SessionResponse` (`user_agent`/`current`). Erros agora saem com status 1.
+- Comandos `ci` saíam com status 0 em erro (pipeline passava silenciosamente); agora saem com 1.
+
+**Breaking:** `criptenv login --email` virou flag; o e-mail vai em `--email-address`.
+
 ### Refactor/Security/CI — Sprint 3 da auditoria completa 2026-10
 
 **Backend (API):**

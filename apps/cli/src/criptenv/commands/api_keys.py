@@ -4,7 +4,7 @@ import asyncio
 
 import click
 
-from criptenv.context import cli_context, resolve_project_id
+from criptenv.context import async_cli_context, resolve_project_id_async
 
 VALID_SCOPES = [
     "read:secrets",
@@ -32,8 +32,8 @@ def api_keys_list(project_id: str | None):
         criptenv api-keys list -p <project-id>
     """
     async def _do_list():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.list_api_keys(resolved_project_id)
             items = result.get("items", [])
 
@@ -74,8 +74,8 @@ def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], e
         criptenv api-keys create -p <project-id> -n "Deploy Key" -s read:secrets -s write:secrets --expires-days 90
     """
     async def _do_create():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             reserved_scopes = sorted(set(scope) - {"read:secrets"})
             if reserved_scopes:
                 click.echo(
@@ -120,8 +120,8 @@ def api_keys_revoke(key_id: str, project_id: str | None, force: bool):
             return
 
     async def _do_revoke():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.revoke_api_key(resolved_project_id, key_id)
             click.echo(f"✓ Revoked API key {key_id}")
             if result.get("name"):

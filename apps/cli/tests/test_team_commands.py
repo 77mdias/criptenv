@@ -24,7 +24,7 @@ def runner():
 # ─── Members ─────────────────────────────────────────────────────────────────
 
 class TestMembersCommands:
-    @patch("criptenv.commands.members.cli_context")
+    @patch("criptenv.commands.members.async_cli_context")
     def test_members_list(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.list_members = AsyncMock(return_value={
@@ -34,8 +34,8 @@ class TestMembersCommands:
             ],
             "total": 2,
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["members", "list", "--project", "prj_123"])
         assert result.exit_code == 0
@@ -43,36 +43,36 @@ class TestMembersCommands:
         assert "admin" in result.output
         assert "2 member(s)" in result.output
 
-    @patch("criptenv.commands.members.cli_context")
+    @patch("criptenv.commands.members.async_cli_context")
     def test_members_add(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.add_member = AsyncMock(return_value={"id": "mem_3", "role": "viewer"})
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["members", "add", "usr_99", "--role", "viewer", "--project", "prj_123"])
         assert result.exit_code == 0
         assert "Added member" in result.output
         assert "viewer" in result.output
 
-    @patch("criptenv.commands.members.cli_context")
+    @patch("criptenv.commands.members.async_cli_context")
     def test_members_update(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.update_member = AsyncMock(return_value={"id": "mem_1", "role": "developer"})
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["members", "update", "mem_1", "--role", "developer", "--project", "prj_123"])
         assert result.exit_code == 0
         assert "Updated member" in result.output
         assert "developer" in result.output
 
-    @patch("criptenv.commands.members.cli_context")
+    @patch("criptenv.commands.members.async_cli_context")
     def test_members_remove(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.remove_member = AsyncMock(return_value=None)
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["members", "remove", "mem_1", "--project", "prj_123", "--force"])
         assert result.exit_code == 0
@@ -82,7 +82,7 @@ class TestMembersCommands:
 # ─── Invites ─────────────────────────────────────────────────────────────────
 
 class TestInvitesCommands:
-    @patch("criptenv.commands.invites.cli_context")
+    @patch("criptenv.commands.invites.async_cli_context")
     def test_invites_list(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.list_invites = AsyncMock(return_value={
@@ -92,8 +92,8 @@ class TestInvitesCommands:
             ],
             "total": 2,
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["invites", "list", "--project", "prj_123"])
         assert result.exit_code == 0
@@ -101,28 +101,28 @@ class TestInvitesCommands:
         assert "pending" in result.output
         assert "accepted" in result.output
 
-    @patch("criptenv.commands.invites.cli_context")
+    @patch("criptenv.commands.invites.async_cli_context")
     def test_invites_create(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.create_invite = AsyncMock(return_value={
             "id": "inv_3", "email": "charlie@example.com", "role": "admin", "expires_at": "2026-06-01"
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["invites", "create", "charlie@example.com", "--role", "admin", "--project", "prj_123"])
         assert result.exit_code == 0
         assert "Invite sent" in result.output
         assert "charlie@example.com" in result.output
 
-    @patch("criptenv.commands.invites.cli_context")
+    @patch("criptenv.commands.invites.async_cli_context")
     def test_invites_accept(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.accept_invite = AsyncMock(return_value={
             "id": "inv_1", "project_name": "My Project", "role": "developer"
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["invites", "accept", "inv_1", "--project", "prj_123"])
         assert result.exit_code == 0
@@ -130,12 +130,12 @@ class TestInvitesCommands:
         assert "My Project" in result.output
         assert "developer" in result.output
 
-    @patch("criptenv.commands.invites.cli_context")
+    @patch("criptenv.commands.invites.async_cli_context")
     def test_invites_revoke(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.revoke_invite = AsyncMock(return_value={"id": "inv_1", "email": "alice@example.com"})
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["invites", "revoke", "inv_1", "--project", "prj_123", "--force"])
         assert result.exit_code == 0
@@ -145,7 +145,7 @@ class TestInvitesCommands:
 # ─── Audit ───────────────────────────────────────────────────────────────────
 
 class TestAuditCommands:
-    @patch("criptenv.commands.audit.cli_context")
+    @patch("criptenv.commands.audit.async_cli_context")
     def test_audit_list(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.list_audit = AsyncMock(return_value={
@@ -157,8 +157,8 @@ class TestAuditCommands:
             "page": 1,
             "per_page": 50,
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["audit", "list", "--project", "prj_123"])
         assert result.exit_code == 0
@@ -166,15 +166,15 @@ class TestAuditCommands:
         assert "project.updated" in result.output
         assert "2 log(s)" in result.output
 
-    @patch("criptenv.commands.audit.cli_context")
+    @patch("criptenv.commands.audit.async_cli_context")
     def test_audit_list_with_filters(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.list_audit = AsyncMock(return_value={
             "logs": [{"action": "secret.created", "resource_type": "secret", "created_at": "2026-05-01T12:00:00Z", "user_id": "usr_1"}],
             "total": 1, "page": 1, "per_page": 50,
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["audit", "list", "--project", "prj_123", "--action", "secret.created", "--limit", "10"])
         assert result.exit_code == 0
@@ -186,7 +186,7 @@ class TestAuditCommands:
 # ─── API Keys ────────────────────────────────────────────────────────────────
 
 class TestApiKeysCommands:
-    @patch("criptenv.commands.api_keys.cli_context")
+    @patch("criptenv.commands.api_keys.async_cli_context")
     def test_api_keys_list(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.list_api_keys = AsyncMock(return_value={
@@ -196,8 +196,8 @@ class TestApiKeysCommands:
             ],
             "total": 2,
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["api-keys", "list", "--project", "prj_123"])
         assert result.exit_code == 0
@@ -205,26 +205,26 @@ class TestApiKeysCommands:
         assert "cek_live_" in result.output
         assert "2 key(s)" in result.output
 
-    @patch("criptenv.commands.api_keys.cli_context")
+    @patch("criptenv.commands.api_keys.async_cli_context")
     def test_api_keys_create(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.create_api_key = AsyncMock(return_value={
             "id": "key_3", "name": "New Key", "key": "cek_live_abc123", "expires_at": None,
         })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["api-keys", "create", "--project", "prj_123", "--name", "New Key"])
         assert result.exit_code == 0
         assert "API key created" in result.output
         assert "cek_live_abc123" in result.output
 
-    @patch("criptenv.commands.api_keys.cli_context")
+    @patch("criptenv.commands.api_keys.async_cli_context")
     def test_api_keys_revoke(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.revoke_api_key = AsyncMock(return_value={"id": "key_1", "name": "CI Key"})
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["api-keys", "revoke", "key_1", "--project", "prj_123", "--force"])
         assert result.exit_code == 0
@@ -464,17 +464,16 @@ class TestUseCommand:
 
 
 class TestSessionsCommand:
-    @patch("criptenv.commands.sessions.cli_context")
+    @patch("criptenv.commands.sessions.async_cli_context")
     def test_sessions_list(self, mock_ctx, runner):
         mock_client = AsyncMock()
-        mock_client.get_sessions = AsyncMock(return_value={
-            "sessions": [
-                {"device_info": "Chrome on macOS", "ip_address": "192.168.1.1", "created_at": "2026-05-01T10:00:00Z", "is_current": True},
-                {"device_info": "Firefox on Linux", "ip_address": "192.168.1.2", "created_at": "2026-05-02T12:00:00Z", "is_current": False},
-            ],
-        })
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        # Mirrors GET /api/auth/sessions: a bare list of SessionResponse
+        mock_client.get_sessions = AsyncMock(return_value=[
+            {"user_agent": "Chrome on macOS", "ip_address": "192.168.1.1", "created_at": "2026-05-01T10:00:00Z", "current": True},
+            {"user_agent": "Firefox on Linux", "ip_address": "192.168.1.2", "created_at": "2026-05-02T12:00:00Z", "current": False},
+        ])
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["sessions"])
         assert result.exit_code == 0
@@ -482,12 +481,12 @@ class TestSessionsCommand:
         assert "192.168.1.1" in result.output
         assert "2 session(s)" in result.output
 
-    @patch("criptenv.commands.sessions.cli_context")
+    @patch("criptenv.commands.sessions.async_cli_context")
     def test_sessions_empty(self, mock_ctx, runner):
         mock_client = AsyncMock()
-        mock_client.get_sessions = AsyncMock(return_value={"sessions": []})
-        mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-        mock_ctx.return_value.__exit__ = lambda s, *a: None
+        mock_client.get_sessions = AsyncMock(return_value=[])
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
         result = runner.invoke(main, ["sessions"])
         assert result.exit_code == 0
