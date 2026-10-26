@@ -204,16 +204,16 @@ def ci_secrets(environment: str):
 
         if not session:
             click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
-            return
+            raise SystemExit(1)
 
         if session.environment_scope and session.environment_scope != environment:
             click.echo(f"Error: Token is restricted to environment '{session.environment_scope}'", err=True)
-            return
+            raise SystemExit(1)
 
         client = asyncio.run(manager.get_authenticated_client())
         if not client:
             click.echo("Error: Invalid CI session. Run 'criptenv ci login --token <token>' again.", err=True)
-            return
+            raise SystemExit(1)
 
         try:
             secrets_data = asyncio.run(client.list_ci_secrets_keys(session.project_id, environment))
@@ -270,25 +270,25 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
 
         if not session:
             click.echo("Error: No active CI session. Run 'criptenv ci login --token <token>' first.", err=True)
-            return
+            raise SystemExit(1)
 
         if session.environment_scope and session.environment_scope != environment:
             click.echo(
                 f"Error: Token is restricted to environment '{session.environment_scope}'",
                 err=True,
             )
-            return
+            raise SystemExit(1)
 
         if "write:secrets" not in session.scopes and "admin:project" not in session.scopes:
             click.echo("Error: CI session requires write:secrets scope for deploy.", err=True)
-            return
+            raise SystemExit(1)
 
         if "CRIPTENV_VAULT_PASSWORD" not in os.environ:
             click.echo(
                 "Error: ci deploy is non-interactive. Set CRIPTENV_VAULT_PASSWORD to encrypt secrets.",
                 err=True,
             )
-            return
+            raise SystemExit(1)
 
         if dry_run:
             click.echo(f"[DRY RUN] Would deploy {len(entries)} secret(s) from {file_path} to {environment}")
@@ -299,7 +299,7 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
         client = asyncio.run(manager.get_authenticated_client())
         if not client:
             click.echo("Error: Invalid CI session. Run 'criptenv ci login --token <token>' again.", err=True)
-            return
+            raise SystemExit(1)
 
         try:
             vault = RemoteVault(client, session.project_id)
@@ -323,10 +323,10 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
             click.echo(f"✓ Deployment complete ({len(entries)} secret(s), version {version})")
         except click.ClickException as e:
             click.echo(f"Error: {e.message}", err=True)
-            return
+            raise SystemExit(1)
         except Exception as e:
             click.echo(f"Error pushing secrets: {e}", err=True)
-            return
+            raise SystemExit(1)
 
         if provider:
             if "write:integrations" not in session.scopes and "admin:project" not in session.scopes:
@@ -334,7 +334,7 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
                     "Error: --provider sync requires write:integrations scope.",
                     err=True,
                 )
-                return
+                raise SystemExit(1)
 
             click.echo(f"Syncing to {provider}...")
             try:
@@ -351,7 +351,7 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
                         f"Run 'criptenv integrations connect {provider}' first.",
                         err=True,
                     )
-                    return
+                    raise SystemExit(1)
 
                 asyncio.run(client.sync_integration(session.project_id, provider_integration["id"], direction="push"))
                 click.echo(f"✓ Sync to {provider} complete")

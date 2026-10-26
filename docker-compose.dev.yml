@@ -113,7 +113,7 @@ services:
     # The named volume `web-node-modules` starts empty and masks the bind
     # mount's node_modules, so install deps inside the container before
     # starting the dev server (otherwise `vinext` is not found).
-    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --hostname 0.0.0.0"
+    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 3000"
     ports:
       - "3000:3000"
     depends_on:

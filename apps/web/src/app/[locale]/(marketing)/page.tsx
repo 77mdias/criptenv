@@ -44,7 +44,7 @@ const workflowSteps = [
     num: "01",
     icon: Terminal,
     key: "authenticate",
-    cmd: "criptenv login --email you@company.com",
+    cmd: "criptenv login --email-address you@company.com",
   },
   {
     num: "02",
@@ -91,7 +91,7 @@ function TerminalPanel() {
       </div>
       <div className="space-y-3 p-5 font-mono text-xs text-(--text-secondary) sm:p-6 break-all">
         <p>
-          <span className="text-green-400">$</span> criptenv login --email
+          <span className="text-green-400">$</span> criptenv login --email-address
           dev@company.com
         </p>
         <p>
@@ -538,7 +538,7 @@ export default async function LandingPage() {
                   <span className="text-(--text-muted) dark:text-white/42">
                     $
                   </span>{" "}
-                  criptenv login --email dev@company.com
+                  criptenv login --email-address dev@company.com
                 </p>
                 <p className="break-all text-green-700 dark:text-green-300">
                   <span className="text-(--text-muted) dark:text-white/42">

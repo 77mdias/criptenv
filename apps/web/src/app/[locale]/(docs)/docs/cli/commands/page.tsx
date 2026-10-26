@@ -55,13 +55,17 @@ export default function CliCommandsPage() {
       <ParamTable
         title="Opções"
         rows={[
-          { name: '--email', type: 'string', required: false, description: 'E-mail da conta' },
+          { name: '--email-address', type: 'string', required: false, description: 'E-mail da conta (login por e-mail e senha)' },
+          { name: '--email', type: 'boolean', required: false, description: 'Login por e-mail e senha, pedindo o e-mail interativamente' },
+          { name: '--device', type: 'boolean', required: false, description: 'Device flow, para SSH/headless' },
+          { name: '--api-key', type: 'string', required: false, description: 'Login com API key (cek_...). Também lida de CRIPTENV_API_KEY; sem valor, pede de forma oculta' },
         ]}
       />
       <CodeBlock
         language="bash"
         code={`criptenv login
-criptenv login --email user@example.com`}
+criptenv login --email-address user@example.com
+CRIPTENV_API_KEY=cek_xxx criptenv login`}
       />
 
       <h3 className="text-xl font-semibold mt-8 mb-3">
@@ -445,13 +449,12 @@ criptenv projects create meusite --description "Backend do MeuSite"`}
       <ParamTable
         title="Opções"
         rows={[
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente (padrão: production)' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto' },
+          { name: '--env', type: 'string', required: true, description: 'Ambiente (ex: production)' },
         ]}
       />
       <CodeBlock
         language="bash"
-        code={`criptenv ci secrets -e production`}
+        code={`criptenv ci secrets --env production`}
       />
 
       <h3 className="text-xl font-semibold mt-8 mb-3">
@@ -460,17 +463,22 @@ criptenv projects create meusite --description "Backend do MeuSite"`}
       <p className="mb-4">
         Importa um arquivo de secrets para o vault remoto no contexto de CI.
       </p>
+      <Callout variant="warning">
+        Ainda indisponível: a API não aceita a sessão de CI para escrita no vault.
+        Para ler secrets em CI, use <InlineCode>CRIPTENV_API_KEY</InlineCode> com{' '}
+        <InlineCode>criptenv run</InlineCode> ou o GitHub Action.
+      </Callout>
       <ParamTable
         title="Opções"
         rows={[
           { name: '--file, -f', type: 'string', required: true, description: 'Arquivo .env de origem' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de deploy' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto' },
+          { name: '--env', type: 'string', required: true, description: 'Ambiente de deploy' },
+          { name: '--dry-run', type: 'boolean', required: false, description: 'Mostra o que seria enviado, sem enviar' },
         ]}
       />
       <CodeBlock
         language="bash"
-        code={`CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production -e production -p <project-id>`}
+        code={`CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production --env production`}
       />
 
       <h3 className="text-xl font-semibold mt-8 mb-3">
@@ -666,7 +674,7 @@ criptenv rotation list --days 7 -e production`}
 criptenv rotation history DB_PASS -e staging`}
       />
 
-      <Callout type="info">
+      <Callout variant="info">
         Para mais detalhes sobre a configuração do CLI, consulte a{' '}
         <Link href="/docs/cli/configuration" className="underline font-medium">
           página de Configuração

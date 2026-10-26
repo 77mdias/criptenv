@@ -162,6 +162,31 @@ async def test_vault_version_with_api_key(transport, mock_user, mock_project, mo
 
 
 @pytest.mark.asyncio
+async def test_auth_session_with_api_key(transport, mock_user):
+    """GET /api/auth/session must accept API key: `criptenv login --api-key` validates the key there."""
+    now = datetime.now(timezone.utc)
+    mock_user.kdf_salt = "salt"
+    mock_user.avatar_url = None
+    mock_user.email_verified = True
+    mock_user.two_factor_enabled = False
+    mock_user.terms_accepted_at = None
+    mock_user.terms_version = None
+    mock_user.created_at = now
+    mock_user.updated_at = now
+    mock_user.last_login_at = None
+
+    with override_dual_auth(mock_user):
+        async with AsyncClient(transport=transport, base_url="http://test") as client:
+            response = await client.get(
+                "/api/auth/session",
+                headers={"Authorization": "Bearer cek_live_testkey123"}
+            )
+
+    assert response.status_code == 200
+    assert response.json()["email"] == "api-user@example.com"
+
+
+@pytest.mark.asyncio
 async def test_projects_list_with_api_key(transport, mock_user):
     """GET /api/v1/projects must accept API key."""
     with override_dual_auth(mock_user):

@@ -61,7 +61,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Carregar variáveis de ambiente
-        uses: criptenv/action@v1
+        uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           project: 'seu-project-id'
@@ -84,45 +84,47 @@ jobs:
   - test
   - deploy
 
+# Defina em Settings → CI/CD → Variables (masked):
+#   CRIPTENV_API_KEY        API key read:secrets (cek_...)
+#   CRIPTENV_VAULT_PASSWORD Vault password do projeto
 variables:
-  CRIPTENV_TOKEN: $CRIPTENV_TOKEN_SECRET
+  CRIPTENV_PROJECT: <project-id>
 
 build:
   stage: build
-  image: python:3.12
+  image: nikolaik/python-nodejs:python3.12-nodejs20
   before_script:
     - pip install criptenv
-    - criptenv ci login --token $CRIPTENV_TOKEN
+    - criptenv login
   script:
-    - criptenv ci deploy -p <project-id> -e production
     - npm ci
-    - npm run build`}
+    - criptenv run -e production -- npm run build`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">CircleCI</h2>
       <CodeBlock language="yaml" title=".circleci/config.yml">
 {`version: 2.1
 
+# CRIPTENV_API_KEY e CRIPTENV_VAULT_PASSWORD ficam no Context/Project Settings
 jobs:
   build:
     docker:
-      - image: cimg/node:20.0
+      - image: cimg/python:3.12-node
+    environment:
+      CRIPTENV_PROJECT: <project-id>
     steps:
       - checkout
       - run:
           name: Instalar CriptEnv CLI
           command: |
             pip install criptenv
-            criptenv ci login --token $CRIPTENV_TOKEN
-      - run:
-          name: Deploy secrets
-          command: criptenv ci deploy -p <project-id>
+            criptenv login
       - run:
           name: Instalar dependências
           command: npm ci
       - run:
-          name: Executar testes
-          command: npm test
+          name: Executar testes com os secrets
+          command: criptenv run -e staging -- npm test
 
 workflows:
   build-and-test:
@@ -153,7 +155,7 @@ workflows:
         </li>
       </ul>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Nunca commite tokens do CriptEnv diretamente no código. Use sempre
         variáveis de ambiente ou secrets nativos da plataforma de CI/CD.
       </Callout>

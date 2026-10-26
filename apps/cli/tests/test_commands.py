@@ -20,7 +20,7 @@ class TestCLIHelp:
     def test_version(self, runner):
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "0.1.0" in result.output
+        assert "0.2.1" in result.output
 
     def test_init_help(self, runner):
         result = runner.invoke(main, ["init", "--help"])
@@ -140,3 +140,37 @@ class TestDoctorCommand:
         assert result.exit_code == 0
         assert seen_urls == ["https://criptenv-api.77mdevseven.tech/health"]
         assert "API server reachable" in result.output
+
+
+class TestLoginApiKey:
+    """Regression: `--api-key` was declared with flag_value, so Click treated it
+    as a pure flag and `criptenv login --api-key cek_xxx` failed with
+    'unexpected extra argument'."""
+
+    @pytest.fixture
+    def seen_keys(self, monkeypatch, mock_config_dir):
+        from criptenv.commands import login as login_module
+
+        seen = []
+
+        async def fake_api_key_login(_auth_key, _db, api_key):
+            seen.append(api_key)
+            return {"email": "ci@example.com", "id": "usr_1"}
+
+        monkeypatch.setattr(login_module, "_api_key_login", fake_api_key_login)
+        return seen
+
+    def test_api_key_value(self, runner, seen_keys):
+        result = runner.invoke(main, ["login", "--api-key", "cek_live_abc"])
+        assert result.exit_code == 0, result.output
+        assert seen_keys == ["cek_live_abc"]
+
+    def test_api_key_from_env(self, runner, seen_keys):
+        result = runner.invoke(main, ["login"], env={"CRIPTENV_API_KEY": "cek_live_env"})
+        assert result.exit_code == 0, result.output
+        assert seen_keys == ["cek_live_env"]
+
+    def test_api_key_without_value_prompts(self, runner, seen_keys):
+        result = runner.invoke(main, ["login", "--api-key"], input="cek_live_prompt\n")
+        assert result.exit_code == 0, result.output
+        assert seen_keys == ["cek_live_prompt"]

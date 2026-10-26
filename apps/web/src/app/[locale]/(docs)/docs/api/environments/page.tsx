@@ -279,7 +279,7 @@ export default function ApiEnvironmentsPage() {
         {`DELETE /v1/projects/{project_id}/environments/{environment_id}`}
       </CodeBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Ao deletar um ambiente, todos os segredos associados são permanentemente
         removidos. Se você precisa apenas remover o acesso, considere atualizar as
         permissões dos membros em vez de deletar o ambiente.

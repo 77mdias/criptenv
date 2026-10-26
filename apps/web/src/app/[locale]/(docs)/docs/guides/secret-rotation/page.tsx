@@ -28,7 +28,7 @@ export default function SecretRotationPage() {
         usando o CriptEnv.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         A rotação de secrets reduz a janela de exposição caso uma credencial
         seja comprometida. Recomendamos rodar a cada 30-90 dias, dependendo
         do nível de sensibilidade.
@@ -204,7 +204,7 @@ criptenv secrets alert API_KEY --days 14 -p <project-id>
 criptenv rotation list --days 30 -p <project-id>`}
       </CodeBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Ao rotacionar secrets em produção, certifique-se de que todos os
         serviços dependentes são atualizados simultaneamente para evitar
         downtime. Considere usar rotação com período de sobreposição (overlap)

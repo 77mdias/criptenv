@@ -80,7 +80,7 @@ export default function ApiAuthenticationPage() {
         subsequentes do navegador.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         O cookie de sessão é <InlineCode>HttpOnly</InlineCode>,{" "}
         <InlineCode>Secure</InlineCode> e usa{" "}
         <InlineCode>SameSite=Lax</InlineCode>. Ele não pode ser acessado via
@@ -247,7 +247,7 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 	}`}
       </CodeBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         O campo <InlineCode>key</InlineCode> é retornado apenas na criação.
         Guarde-o em um local seguro. Se perder, será necessário revogar e criar
         uma nova chave.
@@ -400,7 +400,7 @@ https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/authorize
 }`}
       </CodeBlock>
 
-      <Callout type="info">
+      <Callout variant="info">
         Após o login OAuth bem-sucedido, um cookie de sessão é criado
         automaticamente. As requisições subsequentes usam esse cookie
         normalmente.

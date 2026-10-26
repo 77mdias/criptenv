@@ -28,7 +28,7 @@ export default function GitHubActionPage() {
         seus workflows do GitHub Actions.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         A GitHub Action do CriptEnv requer um token de API válido. Você pode
         gerar um em{' '}
         <Link href="/dashboard/tokens" className="underline">
@@ -80,7 +80,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Carregar variáveis de ambiente
-        uses: criptenv/action@v1
+        uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           project: 'seu-project-id'
@@ -157,7 +157,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: criptenv/action@v1
+      - uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           project: 'seu-project-id'
@@ -172,7 +172,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: criptenv/action@v1
+      - uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           project: 'seu-project-id'
@@ -182,7 +182,7 @@ jobs:
       - run: npm run deploy:production`}
       </CodeBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Nunca exponha o token do CriptEnv em logs públicos. Use sempre o
         GitHub Secrets para armazenar tokens e credenciais sensíveis.
       </Callout>

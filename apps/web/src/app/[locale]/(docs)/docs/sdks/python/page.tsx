@@ -16,7 +16,7 @@ export default function PythonSDKPage() {
 
       <h1 className="text-3xl font-bold mt-6 mb-4">SDK Python</h1>
 
-      <Callout type="info">
+      <Callout variant="info">
         O SDK oficial para Python está em desenvolvimento.
         Acompanhe o progresso no{' '}
         <a

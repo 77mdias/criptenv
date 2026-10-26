@@ -27,7 +27,7 @@ export default function SecurityOverviewPage() {
         do projeto.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         A Vault password do projeto nunca é enviada ao servidor. Ela é usada
         localmente para derivar chaves criptográficas que nunca saem do seu
         dispositivo.

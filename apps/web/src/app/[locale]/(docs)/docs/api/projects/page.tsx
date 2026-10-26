@@ -263,7 +263,7 @@ export default function ApiProjectsPage() {
         {`DELETE /v1/projects/{project_id}`}
       </CodeBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         A exclusão de um projeto é permanente. Todos os segredos criptografados serão
         removidos e não poderão ser recuperados. Certifique-se de ter um backup antes
         de executar esta operação.

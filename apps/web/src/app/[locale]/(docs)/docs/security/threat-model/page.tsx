@@ -26,7 +26,7 @@ export default function ThreatModelPage() {
         arquitetura de segurança do sistema.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         O modelo de ameaças assume que o atacante pode ter acesso completo ao servidor,
         banco de dados e infraestrutura — mas não ao dispositivo do usuário.
       </Callout>
@@ -276,7 +276,7 @@ Resultado: Mesmo com comprometimento total de uma camada,
 as demais continuam protegendo os dados do usuário.`}
       />
 
-      <Callout type="warning">
+      <Callout variant="warning">
         <strong>Responsabilidade do Usuário:</strong> A segurança do sistema depende
         fundamentalmente da força da Vault password. Use uma senha longa, única e
         gerada por um gerenciador de senhas. A arquitetura zero-knowledge não pode

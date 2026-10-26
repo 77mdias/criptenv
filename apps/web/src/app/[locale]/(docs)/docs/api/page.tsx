@@ -185,7 +185,7 @@ X-RateLimit-Remaining: 487
 X-RateLimit-Reset: 1705312800`}
       </CodeBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Quando o limite é excedido, a API retorna <InlineCode>429 Too Many Requests</InlineCode>.
         O header <InlineCode>Retry-After</InlineCode> indica quantos segundos aguardar.
       </Callout>

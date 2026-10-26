@@ -26,7 +26,7 @@ export default function VercelIntegrationPage() {
         eles serão automaticamente propagados para seus projetos no Vercel.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         A integração com Vercel utiliza a API oficial do Vercel para criar e
         atualizar Environment Variables de forma segura.
       </Callout>
@@ -105,7 +105,7 @@ criptenv integrations sync vercel -e production -p <project-id>`}
 }`}
       </CodeBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Ao ativar a sincronização automática, o CriptEnv sobrescreverá as
         variáveis existentes no Vercel com o mesmo nome. Certifique-se de que
         os nomes das variáveis estão corretos.

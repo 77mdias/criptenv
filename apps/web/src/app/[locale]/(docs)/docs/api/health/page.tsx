@@ -25,7 +25,7 @@ export default function HealthPage() {
         monitoramento, load balancers e verificações de integração.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         Estes endpoints não requerem autenticação e retornam rapidamente para
         uso em health checks de infraestrutura.
       </Callout>

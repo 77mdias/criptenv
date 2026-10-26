@@ -9,7 +9,7 @@ from typing import Optional
 
 import click
 
-from criptenv.context import cli_context, resolve_project_id
+from criptenv.context import async_cli_context, resolve_project_id_async
 
 
 @click.group()
@@ -30,9 +30,9 @@ def integrations_list(project_id: str | None):
         criptenv integrations list
     """
     async def _do_list():
-        with cli_context(require_auth=True) as (db, master_key, client):
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = resolve_project_id(db, project_id)
+                resolved_project_id = await resolve_project_id_async(db, project_id)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -95,9 +95,9 @@ def integrations_connect(
         # (found by the ruff F823 gate, Sprint 3 2026-10).
         nonlocal token, project_id_opt
 
-        with cli_context(require_auth=True) as (db, master_key, client):
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = resolve_project_id(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -145,9 +145,9 @@ def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], 
         criptenv integrations disconnect 550e8400-e29b-41d4-a716-446655440000 --project prj_xxx
     """
     async def _do_disconnect():
-        with cli_context(require_auth=True) as (db, master_key, client):
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = resolve_project_id(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -176,9 +176,9 @@ def integrations_validate(integration_id: str, project_id_arg: Optional[str]):
         criptenv integrations validate <integration-id> --project prj_xxx
     """
     async def _do_validate():
-        with cli_context(require_auth=True) as (db, master_key, client):
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = resolve_project_id(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -210,9 +210,9 @@ def integrations_sync(provider: str, environment: str, direction: str, project_i
         criptenv integrations sync --provider render --env production --direction push
     """
     async def _do_sync():
-        with cli_context(require_auth=True) as (db, master_key, client):
+        async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = resolve_project_id(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return

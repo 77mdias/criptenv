@@ -23,7 +23,7 @@ https://criptenv.77mdevseven.tech                                           Supa
 | **API** | VPS Docker + Cloudflare Tunnel | `https://criptenv-api.77mdevseven.tech` | Tunnel forwards to `http://api:8000` |
 | **Rate limits** | Redis on VPS | internal | Shared counters across API workers |
 | **Database** | PostgreSQL 15 in VPS Docker Compose | internal | Persistent `postgres_data` volume; Supabase is a legacy migration source |
-| **CLI** | PyPI future | `pip install criptenv` | Not required for hosting the web/API MVP |
+| **CLI** | PyPI | `pip install criptenv` | Release: bump `apps/cli/pyproject.toml` + `__init__.py`, push tag `cli-vX.Y.Z` → `release-cli.yml` |
 
 Render/Railway hosting configs remain as legacy rollback references. Product integrations with Render/Railway are separate from CriptEnv's own hosting.
 

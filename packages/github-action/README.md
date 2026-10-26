@@ -9,7 +9,7 @@ jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
-      - uses: criptenv/action@v1
+      - uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: ${{ secrets.CRIPTENV_TOKEN }}
           project: ${{ secrets.CRIPTENV_PROJECT_ID }}
@@ -54,7 +54,7 @@ jobs:
         uses: actions/checkout@v4
 
       - name: Get secrets
-        uses: criptenv/action@v1
+        uses: 77mdias/criptenv/packages/github-action@github-action-v1
         id: criptenv
         with:
           token: ${{ secrets.CRIPTENV_TOKEN }}

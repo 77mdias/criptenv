@@ -33,7 +33,7 @@ export default function CliConfigurationPage() {
         necessário, recriptografa no próprio processo e envia apenas ciphertext
         para a API.
       </p>
-      <Callout type="info">
+      <Callout variant="info">
         O backend nunca recebe secrets em texto claro e a Vault password do
         projeto nunca é enviada ao servidor.
       </Callout>
@@ -73,7 +73,7 @@ export default function CliConfigurationPage() {
         </table>
       </div>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         O fluxo normal do CLI não grava uma cópia local dos secrets. Backups de
         <InlineCode>~/.criptenv/</InlineCode> ainda devem ser protegidos porque
         contêm credenciais de sessão.
@@ -94,7 +94,7 @@ export default function CliConfigurationPage() {
 > Vault password:`}
       />
 
-      <Callout type="info">
+      <Callout variant="info">
         Para automação, defina <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode>.
         O CLI usa essa variável no lugar do prompt interativo.
       </Callout>
@@ -139,13 +139,13 @@ export CRIPTENV_VAULT_PASSWORD="project-vault-password"
 criptenv export -e production -o .env.production`}
       />
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Evite expor <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode> em logs,
         shells compartilhados ou históricos persistentes. Em CI, use o mecanismo
         de secrets do provedor.
       </Callout>
 
-      <Callout type="info">
+      <Callout variant="info">
         Use <InlineCode>criptenv doctor</InlineCode> para verificar sessão,
         projeto atual, metadata local e conectividade com a API.
       </Callout>

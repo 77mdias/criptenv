@@ -27,7 +27,7 @@ export default function AuditPage() {
         atualização e exclusão de segredos, membros, convites e configurações.
       </p>
 
-      <Callout type="info">
+      <Callout variant="info">
         Os audit logs são armazenados por 90 dias. Para retenção prolongada,
         exporte os logs periodicamente ou configure integração com seu SIEM.
       </Callout>

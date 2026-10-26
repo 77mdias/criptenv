@@ -43,26 +43,26 @@ def test_railway_connect_rejected_as_invalid_choice():
     assert "Invalid value" in result.output
 
 
-@patch("criptenv.commands.integrations.cli_context")
+@patch("criptenv.commands.integrations.async_cli_context")
 def test_integrations_validate(mock_ctx):
     runner = CliRunner()
     mock_client = AsyncMock()
     mock_client.validate_integration = AsyncMock(return_value={"status": "valid", "message": "OK"})
-    mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-    mock_ctx.return_value.__exit__ = lambda s, *a: None
+    mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+    mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
     result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "prj_123"])
     assert result.exit_code == 0
     assert "valid" in result.output
 
 
-@patch("criptenv.commands.integrations.cli_context")
+@patch("criptenv.commands.integrations.async_cli_context")
 def test_integrations_validate_invalid(mock_ctx):
     runner = CliRunner()
     mock_client = AsyncMock()
     mock_client.validate_integration = AsyncMock(return_value={"status": "invalid", "message": "Token expired"})
-    mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
-    mock_ctx.return_value.__exit__ = lambda s, *a: None
+    mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+    mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
     result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "prj_123"])
     assert result.exit_code == 0
@@ -80,7 +80,8 @@ def test_ci_deploy_without_session_reports_login_hint(mock_config_dir, monkeypat
             f.write("API_KEY=secret\n")
         result = runner.invoke(main, ["ci", "deploy", "--env", "production", "--file", ".env.production"])
 
-    assert result.exit_code == 0
+    # CI must fail the pipeline step, not pass silently
+    assert result.exit_code == 1
     assert "No active CI session" in result.output
 
 
@@ -89,7 +90,7 @@ def test_connect_does_not_raise_unbound_local(monkeypatch):
     `token`/`project_id_opt` inside the nested `_do_connect()` made them
     closure locals, so `if not token` raised UnboundLocalError on every
     invocation. Found by the ruff F823 CI gate."""
-    from contextlib import contextmanager
+    from contextlib import asynccontextmanager
 
     from criptenv.commands import integrations as integrations_module
 
@@ -100,13 +101,16 @@ def test_connect_does_not_raise_unbound_local(monkeypatch):
             created.update(kwargs)
             return {"id": "int_1", "status": "active"}
 
-    @contextmanager
-    def fake_cli_context(*_args, **_kwargs):
+    @asynccontextmanager
+    async def fake_cli_context(*_args, **_kwargs):
         yield object(), None, FakeClient()
 
-    monkeypatch.setattr(integrations_module, "cli_context", fake_cli_context)
+    async def fake_resolve_project_id(db, project):
+        return "prj_123"
+
+    monkeypatch.setattr(integrations_module, "async_cli_context", fake_cli_context)
     monkeypatch.setattr(
-        integrations_module, "resolve_project_id", lambda db, project: "prj_123"
+        integrations_module, "resolve_project_id_async", fake_resolve_project_id
     )
 
     runner = CliRunner()

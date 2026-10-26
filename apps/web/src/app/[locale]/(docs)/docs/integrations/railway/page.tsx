@@ -18,7 +18,7 @@ export default function RailwayIntegrationPage() {
         Integração com Railway
       </h1>
 
-      <Callout type="info">
+      <Callout variant="info">
         A integração com Railway está em desenvolvimento e será disponibilizada em breve.
         Atualmente, o CriptEnv suporta integrações com{' '}
         <Link href="/docs/integrations/vercel" className="underline">Vercel</Link> e{' '}

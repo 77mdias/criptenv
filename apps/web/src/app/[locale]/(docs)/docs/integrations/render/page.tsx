@@ -90,13 +90,13 @@ criptenv integrations sync render -e production -p <project-id>`}
       - name: meu-env-group`}
       </CodeBlock>
 
-      <Callout type="tip">
+      <Callout variant="tip">
         Os Environment Groups do Render permitem compartilhar variáveis entre
         múltiplos serviços. Use esta integração para manter todos os seus
         serviços sincronizados com as mesmas variáveis do CriptEnv.
       </Callout>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         A API Key do Render tem acesso amplo à sua conta. Recomendamos criar
         uma chave dedicada apenas para a integração com o CriptEnv.
       </Callout>

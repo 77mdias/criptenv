@@ -49,7 +49,7 @@ export default function ApiVaultPage() {
         <p className="ml-4">3. Descriptografa localmente com AES-256-GCM</p>
       </div>
 
-      <Callout type="info">
+      <Callout variant="info">
         O servidor armazena apenas dados opacos (ciphertext). Sem a Vault password
         do projeto, é impossível recuperar os valores originais — nem o CriptEnv, nem
         qualquer pessoa com acesso ao banco de dados, consegue ler os segredos.
@@ -156,7 +156,7 @@ export default function ApiVaultPage() {
         </CodeBlock>
       </ResponseBlock>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         Em caso de conflito, faça um <InlineCode>pull</InlineCode> para obter a versão
         mais recente, resolva o conflito manualmente e tente novamente o <InlineCode>push</InlineCode>.
       </Callout>

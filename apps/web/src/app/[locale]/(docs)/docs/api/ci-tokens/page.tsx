@@ -27,7 +27,7 @@ export default function CITokensPage() {
         exibido apenas uma vez na criação.
       </p>
 
-      <Callout type="warning">
+      <Callout variant="warning">
         O valor do token só é retornado no momento da criação. Guarde-o em um
         local seguro — como um secret manager do seu provedor de CI. Se
         perder, será necessário criar um novo.

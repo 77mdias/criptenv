@@ -4,7 +4,7 @@ import asyncio
 
 import click
 
-from criptenv.context import cli_context, resolve_project_id
+from criptenv.context import async_cli_context, resolve_project_id_async
 
 
 @click.group("invites")
@@ -23,8 +23,8 @@ def invites_list(project_id: str | None):
         criptenv invites list -p <project-id>
     """
     async def _do_list():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.list_invites(resolved_project_id)
             items = result.get("invites", [])
 
@@ -60,8 +60,8 @@ def invites_create(email: str, role: str, project_id: str | None):
         criptenv invites create user@example.com --role developer -p <project-id>
     """
     async def _do_create():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.create_invite(resolved_project_id, email, role)
             click.echo(f"✓ Invite sent to {email}")
             click.echo(f"  Role: {role}")
@@ -82,8 +82,8 @@ def invites_accept(invite_id: str, project_id: str | None):
         criptenv invites accept <invite-id> -p <project-id>
     """
     async def _do_accept():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.accept_invite(resolved_project_id, invite_id)
             click.echo(f"✓ Accepted invite {invite_id}")
             click.echo(f"  Project: {result.get('project_name', 'unknown')}")
@@ -109,8 +109,8 @@ def invites_revoke(invite_id: str, project_id: str | None, force: bool):
             return
 
     async def _do_revoke():
-        with cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = resolve_project_id(db, project_id)
+        async with async_cli_context(require_auth=True) as (db, _mk, client):
+            resolved_project_id = await resolve_project_id_async(db, project_id)
             result = await client.revoke_invite(resolved_project_id, invite_id)
             click.echo(f"✓ Revoked invite {invite_id}")
             if result.get("email"):

@@ -157,7 +157,7 @@ export default function EncryptionPage() {
         ]}
       />
 
-      <Callout type="warning">
+      <Callout variant="warning">
         O IV (vetor de inicialização) é gerado aleatoriamente para cada operação de
         criptografia. Nunca reutilize um IV com a mesma chave — isso comprometeria
         a segurança do GCM.
@@ -212,7 +212,7 @@ Recursos de segurança:
 • Cleanup automático de sessões expiradas`}
             />
 
-            <Callout type="info">
+            <Callout variant="info">
               O fluxo principal da CLI não armazena secrets localmente. Secrets
               vivem no vault remoto e são descriptografados apenas em memória.
             </Callout>
