@@ -102,6 +102,9 @@ jobs:
         run: npm ci
       - name: Run web lint
         run: make web-lint
+      - name: Check sitemap is up to date
+        working-directory: apps/web
+        run: npm run check:sitemap
       - name: Run web unit tests
         run: make web-test-unit
       - name: Run Vinext compatibility check
