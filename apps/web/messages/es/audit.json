@@ -1,6 +1,6 @@
 {
   "page": {
-    "title": "Audit Log",
+    "title": "Auditoría",
     "subtitle": "{total} eventos registrados para este proyecto",
     "exportCsv": "Exportar CSV",
     "exportJson": "Exportar JSON",
@@ -19,5 +19,46 @@
   "empty": {
     "title": "Ningún evento encontrado",
     "description": "Las acciones realizadas en este proyecto aparecerán aquí."
+  },
+  "actors": {
+    "you": "Tú",
+    "user": "{name}",
+    "ci": "CI",
+    "api": "API key",
+    "system": "Sistema"
+  },
+  "actions": {
+    "alert_settings_test_webhook": "{actor} probó el webhook de alertas",
+    "api_key_created": "{actor} creó una API key",
+    "api_key_revoked": "{actor} revocó una API key",
+    "api_key_updated": "{actor} actualizó una API key",
+    "avatar_deleted": "{actor} eliminó la foto de perfil",
+    "avatar_updated": "{actor} actualizó la foto de perfil",
+    "environment_archived": "{actor} archivó un entorno",
+    "environment_created": "{actor} creó un entorno",
+    "environment_updated": "{actor} actualizó un entorno",
+    "expiration_deleted": "{actor} quitó la expiración de {key}",
+    "expiration_set": "{actor} definió una expiración para {key}",
+    "integration_created": "{actor} conectó una integración",
+    "integration_deleted": "{actor} desconectó una integración",
+    "integration_synced": "{actor} sincronizó una integración ({direction})",
+    "invite_accepted": "{actor} aceptó una invitación",
+    "invite_created": "{actor} invitó a {email} como {role}",
+    "invite_deleted": "{actor} eliminó una invitación",
+    "invite_revoked": "{actor} revocó una invitación",
+    "member_added": "{actor} añadió un miembro como {role}",
+    "member_removed": "{actor} eliminó un miembro",
+    "member_role_changed": "{actor} cambió el rol de un miembro a {role}",
+    "project_alert_settings_updated": "{actor} actualizó las alertas del proyecto",
+    "project_created": "{actor} creó el proyecto",
+    "project_deleted": "{actor} eliminó el proyecto",
+    "project_updated": "{actor} actualizó el proyecto",
+    "project_vault_rekeyed": "{actor} cambió la contraseña del vault",
+    "secret_rotated": "{actor} rotó {key}",
+    "token_created": "{actor} creó el token de CI {name}",
+    "token_deleted": "{actor} eliminó un token de CI",
+    "token_revoked": "{actor} revocó un token de CI",
+    "vault_pushed": "{actor} actualizó el vault ({count, plural, =0 {sin secrets} one {# secret} other {# secrets}})",
+    "unknown": "{actor} ejecutó {action}"
   }
 }

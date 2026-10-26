@@ -1,7 +1,14 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Dict, Any
+from typing import Optional, Dict, Any, Literal
 from datetime import datetime
 from uuid import UUID
+
+
+class AuditActor(BaseModel):
+    id: UUID
+    name: str
+    email: str
+    avatar_url: Optional[str] = None
 
 
 class AuditLogResponse(BaseModel):
@@ -15,6 +22,9 @@ class AuditLogResponse(BaseModel):
     ip_address: Optional[str] = None
     user_agent: Optional[str] = None
     created_at: datetime
+    actor: Optional[AuditActor] = None
+    # Origin of the action; CI-session actions have no user_id
+    auth_type: Literal["session", "api_key", "ci_session"] = "session"
 
     class Config:
         from_attributes = True

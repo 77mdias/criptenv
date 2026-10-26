@@ -6,7 +6,7 @@ from typing import Optional
 from app.database import get_db
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
-from app.schemas.audit import AuditLogResponse, AuditLogListResponse
+from app.schemas.audit import AuditActor, AuditLogResponse, AuditLogListResponse
 from app.middleware.auth import get_current_user
 from app.models.user import User
 
@@ -26,6 +26,19 @@ def _force_load_audit_log(log):
     _ = log.user_agent
     _ = log.created_at
     return log
+
+
+def _to_response(log, actors: dict) -> AuditLogResponse:
+    response = AuditLogResponse.model_validate(_force_load_audit_log(log))
+    actor = actors.get(log.user_id)
+    if actor is not None:
+        response.actor = AuditActor(
+            id=actor.id, name=actor.name, email=str(actor.email), avatar_url=actor.avatar_url
+        )
+    auth_type = (log.meta or {}).get("auth_type")
+    if auth_type in ("api_key", "ci_session"):
+        response.auth_type = auth_type
+    return response
 
 
 @router.get("", response_model=AuditLogListResponse)
@@ -64,8 +77,10 @@ async def list_audit_logs(
         resource_type=resource_type
     )
 
+    actors = await audit_service.get_actors({log.user_id for log in logs if log.user_id})
+
     return AuditLogListResponse(
-        logs=[AuditLogResponse.model_validate(_force_load_audit_log(log)) for log in logs],
+        logs=[_to_response(log, actors) for log in logs],
         total=total,
         page=page,
         per_page=per_page

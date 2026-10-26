@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projetos",
+    "integrations": "Integrações",
     "help": "Ajuda",
     "account": "Conta",
     "closeMenu": "Fechar menu"
@@ -15,14 +16,15 @@
     "synced": "Tudo sincronizado",
     "loadError": "Erro ao carregar dashboard",
     "stats": {
-      "projects": "Projects",
+      "projects": "Projetos",
       "projectsNone": "Nenhum projeto ainda",
       "projectsActive": "{count} ativos",
       "secrets": "Secrets",
       "secretsNone": "Nenhuma secret ainda",
       "secretsTotal": "{count} secrets no total",
-      "lastSync": "Last Sync",
-      "lastActivity": "Última atividade"
+      "lastSync": "Última atividade",
+      "lastActivity": "Nenhuma atividade ainda",
+      "lastActivityIn": "em {project}"
     },
     "activity": {
       "title": "Atividade Recente",
@@ -60,6 +62,37 @@
       "nameCharset": "Apenas letras, números e hífens",
       "vaultPasswordLength": "Senha do vault deve ter pelo menos 8 caracteres",
       "vaultPasswordMismatch": "Senhas do vault não conferem"
+    }
+  },
+  "projectNav": {
+    "ariaLabel": "Navegação do projeto",
+    "openSection": "Abrir seção",
+    "overviewPage": {
+      "eyebrow": "Visão geral",
+      "title": "Escolha onde quer trabalhar",
+      "description": "Acesse os secrets, a equipe, a auditoria e as configurações deste projeto."
+    },
+    "sections": {
+      "overview": {
+        "label": "Visão geral",
+        "description": "Resumo do projeto e atalhos principais."
+      },
+      "secrets": {
+        "label": "Secrets",
+        "description": "Gerencie ambientes, vault e secrets criptografados."
+      },
+      "members": {
+        "label": "Equipe",
+        "description": "Convide membros e ajuste permissões do projeto."
+      },
+      "audit": {
+        "label": "Auditoria",
+        "description": "Acompanhe eventos, mudanças e trilha de auditoria."
+      },
+      "settings": {
+        "label": "Configurações",
+        "description": "Configure dados do projeto, tokens de CI e zona de perigo."
+      }
     }
   }
 }

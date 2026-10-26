@@ -1,46 +1,18 @@
 "use client"
 
-import {
-  Download,
-  Eye,
-  FolderPlus,
-  Pencil,
-  PlusCircle,
-  RefreshCw,
-  Trash2,
-  Upload,
-  UserMinus,
-  UserPlus,
-  type LucideIcon,
-} from "lucide-react"
+import { useLocale } from "next-intl"
 import { Badge } from "@/components/ui/badge"
-import { formatRelativeTime } from "@/lib/utils"
 import type { AuditLog } from "@/lib/api"
-
-const actionConfig: Record<string, { icon: LucideIcon; variant: "success" | "info" | "warning" | "danger" | "outline" }> = {
-  "secret.created": { icon: PlusCircle, variant: "success" },
-  "secret.updated": { icon: Pencil, variant: "info" },
-  "secret.deleted": { icon: Trash2, variant: "danger" },
-  "secret.viewed": { icon: Eye, variant: "outline" },
-  "secret.exported": { icon: Download, variant: "warning" },
-  "env.created": { icon: FolderPlus, variant: "success" },
-  "member.joined": { icon: UserPlus, variant: "success" },
-  "member.added": { icon: UserPlus, variant: "success" },
-  "member.removed": { icon: UserMinus, variant: "danger" },
-  "member.role_changed": { icon: RefreshCw, variant: "warning" },
-  "invite.created": { icon: UserPlus, variant: "success" },
-  "invite.revoked": { icon: UserMinus, variant: "danger" },
-  "vault.pushed": { icon: Upload, variant: "info" },
-  "key.rotated": { icon: RefreshCw, variant: "warning" },
-}
+import { useAuditDescriber } from "@/lib/audit/describe"
 
 interface AuditEntryProps {
   log: AuditLog
 }
 
 export function AuditEntry({ log }: AuditEntryProps) {
-  const config = actionConfig[log.action] ?? { icon: RefreshCw, variant: "outline" as const }
-  const Icon = config.icon
+  const locale = useLocale()
+  const entry = useAuditDescriber()(log)
+  const Icon = entry.icon
   const metadata = log.meta ?? log.metadata ?? {}
 
   return (
@@ -53,13 +25,17 @@ export function AuditEntry({ log }: AuditEntryProps) {
       </div>
       <div className="min-w-0">
         <div className="flex flex-wrap items-center gap-2">
-          <span className="font-mono text-sm font-semibold text-[var(--text-primary)]">
-            {log.action}
+          <span className="text-sm font-semibold text-[var(--text-primary)]">
+            {entry.title}
           </span>
-          <Badge variant={config.variant}>{log.resource_type}</Badge>
+          <Badge variant={entry.tone}>{log.resource_type}</Badge>
         </div>
         <p className="mt-1 font-mono text-xs text-[var(--text-muted)]">
-          {log.user_id ? `Usuário ${log.user_id}` : "Sistema"} · {formatRelativeTime(log.created_at)}
+          <span>{log.action}</span>
+          {" · "}
+          <time dateTime={log.created_at} title={new Date(log.created_at).toLocaleString(locale)}>
+            {entry.time}
+          </time>
         </p>
         {Object.keys(metadata).length > 0 && (
           <pre className="mt-3 max-h-28 overflow-auto rounded-lg border border-[var(--border)] bg-[var(--background-subtle)] p-3 font-mono text-[11px] text-[var(--text-secondary)]">

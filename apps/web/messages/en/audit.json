@@ -19,5 +19,46 @@
   "empty": {
     "title": "No events found",
     "description": "Actions performed in this project will appear here."
+  },
+  "actors": {
+    "you": "You",
+    "user": "{name}",
+    "ci": "CI",
+    "api": "API key",
+    "system": "System"
+  },
+  "actions": {
+    "alert_settings_test_webhook": "{actor} tested the alerts webhook",
+    "api_key_created": "{actor} created an API key",
+    "api_key_revoked": "{actor} revoked an API key",
+    "api_key_updated": "{actor} updated an API key",
+    "avatar_deleted": "{actor} removed the profile photo",
+    "avatar_updated": "{actor} updated the profile photo",
+    "environment_archived": "{actor} archived an environment",
+    "environment_created": "{actor} created an environment",
+    "environment_updated": "{actor} updated an environment",
+    "expiration_deleted": "{actor} removed the expiration of {key}",
+    "expiration_set": "{actor} set an expiration for {key}",
+    "integration_created": "{actor} connected an integration",
+    "integration_deleted": "{actor} disconnected an integration",
+    "integration_synced": "{actor} synced an integration ({direction})",
+    "invite_accepted": "{actor} accepted an invite",
+    "invite_created": "{actor} invited {email} as {role}",
+    "invite_deleted": "{actor} deleted an invite",
+    "invite_revoked": "{actor} revoked an invite",
+    "member_added": "{actor} added a member as {role}",
+    "member_removed": "{actor} removed a member",
+    "member_role_changed": "{actor} changed a member's role to {role}",
+    "project_alert_settings_updated": "{actor} updated the project alerts",
+    "project_created": "{actor} created the project",
+    "project_deleted": "{actor} deleted the project",
+    "project_updated": "{actor} updated the project",
+    "project_vault_rekeyed": "{actor} changed the vault password",
+    "secret_rotated": "{actor} rotated {key}",
+    "token_created": "{actor} created the CI token {name}",
+    "token_deleted": "{actor} deleted a CI token",
+    "token_revoked": "{actor} revoked a CI token",
+    "vault_pushed": "{actor} updated the vault ({count, plural, =0 {no secrets} one {# secret} other {# secrets}})",
+    "unknown": "{actor} performed {action}"
   }
 }

@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { Plus, FolderOpen, Key } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,7 @@ import type { Project, ProjectListResponse } from "@/lib/api";
 
 export default function ProjectsPage() {
   const t = useTranslations("dashboard.projects");
+  const locale = useLocale();
   const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects");
   const [projects, setProjects] = useState<Project[]>(
     cachedProjects?.projects ?? [],
@@ -158,7 +159,7 @@ export default function ProjectsPage() {
                   </Badge>
                   <span className="text-xs text-(--text-muted) font-mono">
                     {project.updated_at
-                      ? formatRelativeTime(project.updated_at)
+                      ? formatRelativeTime(project.updated_at, locale)
                       : "—"}
                   </span>
                 </div>

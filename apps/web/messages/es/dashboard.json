@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Proyectos",
+    "integrations": "Integraciones",
     "help": "Ayuda",
     "account": "Cuenta",
     "closeMenu": "Cerrar menú"
@@ -21,8 +22,9 @@
       "secrets": "Secrets",
       "secretsNone": "Aún no hay secrets",
       "secretsTotal": "{count} secrets en total",
-      "lastSync": "Última sincronización",
-      "lastActivity": "Última actividad"
+      "lastSync": "Última actividad",
+      "lastActivity": "Aún no hay actividad",
+      "lastActivityIn": "en {project}"
     },
     "activity": {
       "title": "Actividad reciente",
@@ -60,6 +62,37 @@
       "nameCharset": "Solo letras, números y guiones",
       "vaultPasswordLength": "La contraseña del vault debe tener al menos 8 caracteres",
       "vaultPasswordMismatch": "Las contraseñas del vault no coinciden"
+    }
+  },
+  "projectNav": {
+    "ariaLabel": "Navegación del proyecto",
+    "openSection": "Abrir sección",
+    "overviewPage": {
+      "eyebrow": "Resumen",
+      "title": "Elige dónde trabajar",
+      "description": "Accede a los secrets, el equipo, la auditoría y la configuración de este proyecto."
+    },
+    "sections": {
+      "overview": {
+        "label": "Resumen",
+        "description": "Resumen del proyecto y accesos principales."
+      },
+      "secrets": {
+        "label": "Secrets",
+        "description": "Gestiona entornos, vault y secrets cifrados."
+      },
+      "members": {
+        "label": "Equipo",
+        "description": "Invita miembros y ajusta los permisos del proyecto."
+      },
+      "audit": {
+        "label": "Auditoría",
+        "description": "Sigue eventos, cambios y el rastro de auditoría."
+      },
+      "settings": {
+        "label": "Configuración",
+        "description": "Configura datos del proyecto, tokens de CI y la zona de peligro."
+      }
     }
   }
 }

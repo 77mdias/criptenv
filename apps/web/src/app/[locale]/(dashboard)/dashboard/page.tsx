@@ -1,17 +1,20 @@
 "use client"
 
-import { useEffect, useState } from "react"
-import { useTranslations } from "next-intl"
+import { useEffect, useMemo, useState } from "react"
+import { useLocale, useTranslations } from "next-intl"
 import { FolderOpen, Key, Clock } from "lucide-react"
+import { Link } from "@/i18n/navigation"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
 import { peekCached, projectsApi, auditApi, environmentsApi, vaultApi } from "@/lib/api"
-import { formatRelativeTime } from "@/lib/utils"
+import { useAuditDescriber } from "@/lib/audit/describe"
 import type { Project, AuditLog, ProjectListResponse } from "@/lib/api"
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard.home")
+  const locale = useLocale()
+  const describe = useAuditDescriber()
   const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects")
   const [projects, setProjects] = useState<Project[]>(cachedProjects?.projects ?? [])
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
@@ -19,6 +22,10 @@ export default function DashboardPage() {
   const [loading, setLoading] = useState(!cachedProjects)
   const [activityLoading, setActivityLoading] = useState(!cachedProjects)
   const [error, setError] = useState<string | null>(null)
+  const projectNames = useMemo(
+    () => new Map(projects.map((project) => [project.id, project.name])),
+    [projects]
+  )
 
   useEffect(() => {
     let cancelled = false
@@ -53,9 +60,19 @@ export default function DashboardPage() {
 
         if (projectData.projects.length > 0) {
           setActivityLoading(true)
-          const logData = await auditApi.getLogs(projectData.projects[0].id, { per_page: 5 })
+          // shortcut: fan-out over the first 10 projects; replaced by GET /me/overview in UX.2
+          const logPages = await Promise.all(
+            projectData.projects.slice(0, 10).map((project) =>
+              auditApi.getLogs(project.id, { per_page: 5 })
+            )
+          )
           if (cancelled) return
-          setAuditLogs(logData.logs)
+          setAuditLogs(
+            logPages
+              .flatMap((page) => page.logs)
+              .sort((a, b) => b.created_at.localeCompare(a.created_at))
+              .slice(0, 8)
+          )
         } else {
           setAuditLogs([])
         }
@@ -189,14 +206,14 @@ export default function DashboardPage() {
                     {t("stats.lastSync")}
                   </p>
                   <p className="text-lg sm:text-2xl font-semibold tracking-tight truncate">
-                    {auditLogs.length > 0 && auditLogs[0].created_at
-                      ? formatRelativeTime(auditLogs[0].created_at)
-                      : "—"}
+                    {auditLogs.length > 0 ? describe(auditLogs[0]).time : "—"}
                   </p>
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
-                {t("stats.lastActivity")}
+                {auditLogs.length > 0 && projectNames.get(auditLogs[0].project_id)
+                  ? t("stats.lastActivityIn", { project: projectNames.get(auditLogs[0].project_id) ?? "" })
+                  : t("stats.lastActivity")}
               </p>
             </Card>
           </>
@@ -225,30 +242,45 @@ export default function DashboardPage() {
             </>
           ) : auditLogs.length > 0 ? (
             auditLogs.map((log) => {
-              const metadata = log.meta ?? log.metadata ?? {}
-              const description =
-                typeof metadata.description === "string"
-                  ? metadata.description
-                  : log.resource_type
+              const entry = describe(log)
+              const Icon = entry.icon
+              const projectName = projectNames.get(log.project_id)
 
               return (
                 <div key={log.id} className="flex items-center gap-4 py-3 border-b border-[var(--border)] last:border-0">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background-muted)]">
-                    <Key className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
-                  </div>
+                  {log.actor?.avatar_url ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img src={log.actor.avatar_url} alt="" className="h-8 w-8 rounded-full object-cover" />
+                  ) : (
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[var(--background-muted)]">
+                      <Icon className="h-3.5 w-3.5 text-[var(--text-tertiary)]" />
+                    </div>
+                  )}
                   <div className="flex-1 min-w-0 overflow-hidden">
-                    <p className="text-sm text-[var(--text-primary)] truncate">
-                      <span className="font-medium">{log.action}</span>
-                      {" · "}
-                      <span className="font-mono text-[var(--text-secondary)]">{log.resource_type}</span>
-                    </p>
+                    <p className="text-sm text-[var(--text-primary)] line-clamp-2">{entry.title}</p>
                     <p className="text-xs text-[var(--text-muted)] font-mono truncate">
-                      {description}
+                      {projectName && (
+                        <Link
+                          href={`/projects/${log.project_id}`}
+                          className="hover:text-[var(--text-secondary)]"
+                        >
+                          {projectName}
+                        </Link>
+                      )}
+                      {/* on mobile the time column moves under the title */}
+                      <span className="sm:hidden">
+                        {projectName ? " · " : ""}
+                        {entry.time}
+                      </span>
                     </p>
                   </div>
-                  <span className="text-xs text-[var(--text-muted)] font-mono whitespace-nowrap">
-                    {log.created_at ? formatRelativeTime(log.created_at) : "—"}
-                  </span>
+                  <time
+                    dateTime={log.created_at}
+                    title={new Date(log.created_at).toLocaleString(locale)}
+                    className="hidden sm:block text-xs text-[var(--text-muted)] font-mono whitespace-nowrap"
+                  >
+                    {entry.time}
+                  </time>
                 </div>
               )
             })

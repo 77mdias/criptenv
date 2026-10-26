@@ -1,7 +1,7 @@
 "use client"
 
 import { useState } from "react"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2, RotateCcw, Clock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -48,6 +48,7 @@ export function SecretRow({
 }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
   const t = useTranslations("secrets.row")
+  const locale = useLocale()
   const masked = "••••••••••••••••"
 
   const showSelection = Boolean(canManageSecrets && selectable && onSelectChange)
@@ -87,7 +88,7 @@ export function SecretRow({
           </Badge>
           {secret.updatedAt && (
             <span className="font-mono text-xs text-[var(--text-muted)]">
-              {formatRelativeTime(secret.updatedAt)}
+              {formatRelativeTime(secret.updatedAt, locale)}
             </span>
           )}
           {/* M3.5.7: Expiration badge */}

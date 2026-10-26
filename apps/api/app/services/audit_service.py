@@ -5,6 +5,7 @@ from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit import AuditLog
+from app.models.user import User
 from app.strategies.audit_filters import apply_audit_filters, build_audit_filter_strategies
 
 
@@ -64,3 +65,10 @@ class AuditService:
         logs = list(result.scalars().all())
 
         return logs, total
+
+    async def get_actors(self, user_ids: set[UUID]) -> dict[UUID, User]:
+        """Resolve the users behind a page of logs in a single query."""
+        if not user_ids:
+            return {}
+        result = await self.db.execute(select(User).where(User.id.in_(user_ids)))
+        return {user.id: user for user in result.scalars().all()}
