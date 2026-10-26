@@ -3,7 +3,7 @@ import { NextIntlClientProvider, hasLocale } from "next-intl";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import { notFound } from "next/navigation";
 
-import { buildAlternates, OG_LOCALES } from "@/i18n/alternates";
+import { OG_LOCALES } from "@/i18n/alternates";
 import { loadMessages } from "@/i18n/messages";
 import { routing, type Locale } from "@/i18n/routing";
 import { suppressThreeWarnings } from "@/lib/three-warning-suppress";
@@ -26,13 +26,14 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { locale } = await params;
   const t = await getTranslations({ locale, namespace: "common.meta" });
-  const alternates = buildAlternates("/");
 
+  // No `alternates`/`openGraph.url` here: a layout can't know the page's path,
+  // so they would make every page canonical to the home page. Pages
+  // self-canonicalize and hreflang comes from public/sitemap.xml.
   return {
     metadataBase: new URL(SITE_URL),
     title: t("title"),
     description: t("description"),
-    alternates,
     robots: {
       index: true,
       follow: true,
@@ -40,7 +41,6 @@ export async function generateMetadata({
     },
     openGraph: {
       type: "website",
-      url: SITE_URL,
       siteName: "CriptEnv",
       title: t("title"),
       description: t("description"),

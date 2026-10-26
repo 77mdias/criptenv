@@ -1,18 +1,213 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:xhtml="http://www.w3.org/1999/xhtml">
   <url>
     <loc>https://criptenv.77mdevseven.tech/</loc>
-    <changefreq>weekly</changefreq>
-    <priority>1.0</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/contribute</loc>
-    <changefreq>monthly</changefreq>
-    <priority>0.7</priority>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs</loc>
-    <changefreq>weekly</changefreq>
-    <priority>0.8</priority>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/audit</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/authentication</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/ci-tokens</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/environments</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/health</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/integrations</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/invites</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/members</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/projects</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/rotation</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/api/vault</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/cli</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/cli/commands</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/cli/configuration</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/getting-started/concepts</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/concepts"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/getting-started/concepts</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/concepts"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/getting-started/concepts</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/concepts"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/concepts"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/getting-started/installation</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/installation"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/getting-started/installation</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/installation"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/getting-started/installation</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/installation"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/installation"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/getting-started/quickstart</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/quickstart"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/getting-started/quickstart</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/quickstart"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/getting-started/quickstart</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/getting-started/quickstart"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/getting-started/quickstart"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/guides</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/guides/cicd-setup</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/guides/first-project</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/guides/secret-rotation</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/guides/team-setup</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/integrations</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/integrations/github-action</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/integrations/railway</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/integrations/render</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/integrations/vercel</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/sdks</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/sdks/javascript</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/sdks/python</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/security</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/security/encryption</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/security/threat-model</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/security/zero-knowledge</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/politica-de-privacidade</loc>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/termos-de-uso</loc>
   </url>
 </urlset>

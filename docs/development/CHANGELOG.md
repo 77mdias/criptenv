@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### SEO: sitemap completo e canonical corrigido — 2026-10-26
+
+- **Canonical errado em todas as páginas:** o layout raiz `[locale]/layout.tsx` declarava `alternates` (canonical e hreflang) para `/`, e todas as páginas herdavam isso. Assim as 50 URLs públicas diziam ao Google que eram cópia da home, e só ela seria indexada. O `openGraph.url` também apontava para a home. Os dois saíram do layout: cada página passa a ser o próprio canonical, e o hreflang vem do sitemap. `buildAlternates` foi removido (não tinha outro uso).
+- **`public/sitemap.xml` gerado:** `scripts/generate-sitemap.mjs` (`npm run sitemap`) lê as rotas públicas (`(marketing)`, `(docs)`). Agora são 40 páginas e 50 URLs (antes eram 3). Só as páginas traduzidas com next-intl (home, `/docs` e getting-started) recebem as versões `/en` e `/es` com hreflang e `x-default`; as demais aparecem só em português, para não anunciar cópias não traduzidas.
+- **CI:** o passo `npm run check:sitemap` falha quando uma página nova entra sem regenerar o sitemap.
+
 ### UX.1 — Fundação da experiência autenticada (Phase 3.5) — 2026-10-26
 
 **API:**
