@@ -5,7 +5,8 @@
     "integrations": "Integrations",
     "help": "Help",
     "account": "Account",
-    "closeMenu": "Close menu"
+    "closeMenu": "Close menu",
+    "withErrors": "{count, plural, one {failing} other {failing}}"
   },
   "layout": {
     "checkingSession": "Checking session..."
@@ -30,7 +31,76 @@
       "title": "Recent Activity",
       "description": "Latest operations across your projects",
       "empty": "No recent activity"
-    }
+    },
+    "attention": {
+      "title": "Needs attention",
+      "description": "{count, plural, one {# item needs} other {# items need}} your action",
+      "emptyDescription": "Nothing pending in your projects",
+      "empty": "All clear: no expiring secrets, idle credentials or failing integrations.",
+      "more": "+{count} more",
+      "severity": {
+        "high": "Urgent",
+        "medium": "Warning",
+        "low": "Info"
+      },
+      "items": {
+        "expired": "{key} expired in {environment}",
+        "integration": "Integration {name} ({provider}) is failing",
+        "expiring": "{key} expires soon in {environment}",
+        "credential_no_expiry": "Credential {name} has no expiration date",
+        "credential_unused": "Credential {name} unused for over 30 days",
+        "invite": "Invite for {email} ({role}) is pending"
+      }
+    },
+    "onboarding": {
+      "title": "Getting started",
+      "description": "Set up the essentials to use CriptEnv day to day.",
+      "progress": "{done} of {total} done",
+      "dismiss": "Dismiss getting started",
+      "done": "done",
+      "copy": "Copy command and mark as done",
+      "copied": "Command copied",
+      "steps": {
+        "createProject": {
+          "title": "Create a project",
+          "description": "Projects group environments and secrets.",
+          "cta": "Create project"
+        },
+        "addSecret": {
+          "title": "Add your first secret",
+          "description": "Encrypted in the browser before it leaves your machine.",
+          "cta": "Open secrets"
+        },
+        "installCli": {
+          "title": "Install the CLI",
+          "description": "Use secrets in the terminal and CI with criptenv run."
+        },
+        "inviteTeammate": {
+          "title": "Invite a teammate",
+          "description": "Share the project with roles and permissions.",
+          "cta": "Invite"
+        }
+      }
+    },
+    "projectGrid": {
+      "title": "Your projects",
+      "description": "Most recent first",
+      "viewAll": "View all",
+      "healthy": "Healthy",
+      "issues": "{count, plural, one {# alert} other {# alerts}}",
+      "secrets": "{count, plural, one {# secret} other {# secrets}}",
+      "members": "{count, plural, one {# member} other {# members}}",
+      "noActivity": "No activity"
+    },
+    "chart": {
+      "title": "Activity",
+      "description": "{count, plural, =0 {No events} one {# event} other {# events}} in the last {days} days",
+      "changes": "Secret changes",
+      "other": "Other actions",
+      "date": "Date",
+      "tooltip": "{date}: {changes} changes, {other} other"
+    },
+    "attentionBadge": "{count, plural, one {# alert} other {# alerts}}"
   },
   "projects": {
     "title": "Projects",

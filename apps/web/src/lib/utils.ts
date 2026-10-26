@@ -18,16 +18,15 @@ export function formatRelativeTime(
   locale = "pt-BR",
   now: Date = new Date(),
 ): string {
-  const seconds = Math.floor((now.getTime() - new Date(date).getTime()) / 1000)
-  const minutes = Math.floor(seconds / 60)
-  const hours = Math.floor(minutes / 60)
-  const days = Math.floor(hours / 24)
+  // Negative = past ("2 hours ago"), positive = future ("in 3 days")
+  const seconds = Math.trunc((new Date(date).getTime() - now.getTime()) / 1000)
+  const abs = Math.abs(seconds)
   const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" })
 
-  if (seconds < 60) return rtf.format(0, "second")
-  if (minutes < 60) return rtf.format(-minutes, "minute")
-  if (hours < 24) return rtf.format(-hours, "hour")
-  if (days <= 30) return rtf.format(-days, "day")
+  if (abs < 60) return rtf.format(0, "second")
+  if (abs < 3600) return rtf.format(Math.trunc(seconds / 60), "minute")
+  if (abs < 86400) return rtf.format(Math.trunc(seconds / 3600), "hour")
+  if (abs <= 30 * 86400) return rtf.format(Math.trunc(seconds / 86400), "day")
   return formatDate(date, locale)
 }
 

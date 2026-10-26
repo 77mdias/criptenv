@@ -7,24 +7,68 @@ import { Link } from "@/i18n/navigation"
 import { Card, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
 import { StatusBadge } from "@/components/ui/status-badge"
 import { Skeleton } from "@/components/ui/skeleton"
-import { peekCached, projectsApi, auditApi, environmentsApi, vaultApi } from "@/lib/api"
+import { ActivityChart } from "@/components/dashboard/activity-chart"
+import { AttentionCard } from "@/components/dashboard/attention-card"
+import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist"
+import { ProjectGrid } from "@/components/dashboard/project-grid"
+import { auditApi, meApi, peekCached } from "@/lib/api"
 import { useAuditDescriber } from "@/lib/audit/describe"
-import type { Project, AuditLog, ProjectListResponse } from "@/lib/api"
+import { buildAttentionItems } from "@/lib/dashboard/attention"
+import { onboardingSteps } from "@/lib/dashboard/onboarding"
+import { formatRelativeTime } from "@/lib/utils"
+import type { ActivityDay, AuditLog, OverviewResponse } from "@/lib/api"
+
+const ONBOARDING_DISMISSED_KEY = "criptenv-onboarding-dismissed"
+const ONBOARDING_CLI_KEY = "criptenv-onboarding-cli"
+
+function readFlag(key: string): boolean {
+  try {
+    return window.localStorage.getItem(key) === "1"
+  } catch {
+    return false
+  }
+}
+
+function writeFlag(key: string) {
+  try {
+    window.localStorage.setItem(key, "1")
+  } catch {
+    // storage blocked (private mode): the choice just isn't remembered
+  }
+}
+
+function StatSkeleton() {
+  return (
+    <Card>
+      <div className="flex items-center gap-3">
+        <Skeleton className="h-10 w-10 rounded-lg" />
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-16" />
+          <Skeleton className="h-7 w-8" />
+        </div>
+      </div>
+      <Skeleton className="mt-2 h-3 w-24" />
+    </Card>
+  )
+}
 
 export default function DashboardPage() {
   const t = useTranslations("dashboard.home")
   const locale = useLocale()
   const describe = useAuditDescriber()
-  const cachedProjects = peekCached<ProjectListResponse>("/api/v1/projects")
-  const [projects, setProjects] = useState<Project[]>(cachedProjects?.projects ?? [])
+  const [overview, setOverview] = useState<OverviewResponse | null>(
+    () => peekCached<OverviewResponse>("/api/v1/me/overview") ?? null
+  )
+  const [days, setDays] = useState<ActivityDay[] | null>(null)
   const [auditLogs, setAuditLogs] = useState<AuditLog[]>([])
-  const [totalSecrets, setTotalSecrets] = useState(0)
-  const [loading, setLoading] = useState(!cachedProjects)
-  const [activityLoading, setActivityLoading] = useState(!cachedProjects)
+  const [activityLoading, setActivityLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
-  const projectNames = useMemo(
-    () => new Map(projects.map((project) => [project.id, project.name])),
-    [projects]
+  // Overview only exists client-side, so reading storage on first render can't cause a hydration mismatch
+  const [onboardingDismissed, setOnboardingDismissed] = useState(() =>
+    typeof window === "undefined" ? true : readFlag(ONBOARDING_DISMISSED_KEY)
+  )
+  const [cliDone, setCliDone] = useState(() =>
+    typeof window === "undefined" ? false : readFlag(ONBOARDING_CLI_KEY)
   )
 
   useEffect(() => {
@@ -32,68 +76,56 @@ export default function DashboardPage() {
 
     async function fetchDashboardData() {
       try {
-        const projectData = await projectsApi.list()
+        const [overviewData, stats] = await Promise.all([meApi.overview(), meApi.activityStats(30)])
         if (cancelled) return
-        setProjects(projectData.projects)
+        setOverview(overviewData)
+        setDays(stats)
 
-        const environmentResponses = await Promise.all(
-          projectData.projects.map((project) => environmentsApi.list(project.id))
-        )
+        // shortcut: fan-out over the 10 most active projects; replaced by GET /me/audit in UX.5a
+        const recent = [...overviewData.projects]
+          .sort((a, b) => (b.last_activity_at ?? "").localeCompare(a.last_activity_at ?? ""))
+          .slice(0, 10)
+        const logPages = await Promise.all(recent.map((project) => auditApi.getLogs(project.id, { per_page: 5 })))
         if (cancelled) return
-
-        const vaultMetadata = await Promise.all(
-          environmentResponses.flatMap((response) =>
-            response.environments.map((environment) =>
-              vaultApi.getVersion(environment.project_id, environment.id)
-            )
-          )
+        setAuditLogs(
+          logPages
+            .flatMap((page) => page.logs)
+            .sort((a, b) => b.created_at.localeCompare(a.created_at))
+            .slice(0, 8)
         )
-        if (cancelled) return
-
-        const secretsSum = vaultMetadata.reduce(
-          (sum, metadata) => sum + metadata.blob_count,
-          0
-        )
-
-        setTotalSecrets(secretsSum)
-        setLoading(false)
-
-        if (projectData.projects.length > 0) {
-          setActivityLoading(true)
-          // shortcut: fan-out over the first 10 projects; replaced by GET /me/overview in UX.2
-          const logPages = await Promise.all(
-            projectData.projects.slice(0, 10).map((project) =>
-              auditApi.getLogs(project.id, { per_page: 5 })
-            )
-          )
-          if (cancelled) return
-          setAuditLogs(
-            logPages
-              .flatMap((page) => page.logs)
-              .sort((a, b) => b.created_at.localeCompare(a.created_at))
-              .slice(0, 8)
-          )
-        } else {
-          setAuditLogs([])
-        }
       } catch (err) {
-        if (!cancelled) {
-          setError(err instanceof Error ? err.message : t("loadError"))
-        }
+        if (!cancelled) setError(err instanceof Error ? err.message : t("loadError"))
       } finally {
-        if (!cancelled) {
-          setLoading(false)
-          setActivityLoading(false)
-        }
+        if (!cancelled) setActivityLoading(false)
       }
     }
 
     void fetchDashboardData()
-
     return () => {
       cancelled = true
     }
   }, [t])
+
+  const attentionItems = useMemo(() => (overview ? buildAttentionItems(overview) : []), [overview])
+  const attentionByProject = useMemo(() => {
+    const counts = new Map<string, number>()
+    for (const item of attentionItems) counts.set(item.projectId, (counts.get(item.projectId) ?? 0) + 1)
+    return counts
+  }, [attentionItems])
+  const projectNames = useMemo(
+    () => new Map((overview?.projects ?? []).map((project) => [project.id, project.name])),
+    [overview]
+  )
+  const latestProject = useMemo(
+    () =>
+      [...(overview?.projects ?? [])]
+        .filter((project) => project.last_activity_at)
+        .sort((a, b) => (b.last_activity_at ?? "").localeCompare(a.last_activity_at ?? ""))[0],
+    [overview]
+  )
+
+  const steps = overview ? onboardingSteps(overview, cliDone) : []
+  const showOnboarding = overview !== null && !onboardingDismissed && steps.some((step) => !step.done)
 
   if (error) {
     return (
@@ -114,47 +146,38 @@ export default function DashboardPage() {
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
         <div className="min-w-0">
           <h1 className="text-2xl font-semibold tracking-tight">{t("title")}</h1>
-          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">
-            {t("welcome")}
-          </p>
+          <p className="text-[var(--text-tertiary)] text-sm font-mono mt-1">{t("welcome")}</p>
         </div>
-        <StatusBadge status="synced" label={t("synced")} />
+        {overview && (
+          <StatusBadge
+            status={attentionItems.length > 0 ? "pending" : "synced"}
+            label={attentionItems.length > 0 ? t("attentionBadge", { count: attentionItems.length }) : t("synced")}
+          />
+        )}
       </div>
+
+      {showOnboarding && (
+        <OnboardingChecklist
+          steps={steps}
+          projectId={overview.projects[0]?.id ?? null}
+          onCliDone={() => {
+            writeFlag(ONBOARDING_CLI_KEY)
+            setCliDone(true)
+          }}
+          onDismiss={() => {
+            writeFlag(ONBOARDING_DISMISSED_KEY)
+            setOnboardingDismissed(true)
+          }}
+        />
+      )}
 
       {/* Stats */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-        {loading ? (
+        {!overview ? (
           <>
-            <Card>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-7 w-8" />
-                </div>
-              </div>
-              <Skeleton className="mt-2 h-3 w-24" />
-            </Card>
-            <Card>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-7 w-8" />
-                </div>
-              </div>
-              <Skeleton className="mt-2 h-3 w-24" />
-            </Card>
-            <Card>
-              <div className="flex items-center gap-3">
-                <Skeleton className="h-10 w-10 rounded-lg" />
-                <div className="space-y-2">
-                  <Skeleton className="h-3 w-16" />
-                  <Skeleton className="h-7 w-8" />
-                </div>
-              </div>
-              <Skeleton className="mt-2 h-3 w-24" />
-            </Card>
+            <StatSkeleton />
+            <StatSkeleton />
+            <StatSkeleton />
           </>
         ) : (
           <>
@@ -167,13 +190,13 @@ export default function DashboardPage() {
                   <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
                     {t("stats.projects")}
                   </p>
-                  <p className="text-2xl font-semibold tracking-tight">
-                    {projects.length}
-                  </p>
+                  <p className="text-2xl font-semibold tracking-tight">{overview.totals.projects}</p>
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
-                {projects.length === 0 ? t("stats.projectsNone") : t("stats.projectsActive", { count: projects.length })}
+                {overview.totals.projects === 0
+                  ? t("stats.projectsNone")
+                  : t("stats.projectsActive", { count: overview.totals.projects })}
               </p>
             </Card>
 
@@ -186,13 +209,13 @@ export default function DashboardPage() {
                   <p className="text-xs text-[var(--text-muted)] font-mono uppercase tracking-wider truncate">
                     {t("stats.secrets")}
                   </p>
-                  <p className="text-2xl font-semibold tracking-tight">
-                    {totalSecrets}
-                  </p>
+                  <p className="text-2xl font-semibold tracking-tight">{overview.totals.secrets}</p>
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
-                {totalSecrets === 0 ? t("stats.secretsNone") : t("stats.secretsTotal", { count: totalSecrets })}
+                {overview.totals.secrets === 0
+                  ? t("stats.secretsNone")
+                  : t("stats.secretsTotal", { count: overview.totals.secrets })}
               </p>
             </Card>
 
@@ -206,19 +229,29 @@ export default function DashboardPage() {
                     {t("stats.lastSync")}
                   </p>
                   <p className="text-lg sm:text-2xl font-semibold tracking-tight truncate">
-                    {auditLogs.length > 0 ? describe(auditLogs[0]).time : "—"}
+                    {latestProject?.last_activity_at ? formatRelativeTime(latestProject.last_activity_at, locale) : "—"}
                   </p>
                 </div>
               </div>
               <p className="mt-2 text-xs text-[var(--text-muted)] font-mono truncate">
-                {auditLogs.length > 0 && projectNames.get(auditLogs[0].project_id)
-                  ? t("stats.lastActivityIn", { project: projectNames.get(auditLogs[0].project_id) ?? "" })
+                {latestProject
+                  ? t("stats.lastActivityIn", { project: latestProject.name })
                   : t("stats.lastActivity")}
               </p>
             </Card>
           </>
         )}
       </div>
+
+      {/* Attention + activity */}
+      <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+        {overview ? <AttentionCard items={attentionItems} /> : <Skeleton className="h-64 rounded-2xl" />}
+        {days ? <ActivityChart days={days} /> : <Skeleton className="h-64 rounded-2xl" />}
+      </div>
+
+      {overview && overview.projects.length > 0 && (
+        <ProjectGrid projects={overview.projects} attentionCount={attentionByProject} />
+      )}
 
       {/* Recent Activity */}
       <Card>
@@ -258,26 +291,19 @@ export default function DashboardPage() {
                   )}
                   <div className="flex-1 min-w-0 overflow-hidden">
                     <p className="text-sm text-[var(--text-primary)] line-clamp-2">{entry.title}</p>
-                    <p className="text-xs text-[var(--text-muted)] font-mono truncate">
-                      {projectName && (
-                        <Link
-                          href={`/projects/${log.project_id}`}
-                          className="hover:text-[var(--text-secondary)]"
-                        >
-                          {projectName}
-                        </Link>
-                      )}
-                      {/* on mobile the time column moves under the title */}
-                      <span className="sm:hidden">
-                        {projectName ? " · " : ""}
-                        {entry.time}
-                      </span>
-                    </p>
+                    {projectName && (
+                      <Link
+                        href={`/projects/${log.project_id}`}
+                        className="text-xs text-[var(--text-muted)] font-mono truncate hover:text-[var(--text-secondary)]"
+                      >
+                        {projectName}
+                      </Link>
+                    )}
                   </div>
                   <time
                     dateTime={log.created_at}
                     title={new Date(log.created_at).toLocaleString(locale)}
-                    className="hidden sm:block text-xs text-[var(--text-muted)] font-mono whitespace-nowrap"
+                    className="text-xs text-[var(--text-muted)] font-mono whitespace-nowrap"
                   >
                     {entry.time}
                   </time>
@@ -286,9 +312,7 @@ export default function DashboardPage() {
             })
           ) : (
             <div className="text-center py-8">
-              <p className="text-sm text-[var(--text-muted)] font-mono">
-                {t("activity.empty")}
-              </p>
+              <p className="text-sm text-[var(--text-muted)] font-mono">{t("activity.empty")}</p>
             </div>
           )}
         </div>

@@ -66,6 +66,12 @@ P ≈ 1–2 dias · M ≈ 3–4 dias · G ≈ 5–7 dias (uma pessoa).
 
 ## UX.2 — Dashboard como centro de comando
 
+> **Implementado (2026-10-26)**, com estes desvios do plano:
+> - Gráfico com as séries `changes` (`vault.pushed` + `secret.rotated`) e `other`: leituras de CI não são auditadas hoje, então `ci_reads` não tem fonte.
+> - Checklist: "primeiro token de CI" virou "convidar alguém da equipe". O overview só lista credenciais paradas, então não dá para detectar se existe token. "Instalar a CLI" é marcado pelo usuário ao copiar o comando.
+> - Dados via `meApi` + cache/dedupe do `request()` (o padrão atual do app), não React Query; o badge da sidebar reusa a mesma requisição.
+> - O feed de atividade ainda faz fan-out por projeto (até 10) até existir `GET /me/audit` (UX.5a).
+
 **Backend**
 - [ ] `app/services/overview_service.py` + `app/routers/me.py` (prefixo `/api/v1/me`, registrado em `main.py`).
 - [ ] `GET /me/overview` → `OverviewResponse`:

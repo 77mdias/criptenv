@@ -13,6 +13,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - **`public/sitemap.xml` gerado:** `scripts/generate-sitemap.mjs` (`npm run sitemap`) lê as rotas públicas (`(marketing)`, `(docs)`). Agora são 40 páginas e 50 URLs (antes eram 3). Só as páginas traduzidas com next-intl (home, `/docs` e getting-started) recebem as versões `/en` e `/es` com hreflang e `x-default`; as demais aparecem só em português, para não anunciar cópias não traduzidas.
 - **CI:** o passo `npm run check:sitemap` falha quando uma página nova entra sem regenerar o sitemap.
 
+### UX.2 — Dashboard como centro de comando (Phase 3.5) — 2026-10-26
+
+**API:**
+- `GET /api/v1/me/overview`: projetos do usuário com papel, ambientes (contagem de secrets, versão, última alteração), número de membros e última atividade, mais `attention`: secrets expirados ou expirando em até 7 dias, convites pendentes, credenciais sem expiração ou sem uso há 30 dias ou mais, e integrações com erro. Credenciais e convites aparecem só para owner/admin. Contagens via `GROUP BY`, sem laço por projeto.
+- `GET /api/v1/me/activity-stats?days=N` (1–90): eventos de auditoria por dia, separados em alterações de secrets e outras ações, com zero nos dias vazios.
+- Migration `20261026_0013`: índice `audit_logs (project_id, created_at)`.
+
+**Web:**
+- Dashboard com o card "Precisa de atenção" (ordenado por severidade, cada item com link para a correção), o checklist de primeiros passos (dispensável), a grade de projetos com indicador de saúde e o gráfico de 30 dias em SVG (com tabela para leitores de tela). Os cards de contagem passam a vir do overview, sem o fan-out por projeto, ambiente e vault.
+- O selo do cabeçalho mostra "N alertas" em vez do "Tudo sincronizado" fixo; a sidebar mostra o contador de integrações com erro.
+- `formatRelativeTime` também formata datas futuras ("em 3 dias").
+
 ### UX.1 — Fundação da experiência autenticada (Phase 3.5) — 2026-10-26
 
 **API:**
