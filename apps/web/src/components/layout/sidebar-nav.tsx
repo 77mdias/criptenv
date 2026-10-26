@@ -6,6 +6,7 @@ import { usePathname } from "@/i18n/navigation";
 import { cn } from "@/lib/utils"
 import { useUIStore } from "@/stores/ui"
 import { getDashboardNavGroups, isDashboardNavItemActive } from "./dashboard-nav"
+import { NavBadge, useNavBadges } from "./nav-badges"
 
 interface SidebarNavProps {
   className?: string
@@ -15,6 +16,7 @@ function SidebarNav({ className }: SidebarNavProps) {
   const pathname = usePathname()
   const { desktopSidebarOpen } = useUIStore()
   const tNav = useTranslations("dashboard.nav")
+  const badges = useNavBadges()
   const { mainNavItems, bottomNavItems } = getDashboardNavGroups()
 
   return (
@@ -45,6 +47,7 @@ function SidebarNav({ className }: SidebarNavProps) {
             >
               <item.icon className="h-4 w-4 shrink-0" />
               <span>{tNav(item.labelKey)}</span>
+              <NavBadge count={badges[item.href]} label={tNav("withErrors", { count: badges[item.href] ?? 0 })} />
             </Link>
           )
         })}

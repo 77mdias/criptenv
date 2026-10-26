@@ -25,6 +25,13 @@ describe("formatRelativeTime", () => {
     expect(formatRelativeTime(ago(45 * DAY), "pt-BR", now)).toBe("11/09/2026")
   })
 
+  it("handles future dates (expirations)", () => {
+    const ahead = (ms: number) => new Date(now.getTime() + ms)
+    expect(formatRelativeTime(ahead(3 * DAY), "pt-BR", now)).toBe("em 3 dias")
+    expect(formatRelativeTime(ahead(DAY), "en", now)).toBe("tomorrow")
+    expect(formatRelativeTime(ahead(2 * HOUR), "en", now)).toBe("in 2 hours")
+  })
+
   it("defaults to pt-BR for existing callers", () => {
     expect(formatRelativeTime(ago(3 * DAY), undefined, now)).toBe("há 3 dias")
   })

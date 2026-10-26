@@ -12,6 +12,17 @@ export { ciTokensApi } from './api/ci-tokens';
 export { rotationApi } from './api/rotation';
 export { integrationsApi } from './api/integrations';
 export { apiKeysApi } from './api/api-keys';
+export { meApi } from './api/me';
+export type {
+  ActivityDay,
+  AttentionCredential,
+  AttentionExpiration,
+  AttentionIntegration,
+  AttentionInvite,
+  OverviewEnvironment,
+  OverviewProject,
+  OverviewResponse,
+} from './api/me';
 
 export type {
   User,
