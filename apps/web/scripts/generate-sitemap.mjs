@@ -83,7 +83,7 @@ const locs = [...xml.matchAll(/<loc>([^<]+)<\/loc>/g)].map((m) => m[1]);
 assert.ok(locs.length > 0, "sitemap has no URLs");
 assert.equal(new Set(locs).size, locs.length, "duplicate <loc> entries");
 for (const loc of locs) {
-  assert.ok(loc.startsWith(SITE), `foreign URL: ${loc}`);
+  assert.equal(new URL(loc).origin, SITE, `foreign URL: ${loc}`);
   assert.ok(!/[()[\]]/.test(loc), `route group or dynamic segment leaked: ${loc}`);
 }
 
