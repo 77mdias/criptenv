@@ -256,7 +256,7 @@ async def _api_key_login(auth_key: bytes, db, api_key: str) -> dict:
 @click.command()
 @click.option("--email", "email_flag", is_flag=True, help="Use email/password login (legacy)")
 @click.option("--device", "device_flag", is_flag=True, help="Use device authorization flow")
-@click.option("--api-key", "api_key_value", default=None, flag_value="ask", help="Login with an API key. Use without a value to be prompted securely.")
+@click.option("--api-key", "api_key_value", default=None, is_flag=False, flag_value="ask", envvar="CRIPTENV_API_KEY", help="Login with an API key (or set CRIPTENV_API_KEY). Use without a value to be prompted securely.")
 @click.option("--email-address", "email_address", default=None, help="Email for legacy login")
 @click.option("--password", default=None, help="Password for legacy login")
 def login_command(

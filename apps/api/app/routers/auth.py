@@ -15,7 +15,7 @@ from app.schemas.auth import (
     VerifyEmailRequest, SendVerificationResponse, VerifyEmailResponse,
     SessionsRevokedResponse,
 )
-from app.middleware.auth import get_current_user
+from app.middleware.auth import get_current_user, get_current_user_or_api_key
 from app.models.user import User
 from app.services.audit_service import AuditService
 from app.services.avatar_service import AvatarService
@@ -241,7 +241,7 @@ async def signout(
 
 @router.get("/session", response_model=UserResponse)
 async def get_session(
-    current_user: User = Depends(get_current_user)
+    current_user: User = Depends(get_current_user_or_api_key)
 ):
     return _user_to_response(current_user)
 
