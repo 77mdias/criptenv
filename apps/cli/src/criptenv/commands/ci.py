@@ -303,7 +303,10 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
 
         try:
             vault = RemoteVault(client, session.project_id)
-            state = asyncio.run(vault.load_state(environment))
+            state = vault.load_ci_state(
+                asyncio.run(client.get_ci_secrets(session.project_id, environment)),
+                environment,
+            )
             by_key = {blob["key_id"]: blob for blob in state.blobs}
 
             for key, value in entries:
@@ -357,6 +360,7 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
                 click.echo(f"✓ Sync to {provider} complete")
             except Exception as e:
                 click.echo(f"Error syncing to {provider}: {e}", err=True)
+                raise SystemExit(1)
 
 
 # =============================================================================

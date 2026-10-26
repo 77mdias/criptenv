@@ -50,7 +50,8 @@ def audit_list(project_id: str | None, action: str | None, resource: str | None,
                 action_name = log.get("action", "unknown")[:34]
                 resource_type = log.get("resource_type", "unknown")[:14]
                 created = log.get("created_at", "unknown")[:21]
-                user = log.get("user_id", "system")[:29]
+                # user_id is null for CI-session actions
+                user = (log.get("user_id") or "system")[:29]
                 click.echo(f"{action_name:<35} {resource_type:<15} {created:<22} {user:<30}")
 
             click.echo("")

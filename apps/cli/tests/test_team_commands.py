@@ -152,8 +152,10 @@ class TestAuditCommands:
             "logs": [
                 {"action": "secret.created", "resource_type": "secret", "created_at": "2026-05-01T12:00:00Z", "user_id": "usr_1"},
                 {"action": "project.updated", "resource_type": "project", "created_at": "2026-05-02T10:00:00Z", "user_id": "usr_2"},
+                # CI-session pushes are logged without a user
+                {"action": "vault.pushed", "resource_type": "vault", "created_at": "2026-05-03T09:00:00Z", "user_id": None},
             ],
-            "total": 2,
+            "total": 3,
             "page": 1,
             "per_page": 50,
         })
@@ -164,7 +166,8 @@ class TestAuditCommands:
         assert result.exit_code == 0
         assert "secret.created" in result.output
         assert "project.updated" in result.output
-        assert "2 log(s)" in result.output
+        assert "system" in result.output
+        assert "3 log(s)" in result.output
 
     @patch("criptenv.commands.audit.async_cli_context")
     def test_audit_list_with_filters(self, mock_ctx, runner):

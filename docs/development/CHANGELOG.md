@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CLI 0.2.2 (PyPI) — 2026-10-26
+
+- **`ci deploy` funcional:** usava `RemoteVault.load_state`, que chama as rotas de projeto, ambientes e `vault/pull` — todas rejeitam sessão de CI (401). Agora o estado vem de `GET /ci/secrets` (blobs, versão, `environment_id`, `vault_config` público) via `RemoteVault.load_ci_state`, e a escrita segue por `vault/push`, que já validava `write:secrets`, ambiente do token e vault proof. Nenhuma mudança na API.
+- `ci deploy --provider` sai com status 1 se a sincronização falhar.
+- `audit list` quebrava com `TypeError` em logs sem usuário (ações de sessão de CI têm `user_id` nulo); mostra `system`.
+- Validado E2E (Docker local): deploy com token `write:secrets` de produção; recusa (exit 1) para outro ambiente, token só-leitura e vault password errada; o usuário decifra os valores enviados pelo CI.
+
 ### CLI 0.2.1 (PyPI) + API — 2026-10-26
 
 Login por API key nunca funcionou (caminho recomendado para CI fora do GitHub Actions):

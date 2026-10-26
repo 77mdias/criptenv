@@ -131,3 +131,61 @@ def test_connect_does_not_raise_unbound_local(monkeypatch):
     assert result.exit_code == 0, result.output
     assert created["config"]["api_token"] == "tok_xxx"
     assert created["config"]["project_id"] == "prj_provider"
+
+
+def test_ci_deploy_uses_only_ci_routes(mock_config_dir, monkeypatch):
+    """Regression: `ci deploy` went through RemoteVault.load_state, which calls
+    the project/environments/vault-pull routes that reject CI sessions (401).
+    It must seed state from GET /ci/secrets and write via vault/push only."""
+    import asyncio
+
+    from criptenv.commands import ci as ci_module
+    from criptenv.crypto.keys import build_project_vault_config
+    from criptenv.remote_vault import RemoteVault
+
+    vault_config, _proof = build_project_vault_config("ci-vault-pw")
+    pushed = {}
+
+    class FakeClient:
+        async def get_ci_secrets(self, project_id, environment):
+            assert (project_id, environment) == ("prj_1", "production")
+            return {"blobs": [], "version": 3, "environment_id": "env_1", "vault_config": vault_config}
+
+        async def push_vault(self, project_id, env_id, blobs, vault_proof, expected_version):
+            pushed.update(env_id=env_id, blobs=blobs, expected_version=expected_version)
+            return {"version": 4}
+
+        async def _forbidden(self, *_a, **_k):
+            raise AssertionError("CI deploy must not call user-only routes")
+
+        get_project = list_environments = pull_vault = _forbidden
+
+    class FakeSession:
+        project_id = "prj_1"
+        environment_scope = None
+        scopes = ["write:secrets"]
+
+    class FakeManager:
+        async def get_active_session(self):
+            return FakeSession()
+
+        async def get_authenticated_client(self):
+            return FakeClient()
+
+    monkeypatch.setattr(ci_module, "_ci_manager", lambda db: FakeManager())
+    monkeypatch.setenv("CRIPTENV_VAULT_PASSWORD", "ci-vault-pw")
+
+    runner = CliRunner()
+    assert runner.invoke(main, ["init"]).exit_code == 0
+    with runner.isolated_filesystem():
+        with open(".env.production", "w") as f:
+            f.write("API_KEY=from-ci\n")
+        result = runner.invoke(main, ["ci", "deploy", "--env", "production", "--file", ".env.production"])
+
+    assert result.exit_code == 0, result.output
+    assert "Deployment complete" in result.output
+    assert pushed["env_id"] == "env_1" and pushed["expected_version"] == 3
+    # The pushed blob decrypts with the project vault password
+    vault = RemoteVault(FakeClient(), "prj_1")
+    vault.load_ci_state({"environment_id": "env_1", "vault_config": vault_config}, "production")
+    assert asyncio.run(vault.decrypt_blob(pushed["blobs"][0], "env_1")) == b"from-ci"
