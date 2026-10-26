@@ -387,7 +387,7 @@ The CLI stores its local vault at `~/.criptenv/vault.db` (SQLite) and configurat
 | Frontend | Cloudflare Pages + Workers | Built with Vinext, deployed via `vinext deploy` |
 | Backend | Docker on VPS behind Cloudflare Tunnel | `apps/api/Dockerfile` + `deploy/vps/docker-compose.yml`; image published via `.github/workflows/deploy-backend.yml` |
 | Database | PostgreSQL 15 (VPS compose) | Migrations applied automatically by the API container entrypoint (`alembic upgrade head`) |
-| CLI | PyPI (future) | Distributed as Python wheel |
+| CLI | PyPI (`criptenv`) | Tag `cli-vX.Y.Z` (matching `apps/cli/pyproject.toml`) triggers `.github/workflows/release-cli.yml` (Trusted Publishing) |
 | GitHub Action | GitHub Marketplace | Bundled with `ncc` |
 
 Containerization: multi-stage `Dockerfile`s exist for `apps/api` and `apps/web`, with compose files for dev (`docker-compose.dev.yml`), e2e (`docker-compose.e2e.yml`), production (`docker-compose.yml`) and the VPS (`deploy/vps/`). See `docs/development/docker.md`.
