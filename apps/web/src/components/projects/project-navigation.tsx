@@ -1,5 +1,6 @@
 "use client"
 
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation";
 import { usePathname } from "@/i18n/navigation";
 import {
@@ -22,8 +23,6 @@ type ProjectNavKey = "overview" | "secrets" | "members" | "audit" | "settings"
 interface ProjectNavDefinition {
   key: ProjectNavKey
   icon: LucideIcon
-  label: string
-  description: string
   segment: string | null
 }
 
@@ -35,36 +34,26 @@ const projectNavDefinitions: ProjectNavDefinition[] = [
   {
     key: "overview",
     icon: LayoutGrid,
-    label: "Overview",
-    description: "Resumo do projeto e atalhos principais.",
     segment: null,
   },
   {
     key: "secrets",
     icon: KeyRound,
-    label: "Secrets",
-    description: "Gerencie environments, vault e secrets criptografados.",
     segment: "secrets",
   },
   {
     key: "members",
     icon: Users,
-    label: "Team",
-    description: "Convide membros e ajuste permissões do projeto.",
     segment: "members",
   },
   {
     key: "audit",
     icon: ScrollText,
-    label: "Audit Log",
-    description: "Acompanhe eventos, mudanças e trilha de auditoria.",
     segment: "audit",
   },
   {
     key: "settings",
     icon: Settings,
-    label: "Settings",
-    description: "Configure dados do projeto, tokens de CI e zona de perigo.",
     segment: "settings",
   },
 ]
@@ -103,6 +92,7 @@ export function ProjectTabs({
   projectId: string
   currentUserRole?: ProjectRole | null
 }) {
+  const t = useTranslations("dashboard.projectNav")
   const pathname = usePathname()
   const items = getProjectNavigationItems(projectId, currentUserRole)
 
@@ -114,7 +104,7 @@ export function ProjectTabs({
 
       <div className="overflow-x-auto px-1 pb-1 scrollbar-hide">
         <nav
-          aria-label="Project navigation"
+          aria-label={t("ariaLabel")}
           className="flex min-w-max items-center gap-1 sm:gap-2 rounded-2xl border border-[var(--border)] bg-[var(--surface)] p-1 sm:p-1.5"
         >
           {items.map((item) => {
@@ -134,7 +124,7 @@ export function ProjectTabs({
                 )}
               >
                 <item.icon className="h-3.5 w-3.5 sm:h-4 sm:w-4 shrink-0" />
-                <span>{item.label}</span>
+                <span>{t(`sections.${item.key}.label`)}</span>
               </Link>
             )
           })}
@@ -151,6 +141,7 @@ export function ProjectSectionCards({
   projectId: string
   currentUserRole?: ProjectRole | null
 }) {
+  const t = useTranslations("dashboard.projectNav")
   const cachedProject = peekCached<Project>(`/api/v1/projects/${projectId}`)
   const role = currentUserRole ?? cachedProject?.current_user_role ?? null
   const items = getProjectSectionItems(projectId, role)
@@ -171,15 +162,15 @@ export function ProjectSectionCards({
               </div>
               <div>
                 <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-                  {item.label}
+                  {t(`sections.${item.key}.label`)}
                 </h2>
                 <p className="mt-2 font-mono text-sm leading-relaxed text-[var(--text-tertiary)]">
-                  {item.description}
+                  {t(`sections.${item.key}.description`)}
                 </p>
               </div>
             </div>
             <span className="mt-6 font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] transition-colors group-hover:text-[var(--text-primary)]">
-              Abrir seção
+              {t("openSection")}
             </span>
           </Card>
         </Link>

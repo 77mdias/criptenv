@@ -1,15 +1,15 @@
 {
   "page": {
-    "title": "Audit Log",
+    "title": "Auditoria",
     "subtitle": "{total} eventos registrados para este projeto",
-    "exportCsv": "Export CSV",
-    "exportJson": "Export JSON",
+    "exportCsv": "Exportar CSV",
+    "exportJson": "Exportar JSON",
     "loadMore": "Carregar mais"
   },
   "filters": {
     "title": "Filtros",
-    "action": "Action",
-    "resource": "Resource",
+    "action": "Ação",
+    "resource": "Recurso",
     "allActions": "Todas",
     "allResources": "Todos"
   },
@@ -19,5 +19,46 @@
   "empty": {
     "title": "Nenhum evento encontrado",
     "description": "As ações realizadas neste projeto aparecerão aqui."
+  },
+  "actors": {
+    "you": "Você",
+    "user": "{name}",
+    "ci": "CI",
+    "api": "API key",
+    "system": "Sistema"
+  },
+  "actions": {
+    "alert_settings_test_webhook": "{actor} testou o webhook de alertas",
+    "api_key_created": "{actor} criou uma API key",
+    "api_key_revoked": "{actor} revogou uma API key",
+    "api_key_updated": "{actor} atualizou uma API key",
+    "avatar_deleted": "{actor} removeu a foto de perfil",
+    "avatar_updated": "{actor} atualizou a foto de perfil",
+    "environment_archived": "{actor} arquivou um ambiente",
+    "environment_created": "{actor} criou um ambiente",
+    "environment_updated": "{actor} atualizou um ambiente",
+    "expiration_deleted": "{actor} removeu a expiração de {key}",
+    "expiration_set": "{actor} definiu expiração para {key}",
+    "integration_created": "{actor} conectou uma integração",
+    "integration_deleted": "{actor} desconectou uma integração",
+    "integration_synced": "{actor} sincronizou uma integração ({direction})",
+    "invite_accepted": "{actor} aceitou um convite",
+    "invite_created": "{actor} convidou {email} como {role}",
+    "invite_deleted": "{actor} excluiu um convite",
+    "invite_revoked": "{actor} revogou um convite",
+    "member_added": "{actor} adicionou um membro como {role}",
+    "member_removed": "{actor} removeu um membro",
+    "member_role_changed": "{actor} mudou o papel de um membro para {role}",
+    "project_alert_settings_updated": "{actor} atualizou os alertas do projeto",
+    "project_created": "{actor} criou o projeto",
+    "project_deleted": "{actor} excluiu o projeto",
+    "project_updated": "{actor} atualizou o projeto",
+    "project_vault_rekeyed": "{actor} trocou a senha do vault",
+    "secret_rotated": "{actor} rotacionou {key}",
+    "token_created": "{actor} criou o token de CI {name}",
+    "token_deleted": "{actor} excluiu um token de CI",
+    "token_revoked": "{actor} revogou um token de CI",
+    "vault_pushed": "{actor} atualizou o vault ({count, plural, =0 {sem secrets} one {# secret} other {# secrets}})",
+    "unknown": "{actor} executou {action}"
   }
 }

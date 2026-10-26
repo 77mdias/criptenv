@@ -2,6 +2,7 @@ import {
   CircleHelp,
   FolderOpen,
   LayoutDashboard,
+  Plug,
   User,
   type LucideIcon,
 } from "lucide-react"
@@ -25,6 +26,7 @@ export function getDashboardNavGroups(): DashboardNavGroups {
   const mainNavItems: DashboardNavItem[] = [
     { icon: LayoutDashboard, labelKey: "dashboard", href: "/dashboard" },
     { icon: FolderOpen, labelKey: "projects", href: "/projects", matchMode: "prefix" },
+    { icon: Plug, labelKey: "integrations", href: "/integrations", matchMode: "prefix" },
   ]
 
   const bottomNavItems: DashboardNavItem[] = [

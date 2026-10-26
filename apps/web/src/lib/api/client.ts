@@ -206,6 +206,15 @@ export interface AuditLog {
   ip_address?: string | null;
   user_agent?: string | null;
   created_at: string;
+  actor?: AuditActor | null;
+  auth_type?: "session" | "api_key" | "ci_session";
+}
+
+export interface AuditActor {
+  id: string;
+  name: string;
+  email: string;
+  avatar_url: string | null;
 }
 
 export interface AuditLogListResponse {

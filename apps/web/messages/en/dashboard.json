@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projects",
+    "integrations": "Integrations",
     "help": "Help",
     "account": "Account",
     "closeMenu": "Close menu"
@@ -21,8 +22,9 @@
       "secrets": "Secrets",
       "secretsNone": "No secrets yet",
       "secretsTotal": "{count} secrets in total",
-      "lastSync": "Last Sync",
-      "lastActivity": "Last activity"
+      "lastSync": "Last activity",
+      "lastActivity": "No activity yet",
+      "lastActivityIn": "in {project}"
     },
     "activity": {
       "title": "Recent Activity",
@@ -60,6 +62,37 @@
       "nameCharset": "Letters, numbers and hyphens only",
       "vaultPasswordLength": "Vault password must be at least 8 characters",
       "vaultPasswordMismatch": "Vault passwords do not match"
+    }
+  },
+  "projectNav": {
+    "ariaLabel": "Project navigation",
+    "openSection": "Open section",
+    "overviewPage": {
+      "eyebrow": "Overview",
+      "title": "Choose where to work",
+      "description": "Go to this project's secrets, team, audit log and settings."
+    },
+    "sections": {
+      "overview": {
+        "label": "Overview",
+        "description": "Project summary and main shortcuts."
+      },
+      "secrets": {
+        "label": "Secrets",
+        "description": "Manage environments, vault and encrypted secrets."
+      },
+      "members": {
+        "label": "Team",
+        "description": "Invite members and adjust project permissions."
+      },
+      "audit": {
+        "label": "Audit Log",
+        "description": "Follow events, changes and the audit trail."
+      },
+      "settings": {
+        "label": "Settings",
+        "description": "Configure project details, CI tokens and the danger zone."
+      }
     }
   }
 }

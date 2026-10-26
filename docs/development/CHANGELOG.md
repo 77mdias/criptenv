@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### UX.1 — Fundação da experiência autenticada (Phase 3.5) — 2026-10-26
+
+**API:**
+- `AuditLogResponse` ganha `actor` (`id`, `name`, `email`, `avatar_url`) e `auth_type` (`session` | `api_key` | `ci_session`, derivado de `metadata.auth_type`). Os atores de uma página são resolvidos em **uma** query (`AuditService.get_actors`), sem N+1.
+
+**Web:**
+- Feed de atividade legível: `lib/audit/describe.ts` traduz cada ação emitida pela API em frase ("Você rotacionou API_KEY", "CI atualizou o vault (2 secrets)"), com ícone e tom; ação desconhecida cai num fallback. O mapa antigo do `AuditEntry` usava nomes que a API nunca emite (`secret.created`, `env.created`, `key.rotated`).
+- `AuditEntry` mostra quem fez (você / nome / CI / API key / sistema) em vez de `Usuário <uuid>`.
+- Dashboard: atividade dos 10 projetos mais recentes (antes só do primeiro), rótulos traduzidos ("Projetos", "Última atividade em <projeto>").
+- `formatRelativeTime`/`formatDate` respeitam a locale ativa (`Intl.RelativeTimeFormat`) e ficam relativos até 30 dias (antes: texto fixo em PT e data absoluta após 7 dias).
+- Integrações na sidebar; navegação do projeto e página de visão geral traduzidas; rótulos da página de auditoria em pt-BR/es.
+
 ### CLI 0.2.2 (PyPI) — 2026-10-26
 
 - **`ci deploy` funcional:** usava `RemoteVault.load_state`, que chama as rotas de projeto, ambientes e `vault/pull` — todas rejeitam sessão de CI (401). Agora o estado vem de `GET /ci/secrets` (blobs, versão, `environment_id`, `vault_config` público) via `RemoteVault.load_ci_state`, e a escrita segue por `vault/push`, que já validava `write:secrets`, ambiente do token e vault proof. Nenhuma mudança na API.
