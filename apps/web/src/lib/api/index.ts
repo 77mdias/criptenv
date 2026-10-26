@@ -62,3 +62,14 @@ export type {
   AlertSettingsUpdate,
   TestWebhookResponse,
 } from "./alert-settings";
+export { meApi } from "./me";
+export type {
+  ActivityDay,
+  AttentionCredential,
+  AttentionExpiration,
+  AttentionIntegration,
+  AttentionInvite,
+  OverviewEnvironment,
+  OverviewProject,
+  OverviewResponse,
+} from "./me";

@@ -5,7 +5,8 @@
     "integrations": "Integrações",
     "help": "Ajuda",
     "account": "Conta",
-    "closeMenu": "Fechar menu"
+    "closeMenu": "Fechar menu",
+    "withErrors": "{count, plural, one {com erro} other {com erro}}"
   },
   "layout": {
     "checkingSession": "Verificando sessão..."
@@ -30,7 +31,76 @@
       "title": "Atividade Recente",
       "description": "Últimas operações nos seus projetos",
       "empty": "Nenhuma atividade recente"
-    }
+    },
+    "attention": {
+      "title": "Precisa de atenção",
+      "description": "{count, plural, one {# item pede} other {# itens pedem}} uma ação sua",
+      "emptyDescription": "Nada pendente nos seus projetos",
+      "empty": "Tudo em ordem: nenhum secret expirando, credencial parada ou integração com erro.",
+      "more": "+{count} {count, plural, one {item} other {itens}}",
+      "severity": {
+        "high": "Urgente",
+        "medium": "Atenção",
+        "low": "Informativo"
+      },
+      "items": {
+        "expired": "{key} expirou em {environment}",
+        "integration": "Integração {name} ({provider}) com erro",
+        "expiring": "{key} expira em breve em {environment}",
+        "credential_no_expiry": "Credencial {name} sem data de expiração",
+        "credential_unused": "Credencial {name} sem uso há mais de 30 dias",
+        "invite": "Convite para {email} ({role}) aguardando"
+      }
+    },
+    "onboarding": {
+      "title": "Primeiros passos",
+      "description": "Configure o essencial para usar o CriptEnv no dia a dia.",
+      "progress": "{done} de {total} concluídos",
+      "dismiss": "Dispensar primeiros passos",
+      "done": "concluído",
+      "copy": "Copiar comando e marcar como feito",
+      "copied": "Comando copiado",
+      "steps": {
+        "createProject": {
+          "title": "Crie um projeto",
+          "description": "Projetos agrupam ambientes e secrets.",
+          "cta": "Criar projeto"
+        },
+        "addSecret": {
+          "title": "Adicione o primeiro secret",
+          "description": "Cifrado no navegador antes de sair da sua máquina.",
+          "cta": "Abrir secrets"
+        },
+        "installCli": {
+          "title": "Instale a CLI",
+          "description": "Use os secrets no terminal e no CI com criptenv run."
+        },
+        "inviteTeammate": {
+          "title": "Convide alguém da equipe",
+          "description": "Compartilhe o projeto com papéis e permissões.",
+          "cta": "Convidar"
+        }
+      }
+    },
+    "projectGrid": {
+      "title": "Seus projetos",
+      "description": "Mais recentes primeiro",
+      "viewAll": "Ver todos",
+      "healthy": "Saudável",
+      "issues": "{count, plural, one {# alerta} other {# alertas}}",
+      "secrets": "{count, plural, one {# secret} other {# secrets}}",
+      "members": "{count, plural, one {# membro} other {# membros}}",
+      "noActivity": "Sem atividade"
+    },
+    "chart": {
+      "title": "Atividade",
+      "description": "{count, plural, =0 {Nenhum evento} one {# evento} other {# eventos}} nos últimos {days} dias",
+      "changes": "Alterações de secrets",
+      "other": "Outras ações",
+      "date": "Data",
+      "tooltip": "{date}: {changes} alterações, {other} outras"
+    },
+    "attentionBadge": "{count, plural, one {# alerta} other {# alertas}}"
   },
   "projects": {
     "title": "Projects",
