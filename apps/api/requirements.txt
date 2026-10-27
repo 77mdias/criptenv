@@ -12,7 +12,6 @@ python-multipart==0.0.32
 httpx==0.28.1
 apscheduler==3.11.3
 pytest-asyncio==1.4.0
-authlib==1.8.0
 gunicorn==26.2.0
 redis==8.1.0
 resend==2.47.0
