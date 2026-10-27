@@ -113,7 +113,10 @@ services:
     # The named volume `web-node-modules` starts empty and masks the bind
     # mount's node_modules, so install deps inside the container before
     # starting the dev server (otherwise `vinext` is not found).
-    command: sh -c "npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 3000"
+    # vinext's dev lock (.vinext/dev/lock.json) lives on the bind mount and
+    # survives a killed container; its PID can be reused by another process in
+    # the new one, so a stale lock blocks startup. One dev server per container.
+    command: sh -c "rm -f .vinext/dev/lock.json && npm install --no-audit --no-fund && npm run dev -- --host 0.0.0.0 --port 3000"
     ports:
       - "3000:3000"
     depends_on:
