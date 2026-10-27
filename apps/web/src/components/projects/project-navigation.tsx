@@ -11,12 +11,8 @@ import {
   Users,
   type LucideIcon,
 } from "lucide-react"
-import { Badge } from "@/components/ui/badge"
-import { Card } from "@/components/ui/card"
-import { peekCached } from "@/lib/api"
 import { canManageProject, type ProjectRole } from "@/lib/project-permissions"
 import { cn } from "@/lib/utils"
-import type { Project } from "@/lib/api"
 
 type ProjectNavKey = "overview" | "secrets" | "members" | "audit" | "settings"
 
@@ -68,13 +64,6 @@ export function getProjectNavigationItems(
       ...item,
       href: item.segment ? `/projects/${projectId}/${item.segment}` : `/projects/${projectId}`,
     }))
-}
-
-export function getProjectSectionItems(
-  projectId: string,
-  currentUserRole?: ProjectRole | null
-): ProjectNavigationItem[] {
-  return getProjectNavigationItems(projectId, currentUserRole).filter((item) => item.key !== "overview")
 }
 
 function isProjectNavItemActive(pathname: string, item: ProjectNavigationItem) {
@@ -130,51 +119,6 @@ export function ProjectTabs({
           })}
         </nav>
       </div>
-    </div>
-  )
-}
-
-export function ProjectSectionCards({
-  projectId,
-  currentUserRole,
-}: {
-  projectId: string
-  currentUserRole?: ProjectRole | null
-}) {
-  const t = useTranslations("dashboard.projectNav")
-  const cachedProject = peekCached<Project>(`/api/v1/projects/${projectId}`)
-  const role = currentUserRole ?? cachedProject?.current_user_role ?? null
-  const items = getProjectSectionItems(projectId, role)
-
-  return (
-    <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-      {items.map((item) => (
-        <Link key={item.href} href={item.href} className="group block h-full">
-          <Card className="flex h-full min-h-[168px] flex-col justify-between hover:shadow-xl">
-            <div className="space-y-4">
-              <div className="flex items-start justify-between gap-4">
-                <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[var(--background-muted)] transition-colors group-hover:bg-[var(--accent)] group-hover:text-[var(--accent-foreground)]">
-                  <item.icon className="h-5 w-5" />
-                </div>
-                <Badge variant="outline" className="text-[10px]">
-                  /{item.segment}
-                </Badge>
-              </div>
-              <div>
-                <h2 className="text-lg font-semibold tracking-tight text-[var(--text-primary)]">
-                  {t(`sections.${item.key}.label`)}
-                </h2>
-                <p className="mt-2 font-mono text-sm leading-relaxed text-[var(--text-tertiary)]">
-                  {t(`sections.${item.key}.description`)}
-                </p>
-              </div>
-            </div>
-            <span className="mt-6 font-mono text-xs font-semibold uppercase tracking-wider text-[var(--text-muted)] transition-colors group-hover:text-[var(--text-primary)]">
-              {t("openSection")}
-            </span>
-          </Card>
-        </Link>
-      ))}
     </div>
   )
 }

@@ -136,33 +136,50 @@
   },
   "projectNav": {
     "ariaLabel": "Navegación del proyecto",
-    "openSection": "Abrir sección",
-    "overviewPage": {
-      "eyebrow": "Resumen",
-      "title": "Elige dónde trabajar",
-      "description": "Accede a los secrets, el equipo, la auditoría y la configuración de este proyecto."
-    },
     "sections": {
       "overview": {
-        "label": "Resumen",
-        "description": "Resumen del proyecto y accesos principales."
+        "label": "Resumen"
       },
       "secrets": {
-        "label": "Secrets",
-        "description": "Gestiona entornos, vault y secrets cifrados."
+        "label": "Secrets"
       },
       "members": {
-        "label": "Equipo",
-        "description": "Invita miembros y ajusta los permisos del proyecto."
+        "label": "Equipo"
       },
       "audit": {
-        "label": "Auditoría",
-        "description": "Sigue eventos, cambios y el rastro de auditoría."
+        "label": "Auditoría"
       },
       "settings": {
-        "label": "Configuración",
-        "description": "Configura datos del proyecto, tokens de CI y la zona de peligro."
+        "label": "Configuración"
       }
+    }
+  },
+  "projectOverview": {
+    "loadError": "No se pudo cargar el proyecto",
+    "stats": {
+      "environments": "Entornos",
+      "secrets": "Secrets",
+      "members": "Miembros"
+    },
+    "matrix": {
+      "title": "Secrets por entorno",
+      "missingDescription": "{count, plural, one {# clave falta} other {# claves faltan}} en algún entorno",
+      "completeDescription": "Todas las claves existen en todos los entornos",
+      "emptyDescription": "Aún no hay secrets en este proyecto",
+      "onlyMissing": "Solo divergentes",
+      "key": "Clave",
+      "missing": "ausente",
+      "addFirst": "Añadir el primer secret"
+    },
+    "activity": {
+      "title": "Actividad reciente",
+      "description": "Últimas acciones en este proyecto",
+      "viewAll": "Ver auditoría",
+      "empty": "Aún no hay actividad"
+    },
+    "usage": {
+      "title": "Cómo usar este proyecto",
+      "description": "Comandos listos con el ID de este proyecto"
     }
   }
 }

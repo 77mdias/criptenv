@@ -3,6 +3,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
+from app.schemas.overview import SecretMatrixResponse
+from app.services.overview_service import OverviewService
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.project import (
@@ -134,6 +136,25 @@ async def get_project(
         )
 
     return ProjectResponse.from_project(project, current_user_role=member.role)
+
+
+@router.get("/{project_id}/secrets/matrix", response_model=SecretMatrixResponse)
+async def get_secret_matrix(
+    project_id: str,
+    current_user: User = Depends(get_current_user_or_api_key),
+    db: AsyncSession = Depends(get_db)
+):
+    """Which keys exist in which environment (names and versions only, no ciphertext)."""
+    from uuid import UUID
+
+    try:
+        project_uuid = UUID(project_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project ID")
+
+    if not await ProjectService(db).check_user_access(current_user.id, project_uuid):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    return await OverviewService(db).get_secret_matrix(project_uuid)
 
 
 @router.patch("/{project_id}", response_model=ProjectResponse)
