@@ -7,6 +7,17 @@ import type {
   VaultRekeyRequest,
 } from './client';
 
+export interface MatrixCell {
+  version: number;
+  updated_at: string | null;
+}
+
+export interface SecretMatrixResponse {
+  environments: { id: string; name: string; is_default: boolean }[];
+  /** cells: environment id -> cell, or null when the key is missing there */
+  keys: { key_id: string; cells: Record<string, MatrixCell | null> }[];
+}
+
 export const projectsApi = {
   list(): Promise<ProjectListResponse> {
     return request('GET', '/api/v1/projects');
@@ -14,6 +25,10 @@ export const projectsApi = {
 
   get(id: string): Promise<Project> {
     return request('GET', `/api/v1/projects/${id}`);
+  },
+
+  secretMatrix(id: string): Promise<SecretMatrixResponse> {
+    return request('GET', `/api/v1/projects/${id}/secrets/matrix`);
   },
 
   create(body: CreateProjectRequest): Promise<Project> {

@@ -136,33 +136,50 @@
   },
   "projectNav": {
     "ariaLabel": "Project navigation",
-    "openSection": "Open section",
-    "overviewPage": {
-      "eyebrow": "Overview",
-      "title": "Choose where to work",
-      "description": "Go to this project's secrets, team, audit log and settings."
-    },
     "sections": {
       "overview": {
-        "label": "Overview",
-        "description": "Project summary and main shortcuts."
+        "label": "Overview"
       },
       "secrets": {
-        "label": "Secrets",
-        "description": "Manage environments, vault and encrypted secrets."
+        "label": "Secrets"
       },
       "members": {
-        "label": "Team",
-        "description": "Invite members and adjust project permissions."
+        "label": "Team"
       },
       "audit": {
-        "label": "Audit Log",
-        "description": "Follow events, changes and the audit trail."
+        "label": "Audit Log"
       },
       "settings": {
-        "label": "Settings",
-        "description": "Configure project details, CI tokens and the danger zone."
+        "label": "Settings"
       }
+    }
+  },
+  "projectOverview": {
+    "loadError": "Could not load the project",
+    "stats": {
+      "environments": "Environments",
+      "secrets": "Secrets",
+      "members": "Members"
+    },
+    "matrix": {
+      "title": "Secrets by environment",
+      "missingDescription": "{count, plural, one {# key is} other {# keys are}} missing in some environment",
+      "completeDescription": "Every key exists in every environment",
+      "emptyDescription": "No secrets in this project yet",
+      "onlyMissing": "Only mismatches",
+      "key": "Key",
+      "missing": "missing",
+      "addFirst": "Add the first secret"
+    },
+    "activity": {
+      "title": "Recent activity",
+      "description": "Latest actions in this project",
+      "viewAll": "View audit log",
+      "empty": "No activity yet"
+    },
+    "usage": {
+      "title": "How to use this project",
+      "description": "Ready-to-run commands with this project's ID"
     }
   }
 }

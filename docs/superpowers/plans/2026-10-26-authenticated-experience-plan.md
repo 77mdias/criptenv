@@ -106,6 +106,12 @@ P ≈ 1–2 dias · M ≈ 3–4 dias · G ≈ 5–7 dias (uma pessoa).
 
 ## UX.3 — Visão geral do projeto
 
+> **Implementado (2026-10-27)**, com estes desvios:
+> - Snippets em `lib/projects/snippets.ts` (testado); as páginas de docs ainda têm os próprios exemplos — unificar fica para quando as docs forem migradas para i18n.
+> - Resumo sem "tokens ativos": a contagem exige papel de owner/admin e já aparece como alerta quando o token está parado/sem expiração.
+> - Coluna de chave sem `sticky`: o `--surface` é translúcido e empilhava cor; com poucos ambientes o scroll horizontal basta.
+> - `ProjectSectionCards`/`getProjectSectionItems` removidos (as abas do projeto já navegam).
+
 **Backend**
 - [ ] `GET /api/v1/projects/{id}/secrets/matrix` → `{ environments[], keys[]: { key_id, cells: { [env_id]: { version, updated_at } | null } } }`. Só metadados, sem ciphertext, IV ou tag; acessível a qualquer membro (mesma regra do `vault/pull`).
 - [ ] Testes: o payload não contém `ciphertext`; um não-membro recebe 404.
