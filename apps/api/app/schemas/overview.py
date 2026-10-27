@@ -78,6 +78,28 @@ class OverviewResponse(BaseModel):
     totals: OverviewTotals
 
 
+class MatrixEnvironment(BaseModel):
+    id: UUID
+    name: str
+    is_default: bool
+
+
+class MatrixCell(BaseModel):
+    version: int
+    updated_at: Optional[datetime] = None
+
+
+class MatrixKey(BaseModel):
+    key_id: str
+    # environment id -> cell, or null when the key is missing in that environment
+    cells: dict[str, Optional[MatrixCell]]
+
+
+class SecretMatrixResponse(BaseModel):
+    environments: list[MatrixEnvironment]
+    keys: list[MatrixKey]
+
+
 class ActivityDay(BaseModel):
     date: str
     changes: int

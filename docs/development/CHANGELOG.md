@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### UX.3 — Visão geral do projeto (Phase 3.5) — 2026-10-27
+
+**API:**
+- `GET /api/v1/projects/{id}/secrets/matrix`: lista quais chaves existem em quais ambientes, com versão e `updated_at` de cada uma, só a partir dos metadados do vault. Ambientes arquivados ficam de fora, ciphertext, IV e tag nunca vão na resposta, e quem não é membro recebe 404.
+- Testes: um fixture autouse limpa o rate limiter em memória antes de cada teste. Antes, as contagens vazavam entre testes, e os testes HTTP que rodavam por último recebiam 429 conforme a ordem de execução.
+
+**Web:**
+- A visão geral do projeto deixa de ser um menu e mostra:
+  - contadores de ambientes, secrets e membros;
+  - a matriz de chaves por ambiente, com filtro "Só divergentes" e link para cada chave;
+  - os alertas do projeto (o mesmo `AttentionCard` do dashboard);
+  - as 5 atividades mais recentes;
+  - "Como usar este projeto": abas CLI, GitHub Actions, GitLab CI e API, com o ID do projeto já preenchido.
+- `ProjectSectionCards` foi removido (as abas do projeto já fazem a navegação), junto com as chaves de tradução que ficaram órfãs.
+
 ### SEO: sitemap completo e canonical corrigido — 2026-10-26
 
 - **Canonical errado em todas as páginas:** o layout raiz `[locale]/layout.tsx` declarava `alternates` (canonical e hreflang) para `/`, e todas as páginas herdavam isso. Assim as 50 URLs públicas diziam ao Google que eram cópia da home, e só ela seria indexada. O `openGraph.url` também apontava para a home. Os dois saíram do layout: cada página passa a ser o próprio canonical, e o hreflang vem do sitemap. `buildAlternates` foi removido (não tinha outro uso).

@@ -197,6 +197,34 @@ class OverviewService:
             for r in rows
         ]
 
+    async def get_secret_matrix(self, project_id: UUID) -> dict:
+        """Key × environment presence from vault metadata (never ciphertext)."""
+        environments = (await self.db.execute(
+            select(Environment)
+            .where(Environment.project_id == project_id, Environment.archived == False)  # noqa: E712
+            .order_by(Environment.is_default.desc(), Environment.name)
+        )).scalars().all()
+        env_ids = [env.id for env in environments]
+
+        rows = (await self.db.execute(
+            select(VaultBlob.key_id, VaultBlob.environment_id, VaultBlob.version, VaultBlob.updated_at)
+            .where(VaultBlob.project_id == project_id, VaultBlob.environment_id.in_(env_ids))
+        )).all() if env_ids else []
+
+        cells: dict[str, dict] = {}
+        for key_id, env_id, version, updated_at in rows:
+            cells.setdefault(key_id, {str(e): None for e in env_ids})[str(env_id)] = {
+                "version": version,
+                "updated_at": _utc(updated_at),
+            }
+
+        return {
+            "environments": [
+                {"id": env.id, "name": env.name, "is_default": bool(env.is_default)} for env in environments
+            ],
+            "keys": [{"key_id": key_id, "cells": cells[key_id]} for key_id in sorted(cells)],
+        }
+
     async def get_activity_stats(self, user_id: UUID, days: int, now: Optional[datetime] = None) -> list[dict]:
         now = now or datetime.now(timezone.utc)
         today = now.date()
