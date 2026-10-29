@@ -24,7 +24,7 @@ export function buildAttentionItems(overview: OverviewResponse): AttentionItem[]
   return [
     ...expired.map((e): AttentionItem => ({
       id: `expired:${e.environment_id}:${e.secret_key}`, projectId: e.project_id, kind: "expired", severity: "high",
-      messageKey: "expired", href: `/projects/${e.project_id}/secrets?key=${encodeURIComponent(e.secret_key)}`,
+      messageKey: "expired", href: `/projects/${e.project_id}/secrets?key=${encodeURIComponent(e.secret_key)}&env=${e.environment_id}`,
       values: { key: e.secret_key, environment: e.environment_name, project: project(e.project_id) },
       date: e.expires_at,
     })),
@@ -36,7 +36,7 @@ export function buildAttentionItems(overview: OverviewResponse): AttentionItem[]
     })),
     ...expiring.map((e): AttentionItem => ({
       id: `expiring:${e.environment_id}:${e.secret_key}`, projectId: e.project_id, kind: "expiring", severity: "medium",
-      messageKey: "expiring", href: `/projects/${e.project_id}/secrets?key=${encodeURIComponent(e.secret_key)}`,
+      messageKey: "expiring", href: `/projects/${e.project_id}/secrets?key=${encodeURIComponent(e.secret_key)}&env=${e.environment_id}`,
       values: { key: e.secret_key, environment: e.environment_name, project: project(e.project_id) },
       date: e.expires_at,
     })),

@@ -23,6 +23,7 @@ interface SecretsTableProps {
   onCreate: () => void
   onRotate?: (secret: DecryptedSecret) => void
   onSetExpiration?: (secret: DecryptedSecret) => void
+  onOpenDetails?: (secret: DecryptedSecret) => void
 }
 
 function SelectAllCheckbox({
@@ -71,6 +72,7 @@ export function SecretsTable({
   onCreate,
   onRotate,
   onSetExpiration,
+  onOpenDetails,
 }: SecretsTableProps) {
   const t = useTranslations("secrets.table")
   const selectedKeySet = useMemo(() => new Set(selectedKeys), [selectedKeys])
@@ -155,6 +157,7 @@ export function SecretsTable({
             onDelete={onDelete}
             onRotate={onRotate}
             onSetExpiration={onSetExpiration}
+            onOpenDetails={onOpenDetails}
           />
         ))}
       </div>

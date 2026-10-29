@@ -30,6 +30,7 @@ interface SecretRowProps {
   selected?: boolean
   onSelectChange?: (secret: DecryptedSecret, selected: boolean) => void
   onSetExpiration?: (secret: DecryptedSecret) => void
+  onOpenDetails?: (secret: DecryptedSecret) => void
 }
 
 export function SecretRow({
@@ -45,6 +46,7 @@ export function SecretRow({
   selected = false,
   onSelectChange,
   onSetExpiration,
+  onOpenDetails,
 }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
   const t = useTranslations("secrets.row")
@@ -79,9 +81,20 @@ export function SecretRow({
       </div>
 
       <div className="min-w-0">
-        <p className="truncate font-mono text-sm font-semibold text-[var(--text-primary)]">
-          {secret.key}
-        </p>
+        {onOpenDetails ? (
+          <button
+            type="button"
+            aria-label={t("openDetails", { key: secret.key })}
+            onClick={() => onOpenDetails(secret)}
+            className="block max-w-full truncate rounded font-mono text-sm font-semibold text-[var(--text-primary)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--accent)]"
+          >
+            {secret.key}
+          </button>
+        ) : (
+          <p className="truncate font-mono text-sm font-semibold text-[var(--text-primary)]">
+            {secret.key}
+          </p>
+        )}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="px-2 py-0 text-[10px]">
             {environmentName}

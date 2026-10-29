@@ -143,6 +143,24 @@ class TestRotationSchemas:
         assert schema.is_expired is None  # not computed in this case
         assert schema.days_until_expiration is None
 
+    def test_expiration_response_accepts_never_updated_row(self):
+        """A freshly created expiration has updated_at NULL (onupdate only)."""
+        from app.schemas.secret_expiration import ExpirationResponse
+
+        now = datetime.now(timezone.utc)
+        schema = ExpirationResponse(
+            id=uuid4(),
+            secret_key="SECRET",
+            expires_at=now + timedelta(days=30),
+            rotation_policy="notify",
+            notify_days_before=7,
+            created_at=now,
+            updated_at=None,
+            project_id=uuid4(),
+            environment_id=uuid4(),
+        )
+        assert schema.updated_at is None
+
     def test_rotation_status_schema(self):
         """RotationStatus should have current_version, expires_at, rotation_policy."""
         from app.schemas.secret_expiration import RotationStatus

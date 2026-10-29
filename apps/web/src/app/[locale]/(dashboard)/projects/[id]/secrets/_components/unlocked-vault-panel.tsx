@@ -23,6 +23,7 @@ interface UnlockedVaultPanelProps {
   onCreate: () => void;
   onRotate: (secret: DecryptedSecret) => void;
   onSetExpiration: (secret: DecryptedSecret) => void;
+  onOpenDetails: (secret: DecryptedSecret) => void;
   onLock: () => void;
 }
 
@@ -43,6 +44,7 @@ export function UnlockedVaultPanel({
   onCreate,
   onRotate,
   onSetExpiration,
+  onOpenDetails,
   onLock,
 }: UnlockedVaultPanelProps) {
 
@@ -87,6 +89,7 @@ export function UnlockedVaultPanel({
           onCreate={onCreate}
           onRotate={onRotate}
           onSetExpiration={onSetExpiration}
+          onOpenDetails={onOpenDetails}
         />
       )}
     </Card>

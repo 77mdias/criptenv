@@ -2,11 +2,14 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
+import { useSearchParams } from "next/navigation"
+import { usePathname, useRouter } from "@/i18n/navigation"
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { EnvSelector } from "@/components/shared/env-selector"
 import { ExportModal } from "@/components/shared/export-modal"
 import { ImportModal } from "@/components/shared/import-modal"
 import { PermissionDialog } from "@/components/shared/permission-dialog"
+import { SecretDetailSheet } from "@/components/shared/secret-detail-sheet"
 import { SecretForm } from "@/components/shared/secret-form"
 import { ExpirationModal } from "@/components/shared/expiration-modal"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
@@ -35,6 +38,21 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
     keys: [],
   })
   const [rotateTarget, setRotateTarget] = useState<DecryptedSecret | null>(null)
+  const searchParams = useSearchParams()
+  const router = useRouter()
+  const pathname = usePathname()
+  const detailKey = searchParams.get("key")
+  const envParam = searchParams.get("env")
+
+  // The open secret lives in the URL (`?key=NAME`) so the attention card and the key matrix can deep link to it.
+  const replaceParams = (update: (params: URLSearchParams) => void) => {
+    const params = new URLSearchParams(searchParams.toString())
+    update(params)
+    const query = params.toString()
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false })
+  }
+  const openDetails = (secret: DecryptedSecret) => replaceParams((params) => params.set("key", secret.key))
+  const closeDetails = () => replaceParams((params) => params.delete("key"))
 
   const showPermission = () => setPermissionOpen(true)
   const guardedCreate = () => {
@@ -115,6 +133,16 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
     return () => window.removeEventListener("criptenv:new-secret", openNewSecret)
   }, [actions, canManageSecrets])
 
+  // `?env=` picks the environment once, then is dropped so the selector stays in charge.
+  useEffect(() => {
+    if (!envParam) return
+    const environment = state.environments.find((item) => item.id === envParam)
+    if (!environment) return
+    actions.setActiveEnv(environment)
+    replaceParams((params) => params.delete("env"))
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [envParam, state.environments])
+
   if (state.loading) {
     return <SecretsLoadingState />
   }
@@ -168,10 +196,27 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
           onCreate={guardedCreate}
           onRotate={setRotateTarget}
           onSetExpiration={actions.openExpirationModal}
+          onOpenDetails={openDetails}
           onLock={actions.lockVault}
         />
       )}
 
+      <SecretDetailSheet
+        projectId={projectId}
+        environment={state.activeEnv}
+        secretKey={detailKey}
+        secret={state.secretsWithExpiration.find((secret) => secret.key === detailKey)}
+        expiration={state.expirations.find(
+          (item) => item.environment_id === state.activeEnv?.id && item.secret_key === detailKey
+        )}
+        canManageSecrets={canManageSecrets}
+        historyVersion={state.vaultVersion}
+        copied={state.copiedKey === detailKey}
+        onCopy={actions.copySecret}
+        onRotate={setRotateTarget}
+        onSetExpiration={actions.openExpirationModal}
+        onClose={closeDetails}
+      />
       <SecretForm
         open={state.formOpen}
         title={state.editingSecret ? t("editSecret") : t("newSecret")}

@@ -7,6 +7,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### UX.4 — Detalhe do secret (Phase 3.5) — 2026-10-28
+
+**API:**
+- Fix: `POST .../secrets/{key}/expiration` respondia 500 na **primeira** definição de expiração. `updated_at` só tem `onupdate`, então vem `NULL` numa linha nova, e o `ExpirationResponse` exigia datetime. O campo passou a ser opcional, como a coluna. Teste de regressão no schema.
+
+**Web:**
+- Painel lateral do secret (`components/shared/secret-detail-sheet.tsx`, Radix `Dialog` em modo sheet): histórico de rotações, expiração (ver/definir/remover) e as ações de copiar e rotacionar, que reaproveitam os fluxos de `use-project-secrets.ts`.
+- Abre pelo nome da chave na linha da tabela e por deep link `?key=NOME`, que o card de atenção e a matriz já geravam. O card de atenção agora manda também `&env=`, para abrir no ambiente certo.
+- Histórico e expiração funcionam com o vault trancado; copiar e rotacionar continuam exigindo o vault destravado.
+- Fechar devolve o foco à linha que abriu o painel. O Radix não faz isso sozinho num dialog controlado sem `Trigger`.
+- Testes: Jest do painel (vault trancado/destravado, expiração, foco) e Cypress de expiração pelo painel.
+
 ### UX.3 — Visão geral do projeto (Phase 3.5) — 2026-10-27
 
 **API:**

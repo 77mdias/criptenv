@@ -8,8 +8,8 @@
 | UX.1 Fundação (feed legível, ator na auditoria, i18n, datas relativas) | ✅ mergeado | #54 |
 | UX.2 Dashboard central de comando (`GET /me/overview`, `/me/activity-stats`) | ✅ mergeado | #55 |
 | UX.3 Visão geral do projeto (matriz chave × ambiente, snippets) | ✅ mergeado | #58 |
-| **UX.4 Detalhe do secret (painel lateral)** | ⏭️ **próximo** | — |
-| UX.5a–d Atividade · Segurança · Acessos · Comparar | 📋 | — |
+| UX.4 Detalhe do secret (painel lateral) | ✅ PR aberto | `feat/ux4-secret-detail` |
+| **UX.5a–d Atividade · Segurança · Acessos · Comparar** | ⏭️ **próximo** | — |
 | UX.6 Ctrl+K, EmptyState, skeletons | 📋 | — |
 
 Fora da Phase 3.5, também concluído nesta janela: CLI 0.2.0→0.2.2 no PyPI (release via tag `cli-v*`, Trusted Publishing), `ci deploy` funcional, SEO (sitemap gerado + canonical corrigido, #56), lock do vinext no container dev (#57), `authlib` removido / `cryptography` declarado (#58).
