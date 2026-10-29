@@ -57,7 +57,7 @@ class ExpirationResponse(BaseModel):
     last_notified_at: Optional[datetime] = None
     rotated_at: Optional[datetime] = None
     created_at: datetime
-    updated_at: datetime
+    updated_at: Optional[datetime] = None  # column is onupdate-only: NULL until first update
     project_id: UUID
     environment_id: UUID
     

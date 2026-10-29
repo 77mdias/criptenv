@@ -57,4 +57,20 @@ describe("project vault and secrets", () => {
       cy.contains("Nenhum secret neste ambiente", { timeout: 15000 }).should("be.visible")
     })
   })
+
+  it("sets an expiration from the secret detail panel without unlocking the vault", () => {
+    cy.createProject("detail-e2e", vaultPassword).then((projectId) => {
+      cy.visit(`/projects/${projectId}/secrets?key=API_KEY`)
+      cy.get('[role="dialog"]', { timeout: 15000 }).within(() => {
+        cy.contains("h2", "API_KEY").should("be.visible")
+        cy.contains("Destrave o vault").should("be.visible")
+        cy.contains("Nenhuma rotação registrada.").should("be.visible")
+        cy.contains("button", "Configurar expiração").click()
+      })
+      cy.contains('[role="dialog"]', "Expiração de Secret").within(() => {
+        cy.contains("button", "Salvar").click()
+      })
+      cy.contains('[role="dialog"]', "API_KEY").contains("dias", { timeout: 15000 }).should("be.visible")
+    })
+  })
 })

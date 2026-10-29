@@ -250,7 +250,7 @@ GET    /api/v1/ci/secrets                  # CI session auth ✅
 | **UX.1**: Foundation | Integrations in sidebar, human-readable activity feed, audit actor, i18n labels, relative dates | `actor` + `auth_type` on audit logs | ✅ Implemented (#54) |
 | **UX.2**: Command-center dashboard | Attention card, onboarding checklist, project grid, 30-day activity chart | `GET /api/v1/me/overview`, `GET /api/v1/me/activity-stats` | ✅ Implemented |
 | **UX.3**: Project overview | Key × environment matrix, "How to use" snippets, project summary | `GET /projects/{id}/secrets/matrix` | ✅ Implemented |
-| **UX.4**: Secret detail | Side sheet with version/rotation history, expiration, rotate/copy | `resource_id` audit filter | 📋 Planned |
+| **UX.4**: Secret detail | Side sheet with rotation history, expiration, rotate/copy; `?key=` deep link | — (rotation history endpoint) | ✅ Implemented |
 | **UX.5**: New screens | Activity, Security posture, Access (tokens + API keys), Compare environments | `GET /api/v1/me/audit`, `GET /api/v1/me/credentials` | 📋 Planned |
 | **UX.6**: Polish | Cmd/Ctrl+K palette, empty states, skeletons | — | 📋 Planned |
 

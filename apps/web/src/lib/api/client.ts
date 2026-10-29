@@ -350,7 +350,7 @@ export interface SecretExpiration {
   last_notified_at: string | null;
   rotated_at: string | null;
   created_at: string;
-  updated_at: string;
+  updated_at: string | null;
   project_id: string;
   environment_id: string;
   is_expired: boolean | null;

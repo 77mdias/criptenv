@@ -29,6 +29,7 @@ interface UseProjectSecretsResult {
     activeEnv: Environment | null
     secrets: DecryptedSecret[]
     secretsWithExpiration: DecryptedSecret[]
+    expirations: SecretExpiration[]
     secretCounts: Record<string, number>
     activeEnvName: string
     activeSecretCount: number
@@ -493,6 +494,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       activeEnv,
       secrets,
       secretsWithExpiration,
+      expirations,
       secretCounts: secretCountState.counts,
       activeEnvName,
       activeSecretCount,

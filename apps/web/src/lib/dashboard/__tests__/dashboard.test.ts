@@ -34,7 +34,7 @@ describe("buildAttentionItems", () => {
     expect(items.map((i) => i.kind)).toEqual(["expired", "integration", "expiring", "credential", "invite"])
     expect(items.map((i) => i.severity)).toEqual(["high", "high", "medium", "medium", "low"])
     expect(items[0]).toMatchObject({
-      href: "/projects/p1/secrets?key=API_KEY",
+      href: "/projects/p1/secrets?key=API_KEY&env=e1",
       values: { key: "API_KEY", environment: "production", project: "api" },
     })
     expect(items[1].href).toBe("/integrations")
