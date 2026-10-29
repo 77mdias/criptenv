@@ -1,4 +1,37 @@
-# Current Task — i18n (pt-BR · en · es) do Web
+# Current Task — Phase 3.5: Experiência Autenticada (UX)
+
+**Atualizado:** 2026-10-28
+**Plano:** `docs/superpowers/plans/2026-10-26-authenticated-experience-plan.md` · **Spec:** `docs/superpowers/specs/2026-10-26-authenticated-experience-design.md` · **Roadmap:** Phase 3.5 em `ROADMAP.md`
+
+| Milestone | Status | PR |
+|---|---|---|
+| UX.1 Fundação (feed legível, ator na auditoria, i18n, datas relativas) | ✅ mergeado | #54 |
+| UX.2 Dashboard central de comando (`GET /me/overview`, `/me/activity-stats`) | ✅ mergeado | #55 |
+| UX.3 Visão geral do projeto (matriz chave × ambiente, snippets) | ✅ mergeado | #58 |
+| **UX.4 Detalhe do secret (painel lateral)** | ⏭️ **próximo** | — |
+| UX.5a–d Atividade · Segurança · Acessos · Comparar | 📋 | — |
+| UX.6 Ctrl+K, EmptyState, skeletons | 📋 | — |
+
+Fora da Phase 3.5, também concluído nesta janela: CLI 0.2.0→0.2.2 no PyPI (release via tag `cli-v*`, Trusted Publishing), `ci deploy` funcional, SEO (sitemap gerado + canonical corrigido, #56), lock do vinext no container dev (#57), `authlib` removido / `cryptography` declarado (#58).
+
+## Handoff — UX.4 (ponto de partida para uma sessão nova)
+
+**Objetivo:** painel lateral do secret, aberto pela linha da tabela de secrets e por deep link `?key=NOME` (o card de atenção em `lib/dashboard/attention.ts` e a matriz em `components/projects/key-matrix.tsx` **já geram esses links**; hoje a página ignora o parâmetro).
+
+**Onde mexer:**
+- Página: `apps/web/src/app/[locale]/(dashboard)/projects/[id]/secrets/` — `secrets-client.tsx` + hook `use-project-secrets.ts` (já tem `rotateSecret` l.413, `setExpiration` l.449, `deleteExpiration` l.462, `listExpiring` l.123). Reaproveitar esses fluxos; **não duplicar a lógica de vault** (cópia do valor continua exigindo vault destravado).
+- Histórico: `rotationApi.getRotationHistory` (`lib/api/rotation.ts`, ~l.75) existe e **não é usado em nenhuma tela**.
+- Primitiva: `components/ui/dialog.tsx` (Radix, focus trap/Esc já resolvidos).
+- Frases de auditoria: `useAuditDescriber` em `lib/audit/describe.ts`.
+
+**Correção ao plano:** o plano diz filtrar auditoria por `resource_id`, mas logs de secret gravam `resource_id = environment_id` e o nome em `metadata.secret_key` (`routers/rotation.py` ~l.131). Opções: (a) usar só `getRotationHistory` para a linha do tempo; (b) se precisar da auditoria, nova estratégia em `app/strategies/audit_filters.py` filtrando `AuditLog.meta["secret_key"].as_string() == key` + `resource_id == environment_id` (funciona em Postgres e no SQLite dos testes).
+
+**Convenções que valeram nas UX.1–3:** branch + PR por milestone; testes primeiro (API com SQLite real, ver `tests/test_me_overview.py`); toda string nas 3 locales e `npm run check:i18n`; verificação no navegador (Docker local) em 1440 e 375 px; CHANGELOG + status no ROADMAP + desvios anotados no plano.
+
+---
+
+## Histórico — i18n (pt-BR · en · es) do Web (2026-09-23)
+
 
 **Data:** 2026-09-23
 **Branch:** `feature/i18n-support`
