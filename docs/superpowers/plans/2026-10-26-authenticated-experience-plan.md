@@ -131,6 +131,7 @@ P ≈ 1–2 dias · M ≈ 3–4 dias · G ≈ 5–7 dias (uma pessoa).
 ## UX.4 — Detalhe do secret
 
 **Backend**
+> ⚠️ **Correção (2026-10-28):** logs de secret gravam `resource_id = environment_id` e o nome em `metadata.secret_key` — filtrar por `resource_id` não isola um secret. Ver o handoff em `docs/tasks/current-task.md`.
 - [ ] `routers/audit.py`: filtro opcional `resource_id`, implementado como uma estratégia nova em `app/strategies/audit_filters.py`, seguindo o padrão existente. Teste da estratégia.
 
 **Frontend**
