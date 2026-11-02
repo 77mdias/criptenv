@@ -3,6 +3,7 @@ from typing import Optional
 from uuid import UUID, uuid4
 
 import bcrypt
+from fastapi import HTTPException
 from sqlalchemy import select, func
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -262,6 +263,36 @@ class ProjectService:
 
         await self.db.delete(project)
         return True
+
+    async def active_environment_names(self, project_id: UUID) -> list[str]:
+        result = await self.db.execute(
+            select(Environment.name)
+            .where(Environment.project_id == project_id, Environment.archived.is_(False))
+            .order_by(Environment.name)
+        )
+        return list(result.scalars().all())
+
+    async def validate_environment_scope(
+        self, project_id: UUID, scope: Optional[str]
+    ) -> Optional[str]:
+        """Return the normalized scope, or raise 422 if it names no active environment.
+
+        A credential scoped to a nonexistent environment authenticates but sees
+        nothing, so reject it at creation instead of failing silently later.
+        """
+        scope = (scope or "").strip() or None
+        if scope is None:
+            return None
+        names = await self.active_environment_names(project_id)
+        if scope not in names:
+            raise HTTPException(
+                status_code=422,
+                detail=(
+                    f"Environment '{scope}' does not exist in this project. "
+                    f"Valid environments: {', '.join(names) or '(none)'}"
+                ),
+            )
+        return scope
 
     async def check_user_access(
         self,

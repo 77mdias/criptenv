@@ -70,3 +70,39 @@ async def test_decrypts_legacy_plaintext_checksum_blob(remote_vault_client):
     vault = RemoteVault(remote_vault_client, remote_vault_client.project_id)
 
     assert await vault.decrypt_blob(blob, remote_vault_client.environment_id) == b"secret123"
+
+
+class _EnvClient:
+    def __init__(self, response):
+        self.response = response
+
+    async def list_environments(self, project_id):
+        return self.response
+
+
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    "envs, scope, requested, message",
+    [
+        ([], "developer", "development", "restricted to environment 'developer', which does not exist"),
+        ([{"id": "e1", "name": "development"}], "development", "production",
+         "restricted to environment 'development' and cannot access 'production'"),
+    ],
+)
+async def test_resolve_environment_explains_api_key_scope(envs, scope, requested, message):
+    import click
+
+    client = _EnvClient({"environments": envs, "api_key_environment_scope": scope})
+    vault = RemoteVault(client, "proj")
+    with pytest.raises(click.ClickException, match=message):
+        await vault.resolve_environment(requested)
+
+
+@pytest.mark.asyncio
+async def test_resolve_environment_within_api_key_scope():
+    client = _EnvClient({
+        "environments": [{"id": "e1", "name": "development"}],
+        "api_key_environment_scope": "development",
+    })
+    env = await RemoteVault(client, "proj").resolve_environment("development")
+    assert env.id == "e1"

@@ -16,6 +16,11 @@ VALID_SCOPES = [
 ]
 
 
+async def _environment_names(client, project_id: str) -> list[str]:
+    result = await client.list_environments(project_id)
+    return [e["name"] for e in result.get("environments", [])]
+
+
 @click.group("api-keys")
 def api_keys_group():
     """Manage API keys for programmatic access."""
@@ -41,17 +46,33 @@ def api_keys_list(project_id: str | None):
                 click.echo("No API keys found.")
                 return
 
-            click.echo(f"{'NAME':<25} {'PREFIX':<15} {'SCOPES':<35} {'ID':<38}")
-            click.echo("─" * 113)
+            env_names = set(await _environment_names(client, resolved_project_id))
+            broken = []
+            click.echo(f"{'NAME':<25} {'PREFIX':<15} {'ENV':<18} {'SCOPES':<35} {'ID':<38}")
+            click.echo("─" * 132)
             for key in items:
                 name = key.get("name", "Unnamed")[:24]
                 prefix = key.get("prefix", "unknown")[:14]
+                env_scope = key.get("environment_scope")
+                env = env_scope or "all"
+                if env_scope and env_scope not in env_names:
+                    broken.append(key)
+                    env = f"{env_scope[:14]} (!)"
                 scopes = ", ".join(key.get("scopes", []))[:34]
                 kid = key.get("id", "unknown")[:37]
-                click.echo(f"{name:<25} {prefix:<15} {scopes:<35} {kid:<38}")
+                click.echo(f"{name:<25} {prefix:<15} {env[:17]:<18} {scopes:<35} {kid:<38}")
 
             click.echo("")
             click.echo(f"Total: {len(items)} key(s)")
+            if broken:
+                click.echo("")
+                click.echo(click.style(
+                    f"Warning: {len(broken)} key(s) are restricted to an environment that does not exist, "
+                    "so they cannot read any secrets. Revoke and recreate them:",
+                    fg="yellow",
+                ), err=True)
+                for key in broken:
+                    click.echo(f"  criptenv api-keys revoke {key.get('id')} -p {resolved_project_id}", err=True)
 
     asyncio.run(_do_list())
 
@@ -61,7 +82,7 @@ def api_keys_list(project_id: str | None):
 @click.option("--name", "-n", required=True, help="Key name")
 @click.option("--scope", "-s", multiple=True, default=["read:secrets"],
               type=click.Choice(VALID_SCOPES), help="Scopes (read:secrets is the current public API scope; others are reserved)")
-@click.option("--env", default=None, help="Environment scope restriction")
+@click.option("--env", default=None, help="Restrict the key to one environment (name as shown by 'criptenv env list'). Default: all environments")
 @click.option("--expires-days", type=int, default=None, help="Expiration in days (1-365)")
 def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], env: str | None, expires_days: int | None):
     """Create a new API key.
@@ -83,16 +104,25 @@ def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], e
                     f"Reserved scope(s): {', '.join(reserved_scopes)}",
                     err=True,
                 )
+            env_scope = (env or "").strip() or None
+            if env_scope:
+                env_names = await _environment_names(client, resolved_project_id)
+                if env_scope not in env_names:
+                    raise click.ClickException(
+                        f"Environment '{env_scope}' does not exist in this project. "
+                        f"Valid environments: {', '.join(env_names) or '(none)'}"
+                    )
             result = await client.create_api_key(
                 project_id=resolved_project_id,
                 name=name,
                 scopes=list(scope),
-                environment_scope=env,
+                environment_scope=env_scope,
                 expires_in_days=expires_days,
             )
             click.echo(click.style("✓ API key created", fg="green", bold=True))
             click.echo(f"  Name: {result.get('name', name)}")
             click.echo(f"  ID: {result.get('id', 'unknown')}")
+            click.echo(f"  Environment: {result.get('environment_scope') or 'all'}")
             click.echo("")
             click.echo(click.style("  IMPORTANT: Copy this key now — it will never be shown again:", fg="yellow", bold=True))
             click.echo(click.style(f"  {result.get('key', 'unknown')}", fg="cyan"))

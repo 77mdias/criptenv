@@ -33,5 +33,17 @@
     "continueWith": "Continue with",
     "linkWith": "Link with",
     "linkShort": "Link"
+  },
+  "notifications": {
+    "title": "Notifications",
+    "markAll": "Mark all as read",
+    "loading": "Loading...",
+    "empty": "No notifications yet",
+    "justNow": "just now",
+    "invite": {
+      "title": "Invitation to {project}",
+      "message": "{actor} invited you to join project ''{project}'' as {role}.",
+      "someone": "Someone"
+    }
   }
 }

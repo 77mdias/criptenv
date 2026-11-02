@@ -65,3 +65,11 @@ def test_authenticated_context_with_master_key_keeps_session_on_cli_auth_key(
     ):
         assert master_key == expected_master_key
         assert client.session_token == "session-token"
+
+
+
+def test_api_key_mode_does_not_create_local_vault_db(mock_config_dir, monkeypatch):
+    monkeypatch.setenv("CRIPTENV_API_KEY", "cek_live_" + "a" * 32)
+    with cli_context(require_auth=True) as (_db, _mk, client):
+        assert client.session_token.startswith("cek_live_")
+    assert not (mock_config_dir / "vault.db").exists()
