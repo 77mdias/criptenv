@@ -84,3 +84,6 @@ cookies.txt
 .gl-report.json
 gitleaks-report.json
 /[a-z0-9_-]*.png
+
+# graphify knowledge graph output
+graphify-out/
