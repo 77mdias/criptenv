@@ -1467,5 +1467,61 @@
         }
       }
     }
+  },
+  "api": {
+    "health": {
+      "description": "Endpoints públicos para comprobar la disponibilidad de la API. Útiles para monitorización, balanceadores de carga y comprobaciones de integración.",
+      "callout": "Estos endpoints no requieren autenticación y responden rápido, para health checks de infraestructura.",
+      "status": {
+        "title": "Estado de la API",
+        "body": "Devuelve el estado general de la API. Siempre responde 200 mientras el servidor esté activo."
+      },
+      "ready": {
+        "title": "Disponibilidad",
+        "body": "Comprueba si la API está lista para recibir peticiones, incluida la conectividad con la base de datos. Devuelve 200 si todo funciona, o 503 si la base de datos no está accesible."
+      }
+    },
+    "audit": {
+      "description": "Consulta el registro de las acciones realizadas en el proyecto. Los audit logs registran cambios en el vault, secrets, entornos, miembros, invitaciones, tokens, API keys y configuración.",
+      "callout": "Las lecturas (pull, get, export) no se registran; solo los cambios. Los audit logs se eliminan junto con el proyecto o la cuenta.",
+      "list": {
+        "title": "Listar audit logs",
+        "body": "Devuelve los logs de auditoría del proyecto, paginados y filtrables. Cada entrada incluye el autor, la acción, el recurso afectado, el origen (auth_type) y la fecha.",
+        "params": {
+          "page": "Página (por defecto: 1)",
+          "perPage": "Elementos por página (por defecto: 50, máx.: 100)",
+          "action": "Filtrar por acción, p. ej. vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
+          "resourceType": "Filtrar por tipo de recurso, p. ej. vault, environment, member, invite, integration, ci_token, api_key, project"
+        }
+      }
+    },
+    "invites": {
+      "description": "Gestiona invitaciones por email para añadir nuevos miembros a un proyecto. Las invitaciones caducan a los 7 días y están vinculadas a un rol concreto.",
+      "callout": "Todos los endpoints siguientes requieren autenticación y están bajo <code>/api/v1/projects/{pid}/invites</code>. Crear y eliminar invitaciones requiere el rol admin; el rol owner no se puede conceder por invitación.",
+      "create": {
+        "title": "Crear invitación",
+        "body": "Envía una invitación por email a un nuevo miembro (solo admins). La invitación caduca automáticamente a los 7 días. El token de la invitación solo se devuelve en esta respuesta.",
+        "params": {
+          "email": "Email de la persona invitada",
+          "role": "Rol del miembro: viewer, developer o admin"
+        }
+      },
+      "list": {
+        "title": "Listar invitaciones",
+        "body": "Devuelve las invitaciones del proyecto. Las invitaciones revocadas con el endpoint de revoke se eliminan permanentemente."
+      },
+      "accept": {
+        "title": "Aceptar invitación",
+        "body": "Acepta una invitación pendiente. El usuario autenticado obtiene acceso al proyecto con el rol de la invitación."
+      },
+      "revoke": {
+        "title": "Revocar invitación",
+        "body": "Revoca una invitación pendiente y elimina el enlace permanentemente. Los developers solo pueden revocar las invitaciones pendientes que crearon; los admins pueden revocar cualquiera."
+      },
+      "delete": {
+        "title": "Eliminar invitación",
+        "body": "Elimina permanentemente una invitación del proyecto (solo admins). Devuelve 204 sin cuerpo."
+      }
+    }
   }
 }

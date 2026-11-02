@@ -8,13 +8,17 @@ import {
   ResponseBlock,
   Callout,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function InvitesPage() {
+  const t = useTranslations('docs.api.invites');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <code className="bg-muted px-1 rounded text-sm">{chunks}</code>;
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'API Reference', href: '/docs/api' },
           { label: 'Invites' },
         ]}
@@ -22,28 +26,20 @@ export default function InvitesPage() {
 
       <h1 className="text-4xl font-bold mt-6 mb-2">Invites</h1>
       <p className="text-lg text-muted-foreground mb-8">
-        Gerencie convites por email para adicionar novos membros a um projeto.
-        Convites possuem expiração de 7 dias e são vinculados a um papel
-        específico.
+        {t('description')}
       </p>
 
       <Callout variant="info">
-        Todos os endpoints abaixo requerem autenticação e pertencem à rota base{' '}
-        <code className="bg-muted px-1 rounded text-sm">
-          /api/v1/projects/{'{pid}'}/invites
-        </code>
-        . Admins e owners podem convidar qualquer papel permitido; developers
-        podem convidar apenas developers ou viewers.
+        {t.rich('callout', { code })}
       </Callout>
 
       {/* POST /invites */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Criar convite
+          <EndpointBadge method="POST" /> {t('create.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Envia um convite por email para um novo membro. O convite expira em 7
-          dias automaticamente.
+          {t('create.body')}
         </p>
 
         <ParamTable
@@ -52,13 +48,13 @@ export default function InvitesPage() {
               name: 'email',
               type: 'string',
               required: true,
-              description: 'Email do convidado',
+              description: t('create.params.email'),
             },
             {
               name: 'role',
               type: 'string',
               required: true,
-              description: 'Papel do membro: viewer, developer ou admin',
+              description: t('create.params.role'),
             },
           ]}
         />
@@ -75,23 +71,27 @@ export default function InvitesPage() {
         />
 
         <ResponseBlock status={201}>{`{
-  "id": "inv_abc123",
+  "id": "3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+  "project_id": "9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
   "email": "dev@example.com",
   "role": "developer",
-  "status": "pending",
-  "expires_at": "2025-02-07T12:00:00Z",
-  "created_at": "2025-01-31T12:00:00Z"
+  "invited_by": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "expires_at": "2026-02-07T12:00:00Z",
+  "accepted_at": null,
+  "revoked_at": null,
+  "created_at": "2026-01-31T12:00:00Z",
+  "invited_by_name": "Admin",
+  "token": "<invite-token, returned only on creation>"
 }`}</ResponseBlock>
       </section>
 
       {/* GET /invites */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Listar convites
+          <EndpointBadge method="GET" /> {t('list.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Retorna os convites do projeto. Convites revogados pelo endpoint de
-          revoke são removidos permanentemente.
+          {t('list.body')}
         </p>
 
         <CodeBlock
@@ -103,79 +103,96 @@ export default function InvitesPage() {
         <ResponseBlock status={200}>{`{
   "invites": [
     {
-      "id": "inv_abc123",
+      "id": "3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+      "project_id": "9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
       "email": "dev@example.com",
       "role": "developer",
-      "status": "pending",
-      "expires_at": "2025-02-07T12:00:00Z",
-      "created_at": "2025-01-31T12:00:00Z"
+      "invited_by": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "expires_at": "2026-02-07T12:00:00Z",
+      "accepted_at": null,
+      "revoked_at": null,
+      "created_at": "2026-01-31T12:00:00Z",
+      "invited_by_name": "Admin"
     }
-  ]
+  ],
+  "total": 1
 }`}</ResponseBlock>
       </section>
 
       {/* POST /invites/:id/accept */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Aceitar convite
+          <EndpointBadge method="POST" /> {t('accept.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Aceita um convite pendente. O usuário autenticado passa a ter acesso ao
-          projeto com o papel definido no convite.
+          {t('accept.body')}
         </p>
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/inv_abc123/accept \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/{invite_id}/accept \\
   -H "Authorization: Bearer {token}"`}
         />
 
         <ResponseBlock status={200}>{`{
-  "id": "inv_abc123",
-  "status": "accepted",
-  "accepted_at": "2025-02-01T10:00:00Z"
+  "id": "3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+  "project_id": "9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
+  "email": "dev@example.com",
+  "role": "developer",
+  "invited_by": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "expires_at": "2026-02-07T12:00:00Z",
+  "accepted_at": "2026-02-01T10:00:00Z",
+  "revoked_at": null,
+  "created_at": "2026-01-31T12:00:00Z",
+  "invited_by_name": "Admin"
 }`}</ResponseBlock>
       </section>
 
       {/* POST /invites/:id/revoke */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Revogar convite
+          <EndpointBadge method="POST" /> {t('revoke.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Revoga um convite pendente e remove o link permanentemente do banco.
-          Developers só podem revogar convites pendentes criados por eles.
+          {t('revoke.body')}
         </p>
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/inv_abc123/revoke \\
+          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/{invite_id}/revoke \\
   -H "Authorization: Bearer {token}"`}
         />
 
         <ResponseBlock status={200}>{`{
-  "id": "inv_abc123",
+  "id": "3c4d5e6f-7a8b-4c9d-0e1f-2a3b4c5d6e7f",
+  "project_id": "9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
   "email": "dev@example.com",
-  "role": "developer"
+  "role": "developer",
+  "invited_by": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "expires_at": "2026-02-07T12:00:00Z",
+  "accepted_at": null,
+  "revoked_at": "2026-02-01T10:00:00Z",
+  "created_at": "2026-01-31T12:00:00Z",
+  "invited_by_name": "Admin"
 }`}</ResponseBlock>
       </section>
 
       {/* DELETE /invites/:id */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="DELETE" /> Remover convite
+          <EndpointBadge method="DELETE" /> {t('delete.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Remove permanentemente um convite do projeto.
+          {t('delete.body')}
         </p>
 
         <CodeBlock
           language="bash"
-          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/inv_abc123 \\
+          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/invites/{invite_id} \\
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock status={200}>{`{ "deleted": true }`}</ResponseBlock>
+        <ResponseBlock status={204}>{`(no content)`}</ResponseBlock>
       </section>
     </div>
   );

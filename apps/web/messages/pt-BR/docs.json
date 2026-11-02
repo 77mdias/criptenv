@@ -1467,5 +1467,61 @@
         }
       }
     }
+  },
+  "api": {
+    "health": {
+      "description": "Endpoints públicos para verificar a disponibilidade da API. Úteis para monitoramento, load balancers e verificações de integração.",
+      "callout": "Estes endpoints não requerem autenticação e retornam rapidamente para uso em health checks de infraestrutura.",
+      "status": {
+        "title": "Status da API",
+        "body": "Retorna o status geral da API. Este endpoint sempre responde 200 se o servidor estiver ativo."
+      },
+      "ready": {
+        "title": "Prontidão",
+        "body": "Verifica se a API está pronta para receber requisições, incluindo a conectividade com o banco de dados. Retorna 200 se tudo estiver operacional, ou 503 se o banco estiver inacessível."
+      }
+    },
+    "audit": {
+      "description": "Consulte o registro das ações realizadas no projeto. Os audit logs rastreiam alterações no vault, secrets, ambientes, membros, convites, tokens, API keys e configurações.",
+      "callout": "Leituras (pull, get, export) não são registradas; apenas alterações. Os audit logs são removidos junto com o projeto ou a conta.",
+      "list": {
+        "title": "Listar audit logs",
+        "body": "Retorna os logs de auditoria do projeto de forma paginada e filtrável. Cada entrada contém o autor, a ação, o recurso afetado, a origem (auth_type) e o timestamp.",
+        "params": {
+          "page": "Página (padrão: 1)",
+          "perPage": "Itens por página (padrão: 50, máx: 100)",
+          "action": "Filtrar por ação, ex.: vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
+          "resourceType": "Filtrar por tipo de recurso, ex.: vault, environment, member, invite, integration, ci_token, api_key, project"
+        }
+      }
+    },
+    "invites": {
+      "description": "Gerencie convites por email para adicionar novos membros a um projeto. Convites possuem expiração de 7 dias e são vinculados a um papel específico.",
+      "callout": "Todos os endpoints abaixo requerem autenticação e pertencem à rota base <code>/api/v1/projects/{pid}/invites</code>. Criar e remover convites exige o papel admin; o papel owner não pode ser concedido por convite.",
+      "create": {
+        "title": "Criar convite",
+        "body": "Envia um convite por email para um novo membro (apenas admins). O convite expira em 7 dias automaticamente. O token do convite só é retornado nesta resposta.",
+        "params": {
+          "email": "Email do convidado",
+          "role": "Papel do membro: viewer, developer ou admin"
+        }
+      },
+      "list": {
+        "title": "Listar convites",
+        "body": "Retorna os convites do projeto. Convites revogados pelo endpoint de revoke são removidos permanentemente."
+      },
+      "accept": {
+        "title": "Aceitar convite",
+        "body": "Aceita um convite pendente. O usuário autenticado passa a ter acesso ao projeto com o papel definido no convite."
+      },
+      "revoke": {
+        "title": "Revogar convite",
+        "body": "Revoga um convite pendente e remove o link permanentemente do banco. Developers só podem revogar convites pendentes criados por eles; admins podem revogar qualquer um."
+      },
+      "delete": {
+        "title": "Remover convite",
+        "body": "Remove permanentemente um convite do projeto (apenas admins). Retorna 204 sem corpo."
+      }
+    }
   }
 }

@@ -1467,5 +1467,61 @@
         }
       }
     }
+  },
+  "api": {
+    "health": {
+      "description": "Public endpoints to check API availability. Useful for monitoring, load balancers and integration checks.",
+      "callout": "These endpoints need no authentication and respond quickly, for infrastructure health checks.",
+      "status": {
+        "title": "API status",
+        "body": "Returns the API's overall status. It always responds 200 while the server is up."
+      },
+      "ready": {
+        "title": "Readiness",
+        "body": "Checks whether the API is ready to take requests, including database connectivity. Returns 200 when everything works, or 503 when the database is unreachable."
+      }
+    },
+    "audit": {
+      "description": "Review the record of actions taken in the project. Audit logs track changes to the vault, secrets, environments, members, invitations, tokens, API keys and settings.",
+      "callout": "Reads (pull, get, export) are not logged; only changes are. Audit logs are removed together with the project or account.",
+      "list": {
+        "title": "List audit logs",
+        "body": "Returns the project's audit logs, paginated and filterable. Each entry has the actor, action, affected resource, origin (auth_type) and timestamp.",
+        "params": {
+          "page": "Page (default: 1)",
+          "perPage": "Items per page (default: 50, max: 100)",
+          "action": "Filter by action, e.g. vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
+          "resourceType": "Filter by resource type, e.g. vault, environment, member, invite, integration, ci_token, api_key, project"
+        }
+      }
+    },
+    "invites": {
+      "description": "Manage email invitations to add new members to a project. Invitations expire after 7 days and are tied to a specific role.",
+      "callout": "Every endpoint below requires authentication and lives under <code>/api/v1/projects/{pid}/invites</code>. Creating and deleting invitations requires the admin role; the owner role cannot be granted through an invitation.",
+      "create": {
+        "title": "Create invitation",
+        "body": "Emails an invitation to a new member (admin only). The invitation expires automatically after 7 days. The invite token is returned only in this response.",
+        "params": {
+          "email": "Invitee's email",
+          "role": "Member role: viewer, developer or admin"
+        }
+      },
+      "list": {
+        "title": "List invitations",
+        "body": "Returns the project's invitations. Invitations revoked through the revoke endpoint are deleted permanently."
+      },
+      "accept": {
+        "title": "Accept invitation",
+        "body": "Accepts a pending invitation. The authenticated user gets access to the project with the invitation's role."
+      },
+      "revoke": {
+        "title": "Revoke invitation",
+        "body": "Revokes a pending invitation and permanently removes the link. Developers can only revoke pending invitations they created; admins can revoke any."
+      },
+      "delete": {
+        "title": "Delete invitation",
+        "body": "Permanently deletes an invitation from the project (admin only). Returns 204 with no body."
+      }
+    }
   }
 }
