@@ -33,7 +33,7 @@ export default function HealthPage() {
       {/* GET /health */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Status da API
+          <EndpointBadge method="GET" /> Status da API
         </h2>
         <p className="text-muted-foreground mb-4">
           Retorna o status geral da API e a versão atual. Este endpoint sempre
@@ -45,19 +45,17 @@ export default function HealthPage() {
           code={`curl https://criptenv-api.77mdevseven.tech/health`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "status": "ok",
   "version": "1.4.2",
   "uptime": "72h14m30s"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* GET /health/ready */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Prontidão
+          <EndpointBadge method="GET" /> Prontidão
         </h2>
         <p className="text-muted-foreground mb-4">
           Verifica se a API está pronta para receber requisições, incluindo a
@@ -70,15 +68,13 @@ export default function HealthPage() {
           code={`curl https://criptenv-api.77mdevseven.tech/health/ready`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "status": "ready",
   "checks": {
     "database": "ok",
     "cache": "ok"
   }
-}`}
-        />
+}`}</ResponseBlock>
       </section>
     </div>
   );

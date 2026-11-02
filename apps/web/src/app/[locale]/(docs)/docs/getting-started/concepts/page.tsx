@@ -1,6 +1,7 @@
 'use client';
 
 import { useTranslations } from "next-intl";
+import { Database, Folder, Globe, KeyRound, Lock, RefreshCw } from "lucide-react";
 import {
   Breadcrumb,
   CodeBlock,
@@ -12,12 +13,12 @@ import {
 const codeClass = "bg-muted px-1 rounded text-sm";
 
 const conceptItems = [
-  { icon: "🔒", key: "zeroKnowledge" },
-  { icon: "📁", key: "projects" },
-  { icon: "🌐", key: "environments" },
-  { icon: "🗄️", key: "remoteVault" },
-  { icon: "🔑", key: "vaultPassword" },
-  { icon: "🔄", key: "importExport" },
+  { icon: Lock, key: "zeroKnowledge" },
+  { icon: Folder, key: "projects" },
+  { icon: Globe, key: "environments" },
+  { icon: Database, key: "remoteVault" },
+  { icon: KeyRound, key: "vaultPassword" },
+  { icon: RefreshCw, key: "importExport" },
 ] as const;
 
 export default function ConceptsPage() {
@@ -39,7 +40,7 @@ export default function ConceptsPage() {
 
       <Callout variant="info">{t("zeroKnowledgeCallout")}</Callout>
 
-      <CardGrid columns={2} className="mt-10">
+      <CardGrid cols={2} className="mt-10">
         {conceptItems.map((item) => (
           <DocCard
             key={item.key}

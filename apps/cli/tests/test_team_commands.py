@@ -37,7 +37,7 @@ class TestMembersCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["members", "list", "--project", "prj_123"])
+        result = runner.invoke(main, ["members", "list", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "Alice" in result.output
         assert "admin" in result.output
@@ -50,7 +50,7 @@ class TestMembersCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["members", "add", "usr_99", "--role", "viewer", "--project", "prj_123"])
+        result = runner.invoke(main, ["members", "add", "usr_99", "--role", "viewer", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "Added member" in result.output
         assert "viewer" in result.output
@@ -62,7 +62,7 @@ class TestMembersCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["members", "update", "mem_1", "--role", "developer", "--project", "prj_123"])
+        result = runner.invoke(main, ["members", "update", "mem_1", "--role", "developer", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "Updated member" in result.output
         assert "developer" in result.output
@@ -74,7 +74,7 @@ class TestMembersCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["members", "remove", "mem_1", "--project", "prj_123", "--force"])
+        result = runner.invoke(main, ["members", "remove", "mem_1", "--project", "00000000-0000-4000-8000-000000000123", "--force"])
         assert result.exit_code == 0
         assert "Removed member" in result.output
 
@@ -95,7 +95,7 @@ class TestInvitesCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["invites", "list", "--project", "prj_123"])
+        result = runner.invoke(main, ["invites", "list", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "alice@example.com" in result.output
         assert "pending" in result.output
@@ -110,7 +110,7 @@ class TestInvitesCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["invites", "create", "charlie@example.com", "--role", "admin", "--project", "prj_123"])
+        result = runner.invoke(main, ["invites", "create", "charlie@example.com", "--role", "admin", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "Invite sent" in result.output
         assert "charlie@example.com" in result.output
@@ -124,7 +124,7 @@ class TestInvitesCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["invites", "accept", "inv_1", "--project", "prj_123"])
+        result = runner.invoke(main, ["invites", "accept", "inv_1", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "Accepted invite" in result.output
         assert "My Project" in result.output
@@ -137,7 +137,7 @@ class TestInvitesCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["invites", "revoke", "inv_1", "--project", "prj_123", "--force"])
+        result = runner.invoke(main, ["invites", "revoke", "inv_1", "--project", "00000000-0000-4000-8000-000000000123", "--force"])
         assert result.exit_code == 0
         assert "Revoked invite" in result.output
 
@@ -162,7 +162,7 @@ class TestAuditCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["audit", "list", "--project", "prj_123"])
+        result = runner.invoke(main, ["audit", "list", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "secret.created" in result.output
         assert "project.updated" in result.output
@@ -179,10 +179,10 @@ class TestAuditCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["audit", "list", "--project", "prj_123", "--action", "secret.created", "--limit", "10"])
+        result = runner.invoke(main, ["audit", "list", "--project", "00000000-0000-4000-8000-000000000123", "--action", "secret.created", "--limit", "10"])
         assert result.exit_code == 0
         mock_client.list_audit.assert_awaited_once_with(
-            "prj_123", action="secret.created", resource_type=None, page=1, per_page=10
+            "00000000-0000-4000-8000-000000000123", action="secret.created", resource_type=None, page=1, per_page=10
         )
 
 
@@ -202,7 +202,7 @@ class TestApiKeysCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["api-keys", "list", "--project", "prj_123"])
+        result = runner.invoke(main, ["api-keys", "list", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "CI Key" in result.output
         assert "cek_live_" in result.output
@@ -217,7 +217,7 @@ class TestApiKeysCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["api-keys", "create", "--project", "prj_123", "--name", "New Key"])
+        result = runner.invoke(main, ["api-keys", "create", "--project", "00000000-0000-4000-8000-000000000123", "--name", "New Key"])
         assert result.exit_code == 0
         assert "API key created" in result.output
         assert "cek_live_abc123" in result.output
@@ -229,7 +229,7 @@ class TestApiKeysCommands:
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-        result = runner.invoke(main, ["api-keys", "revoke", "key_1", "--project", "prj_123", "--force"])
+        result = runner.invoke(main, ["api-keys", "revoke", "key_1", "--project", "00000000-0000-4000-8000-000000000123", "--force"])
         assert result.exit_code == 0
         assert "Revoked API key" in result.output
 
@@ -237,7 +237,7 @@ class TestApiKeysCommands:
 # ─── CI Tokens Management ─────────────────────────────────────────────────────
 
 class TestCITokensManagementCommands:
-    @patch("criptenv.commands.ci.resolve_project_id", return_value="prj_123")
+    @patch("criptenv.commands.ci.resolve_project_id", return_value="00000000-0000-4000-8000-000000000123")
     @patch("criptenv.commands.ci.cli_context")
     def test_ci_tokens_list_uses_human_session(self, mock_ctx, _resolve_project_id, runner):
         mock_client = AsyncMock()
@@ -257,14 +257,14 @@ class TestCITokensManagementCommands:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["ci", "tokens", "list", "--project", "prj_123"])
+        result = runner.invoke(main, ["ci", "tokens", "list", "--project", "00000000-0000-4000-8000-000000000123"])
 
         assert result.exit_code == 0
         mock_ctx.assert_called_once_with(require_auth=True)
-        mock_client.list_ci_tokens.assert_awaited_once_with("prj_123", False)
+        mock_client.list_ci_tokens.assert_awaited_once_with("00000000-0000-4000-8000-000000000123", False)
         assert "GitHub Actions" in result.output
 
-    @patch("criptenv.commands.ci.resolve_project_id", return_value="prj_123")
+    @patch("criptenv.commands.ci.resolve_project_id", return_value="00000000-0000-4000-8000-000000000123")
     @patch("criptenv.commands.ci.cli_context")
     def test_ci_tokens_create_uses_human_session(self, mock_ctx, _resolve_project_id, runner):
         mock_client = AsyncMock()
@@ -286,7 +286,7 @@ class TestCITokensManagementCommands:
                 "tokens",
                 "create",
                 "--project",
-                "prj_123",
+                "00000000-0000-4000-8000-000000000123",
                 "--name",
                 "Deploy",
                 "--scopes",
@@ -301,7 +301,7 @@ class TestCITokensManagementCommands:
         mock_client.create_ci_token.assert_awaited_once()
         assert "ci_plain" in result.output
 
-    @patch("criptenv.commands.ci.resolve_project_id", return_value="prj_123")
+    @patch("criptenv.commands.ci.resolve_project_id", return_value="00000000-0000-4000-8000-000000000123")
     @patch("criptenv.commands.ci.cli_context")
     def test_ci_tokens_revoke_uses_human_session(self, mock_ctx, _resolve_project_id, runner):
         mock_client = AsyncMock()
@@ -309,11 +309,11 @@ class TestCITokensManagementCommands:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["ci", "tokens", "revoke", "tok_1", "--project", "prj_123", "--force"])
+        result = runner.invoke(main, ["ci", "tokens", "revoke", "tok_1", "--project", "00000000-0000-4000-8000-000000000123", "--force"])
 
         assert result.exit_code == 0
         mock_ctx.assert_called_once_with(require_auth=True)
-        mock_client.revoke_ci_token.assert_awaited_once_with("prj_123", "tok_1")
+        mock_client.revoke_ci_token.assert_awaited_once_with("00000000-0000-4000-8000-000000000123", "tok_1")
 
 
 # ─── Projects (update/delete/info) ───────────────────────────────────────────
@@ -323,27 +323,27 @@ class TestProjectExtraCommands:
     def test_projects_info(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.get_project = AsyncMock(return_value={
-            "id": "prj_123", "name": "My Project", "slug": "my-project",
+            "id": "00000000-0000-4000-8000-000000000123", "name": "My Project", "slug": "00000000-0000-4000-8000-00000000abcdect",
             "description": "Test desc", "owner_id": "usr_1",
             "created_at": "2026-01-01", "updated_at": "2026-05-01",
         })
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["projects", "info", "prj_123"])
+        result = runner.invoke(main, ["projects", "info", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "My Project" in result.output
-        assert "prj_123" in result.output
+        assert "00000000-0000-4000-8000-000000000123" in result.output
         assert "Test desc" in result.output
 
     @patch("criptenv.commands.projects.cli_context")
     def test_projects_update(self, mock_ctx, runner):
         mock_client = AsyncMock()
-        mock_client.update_project = AsyncMock(return_value={"id": "prj_123", "name": "Updated Name"})
+        mock_client.update_project = AsyncMock(return_value={"id": "00000000-0000-4000-8000-000000000123", "name": "Updated Name"})
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["projects", "update", "prj_123", "--name", "Updated Name"])
+        result = runner.invoke(main, ["projects", "update", "00000000-0000-4000-8000-000000000123", "--name", "Updated Name"])
         assert result.exit_code == 0
         assert "Updated project" in result.output
 
@@ -354,7 +354,7 @@ class TestProjectExtraCommands:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["projects", "delete", "prj_123", "--force"])
+        result = runner.invoke(main, ["projects", "delete", "00000000-0000-4000-8000-000000000123", "--force"])
         assert result.exit_code == 0
         assert "Deleted project" in result.output
 
@@ -387,7 +387,7 @@ class TestProjectExtraCommands:
 
         mock_client = AsyncMock()
         mock_client.get_project = AsyncMock(return_value={
-            "id": "prj_123",
+            "id": "00000000-0000-4000-8000-000000000123",
             "name": "Test Project",
             "vault_config": vault_config,
         })
@@ -409,13 +409,13 @@ class TestProjectExtraCommands:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["projects", "rekey", "prj_123", "--force"])
+        result = runner.invoke(main, ["projects", "rekey", "00000000-0000-4000-8000-000000000123", "--force"])
         assert result.exit_code == 0
         assert "Rekeyed project" in result.output
         # Verify rekey_project was called with the full payload
         mock_client.rekey_project.assert_called_once()
         call_kwargs = mock_client.rekey_project.call_args.kwargs
-        assert call_kwargs["project_id"] == "prj_123"
+        assert call_kwargs["project_id"] == "00000000-0000-4000-8000-000000000123"
         assert "current_vault_proof" in call_kwargs
         assert "new_vault_config" in call_kwargs
         assert "new_vault_proof" in call_kwargs
@@ -433,11 +433,11 @@ class TestUseCommand:
     @patch("criptenv.commands.use.cli_context")
     def test_use_set_project(self, mock_ctx, mock_set_config, runner):
         mock_client = AsyncMock()
-        mock_client.get_project = AsyncMock(return_value={"id": "prj_123", "name": "My Project"})
+        mock_client.get_project = AsyncMock(return_value={"id": "00000000-0000-4000-8000-000000000123", "name": "My Project"})
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["use", "prj_123"])
+        result = runner.invoke(main, ["use", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "Set current project" in result.output
         assert "My Project" in result.output
@@ -445,9 +445,9 @@ class TestUseCommand:
     @patch("criptenv.commands.use.queries.get_config", new_callable=AsyncMock)
     @patch("criptenv.commands.use.cli_context")
     def test_use_show_current(self, mock_ctx, mock_get_config, runner):
-        mock_get_config.return_value = "prj_123"
+        mock_get_config.return_value = "00000000-0000-4000-8000-000000000123"
         mock_client = AsyncMock()
-        mock_client.get_project = AsyncMock(return_value={"id": "prj_123", "name": "My Project"})
+        mock_client.get_project = AsyncMock(return_value={"id": "00000000-0000-4000-8000-000000000123", "name": "My Project"})
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
@@ -504,7 +504,7 @@ class TestStatusCommand:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        with patch("criptenv.commands.status.queries.get_config", AsyncMock(return_value="prj_123")):
+        with patch("criptenv.commands.status.queries.get_config", AsyncMock(return_value="00000000-0000-4000-8000-000000000123")):
             result = runner.invoke(main, ["status"])
             assert result.exit_code == 0
             assert "Logged in" in result.output
@@ -536,7 +536,7 @@ class TestEnvironmentExtraCommands:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["env", "update", "env_1", "--project", "prj_123", "--display-name", "Staging Environment"])
+        result = runner.invoke(main, ["env", "update", "env_1", "--project", "00000000-0000-4000-8000-000000000123", "--display-name", "Staging Environment"])
         assert result.exit_code == 0
         assert "Updated environment" in result.output
 
@@ -547,7 +547,7 @@ class TestEnvironmentExtraCommands:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["env", "delete", "env_1", "--project", "prj_123", "--force"])
+        result = runner.invoke(main, ["env", "delete", "env_1", "--project", "00000000-0000-4000-8000-000000000123", "--force"])
         assert result.exit_code == 0
         assert "Deleted environment" in result.output
 
@@ -561,7 +561,7 @@ class TestEnvironmentExtraCommands:
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 
-        result = runner.invoke(main, ["env", "get", "env_1", "--project", "prj_123"])
+        result = runner.invoke(main, ["env", "get", "env_1", "--project", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "staging" in result.output
         assert "Staging Environment" in result.output

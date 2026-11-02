@@ -9,11 +9,17 @@
 import os
 import shlex
 import subprocess
+import sys
 from typing import Optional
 
 import click
 
 from criptenv.commands.import_export import _parse_env_file, export_entries_remote
+
+_CREDENTIAL_ENV_VARS = frozenset(
+    {"CRIPTENV_API_KEY", "CRIPTENV_VAULT_PASSWORD", "CRIPTENV_MASTER_PASSWORD"}
+)
+_USE_EXEC = os.name == "posix"
 
 
 def _diff_keys(
@@ -56,13 +62,19 @@ def run_command(command: tuple[str, ...], env_name: Optional[str], project: Opti
     if not entries:
         click.echo("Warning: no secrets found for this environment.", err=True)
 
-    child_env = dict(os.environ)
+    # CriptEnv's own credentials must not leak into the app's environment.
+    child_env = {k: v for k, v in os.environ.items() if k not in _CREDENTIAL_ENV_VARS}
     child_env.update(entries)
 
     display = shlex.join(command)
     click.echo(f"→ {display}", err=True)
 
     try:
+        if _USE_EXEC:
+            # Replace this process so signals (SIGTERM from `docker stop`) reach the app directly.
+            sys.stdout.flush()
+            sys.stderr.flush()
+            os.execvpe(command[0], list(command), child_env)
         completed = subprocess.run(list(command), env=child_env, check=False)
     except FileNotFoundError as exc:
         raise click.ClickException(f"Command not found: {command[0]}") from exc

@@ -22,6 +22,27 @@ pip install criptenv
 
 Requires Python **3.10+**.
 
+### Single binary (no Python)
+
+Linux x86_64 (glibc) builds are attached to each [GitHub Release](https://github.com/77mdias/criptenv/releases):
+
+```bash
+curl -fsSLo criptenv https://github.com/77mdias/criptenv/releases/latest/download/criptenv-linux-x86_64
+chmod +x criptenv && sudo mv criptenv /usr/local/bin/
+```
+
+In Docker, copy it from the official image instead of installing Python (Debian/Ubuntu/`node:*-slim` bases; not Alpine):
+
+```dockerfile
+COPY --from=ghcr.io/77mdias/criptenv-cli:latest /usr/local/bin/criptenv /usr/local/bin/criptenv
+```
+
+### Containers and CI
+
+- `CRIPTENV_API_KEY` authenticates any command directly; no session is written to disk.
+- `CRIPTENV_VAULT_PASSWORD` unlocks the vault. Without it and without a TTY, commands fail instead of waiting for a prompt.
+- `criptenv run -- <cmd>` replaces itself with `<cmd>` (signals reach your app) and strips CriptEnv's own credentials from its environment.
+
 ## Quick Start
 
 ```bash

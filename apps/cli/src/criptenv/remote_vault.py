@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import getpass
 import hashlib
 import os
 from dataclasses import dataclass
@@ -11,6 +10,7 @@ from typing import Any
 import click
 
 from criptenv.api.client import CriptEnvAPIError
+from criptenv.context import prompt_secret
 from criptenv.crypto import (
     enforce_pbkdf2_floor,
     decrypt,
@@ -61,7 +61,7 @@ def get_vault_password() -> str:
     password = os.getenv("CRIPTENV_VAULT_PASSWORD")
     if password:
         return password
-    return getpass.getpass("Vault password: ")
+    return prompt_secret("Vault password: ", "CRIPTENV_VAULT_PASSWORD")
 
 
 @dataclass

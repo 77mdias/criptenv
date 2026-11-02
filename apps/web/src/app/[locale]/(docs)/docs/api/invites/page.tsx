@@ -39,7 +39,7 @@ export default function InvitesPage() {
       {/* POST /invites */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Criar convite
+          <EndpointBadge method="POST" /> Criar convite
         </h2>
         <p className="text-muted-foreground mb-4">
           Envia um convite por email para um novo membro. O convite expira em 7
@@ -74,22 +74,20 @@ export default function InvitesPage() {
   }'`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={201}>{`{
   "id": "inv_abc123",
   "email": "dev@example.com",
   "role": "developer",
   "status": "pending",
   "expires_at": "2025-02-07T12:00:00Z",
   "created_at": "2025-01-31T12:00:00Z"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* GET /invites */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Listar convites
+          <EndpointBadge method="GET" /> Listar convites
         </h2>
         <p className="text-muted-foreground mb-4">
           Retorna os convites do projeto. Convites revogados pelo endpoint de
@@ -102,8 +100,7 @@ export default function InvitesPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "invites": [
     {
       "id": "inv_abc123",
@@ -114,14 +111,13 @@ export default function InvitesPage() {
       "created_at": "2025-01-31T12:00:00Z"
     }
   ]
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* POST /invites/:id/accept */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Aceitar convite
+          <EndpointBadge method="POST" /> Aceitar convite
         </h2>
         <p className="text-muted-foreground mb-4">
           Aceita um convite pendente. O usuário autenticado passa a ter acesso ao
@@ -134,19 +130,17 @@ export default function InvitesPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "id": "inv_abc123",
   "status": "accepted",
   "accepted_at": "2025-02-01T10:00:00Z"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* POST /invites/:id/revoke */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Revogar convite
+          <EndpointBadge method="POST" /> Revogar convite
         </h2>
         <p className="text-muted-foreground mb-4">
           Revoga um convite pendente e remove o link permanentemente do banco.
@@ -159,19 +153,17 @@ export default function InvitesPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "id": "inv_abc123",
   "email": "dev@example.com",
   "role": "developer"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* DELETE /invites/:id */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="delete" /> Remover convite
+          <EndpointBadge method="DELETE" /> Remover convite
         </h2>
         <p className="text-muted-foreground mb-4">
           Remove permanentemente um convite do projeto.
@@ -183,7 +175,7 @@ export default function InvitesPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock code={`{ "deleted": true }`} />
+        <ResponseBlock status={200}>{`{ "deleted": true }`}</ResponseBlock>
       </section>
     </div>
   );

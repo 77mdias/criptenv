@@ -24,7 +24,7 @@ def invites_list(project_id: str | None):
     """
     async def _do_list():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.list_invites(resolved_project_id)
             items = result.get("invites", [])
 
@@ -61,7 +61,7 @@ def invites_create(email: str, role: str, project_id: str | None):
     """
     async def _do_create():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.create_invite(resolved_project_id, email, role)
             click.echo(f"✓ Invite sent to {email}")
             click.echo(f"  Role: {role}")
@@ -83,7 +83,7 @@ def invites_accept(invite_id: str, project_id: str | None):
     """
     async def _do_accept():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.accept_invite(resolved_project_id, invite_id)
             click.echo(f"✓ Accepted invite {invite_id}")
             click.echo(f"  Project: {result.get('project_name', 'unknown')}")
@@ -110,7 +110,7 @@ def invites_revoke(invite_id: str, project_id: str | None, force: bool):
 
     async def _do_revoke():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.revoke_invite(resolved_project_id, invite_id)
             click.echo(f"✓ Revoked invite {invite_id}")
             if result.get("email"):

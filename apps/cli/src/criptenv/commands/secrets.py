@@ -34,7 +34,7 @@ def set_command(key_value: str, env_name: str | None, project: str | None):
 
     try:
         with cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = resolve_project_id(db, project)
+            resolved_project_id = resolve_project_id(db, project, client)
             vault = RemoteVault(client, resolved_project_id)
             state = run_async(vault.load_state(env_name))
             existing = next((blob for blob in state.blobs if blob["key_id"] == key_id), None)
@@ -75,7 +75,7 @@ def get_command(key: str, env_name: str | None, project: str | None, clipboard: 
     """
     try:
         with cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = resolve_project_id(db, project)
+            resolved_project_id = resolve_project_id(db, project, client)
             vault = RemoteVault(client, resolved_project_id)
             state = run_async(vault.load_state(env_name))
             blob = next((item for item in state.blobs if item["key_id"] == key), None)
@@ -122,7 +122,7 @@ def list_command(env_name: str | None, project: str | None):
     """
     try:
         with cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = resolve_project_id(db, project)
+            resolved_project_id = resolve_project_id(db, project, client)
             vault = RemoteVault(client, resolved_project_id)
             state = run_async(vault.load_state(env_name))
             env_display, secrets = state.environment.name, state.blobs
@@ -167,7 +167,7 @@ def delete_command(key: str, env_name: str | None, project: str | None, force: b
 
     try:
         with cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = resolve_project_id(db, project)
+            resolved_project_id = resolve_project_id(db, project, client)
             vault = RemoteVault(client, resolved_project_id)
             state = run_async(vault.load_state(env_name))
             blobs = [blob for blob in state.blobs if blob["key_id"] != key]
@@ -222,7 +222,7 @@ def rotate_command(key: str, env_name: str | None, project: str | None,
     
     try:
         with cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = resolve_project_id(db, project)
+            resolved_project_id = resolve_project_id(db, project, client)
             vault = RemoteVault(client, resolved_project_id)
             state = run_async(vault.load_state(env_name))
             current_blob = next((blob for blob in state.blobs if blob["key_id"] == key), None)
@@ -274,7 +274,7 @@ def expire_command(key: str, days: int, policy: str, env_name: str | None, proje
 
     async def _do_expire():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = await resolve_project_id_async(db, project)
+            resolved_project_id = await resolve_project_id_async(db, project, client)
             env = await RemoteVault(client, resolved_project_id).resolve_environment(env_name)
 
             await client.set_expiration(
@@ -311,7 +311,7 @@ def alert_command(key: str, days: int, env_name: str | None, project: str | None
 
     async def _do_alert():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = await resolve_project_id_async(db, project)
+            resolved_project_id = await resolve_project_id_async(db, project, client)
             env = await RemoteVault(client, resolved_project_id).resolve_environment(env_name)
 
             # Set a default 90-day expiration with the requested alert timing
@@ -372,7 +372,7 @@ def rotation_list_command(env_name: str | None, project_id: str | None, days: in
 
     async def _do_list():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.list_expiring(project_id=resolved_project_id, days=days)
             items = result.get("items", [])
 
@@ -413,7 +413,7 @@ def rotation_history_command(secret_key: str, env_name: str | None, project_id: 
 
     async def _do_history():
         async with async_cli_context(require_auth=True) as (db, _master_key, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             env = await RemoteVault(client, resolved_project_id).resolve_environment(env_name)
 
             result = await client.get_rotation_history(

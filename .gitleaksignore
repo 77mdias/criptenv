@@ -1,0 +1,3 @@
+# Known false positives, one exact finding per line (commit:file:rule:line).
+# Docs example token "ci_a1b2c3d4e5f6..." — replaced by ci_<TOKEN> in 9066b61.
+b8170c0d360b59d2471a082ddfe2d359a6411069:apps/web/src/app/[locale]/(docs)/docs/api/ci-tokens/page.tsx:generic-api-key:87

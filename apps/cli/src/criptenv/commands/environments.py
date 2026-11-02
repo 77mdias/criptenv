@@ -23,7 +23,7 @@ def env_list(project_id: str | None):
     """
     with cli_context(require_auth=True) as (db, _master_key, client):
         try:
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = resolve_project_id(db, project_id, client)
             result = run_async(client.list_environments(resolved_project_id))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
@@ -58,7 +58,7 @@ def env_create(name: str, project_id: str | None, display_name: str | None):
     """
     with cli_context(require_auth=True) as (db, _master_key, client):
         try:
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = resolve_project_id(db, project_id, client)
             result = run_async(client.create_environment(resolved_project_id, name, display_name))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
@@ -87,7 +87,7 @@ def env_update(env_id: str, project_id: str | None, name: str | None, display_na
 
     with cli_context(require_auth=True) as (db, _master_key, client):
         try:
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = resolve_project_id(db, project_id, client)
             result = run_async(client.update_environment(resolved_project_id, env_id, name=name, display_name=display_name))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
@@ -115,7 +115,7 @@ def env_delete(env_id: str, project_id: str | None, force: bool):
 
     with cli_context(require_auth=True) as (db, _master_key, client):
         try:
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = resolve_project_id(db, project_id, client)
             run_async(client.delete_environment(resolved_project_id, env_id))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
@@ -136,7 +136,7 @@ def env_get(env_id: str, project_id: str | None):
     """
     with cli_context(require_auth=True) as (db, _master_key, client):
         try:
-            resolved_project_id = resolve_project_id(db, project_id)
+            resolved_project_id = resolve_project_id(db, project_id, client)
             result = run_async(client.get_environment(resolved_project_id, env_id))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)

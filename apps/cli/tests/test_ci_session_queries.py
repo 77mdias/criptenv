@@ -17,7 +17,7 @@ def _make_ci_session(**overrides) -> CISession:
     defaults = {
         "id": "ci_sess_001",
         "project_id": "prj_001",
-        "project_name": "my-project",
+        "project_name": "00000000-0000-4000-8000-00000000abcdect",
         "session_token_encrypted": b"encrypted-ci-token",
         "scopes": ["secrets:read", "secrets:write"],
         "environment_scope": "production",

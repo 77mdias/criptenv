@@ -35,7 +35,7 @@ export default function AuditPage() {
       {/* GET /audit */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Listar audit logs
+          <EndpointBadge method="GET" /> Listar audit logs
         </h2>
         <p className="text-muted-foreground mb-4">
           Retorna os logs de auditoria do projeto de forma paginada e filtrável.
@@ -80,8 +80,7 @@ export default function AuditPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "logs": [
     {
       "id": "log_xyz789",
@@ -105,8 +104,7 @@ export default function AuditPage() {
     "per_page": 20,
     "total": 142
   }
-}`}
-        />
+}`}</ResponseBlock>
       </section>
     </div>
   );

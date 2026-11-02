@@ -32,7 +32,7 @@ def integrations_list(project_id: str | None):
     async def _do_list():
         async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = await resolve_project_id_async(db, project_id)
+                resolved_project_id = await resolve_project_id_async(db, project_id, client)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -97,7 +97,7 @@ def integrations_connect(
 
         async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg, client)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -147,7 +147,7 @@ def integrations_disconnect(integration_id: str, project_id_arg: Optional[str], 
     async def _do_disconnect():
         async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg, client)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -178,7 +178,7 @@ def integrations_validate(integration_id: str, project_id_arg: Optional[str]):
     async def _do_validate():
         async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg, client)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return
@@ -212,7 +212,7 @@ def integrations_sync(provider: str, environment: str, direction: str, project_i
     async def _do_sync():
         async with async_cli_context(require_auth=True) as (db, master_key, client):
             try:
-                resolved_project_id = await resolve_project_id_async(db, project_id_arg)
+                resolved_project_id = await resolve_project_id_async(db, project_id_arg, client)
             except click.ClickException as e:
                 click.echo(f"Error: {e.message}", err=True)
                 return

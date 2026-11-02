@@ -1,6 +1,7 @@
 'use client';
 
 import { Breadcrumb, DocCard, CardGrid } from '@/components/docs';
+import { GitBranch, Server, Triangle, TrainFront } from 'lucide-react';
 
 export default function IntegrationsPage() {
   return (
@@ -24,25 +25,25 @@ export default function IntegrationsPage() {
           title="GitHub Action"
           description="Execute o CriptEnv diretamente nos seus workflows do GitHub Actions para injetar secrets de forma segura durante o build e deploy."
           href="/docs/integrations/github-action"
-          icon="github"
+          icon={GitBranch}
         />
         <DocCard
           title="Vercel"
           description="Sincronize automaticamente suas variáveis de ambiente criptografadas com os Environment Variables do Vercel."
           href="/docs/integrations/vercel"
-          icon="vercel"
+          icon={Triangle}
         />
         <DocCard
           title="Railway"
           description="Em breve. Integração com Railway para sincronização de variáveis de ambiente."
           href="/docs/integrations/railway"
-          icon="railway"
+          icon={TrainFront}
         />
         <DocCard
           title="Render"
           description="Conecte o CriptEnv ao Render para sincronizar secrets com seus Environment Groups de forma automatizada."
           href="/docs/integrations/render"
-          icon="render"
+          icon={Server}
         />
       </CardGrid>
     </div>

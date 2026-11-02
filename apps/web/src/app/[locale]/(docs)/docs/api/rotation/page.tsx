@@ -39,7 +39,7 @@ export default function RotationPage() {
       {/* POST /secrets/:id/rotate */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Rotacionar segredo
+          <EndpointBadge method="POST" /> Rotacionar segredo
         </h2>
         <p className="text-muted-foreground mb-4">
           Rotaciona o valor de um segredo imediatamente. O valor anterior é
@@ -65,20 +65,18 @@ export default function RotationPage() {
   -d '{"value": "new-secret-value-here"}'`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "id": "sec_abc123",
   "name": "API_KEY",
   "rotated_at": "2025-02-01T10:00:00Z",
   "version": 3
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* POST /secrets/:id/expiration */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Definir expiração
+          <EndpointBadge method="POST" /> Definir expiração
         </h2>
         <p className="text-muted-foreground mb-4">
           Configura a data de expiração e a política de rotação para um segredo.
@@ -113,19 +111,17 @@ export default function RotationPage() {
   }'`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "id": "sec_abc123",
   "expires_at": "2025-03-01T00:00:00Z",
   "rotation_policy": "notify"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* GET /secrets/:id/rotation/status */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Status da rotação
+          <EndpointBadge method="GET" /> Status da rotação
         </h2>
         <p className="text-muted-foreground mb-4">
           Consulta o status atual da rotação de um segredo, incluindo política,
@@ -138,22 +134,20 @@ export default function RotationPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "secret_id": "sec_abc123",
   "rotation_policy": "notify",
   "expires_at": "2025-03-01T00:00:00Z",
   "days_remaining": 28,
   "last_rotated_at": "2025-01-31T12:00:00Z",
   "version": 3
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* GET /secrets/:id/rotation/history */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Histórico de rotações
+          <EndpointBadge method="GET" /> Histórico de rotações
         </h2>
         <p className="text-muted-foreground mb-4">
           Retorna o histórico completo de rotações do segredo.
@@ -165,8 +159,7 @@ export default function RotationPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "history": [
     {
       "version": 3,
@@ -181,14 +174,13 @@ export default function RotationPage() {
        "reason": "notify"
     }
   ]
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* DELETE /secrets/:id/expiration */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="delete" /> Remover expiração
+          <EndpointBadge method="DELETE" /> Remover expiração
         </h2>
         <p className="text-muted-foreground mb-4">
           Remove a política de expiração e rotação de um segredo. Requer admin/owner.
@@ -200,13 +192,13 @@ export default function RotationPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock code={`{ "deleted": true }`} />
+        <ResponseBlock status={200}>{`{ "deleted": true }`}</ResponseBlock>
       </section>
 
       {/* GET /secrets/expiring */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Segredos expirando
+          <EndpointBadge method="GET" /> Segredos expirando
         </h2>
         <p className="text-muted-foreground mb-4">
           Lista todos os segredos do projeto que estão próximos da expiração.
@@ -229,8 +221,7 @@ export default function RotationPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "expiring": [
     {
       "id": "sec_abc123",
@@ -240,8 +231,7 @@ export default function RotationPage() {
       "rotation_policy": "notify"
     }
   ]
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       <section className="mt-10">
@@ -255,27 +245,25 @@ export default function RotationPage() {
         <div className="space-y-6">
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-              <EndpointBadge method="get" /> Consultar configurações
+              <EndpointBadge method="GET" /> Consultar configurações
             </h3>
             <CodeBlock
               language="bash"
               code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/alert-settings \\
   -H "Authorization: Bearer {token}"`}
             />
-            <ResponseBlock
-              code={`{
+            <ResponseBlock status={200}>{`{
   "enabled": true,
   "default_notify_days_before": 7,
   "channels": { "in_app": true, "email": false, "webhook": false },
   "webhook_configured": false,
   "webhook_url_preview": null
-}`}
-            />
+}`}</ResponseBlock>
           </div>
 
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-              <EndpointBadge method="patch" /> Atualizar configurações
+              <EndpointBadge method="PATCH" /> Atualizar configurações
             </h3>
             <p className="text-muted-foreground mb-4">
               Omitir um campo preserva seu valor. Envie <code>webhook_url: null</code>
@@ -297,7 +285,7 @@ export default function RotationPage() {
 
           <div>
             <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-              <EndpointBadge method="post" /> Testar webhook
+              <EndpointBadge method="POST" /> Testar webhook
             </h3>
             <p className="text-muted-foreground mb-4">
               Usa somente o webhook salvo e envia um evento sintético com

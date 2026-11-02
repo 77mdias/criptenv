@@ -3,6 +3,8 @@
 import asyncio
 import getpass
 import os
+import sys
+import uuid
 from contextlib import asynccontextmanager, contextmanager
 from typing import Optional
 
@@ -31,7 +33,16 @@ def _get_master_password() -> str:
     password = os.getenv("CRIPTENV_MASTER_PASSWORD")
     if password:
         return password
-    return getpass.getpass("Master password: ")
+    return prompt_secret("Master password: ", "CRIPTENV_MASTER_PASSWORD")
+
+
+def prompt_secret(prompt: str, env_var: str) -> str:
+    """getpass, but fail fast without a TTY instead of waiting for input that never comes."""
+    if not sys.stdin.isatty():
+        raise click.ClickException(
+            f"{env_var} is not set and there is no terminal to prompt for it."
+        )
+    return getpass.getpass(prompt)
 
 
 async def _load_master_key(db: aiosqlite.Connection) -> bytes:
@@ -80,10 +91,20 @@ async def _get_session_manager(
     db: aiosqlite.Connection,
     require_master_key: bool = False,
 ) -> tuple[SessionManager, bytes | None]:
-    """Get a SessionManager with a valid authenticated client."""
-    storage_key = get_or_create_auth_key()
+    """Get a SessionManager with a valid authenticated client.
+
+    CRIPTENV_API_KEY, when set, authenticates this process directly: no
+    session is read from or written to disk.
+    """
     master_key: bytes | None = await _load_master_key(db) if require_master_key else None
 
+    api_key = os.getenv("CRIPTENV_API_KEY")
+    if api_key:
+        manager = SessionManager(b"", db)
+        manager.client.set_token(api_key)
+        return manager, master_key
+
+    storage_key = get_or_create_auth_key()
     manager = SessionManager(storage_key, db)
 
     try:
@@ -148,9 +169,37 @@ async def clear_current_project_id(db: aiosqlite.Connection):
     await db.commit()
 
 
+def _is_uuid(value: str) -> bool:
+    try:
+        uuid.UUID(value)
+        return True
+    except ValueError:
+        return False
+
+
+async def _project_id_from_name(client: CriptEnvClient | None, value: str) -> str:
+    """Accept a project name/slug where an ID is expected (the API only takes UUIDs)."""
+    if client is None or _is_uuid(value):
+        return value
+    result = await client.list_projects()
+    matches = [
+        p for p in result.get("projects", []) if value in (p.get("name"), p.get("slug"))
+    ]
+    if len(matches) == 1:
+        return matches[0]["id"]
+    if not matches:
+        raise click.ClickException(
+            f"Project '{value}' not found. Run 'criptenv projects list' to see your projects."
+        )
+    raise click.ClickException(
+        f"More than one project is named '{value}'. Use the project ID instead."
+    )
+
+
 def resolve_project_id(
     db: aiosqlite.Connection,
     explicit_project_id: Optional[str] = None,
+    client: CriptEnvClient | None = None,
 ) -> str:
     """Resolve project ID from explicit flag, env var, or saved config.
 
@@ -159,41 +208,24 @@ def resolve_project_id(
         2. CRIPTENV_PROJECT environment variable
         3. Saved current_project_id in local config
 
+    Names/slugs from 1 and 2 are resolved to IDs when ``client`` is given.
     Raises ClickException if no project ID can be resolved.
     """
-    # 1. Explicit flag
-    if explicit_project_id:
-        return explicit_project_id
-
-    # 2. Environment variable
-    env_project = get_project_id_from_env()
-    if env_project:
-        return env_project
-
-    # 3. Saved config
-    saved = run_async(get_current_project_id(db))
-    if saved:
-        return saved
-
-    raise click.ClickException(
-        "No project selected. Use one of:\n"
-        "  --project <id>                  (per-command flag)\n"
-        "  CRIPTENV_PROJECT=<id>           (environment variable)\n"
-        "  criptenv use <id>               (set default project)"
-    )
+    return run_async(resolve_project_id_async(db, explicit_project_id, client))
 
 
 async def resolve_project_id_async(
     db: aiosqlite.Connection,
     explicit_project_id: Optional[str] = None,
+    client: CriptEnvClient | None = None,
 ) -> str:
     """Async variant of resolve_project_id for async Click command bodies."""
     if explicit_project_id:
-        return explicit_project_id
+        return await _project_id_from_name(client, explicit_project_id)
 
     env_project = get_project_id_from_env()
     if env_project:
-        return env_project
+        return await _project_id_from_name(client, env_project)
 
     saved = await get_current_project_id(db)
     if saved:

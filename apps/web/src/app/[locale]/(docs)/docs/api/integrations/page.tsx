@@ -35,7 +35,7 @@ export default function IntegrationsPage() {
       {/* POST /integrations */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Criar integração
+          <EndpointBadge method="POST" /> Criar integração
         </h2>
         <p className="text-muted-foreground mb-4">
           Conecta uma nova integração com um provedor de hospedagem.
@@ -83,22 +83,20 @@ export default function IntegrationsPage() {
   }'`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={201}>{`{
   "id": "int_xyz789",
   "provider": "vercel",
   "status": "connected",
   "project_id": "prj_abc123",
   "environment": "production",
   "created_at": "2025-01-31T12:00:00Z"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* GET /integrations */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Listar integrações
+          <EndpointBadge method="GET" /> Listar integrações
         </h2>
         <p className="text-muted-foreground mb-4">
           Retorna todas as integrações configuradas no projeto.
@@ -110,8 +108,7 @@ export default function IntegrationsPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "integrations": [
     {
       "id": "int_xyz789",
@@ -121,14 +118,13 @@ export default function IntegrationsPage() {
       "last_sync_at": "2025-02-01T10:00:00Z"
     }
   ]
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* GET /integrations/:id */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="get" /> Obter integração
+          <EndpointBadge method="GET" /> Obter integração
         </h2>
         <p className="text-muted-foreground mb-4">
           Retorna os detalhes de uma integração específica.
@@ -140,8 +136,7 @@ export default function IntegrationsPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "id": "int_xyz789",
   "provider": "vercel",
   "status": "connected",
@@ -149,14 +144,13 @@ export default function IntegrationsPage() {
   "environment": "production",
   "created_at": "2025-01-31T12:00:00Z",
   "last_sync_at": "2025-02-01T10:00:00Z"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* DELETE /integrations/:id */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="delete" /> Remover integração
+          <EndpointBadge method="DELETE" /> Remover integração
         </h2>
         <p className="text-muted-foreground mb-4">
           Remove a integração e desfaz a conexão com o provedor.
@@ -168,13 +162,13 @@ export default function IntegrationsPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock code={`{ "deleted": true }`} />
+        <ResponseBlock status={200}>{`{ "deleted": true }`}</ResponseBlock>
       </section>
 
       {/* POST /integrations/:id/sync */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Sincronizar
+          <EndpointBadge method="POST" /> Sincronizar
         </h2>
         <p className="text-muted-foreground mb-4">
           Executa uma sincronização entre o CriptEnv e o provedor. Use{' '}
@@ -203,21 +197,19 @@ export default function IntegrationsPage() {
   -d '{"direction": "push"}'`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "sync_id": "sync_abc123",
   "direction": "push",
   "status": "completed",
   "secrets_synced": 5,
   "completed_at": "2025-02-01T10:05:00Z"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
 
       {/* POST /integrations/:id/validate */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="post" /> Validar integração
+          <EndpointBadge method="POST" /> Validar integração
         </h2>
         <p className="text-muted-foreground mb-4">
           Verifica se a conexão com o provedor está funcionando corretamente.
@@ -229,14 +221,12 @@ export default function IntegrationsPage() {
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock
-          code={`{
+        <ResponseBlock status={200}>{`{
   "valid": true,
   "provider": "vercel",
   "project_name": "meu-app",
   "checked_at": "2025-02-01T10:10:00Z"
-}`}
-        />
+}`}</ResponseBlock>
       </section>
     </div>
   );

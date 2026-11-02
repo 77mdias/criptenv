@@ -15,14 +15,14 @@ def runner():
 
 
 def test_push_requires_file(runner):
-    result = runner.invoke(main, ["push", "-p", "prj_123"])
+    result = runner.invoke(main, ["push", "-p", "00000000-0000-4000-8000-000000000123"])
 
     assert result.exit_code == 1
     assert "push <file>" in result.output
 
 
 def test_pull_requires_output(runner):
-    result = runner.invoke(main, ["pull", "-p", "prj_123"])
+    result = runner.invoke(main, ["pull", "-p", "00000000-0000-4000-8000-000000000123"])
 
     assert result.exit_code == 1
     assert "pull --output <file>" in result.output
@@ -37,7 +37,7 @@ def test_push_imports_file_to_remote_vault(runner, remote_vault_client, tmp_path
         patch("criptenv.commands.sync.import_entries_remote") as import_entries,
     ):
         import_entries.return_value = (1, 0)
-        result = runner.invoke(main, ["push", str(env_file), "-p", "prj_123"])
+        result = runner.invoke(main, ["push", str(env_file), "-p", "00000000-0000-4000-8000-000000000123"])
 
     assert result.exit_code == 0
     assert "Pushed 1 secret(s)" in result.output
@@ -48,7 +48,7 @@ def test_pull_exports_remote_vault_to_file(runner, remote_vault_client, tmp_path
     output = tmp_path / ".env.production"
 
     with patch("criptenv.commands.sync.export_entries_remote", return_value={"API_KEY": "secret123"}):
-        result = runner.invoke(main, ["pull", "-p", "prj_123", "-o", str(output)])
+        result = runner.invoke(main, ["pull", "-p", "00000000-0000-4000-8000-000000000123", "-o", str(output)])
 
     assert result.exit_code == 0
     assert output.read_text() == "API_KEY=secret123\n"

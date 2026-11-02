@@ -28,6 +28,46 @@ def fake_client():
 
 
 class TestRunCommand:
+    @pytest.fixture(autouse=True)
+    def _subprocess_mode(self, monkeypatch):
+        # exec mode would replace the pytest process; covered separately below
+        monkeypatch.setattr("criptenv.commands.run_diff._USE_EXEC", False)
+
+    def test_strips_criptenv_credentials_from_child_env(self, runner, mock_config_dir, tmp_path, monkeypatch):
+        monkeypatch.setenv("CRIPTENV_API_KEY", "cek_leak")
+        monkeypatch.setenv("CRIPTENV_VAULT_PASSWORD", "vault-leak")
+        out_file = tmp_path / "env.txt"
+        child_code = (
+            "import os, pathlib; "
+            f"pathlib.Path(r'{out_file}').write_text(repr(sorted(k for k in os.environ if k.startswith('CRIPTENV_'))))"
+        )
+        with patch("criptenv.commands.run_diff.export_entries_remote", return_value={"APP": "1"}):
+            result = runner.invoke(main, ["run", "--", sys.executable, "-c", child_code], catch_exceptions=False)
+
+        assert result.exit_code == 0
+        assert "CRIPTENV_API_KEY" not in out_file.read_text()
+        assert "CRIPTENV_VAULT_PASSWORD" not in out_file.read_text()
+
+    def test_posix_execs_in_place_so_signals_reach_the_app(self, runner, mock_config_dir, monkeypatch):
+        monkeypatch.setattr("criptenv.commands.run_diff._USE_EXEC", True)
+        monkeypatch.setenv("CRIPTENV_VAULT_PASSWORD", "vault-leak")
+        with (
+            patch("criptenv.commands.run_diff.export_entries_remote", return_value={"APP": "1"}),
+            patch("criptenv.commands.run_diff.os.execvpe", side_effect=SystemExit(0)) as execvpe,
+        ):
+            runner.invoke(main, ["run", "--", "node", "server.js"])
+
+        file, argv, env = execvpe.call_args.args
+        assert (file, argv) == ("node", ["node", "server.js"])
+        assert env["APP"] == "1" and "CRIPTENV_VAULT_PASSWORD" not in env
+
+    def test_posix_missing_binary_reports_clearly(self, runner, mock_config_dir, monkeypatch):
+        monkeypatch.setattr("criptenv.commands.run_diff._USE_EXEC", True)
+        with patch("criptenv.commands.run_diff.export_entries_remote", return_value={}):
+            result = runner.invoke(main, ["run", "--", "definitely-not-a-real-binary-xyz"])
+        assert result.exit_code != 0
+        assert "Command not found" in result.output
+
     def test_injects_secrets_into_child_process(self, runner, mock_config_dir, tmp_path):
         out_file = tmp_path / "child-out.txt"
         child_code = (
