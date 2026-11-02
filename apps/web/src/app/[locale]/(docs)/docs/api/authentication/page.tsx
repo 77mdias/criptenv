@@ -288,11 +288,14 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
 
       <CodeBlock language="json" title="Resposta (201 Created)">
         {`{
-  "data": {
-    "token": "<CI_TOKEN>",
-    "expires_at": "2025-01-15T11:30:00Z",
-    "scopes": ["read"],
-    "environment": "production"
+  "token": "ci_...",
+  "token_info": {
+    "id": "6f1c…-uuid",
+    "name": "GitHub Actions",
+    "scopes": ["read:secrets", "write:secrets"],
+    "environment_scope": "production",
+    "expires_at": null,
+    "created_at": "2026-01-31T12:00:00Z"
   }
 }`}
       </CodeBlock>
@@ -300,6 +303,14 @@ curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
       <h3 className="text-lg font-semibold mt-6 mb-3">
         Usar CI Token no GitHub Actions
       </h3>
+
+      <p className="text-muted-foreground mb-4">
+        Guarde o token (<InlineCode>ci_...</InlineCode>) e a senha do cofre
+        como GitHub Secrets. A Action troca o token por uma sessão{" "}
+        <InlineCode>ci_s_</InlineCode> (<InlineCode>POST /api/v1/auth/ci-login</InlineCode>),
+        baixa os blobs (<InlineCode>GET /api/v1/ci/secrets</InlineCode>) e
+        decifra localmente com a senha do cofre.
+      </p>
 
       <CodeBlock language="yaml" title=".github/workflows/deploy.yml">
         {`name: Deploy
@@ -313,24 +324,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Generate CI Token
-        id: ci-token
-        run: |
-          TOKEN=\$(curl -s -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/ci-tokens" \\
-            -H "Authorization: Bearer \${{ secrets.CRIPTENV_API_KEY }}" \\
-            -H "Content-Type: application/json" \\
-            -d '{
-              "project_id": "\${{ secrets.CRIPTENV_PROJECT_ID }}",
-              "scopes": ["read"],
-              "environment": "production"
-            }' | jq -r '.data.token')
-          echo "token=$TOKEN" >> "$GITHUB_OUTPUT"
+      - uses: 77mdias/criptenv/packages/github-action@github-action-v1
+        with:
+          token: \${{ secrets.CRIPTENV_TOKEN }}
+          vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
+          project: \${{ secrets.CRIPTENV_PROJECT_ID }}
+          environment: production
 
-      - name: Pull secrets
-        run: |
-          curl -s "https://criptenv-api.77mdevseven.tech/v1/vault/pull" \\
-            -H "Authorization: Bearer \${{ steps.ci-token.outputs.token }}" \\
-            -o .env`}
+      - run: npm run deploy`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">OAuth</h2>
@@ -367,38 +368,16 @@ jobs:
         language="bash"
         title="1. Iniciar fluxo OAuth — redirecionar o usuário"
       >
-        {`# Redirecionar o usuário para:
-https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/authorize
-  ?redirect_uri=https://app.criptenv.dev/callback
-  &state=random_csrf_token`}
+        {`# Abrir no navegador (provider: github | google | discord):
+https://criptenv-api.77mdevseven.tech/api/auth/oauth/github`}
       </CodeBlock>
 
-      <CodeBlock
-        language="bash"
-        title="2. Trocar o código por sessão (callback)"
-      >
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/callback" \\
-  -H "Content-Type: application/json" \\
-  -c cookies.txt \\
-  -d '{
-    "code": "codigo_recebido_no_callback",
-    "state": "random_csrf_token"
-  }'`}
-      </CodeBlock>
-
-      <CodeBlock language="json" title="Resposta do callback (200 OK)">
-        {`{
-  "data": {
-    "user": {
-      "id": "usr_a1b2c3d4",
-      "email": "usuario@exemplo.com",
-      "name": "João Silva",
-      "avatar_url": "https://avatars.githubusercontent.com/u/12345"
-    },
-    "is_new_user": false
-  }
-}`}
-      </CodeBlock>
+      <p className="text-muted-foreground mb-4">
+        O provedor devolve o usuário para{" "}
+        <InlineCode>/api/auth/oauth/github/callback?code=…&amp;state=…</InlineCode>.
+        A API valida o <InlineCode>state</InlineCode>, troca o código, cria ou
+        vincula a conta e redireciona para o app.
+      </p>
 
       <Callout variant="info">
         Após o login OAuth bem-sucedido, um cookie de sessão é criado
@@ -428,8 +407,7 @@ https://criptenv-api.77mdevseven.tech/v1/auth/oauth/github/authorize
     "code": "forbidden",
     "message": "Esta API Key não tem permissão para escrever neste ambiente.",
     "details": {
-      "required_scope": "write",
-      "current_scopes": ["read"]
+      "required_scope": "write:secrets"
     }
   }
 }`}

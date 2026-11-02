@@ -4,7 +4,6 @@ import {
   Breadcrumb,
   Callout,
   CodeBlock,
-  StatusTable,
 } from '@/components/docs';
 
 export default function ThreatModelPage() {
@@ -33,7 +32,7 @@ export default function ThreatModelPage() {
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">Resumo de Ameaças</h2>
 
-      <StatusTable
+      <ThreatTable
         columns={['Cenário', 'Risco', 'Impacto', 'Status']}
         rows={[
           [
@@ -282,6 +281,36 @@ as demais continuam protegendo os dados do usuário.`}
         gerada por um gerenciador de senhas. A arquitetura zero-knowledge não pode
         proteger contra uma senha fraca ou reutilizada.
       </Callout>
+    </div>
+  );
+}
+
+// StatusTable only renders HTTP status codes; this page needs a generic grid.
+function ThreatTable({ columns, rows }: { columns: string[]; rows: string[][] }) {
+  return (
+    <div className="my-4 overflow-x-auto rounded-lg border border-[var(--border)]">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="bg-[var(--background-muted)] border-b border-[var(--border)]">
+            {columns.map((col) => (
+              <th key={col} className="px-4 py-3 text-left font-semibold text-[var(--text-primary)]">
+                {col}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row[0]} className="border-b border-[var(--border)] last:border-0">
+              {row.map((cell, i) => (
+                <td key={i} className="px-4 py-3 text-[var(--text-secondary)]">
+                  {cell}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
     </div>
   );
 }

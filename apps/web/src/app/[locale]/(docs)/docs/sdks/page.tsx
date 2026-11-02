@@ -1,6 +1,7 @@
 'use client';
 
 import { Breadcrumb, DocCard, CardGrid } from '@/components/docs';
+import { Braces, FileCode } from 'lucide-react';
 
 export default function SDKsPage() {
   return (
@@ -24,13 +25,13 @@ export default function SDKsPage() {
           title="JavaScript / TypeScript"
           description="SDK oficial para Node.js, Deno e navegadores. Suporte completo a TypeScript com tipos definidos. Instale via npm, yarn ou pnpm."
           href="/docs/sdks/javascript"
-          icon="javascript"
+          icon={Braces}
         />
         <DocCard
           title="Python"
           description="SDK oficial para Python 3.8+. Gerencie seus secrets com uma API simples e Pythonica. Instale via pip ou poetry."
           href="/docs/sdks/python"
-          icon="python"
+          icon={FileCode}
         />
       </CardGrid>
 

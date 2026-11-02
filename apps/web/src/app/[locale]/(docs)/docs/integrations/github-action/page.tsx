@@ -40,16 +40,19 @@ export default function GitHubActionPage() {
       <h2 className="text-2xl font-semibold mt-10 mb-4">Configuração</h2>
 
       <Steps>
-        <Step title="Obtenha seu token de API">
+        <Step title="Guarde o token de CI e a senha do cofre no GitHub">
           <p className="text-muted-foreground">
-            Acesse o painel do CriptEnv e gere um token de API com permissão de
-            leitura. Adicione esse token como um{' '}
-            <strong>Repository Secret</strong> no seu repositório GitHub.
+            No painel do CriptEnv, gere um token de CI (começa com{' '}
+            <code>ci_</code>) com escopo <code>read:secrets</code>. Como o
+            CriptEnv é zero-knowledge, o token sozinho só baixa valores
+            cifrados: para receber os valores em texto claro, a Action também
+            precisa da <strong>senha do cofre</strong> do projeto. Guarde os dois
+            como <strong>Repository Secrets</strong>.
           </p>
-          <CodeBlock language="bash" title="Adicionar secret no GitHub">
+          <CodeBlock language="bash" title="Adicionar secrets no GitHub">
 {`Settings → Secrets and variables → Actions → New repository secret
-Nome: CRIPTENV_TOKEN
-Valor: <seu-token-de-api>`}
+Nome: CRIPTENV_TOKEN            Valor: ci_...
+Nome: CRIPTENV_VAULT_PASSWORD   Valor: <senha do cofre do projeto>`}
           </CodeBlock>
         </Step>
 
@@ -83,9 +86,8 @@ jobs:
         uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
+          vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
           project: 'seu-project-id'
-        env:
-          CRIPTENV_TOKEN: \${{ secrets.CRIPTENV_TOKEN }}
 
       - name: Build
         run: npm run build
@@ -117,6 +119,13 @@ jobs:
             type: 'string',
             required: true,
             description: 'ID do projeto no CriptEnv.',
+          },
+          {
+            name: 'vault-password',
+            type: 'string',
+            required: false,
+            description:
+              'Senha do cofre do projeto (via GitHub Secrets). Com ela, a Action exporta os valores em texto claro; sem ela, as variáveis recebem o ciphertext.',
           },
           {
             name: 'environment',
@@ -160,6 +169,7 @@ jobs:
       - uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
+          vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
           project: 'seu-project-id'
           environment: staging
 
@@ -175,6 +185,7 @@ jobs:
       - uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
+          vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
           project: 'seu-project-id'
           environment: production
 

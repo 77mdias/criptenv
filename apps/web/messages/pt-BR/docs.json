@@ -389,6 +389,12 @@
         "title": "Instalação via pip",
         "text": "A maneira mais rápida de instalar o CriptEnv:"
       },
+      "binary": {
+        "title": "Binário único (sem Python)",
+        "text": "Para servidores e containers, baixe o executável único para Linux x86_64. Ele já inclui o Python e as dependências.",
+        "dockerText": "Em imagens Docker, copie o binário da imagem oficial em vez de instalar Python:",
+        "note": "O binário funciona em imagens baseadas em glibc (Debian, Ubuntu, node:*-slim, node:bookworm). Imagens Alpine (musl) não são suportadas: nelas, use pip."
+      },
       "pipxTip": "Recomendamos usar <code>pipx</code> para instalar ferramentas de CLI globalmente, evitando conflitos de dependências:",
       "devTab": {
         "label": "Desenvolvimento",
