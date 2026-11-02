@@ -1,7 +1,7 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import { CheckCircle2, Plug, RefreshCw, Trash2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -20,6 +20,7 @@ function statusVariant(status: string) {
 
 export default function IntegrationsPage() {
   const t = useTranslations("integrations");
+  const locale = useLocale();
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [integrations, setIntegrations] = useState<Integration[]>([]);
@@ -238,7 +239,7 @@ export default function IntegrationsPage() {
                           ? t("lastSync", {
                               date: new Date(
                                 integration.last_sync_at,
-                              ).toLocaleString("pt-BR"),
+                              ).toLocaleString(locale),
                             })
                           : t("noSync")}
                       </p>

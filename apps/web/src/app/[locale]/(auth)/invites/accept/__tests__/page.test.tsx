@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
 import userEvent from "@testing-library/user-event"
 import { useRouter, useSearchParams } from "next/navigation"
 import AcceptInvitePage from "../page"
@@ -26,7 +27,7 @@ describe("AcceptInvitePage", () => {
       role: "developer",
     })
 
-    const { container } = render(<AcceptInvitePage />)
+    const { container } = renderWithIntl(<AcceptInvitePage />)
 
     expect(await screen.findByRole("heading", { name: "Convite para projeto" })).toBeInTheDocument()
     expect(screen.getByText("dev@example.com")).toBeInTheDocument()
@@ -43,7 +44,7 @@ describe("AcceptInvitePage", () => {
       })
       .mockResolvedValueOnce({ message: "Invite accepted successfully." })
 
-    render(<AcceptInvitePage />)
+    renderWithIntl(<AcceptInvitePage />)
 
     await userEvent.click(await screen.findByRole("button", { name: /Aceitar convite/ }))
 

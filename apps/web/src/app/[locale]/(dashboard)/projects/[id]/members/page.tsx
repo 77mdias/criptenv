@@ -18,7 +18,7 @@ import {
   getInviteRoleOptions,
   type ProjectRole,
 } from "@/lib/project-permissions";
-import { inviteMemberSchema } from "@/lib/validators/schemas";
+import { createInviteMemberSchema } from "@/lib/validators/schemas";
 import { useAuthStore } from "@/stores/auth";
 import { cn } from "@/lib/utils";
 import type {
@@ -234,7 +234,7 @@ export default function MembersPage() {
   );
 
   const handleInvite = async () => {
-    const parsed = inviteMemberSchema.safeParse({
+    const parsed = createInviteMemberSchema(t).safeParse({
       email: inviteEmail,
       role: inviteRole,
     });

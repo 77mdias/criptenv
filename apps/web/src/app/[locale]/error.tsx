@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { AlertTriangle, RotateCcw, Home, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -12,6 +13,7 @@ export default function Error({
   error: Error & { digest?: string };
   retry: () => void;
 }) {
+  const t = useTranslations("common.errorPage");
   useEffect(() => {
     console.error("[app-error]", error);
   }, [error]);
@@ -34,7 +36,7 @@ export default function Error({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff4500] opacity-60" />
               <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-[#ff4500]" />
             </span>
-            Erro inesperado
+            {t("badge")}
           </span>
 
           <div
@@ -45,21 +47,20 @@ export default function Error({
           </div>
 
           <h1 className="mb-4 text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-            Algo deu errado{" "}
+            {t("title")}{" "}
             <span className="bg-[linear-gradient(120deg,var(--text-primary)_30%,#ff4500)] bg-clip-text text-transparent">
-              do nosso lado
+              {t("titleAccent")}
             </span>
           </h1>
 
           <p className="mx-auto mb-2 max-w-[42ch] text-[15px] leading-relaxed text-[var(--text-secondary)]">
-            Encontramos uma falha inesperada ao renderizar esta página. Nossa
-            equipe já foi notificada.
+            {t("description")}
           </p>
 
           {error?.digest ? (
             <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background-subtle)] px-4 py-2.5 font-mono text-xs text-[var(--text-muted)]">
               <label className="text-[10px] uppercase tracking-[0.18em]">
-                ID do erro
+                {t("errorId")}
               </label>
               <code className="select-all tracking-wide text-[var(--text-secondary)]">
                 {error.digest}
@@ -69,19 +70,19 @@ export default function Error({
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Button onClick={retry} icon={RotateCcw} size="lg" className="rounded-xl bg-[#ff4500] px-8 hover:bg-[#ff5c1f] focus-visible:ring-[#ff4500]">
-              Tentar novamente
+              {t("retry")}
             </Button>
             <Button asChild variant="secondary" size="lg" className="rounded-xl">
               <Link href="/">
                 <Home className="h-4 w-4" aria-hidden="true" />
-                Ir para o início
+                {t("home")}
               </Link>
             </Button>
           </div>
 
           <p className="mt-9 flex items-center justify-center gap-2 font-mono text-[11.5px] text-[var(--text-muted)]">
             <ShieldCheck className="h-[13px] w-[13px] text-green-700" aria-hidden="true" />
-            Seus secrets continuam seguros — cifrados com AES-256-GCM no seu dispositivo.
+            {t("safe")}
           </p>
         </div>
       </main>

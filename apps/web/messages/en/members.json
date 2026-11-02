@@ -43,7 +43,8 @@
     "send": "Failed to send invite",
     "updateRole": "Failed to update role",
     "remove": "Failed to remove member",
-    "revoke": "Failed to revoke invite"
+    "revoke": "Failed to revoke invite",
+    "invalidEmail": "Invalid email"
   },
   "notices": {
     "roleUpdated": "Role updated",

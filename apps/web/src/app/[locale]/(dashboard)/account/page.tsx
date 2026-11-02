@@ -15,7 +15,7 @@ import { authApi, peekCached } from "@/lib/api"
 import { useAuthStore } from "@/stores/auth"
 import type { SessionResponse, User as UserType } from "@/lib/api"
 import { cn } from "@/lib/utils"
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { AvatarUpload } from "@/components/shared/avatar-upload"
 import { RowIcon, SectionHeader, formatDate } from "./_components/account-ui"
@@ -44,8 +44,9 @@ function AccountSummaryCard({
   linkedCount: number
 }) {
   const t = useTranslations("account")
+  const locale = useLocale()
   const stats = [
-    { label: t("summary.memberSince"), value: user?.created_at ? formatDate(user.created_at) : "—" },
+    { label: t("summary.memberSince"), value: user?.created_at ? formatDate(user.created_at, locale) : "—" },
     { label: t("summary.activeSessions"), value: String(sessionsCount) },
     { label: t("summary.linkedAccounts"), value: String(linkedCount) },
   ]
@@ -410,8 +411,8 @@ export default function AccountPage() {
   }
 
   const handleDeleteAccount = async () => {
-    if (deleteConfirmText !== "DELETAR") {
-      showMessage(t("messages.deleteConfirmationWord"), true)
+    if (deleteConfirmText !== t("dangerZone.confirmWord")) {
+      showMessage(t("messages.deleteConfirmationWord", { word: t("dangerZone.confirmWord") }), true)
       return
     }
     try {
@@ -595,7 +596,7 @@ export default function AccountPage() {
                   {currentUser?.two_factor_enabled && (
                     <span className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-500" title={t("profile.twoFAActiveTitle")}>
                       <span className="h-1.5 w-1.5 rounded-full shrink-0 bg-emerald-500" aria-hidden />
-                      2FA ativo
+                      {t("profile.twoFAActive")}
                     </span>
                   )}
                 </div>
@@ -672,7 +673,7 @@ export default function AccountPage() {
               <div className="space-y-3 rounded-xl bg-[var(--background-subtle)] border border-[var(--border-subtle)] p-4">
                 <p className="text-sm font-medium text-[var(--text-primary)]">{t("security.enable2FA")}</p>
                 <p className="text-sm text-[var(--text-tertiary)] font-mono">
-                  Escaneie o QR code com seu app autenticador e digite o código de 6 dígitos.
+                  {t("security.twoFASetupInstructions")}
                 </p>
                 {twoFASecretUri && (
                   <div className="p-4 bg-white rounded-lg inline-block">
@@ -714,7 +715,7 @@ export default function AccountPage() {
                   <RowIcon icon={currentUser?.two_factor_enabled ? Shield : ShieldOff} />
                   <div className="min-w-0">
                     <p className="text-sm font-medium text-[var(--text-primary)]">
-                      Autenticação de dois fatores
+                      {t("security.twoFactorAuth")}
                     </p>
                     <p className="text-xs text-[var(--text-muted)] font-mono flex items-center gap-2 min-w-0">
                       <span className="truncate">{t("security.extraLayerLogin")}</span>
@@ -780,13 +781,14 @@ export default function AccountPage() {
           <div className="space-y-3 rounded-xl border border-red-500/30 bg-[var(--surface)] p-4">
             <p className="text-sm text-[var(--text-tertiary)] font-mono">
               {t.rich("dangerZone.deleteWarning", {
+                word: t("dangerZone.confirmWord"),
                 strong: (chunks) => <span className="font-bold text-red-500">{chunks}</span>,
               })}
             </p>
             <Input
               value={deleteConfirmText}
               onChange={(e) => setDeleteConfirmText(e.target.value)}
-              placeholder="DELETAR"
+              placeholder={t("dangerZone.confirmWord")}
               className="font-mono"
             />
             <div className="flex gap-2">
@@ -805,7 +807,7 @@ export default function AccountPage() {
               <div className="min-w-0">
                 <p className="text-sm font-medium text-[var(--text-primary)]">{t("dangerZone.deleteAccount")}</p>
                 <p className="text-xs text-[var(--text-muted)] font-mono">
-                  Remove permanentemente seus projetos, segredos e sessões
+                  {t("dangerZone.deleteAccountDescription")}
                 </p>
               </div>
             </div>

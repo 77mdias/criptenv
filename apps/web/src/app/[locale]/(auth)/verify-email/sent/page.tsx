@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +9,7 @@ import { authApi } from "@/lib/api"
 import { CheckCircle2, Mail, AlertCircle } from "lucide-react"
 
 export default function VerificationSentPage() {
+  const t = useTranslations("auth.verificationSent")
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -23,7 +25,7 @@ export default function VerificationSentPage() {
       await authApi.sendVerification({ email })
       setSent(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao enviar email")
+      setError(err instanceof Error ? err.message : t("errors.sendFailed"))
     } finally {
       setLoading(false)
     }
@@ -36,13 +38,13 @@ export default function VerificationSentPage() {
           <CheckCircle2 className="h-7 w-7" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Email enviado</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("sentTitle")}</h1>
           <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-            Enviamos um novo link de verificação para{" "}
+            {t("sentTo")}{" "}
             <span className="font-semibold text-[var(--text-primary)]">{email}</span>.
           </p>
           <p className="text-xs leading-5 text-[var(--text-muted)]">
-            Verifique sua caixa de spam se não receber em alguns minutos. O link expira em 24 horas.
+            {t("checkSpam")}
           </p>
         </div>
         <div className="space-y-3">
@@ -54,10 +56,10 @@ export default function VerificationSentPage() {
               setEmail("")
             }}
           >
-            Enviar para outro email
+            {t("otherEmail")}
           </Button>
           <Button asChild variant="ghost" fullWidth>
-            <Link href="/login">Voltar para login</Link>
+            <Link href="/login">{t("backToLogin")}</Link>
           </Button>
         </div>
       </div>
@@ -70,17 +72,17 @@ export default function VerificationSentPage() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-[var(--accent)]/30 bg-[var(--accent)]/10 text-[var(--accent)]">
           <Mail className="h-7 w-7" />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight">Verifique seu email</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-          Enviamos um link de verificação para o seu email. Clique no link para ativar sua conta.
+          {t("subtitle")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
-          label="Email"
+          label={t("emailLabel")}
           type="email"
-          placeholder="voce@email.com"
+          placeholder={t("emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           icon={Mail}
@@ -95,14 +97,14 @@ export default function VerificationSentPage() {
         )}
 
         <Button type="submit" loading={loading} fullWidth>
-          Reenviar link de verificação
+          {t("submit")}
         </Button>
       </form>
 
       <p className="text-center text-sm text-[var(--text-tertiary)]">
-        Já verificou?{" "}
+        {t("alreadyVerified")}{" "}
         <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
-          Fazer login
+          {t("signIn")}
         </Link>
       </p>
     </div>

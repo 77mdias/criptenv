@@ -33,5 +33,42 @@
     "continueWith": "Continuar com",
     "linkWith": "Vincular com",
     "linkShort": "Vincular"
+  },
+  "notFound": {
+    "metaTitle": "404 — Página não encontrada · CriptEnv",
+    "badge": "Página não encontrada",
+    "title": "Essa página não existe",
+    "titleAccent": "(ou nunca existiu)",
+    "description": "O endereço que você acessou não corresponde a nenhuma rota do CriptEnv. Verifique a URL ou volte para uma página conhecida.",
+    "commandArg": "esta-pagina",
+    "home": "Ir para o início",
+    "signIn": "Entrar na conta"
+  },
+  "a11y": {
+    "skipToContent": "Pular para o conteúdo"
+  },
+  "errorPage": {
+    "badge": "Erro inesperado",
+    "title": "Algo deu errado",
+    "titleAccent": "do nosso lado",
+    "description": "Encontramos uma falha inesperada ao renderizar esta página. Nossa equipe já foi notificada.",
+    "errorId": "ID do erro",
+    "retry": "Tentar novamente",
+    "home": "Ir para o início",
+    "safe": "Seus secrets continuam seguros — cifrados com AES-256-GCM no seu dispositivo."
+  },
+  "dashboardError": {
+    "badge": "Falha ao carregar",
+    "title": "Não foi possível carregar",
+    "titleAccent": "esta seção",
+    "description": "Ocorreu um erro inesperado, mas pode ficar tranquilo: seus secrets estão protegidos.",
+    "errorId": "ID do erro",
+    "retry": "Tentar novamente",
+    "safe": "Arquitetura zero-knowledge — nada sai do seu dispositivo sem cifragem AES-256-GCM."
+  },
+  "codeBlock": {
+    "copy": "Copiar",
+    "copied": "Copiado!",
+    "copyCode": "Copiar código"
   }
 }

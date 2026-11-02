@@ -9,23 +9,24 @@ import { cn } from "@/lib/utils"
  * Moved verbatim from `account/page.tsx` (Sprint 3 split, audit P2 #1).
  */
 
-export function formatRelative(dateStr: string): string {
+export function formatRelative(dateStr: string, locale: string): string {
   const diffMs = Date.now() - new Date(dateStr).getTime()
   if (Number.isNaN(diffMs)) return ""
+  const rtf = new Intl.RelativeTimeFormat(locale, { numeric: "auto" })
   const minutes = Math.floor(diffMs / 60_000)
-  if (minutes < 1) return "agora mesmo"
-  if (minutes < 60) return `${minutes} min atrás`
+  if (minutes < 1) return rtf.format(0, "second")
+  if (minutes < 60) return rtf.format(-minutes, "minute")
   const hours = Math.floor(minutes / 60)
-  if (hours < 24) return `${hours} h atrás`
+  if (hours < 24) return rtf.format(-hours, "hour")
   const days = Math.floor(hours / 24)
-  if (days < 30) return `${days} d atrás`
-  return new Date(dateStr).toLocaleDateString("pt-BR")
+  if (days < 30) return rtf.format(-days, "day")
+  return new Date(dateStr).toLocaleDateString(locale)
 }
 
-export function formatDate(dateStr: string): string {
+export function formatDate(dateStr: string, locale: string): string {
   const date = new Date(dateStr)
   if (Number.isNaN(date.getTime())) return ""
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "short", year: "numeric" })
+  return date.toLocaleDateString(locale, { day: "2-digit", month: "short", year: "numeric" })
 }
 
 // Shared section header: icon chip + title + description, optional action slot.

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslations } from "next-intl"
 import type { SecretFormValue } from "@/components/shared/secret-form"
 import type { DecryptedSecret } from "@/components/shared/secret-row"
 import {
@@ -94,6 +95,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
 
   const isProjectUnlocked = isUnlocked && unlockedProjectId === projectId && Boolean(keyMaterial && vaultProof)
   const copyTimersRef = useRef<number[]>([])
+  const t = useTranslations("secrets.client.errors")
 
   const [project, setProject] = useState<Project | null>(cachedProject)
   const [environments, setEnvironments] = useState<Environment[]>(cachedEnvironments?.environments ?? [])
@@ -154,14 +156,14 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       } catch (err) {
         if (!shouldApply()) return
         setSecrets([])
-        setError(getErrorMessage(err, "Erro ao carregar secrets"))
+        setError(getErrorMessage(err, t("loadSecrets")))
       } finally {
         if (shouldApply()) {
           setVaultLoading(false)
         }
       }
     },
-    [applyVaultPull, projectId]
+    [applyVaultPull, projectId, t]
   )
 
   useEffect(() => {
@@ -172,7 +174,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         const data = await projectsApi.get(projectId)
         if (!cancelled) setProject(data)
       } catch (err) {
-        if (!cancelled) setError(getErrorMessage(err, "Erro ao carregar projeto"))
+        if (!cancelled) setError(getErrorMessage(err, t("loadProject")))
       }
     }
 
@@ -232,7 +234,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         }
       } catch (err) {
         if (!cancelled) {
-          setError(getErrorMessage(err, "Erro ao carregar ambientes"))
+          setError(getErrorMessage(err, t("loadEnvironments")))
         }
       } finally {
         if (!cancelled) {
@@ -248,7 +250,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     return () => {
       cancelled = true
     }
-  }, [projectId])
+  }, [projectId, t])
 
   useEffect(() => {
     if (unlockedProjectId && unlockedProjectId !== projectId) {
@@ -321,12 +323,12 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         })
         await applyVaultPull(activeEnv, data.blobs, data.version)
       } catch (err) {
-        setError(getErrorMessage(err, "Erro ao salvar secrets"))
+        setError(getErrorMessage(err, t("saveSecrets")))
       } finally {
         setSaving(false)
       }
     },
-    [activeEnv, applyVaultPull, keyMaterial, projectId, vaultProof, vaultVersion]
+    [activeEnv, applyVaultPull, keyMaterial, projectId, t, vaultProof, vaultVersion]
   )
 
   const openCreateForm = useCallback(() => {
@@ -424,12 +426,12 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         )
         await pushSecrets(nextSecrets)
       } catch (err) {
-        setError(getErrorMessage(err, "Erro ao rotacionar secret"))
+        setError(getErrorMessage(err, t("rotateSecret")))
       } finally {
         setSaving(false)
       }
     },
-    [activeEnv, keyMaterial, projectId, pushSecrets, secrets, vaultProof]
+    [activeEnv, keyMaterial, projectId, pushSecrets, secrets, t, vaultProof]
   )
 
   const openExpirationModal = useCallback((secret: DecryptedSecret) => {

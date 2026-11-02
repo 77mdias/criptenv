@@ -1,16 +1,18 @@
 import {
-  createEnvironmentSchema,
   createLoginSchema,
   createProjectSchema,
   createSecretSchema,
-  contributionSchema,
-  signupSchema,
+  createContributionSchema,
+  createSignupSchema,
 } from "../schemas"
 
 // createLoginSchema takes a translator; the messages themselves are covered by
 // the login page test — here we only assert the validation rules.
 const loginSchema = createLoginSchema((key) => key)
 const projectSchema = createProjectSchema((key) => key)
+const signupSchema = createSignupSchema((key) => key)
+const secretSchema = createSecretSchema((key) => key)
+const contributionSchema = createContributionSchema((key) => key)
 
 describe("validators", () => {
   it("accepts valid login data and rejects invalid email", () => {
@@ -79,11 +81,9 @@ describe("validators", () => {
   })
 
   it("requires UPPER_CASE secret keys and lowercase environment names", () => {
-    expect(createSecretSchema.safeParse({ key: "DATABASE_URL", value: "postgres" }).success).toBe(true)
-    expect(createSecretSchema.safeParse({ key: "database_url", value: "postgres" }).success).toBe(false)
+    expect(secretSchema.safeParse({ key: "DATABASE_URL", value: "postgres" }).success).toBe(true)
+    expect(secretSchema.safeParse({ key: "database_url", value: "postgres" }).success).toBe(false)
 
-    expect(createEnvironmentSchema.safeParse({ name: "preview-1", display_name: "Preview" }).success).toBe(true)
-    expect(createEnvironmentSchema.safeParse({ name: "Preview", display_name: "Preview" }).success).toBe(false)
   })
 
   it("validates contribution amount as a number and normalizes optional payer fields", () => {

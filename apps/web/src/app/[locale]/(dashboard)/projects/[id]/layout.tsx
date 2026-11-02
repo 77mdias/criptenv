@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { useParams } from "next/navigation";
 import { AlertCircle, ArrowLeft, FolderOpen } from "lucide-react";
@@ -36,6 +37,7 @@ function ProjectLayoutSkeleton() {
 }
 
 function ProjectLayoutError({ message }: { message: string }) {
+  const t = useTranslations("dashboard.projectLayout");
   return (
     <div className="space-y-6">
       <Link
@@ -43,7 +45,7 @@ function ProjectLayoutError({ message }: { message: string }) {
         className={cn(buttonVariants({ variant: "secondary" }), "w-fit")}
       >
         <ArrowLeft className="h-4 w-4" />
-        Voltar para projetos
+        {t("backToProjects")}
       </Link>
       <Card className="border-red-500/40 p-6">
         <div className="flex items-start gap-4">
@@ -52,7 +54,7 @@ function ProjectLayoutError({ message }: { message: string }) {
           </div>
           <div>
             <h1 className="text-xl font-semibold tracking-tight text-(--text-primary)">
-              Projeto indisponível
+              {t("unavailable")}
             </h1>
             <p className="mt-2 font-mono text-sm leading-relaxed text-red-600">
               {message}
@@ -69,6 +71,7 @@ export default function ProjectDetailLayout({
 }: {
   children: React.ReactNode;
 }) {
+  const t = useTranslations("dashboard.projectLayout");
   const params = useParams();
   const projectId = String(params.id ?? "");
   const cachedProject = projectId
@@ -96,7 +99,7 @@ export default function ProjectDetailLayout({
         if (cancelled) return;
         setProject(null);
         setError(
-          err instanceof Error ? err.message : "Erro ao carregar projeto",
+          err instanceof Error ? err.message : t("errors.loadFailed"),
         );
       })
       .finally(() => {
@@ -108,14 +111,14 @@ export default function ProjectDetailLayout({
     return () => {
       cancelled = true;
     };
-  }, [cachedProject, projectId]);
+  }, [cachedProject, projectId, t]);
 
   if (loading) {
     return <ProjectLayoutSkeleton />;
   }
 
   if (error || !project) {
-    return <ProjectLayoutError message={error ?? "Projeto não encontrado."} />;
+    return <ProjectLayoutError message={error ?? t("notFound")} />;
   }
 
   return (
@@ -126,7 +129,7 @@ export default function ProjectDetailLayout({
           className={cn(buttonVariants({ variant: "secondary" }), "w-fit")}
         >
           <ArrowLeft className="h-4 w-4" />
-          Projetos
+          {t("projects")}
         </Link>
 
         <Card className="p-6">
@@ -137,14 +140,14 @@ export default function ProjectDetailLayout({
               </div>
               <div className="min-w-0">
                 <p className="font-mono text-xs font-semibold uppercase tracking-wider text-(--text-muted)">
-                  Projeto
+                  {t("project")}
                 </p>
                 <h1 className="mt-1 truncate text-2xl font-semibold tracking-tight text-(--text-primary)">
                   {project.name}
                 </h1>
                 <p className="mt-2 max-w-2xl font-mono text-sm leading-relaxed text-(--text-tertiary)">
                   {project.description ||
-                    "Sem descrição cadastrada para este projeto."}
+                    t("noDescription")}
                 </p>
               </div>
             </div>

@@ -1,6 +1,7 @@
 "use client"
 
-import { useState } from "react"
+import { useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { useForm } from "react-hook-form"
@@ -11,10 +12,14 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { OAuthButtonGroup } from "@/components/ui/oauth-button"
 import { Mail, Lock, User, AlertCircle } from "lucide-react"
-import { signupSchema, type SignupInput } from "@/lib/validators/schemas"
+import { createSignupSchema, type SignupInput } from "@/lib/validators/schemas"
 import { useAuth } from "@/hooks/use-auth"
 
 export default function SignupPage() {
+  const t = useTranslations("auth.signup")
+  const tAuth = useTranslations("auth")
+  // Built per locale: Zod bakes messages in at construction time.
+  const signupSchema = useMemo(() => createSignupSchema(tAuth), [tAuth])
   const router = useRouter()
   const { signup } = useAuth()
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +39,7 @@ export default function SignupPage() {
       router.push("/verify-email/sent")
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Erro ao criar conta"
+        err instanceof Error ? err.message : t("errors.createFailed")
       setError(message)
     }
   }
@@ -42,9 +47,9 @@ export default function SignupPage() {
   return (
     <div className="space-y-7">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Criar Conta</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-          Configure seu acesso e comece a sincronizar secrets com segurança.
+          {t("subtitle")}
         </p>
       </div>
 
@@ -58,51 +63,46 @@ export default function SignupPage() {
       <div className="space-y-4">
         <OAuthButtonGroup />
         <p className="text-center text-xs leading-5 text-[var(--text-muted)]">
-          Ao continuar com Google, GitHub ou Discord, você aceita os{" "}
-          <Link
-            href="/termos-de-uso"
-            target="_blank"
-            className="text-[var(--accent)] hover:underline"
-          >
-            Termos de Uso
-          </Link>{" "}
-          e a{" "}
-          <Link
-            href="/politica-de-privacidade"
-            target="_blank"
-            className="text-[var(--accent)] hover:underline"
-          >
-            Política de Privacidade
-          </Link>
-          .
+          {t.rich("oauthConsent", {
+            terms: (chunks) => (
+              <Link href="/termos-de-uso" target="_blank" className="text-[var(--accent)] hover:underline">
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link href="/politica-de-privacidade" target="_blank" className="text-[var(--accent)] hover:underline">
+                {chunks}
+              </Link>
+            ),
+          })}
         </p>
         <div className="relative">
           <Separator className="my-2" />
           <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[var(--surface-elevated)] px-3 text-xs text-[var(--text-tertiary)]">
-            ou com email
+            {t("orEmail")}
           </span>
         </div>
       </div>
 
       <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
         <Input
-          label="Nome"
+          label={t("nameLabel")}
           type="text"
-          placeholder="Seu nome"
+          placeholder={t("namePlaceholder")}
           icon={User}
           error={errors.name?.message}
           {...register("name")}
         />
         <Input
-          label="Email"
+          label={t("emailLabel")}
           type="email"
-          placeholder="voce@email.com"
+          placeholder={t("emailPlaceholder")}
           icon={Mail}
           error={errors.email?.message}
           {...register("email")}
         />
         <Input
-          label="Senha"
+          label={t("passwordLabel")}
           type="password"
           placeholder="••••••••"
           icon={Lock}
@@ -110,7 +110,7 @@ export default function SignupPage() {
           {...register("password")}
         />
         <Input
-          label="Confirmar Senha"
+          label={t("confirmPasswordLabel")}
           type="password"
           placeholder="••••••••"
           icon={Lock}
@@ -122,33 +122,28 @@ export default function SignupPage() {
           error={errors.acceptTerms?.message}
           {...register("acceptTerms")}
         >
-          Eu li e aceito os{" "}
-          <Link
-            href="/termos-de-uso"
-            target="_blank"
-            className="font-medium text-[var(--accent)] hover:underline"
-          >
-            Termos de Uso
-          </Link>{" "}
-          e a{" "}
-          <Link
-            href="/politica-de-privacidade"
-            target="_blank"
-            className="font-medium text-[var(--accent)] hover:underline"
-          >
-            Política de Privacidade
-          </Link>
-          .
+          {t.rich("acceptTerms", {
+            terms: (chunks) => (
+              <Link href="/termos-de-uso" target="_blank" className="font-medium text-[var(--accent)] hover:underline">
+                {chunks}
+              </Link>
+            ),
+            privacy: (chunks) => (
+              <Link href="/politica-de-privacidade" target="_blank" className="font-medium text-[var(--accent)] hover:underline">
+                {chunks}
+              </Link>
+            ),
+          })}
         </Checkbox>
         <Button type="submit" fullWidth loading={isSubmitting}>
-          Criar Conta
+          {t("submit")}
         </Button>
       </form>
 
       <p className="text-center text-sm text-[var(--text-tertiary)]">
-        Já tem conta?{" "}
+        {t("haveAccount")}{" "}
         <Link href="/login" className="text-[var(--accent)] hover:underline font-medium">
-          Entrar
+          {t("signIn")}
         </Link>
       </p>
     </div>

@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import { useTranslations } from "next-intl";
 import { Link } from "@/i18n/navigation";
 import { zodResolver } from "@hookform/resolvers/zod";
 import {
@@ -22,7 +23,7 @@ import {
   type ContributionStatusResponse,
 } from "@/lib/api/contributions";
 import {
-  contributionSchema,
+  createContributionSchema,
   type ContributionInput,
 } from "@/lib/validators/schemas";
 
@@ -84,6 +85,7 @@ function toApiPayload(data: ContributionInput) {
 }
 
 function IdlePanel() {
+  const t = useTranslations("marketing.contribute");
   return (
     <Card className="min-h-105 rounded-xl border-(--border) bg-(--surface)/80 p-8">
       <div className="flex h-full flex-col justify-center gap-6">
@@ -92,20 +94,14 @@ function IdlePanel() {
         </div>
         <div>
           <h2 className="text-2xl font-semibold tracking-tight text-(--text-primary)">
-            Pix instantâneo
+            {t("idle.title")}
           </h2>
           <p className="mt-3 text-sm leading-relaxed text-(--text-tertiary)">
-            Sua contribuição ajuda a manter o CriptEnv open source, auditável e
-            disponível para quem precisa proteger secrets sem depender de
-            plataformas fechadas.
+            {t("idle.description")}
           </p>
         </div>
         <div className="grid gap-3">
-          {[
-            "Pagamento processado via Mercado Pago",
-            "Webhook confirma o status automaticamente",
-            "Nenhum dado de vault ou secret passa por este fluxo",
-          ].map((item) => (
+          {[t("idle.point1"), t("idle.point2"), t("idle.point3")].map((item) => (
             <div
               key={item}
               className="flex items-center gap-3 text-sm text-(--text-secondary)"
@@ -146,6 +142,9 @@ function restorePendingState() {
 }
 
 export default function ContributePage() {
+  const t = useTranslations("marketing.contribute");
+  // Built per locale: Zod bakes messages in at construction time.
+  const contributionSchema = useMemo(() => createContributionSchema(t), [t]);
   const restored = restorePendingState();
 
   const [flowStatus, setFlowStatus] = useState<ContributionFlowStatus>(
@@ -264,13 +263,13 @@ export default function ContributePage() {
         const message =
           err instanceof Error
             ? err.message
-            : "Não foi possível atualizar o status do pagamento";
+            : t("errors.statusFailed");
         setError(message);
         setFlowStatus("error");
         return "error";
       }
     },
-    [contribution, createdAt, flowStatus, lastSyncAt],
+    [contribution, createdAt, flowStatus, lastSyncAt, t],
   );
 
   useEffect(() => {
@@ -327,7 +326,7 @@ export default function ContributePage() {
       setFlowStatus(mapProviderStatus(created.status, created.expires_at));
     } catch (err: unknown) {
       const message =
-        err instanceof Error ? err.message : "Não foi possível gerar o Pix";
+        err instanceof Error ? err.message : t("errors.createFailed");
       setError(message);
       setFlowStatus("error");
     }
@@ -340,7 +339,7 @@ export default function ContributePage() {
           <div className="text-center">
             <Loader2 className="mx-auto h-10 w-10 animate-spin text-(--accent)" />
             <p className="mt-4 text-sm text-(--text-tertiary)">
-              Gerando Pix...
+              {t("creating")}
             </p>
           </div>
         </Card>
@@ -393,7 +392,7 @@ export default function ContributePage() {
           className="mb-10 inline-flex items-center gap-2 text-sm font-medium text-(--text-tertiary) transition-colors hover:text-(--text-primary)"
         >
           <ArrowLeft className="h-4 w-4" />
-          Voltar
+          {t("back")}
         </Link>
 
         <section className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-end lg:gap-10">
@@ -402,22 +401,20 @@ export default function ContributePage() {
               <HeartHandshake className="h-7 w-7 text-(--accent)" />
             </div>
             <h1 className="mt-8 max-w-3xl text-4xl font-light leading-[0.98] tracking-tight text-(--text-primary) sm:text-5xl lg:text-6xl">
-              Contribua com o{" "}
+              {t("heroTitle")}{" "}
               <span className="font-semibold text-(--accent)">CriptEnv</span>
             </h1>
             <p className="mt-6 max-w-xl text-base font-light leading-relaxed text-(--text-tertiary)">
-              Apoie uma alternativa open source para gerenciamento de secrets
-              com arquitetura zero-knowledge. O pagamento é feito por Pix e
-              acompanhado nesta página.
+              {t("heroDescription")}
             </p>
           </div>
 
           <Card className="min-w-0 rounded-xl border-(--border) bg-(--surface)/80 p-5 backdrop-blur-sm sm:p-8">
             <h2 className="text-xl font-semibold tracking-tight text-(--text-primary)">
-              Gerar contribuição
+              {t("form.title")}
             </h2>
             <p className="mt-2 text-sm leading-relaxed text-(--text-tertiary)">
-              Escolha um valor a partir de R$ 5,00. Nome e email são opcionais.
+              {t("form.description")}
             </p>
 
             {error && (
@@ -429,11 +426,11 @@ export default function ContributePage() {
 
             <form onSubmit={handleSubmit(onSubmit)} className="mt-6 space-y-4">
               <Input
-                label="Valor"
+                label={t("form.amount")}
                 type="number"
                 step="0.01"
                 min="5"
-                placeholder="25,00"
+                placeholder={t("form.amountPlaceholder")}
                 suffix={
                   <span className="font-mono text-xs text-(--text-muted)">
                     BRL
@@ -443,16 +440,16 @@ export default function ContributePage() {
                 {...register("amount", { valueAsNumber: true })}
               />
               <Input
-                label="Nome"
+                label={t("form.name")}
                 type="text"
-                placeholder="Seu nome"
+                placeholder={t("form.namePlaceholder")}
                 error={errors.payer_name?.message}
                 {...register("payer_name")}
               />
               <Input
-                label="Email"
+                label={t("form.email")}
                 type="email"
-                placeholder="voce@email.com"
+                placeholder={t("form.emailPlaceholder")}
                 error={errors.payer_email?.message}
                 {...register("payer_email")}
               />
@@ -461,7 +458,7 @@ export default function ContributePage() {
                 fullWidth
                 loading={effectiveFlowStatus === "creating"}
               >
-                Gerar Pix
+                {t("form.submit")}
               </Button>
             </form>
           </Card>
@@ -473,21 +470,19 @@ export default function ContributePage() {
               open source
             </p>
             <p className="mt-3 text-sm leading-relaxed text-(--text-tertiary)">
-              O CriptEnv segue MIT License. Contribuições ajudam a manter
-              infraestrutura, auditoria, documentação e evolução do produto sem
-              comprometer o princípio zero-knowledge.
+              {t("openSource")}
             </p>
             <p className="mt-4 text-xs leading-relaxed text-(--text-muted)">
-              Contribuições são voluntárias, não concedem recursos exclusivos e
-              não são reembolsáveis. O pagamento é processado pelo Mercado Pago
-              sob seus termos. Consulte a seção 5 dos{" "}
-              <Link
-                href="/termos-de-uso#5-doacoes"
-                className="underline underline-offset-2 transition-colors hover:text-(--text-secondary)"
-              >
-                Termos de Uso
-              </Link>
-              .
+              {t.rich("disclaimer", {
+                terms: (chunks) => (
+                  <Link
+                    href="/termos-de-uso#5-doacoes"
+                    className="underline underline-offset-2 transition-colors hover:text-(--text-secondary)"
+                  >
+                    {chunks}
+                  </Link>
+                ),
+              })}
             </p>
           </div>
           {statusPanel}

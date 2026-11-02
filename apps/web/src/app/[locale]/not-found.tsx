@@ -1,14 +1,19 @@
 import type { Metadata } from "next";
+import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Home, LogIn, SearchX } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
-export const metadata: Metadata = {
-  title: "404 — Página não encontrada · CriptEnv",
-  robots: { index: false, follow: false },
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getTranslations("common.notFound");
+  return {
+    title: t("metaTitle"),
+    robots: { index: false, follow: false },
+  };
+}
 
-export default function NotFound() {
+export default async function NotFound() {
+  const t = await getTranslations("common.notFound");
   return (
     <div className="relative flex min-h-screen flex-col items-center justify-center overflow-hidden px-6 py-16">
       <div
@@ -30,19 +35,18 @@ export default function NotFound() {
 
         <span className="mb-7 inline-flex items-center gap-2 rounded-full border border-[var(--border)] bg-[var(--background-subtle)] px-4 py-1.5 font-mono text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--text-tertiary)]">
           <SearchX className="h-3.5 w-3.5" aria-hidden="true" />
-          Página não encontrada
+          {t("badge")}
         </span>
 
         <h1 className="mb-4 text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-          Essa página não existe{" "}
+          {t("title")}{" "}
           <span className="bg-[linear-gradient(120deg,var(--text-primary)_30%,#ff4500)] bg-clip-text text-transparent">
-            (ou nunca existiu)
+            {t("titleAccent")}
           </span>
         </h1>
 
         <p className="mx-auto mb-8 max-w-[46ch] text-[15px] leading-relaxed text-[var(--text-secondary)]">
-          O endereço que você acessou não corresponde a nenhuma rota do
-          CriptEnv. Verifique a URL ou volte para uma página conhecida.
+          {t("description")}
         </p>
 
         <div className="mx-auto mb-9 max-w-md overflow-hidden rounded-xl border border-[var(--border)] bg-[var(--background-subtle)] text-left font-mono text-[13px] leading-relaxed">
@@ -57,7 +61,7 @@ export default function NotFound() {
           <div className="space-y-1 px-4 py-3.5">
             <p className="text-[var(--text-secondary)]">
               <span className="select-none text-[#ff4500]">$</span> criptenv get{" "}
-              <span className="text-[var(--text-primary)]">esta-pagina</span>
+              <span className="text-[var(--text-primary)]">{t("commandArg")}</span>
             </p>
             <p className="text-[var(--text-muted)]">
               error: secret not found{" "}
@@ -72,13 +76,13 @@ export default function NotFound() {
           <Button asChild size="lg" className="rounded-xl">
             <Link href="/">
               <Home className="h-4 w-4" aria-hidden="true" />
-              Ir para o início
+              {t("home")}
             </Link>
           </Button>
           <Button asChild variant="secondary" size="lg" className="rounded-xl">
             <Link href="/login">
               <LogIn className="h-4 w-4" aria-hidden="true" />
-              Entrar na conta
+              {t("signIn")}
             </Link>
           </Button>
         </div>

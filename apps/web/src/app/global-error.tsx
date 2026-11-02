@@ -8,6 +8,52 @@ import Link from "next/link";
 import { OctagonAlert, RotateCcw, ShieldCheck } from "lucide-react";
 import "./globals.css";
 
+// Rendered outside NextIntlClientProvider (it replaces the root layout), so the
+// copy lives here and the locale comes from the URL prefix (pt-BR is unprefixed).
+const COPY = {
+  "pt-BR": {
+    title: "Serviço temporariamente indisponível · CriptEnv",
+    badge: "Erro crítico",
+    heading: "Algo deu errado",
+    headingAccent: "do nosso lado",
+    description: "Encontramos uma falha inesperada ao carregar o CriptEnv. Nossa equipe já foi notificada.",
+    errorId: "ID do erro",
+    retry: "Tentar novamente",
+    home: "Ir para o início",
+    safe: "Seus secrets continuam seguros — cifrados com AES-256-GCM no seu dispositivo.",
+  },
+  en: {
+    title: "Service temporarily unavailable · CriptEnv",
+    badge: "Critical error",
+    heading: "Something went wrong",
+    headingAccent: "on our side",
+    description: "We hit an unexpected failure while loading CriptEnv. Our team has been notified.",
+    errorId: "Error ID",
+    retry: "Try again",
+    home: "Go to home",
+    safe: "Your secrets are still safe — encrypted with AES-256-GCM on your device.",
+  },
+  es: {
+    title: "Servicio temporalmente no disponible · CriptEnv",
+    badge: "Error crítico",
+    heading: "Algo salió mal",
+    headingAccent: "de nuestro lado",
+    description: "Encontramos un fallo inesperado al cargar CriptEnv. Nuestro equipo ya fue notificado.",
+    errorId: "ID del error",
+    retry: "Intentar de nuevo",
+    home: "Ir al inicio",
+    safe: "Tus secrets siguen seguros — cifrados con AES-256-GCM en tu dispositivo.",
+  },
+} as const;
+
+type GlobalErrorLocale = keyof typeof COPY;
+
+function detectLocale(): GlobalErrorLocale {
+  if (typeof window === "undefined") return "pt-BR";
+  const prefix = window.location.pathname.split("/")[1];
+  return prefix === "en" || prefix === "es" ? prefix : "pt-BR";
+}
+
 export default function GlobalError({
   error,
   retry,
@@ -19,11 +65,15 @@ export default function GlobalError({
     console.error("[global-error]", error);
   }, [error]);
 
+  const locale = detectLocale();
+  const copy = COPY[locale];
+  const home = locale === "pt-BR" ? "/" : `/${locale}`;
+
   return (
-    <html lang="pt-BR" suppressHydrationWarning>
+    <html lang={locale} suppressHydrationWarning>
       <head>
         <meta name="color-scheme" content="light dark" />
-        <title>Serviço temporariamente indisponível · CriptEnv</title>
+        <title>{copy.title}</title>
       </head>
       <body
         className="min-h-screen bg-(--background) text-(--text-primary) antialiased"
@@ -58,7 +108,7 @@ export default function GlobalError({
                   <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff4500] opacity-60" />
                   <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-[#ff4500]" />
                 </span>
-                Erro crítico
+                {copy.badge}
               </span>
 
               <div
@@ -69,21 +119,20 @@ export default function GlobalError({
               </div>
 
               <h1 className="mb-4 text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-                Algo deu errado{" "}
+                {copy.heading}{" "}
                 <span className="bg-[linear-gradient(120deg,var(--text-primary)_30%,#ff4500)] bg-clip-text text-transparent">
-                  do nosso lado
+                  {copy.headingAccent}
                 </span>
               </h1>
 
               <p className="mx-auto mb-2 max-w-[42ch] text-[15px] leading-relaxed text-[var(--text-secondary)]">
-                Encontramos uma falha inesperada ao carregar o CriptEnv. Nossa
-                equipe já foi notificada.
+                {copy.description}
               </p>
 
               {error?.digest ? (
                 <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background-subtle)] px-4 py-2.5 font-mono text-xs text-[var(--text-muted)]">
                   <label className="text-[10px] uppercase tracking-[0.18em]">
-                    ID do erro
+                    {copy.errorId}
                   </label>
                   <code className="select-all tracking-wide text-[var(--text-secondary)]">
                     {error.digest}
@@ -97,19 +146,19 @@ export default function GlobalError({
                   className="inline-flex h-12 cursor-pointer items-center justify-center gap-2 rounded-xl bg-[#ff4500] px-8 text-sm font-semibold text-white shadow-[0_10px_28px_-10px_rgba(255,69,0,0.4)] transition-all hover:-translate-y-0.5 hover:bg-[#ff5c1f]"
                 >
                   <RotateCcw className="h-4 w-4" aria-hidden="true" />
-                  Tentar novamente
+                  {copy.retry}
                 </button>
                 <Link
-                  href="/"
+                  href={home}
                   className="inline-flex h-12 items-center justify-center rounded-xl border border-[var(--border)] px-8 text-sm font-medium text-[var(--text-secondary)] transition-colors hover:bg-[var(--background-subtle)] hover:text-[var(--text-primary)]"
                 >
-                  Ir para o início
+                  {copy.home}
                 </Link>
               </div>
 
               <p className="mt-9 flex items-center justify-center gap-2 font-mono text-[11.5px] text-[var(--text-muted)]">
                 <ShieldCheck className="h-[13px] w-[13px] text-green-700" aria-hidden="true" />
-                Seus secrets continuam seguros — cifrados com AES-256-GCM no seu dispositivo.
+                {copy.safe}
               </p>
             </div>
           </main>

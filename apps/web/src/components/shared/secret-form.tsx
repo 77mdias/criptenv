@@ -1,6 +1,6 @@
 "use client"
 
-import { FormEvent, useState } from "react"
+import { FormEvent, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { KeyRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -59,13 +59,14 @@ function SecretFormDialog({
   onSubmit,
 }: Omit<SecretFormProps, "open">) {
   const t = useTranslations("secrets.form")
+  const secretSchema = useMemo(() => createSecretSchema(t), [t])
   const [keyName, setKeyName] = useState(initialValue?.key ?? "")
   const [value, setValue] = useState(initialValue?.value ?? "")
   const [error, setError] = useState<string | null>(null)
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault()
-    const parsed = createSecretSchema.safeParse({ key: keyName, value })
+    const parsed = secretSchema.safeParse({ key: keyName, value })
     if (!parsed.success) {
       setError(parsed.error.issues[0]?.message ?? t("invalid"))
       return

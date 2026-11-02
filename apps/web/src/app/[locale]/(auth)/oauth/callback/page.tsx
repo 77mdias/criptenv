@@ -1,12 +1,14 @@
 "use client"
 
 import { useEffect, useState } from "react"
+import { useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { Loader2 } from "lucide-react"
 import { authApi } from "@/lib/api/auth"
 
 export default function OAuthCallbackPage() {
+  const t = useTranslations("auth.oauthCallback")
   const router = useRouter()
   const searchParams = useSearchParams()
   const [error, setError] = useState<string | null>(null)
@@ -32,13 +34,13 @@ export default function OAuthCallbackPage() {
           router.push("/dashboard")
         } else {
           // Session invalid
-          setError("Falha ao autenticar com OAuth. Por favor, tente novamente.")
+          setError(t("errors.sessionFailed"))
           setTimeout(() => {
             router.push("/login?error=oauth_failed")
           }, 2000)
         }
       } catch {
-        setError("Erro de conexão. Por favor, tente novamente.")
+        setError(t("errors.network"))
         setTimeout(() => {
           router.push("/login?error=network_error")
         }, 2000)
@@ -46,7 +48,7 @@ export default function OAuthCallbackPage() {
     }
 
     checkSession()
-  }, [router, searchParams])
+  }, [router, searchParams, t])
 
   const errorParam = searchParams.get("error")
   
@@ -58,14 +60,14 @@ export default function OAuthCallbackPage() {
             <span className="text-2xl">✕</span>
           </div>
           <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-            Falha na autenticação OAuth
+            {t("failedTitle")}
           </h2>
           <p className="text-sm text-[var(--text-tertiary)]">
-            {error || errorParam || "Ocorreu um erro durante o processo de autenticação."}
+            {error || errorParam || t("failedMessage")}
           </p>
         </div>
         <p className="text-xs text-[var(--text-tertiary)]">
-          Redirecionando para login...
+          {t("redirecting")}
         </p>
       </div>
     )
@@ -76,10 +78,10 @@ export default function OAuthCallbackPage() {
       <Loader2 className="h-8 w-8 animate-spin text-[var(--accent)]" />
       <div className="text-center space-y-2">
         <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-          Autenticando...
+          {t("authenticating")}
         </h2>
         <p className="text-sm text-[var(--text-tertiary)]">
-          Processando login com OAuth
+          {t("processing")}
         </p>
       </div>
     </div>

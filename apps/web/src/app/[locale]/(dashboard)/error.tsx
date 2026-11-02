@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { useTranslations } from "next-intl";
 import { KeyRound, RotateCcw, ShieldCheck } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -11,6 +12,7 @@ export default function DashboardError({
   error: Error & { digest?: string };
   retry: () => void;
 }) {
+  const t = useTranslations("common.dashboardError");
   useEffect(() => {
     console.error("[dashboard-error]", error);
   }, [error]);
@@ -29,7 +31,7 @@ export default function DashboardError({
               <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-[#ff4500] opacity-60" />
               <span className="relative inline-flex h-[7px] w-[7px] rounded-full bg-[#ff4500]" />
             </span>
-            Falha ao carregar
+            {t("badge")}
           </span>
 
           <div
@@ -40,21 +42,20 @@ export default function DashboardError({
           </div>
 
           <h1 className="mb-4 text-3xl font-bold tracking-tight text-[var(--text-primary)]">
-            Não foi possível carregar{" "}
+            {t("title")}{" "}
             <span className="bg-[linear-gradient(120deg,var(--text-primary)_30%,#ff4500)] bg-clip-text text-transparent">
-              esta seção
+              {t("titleAccent")}
             </span>
           </h1>
 
           <p className="mx-auto mb-2 max-w-[42ch] text-[15px] leading-relaxed text-[var(--text-secondary)]">
-            Ocorreu um erro inesperado, mas pode ficar tranquilo: seus secrets
-            estão protegidos.
+            {t("description")}
           </p>
 
           {error?.digest ? (
             <div className="mt-6 inline-flex items-center gap-3 rounded-xl border border-[var(--border)] bg-[var(--background-subtle)] px-4 py-2.5 font-mono text-xs text-[var(--text-muted)]">
               <label className="text-[10px] uppercase tracking-[0.18em]">
-                ID do erro
+                {t("errorId")}
               </label>
               <code className="select-all tracking-wide text-[var(--text-secondary)]">
                 {error.digest}
@@ -64,13 +65,13 @@ export default function DashboardError({
 
           <div className="mt-8 flex flex-wrap items-center justify-center gap-3.5">
             <Button onClick={retry} icon={RotateCcw} size="lg" className="rounded-xl bg-[#ff4500] px-8 hover:bg-[#ff5c1f] focus-visible:ring-[#ff4500]">
-              Tentar novamente
+              {t("retry")}
             </Button>
           </div>
 
           <p className="mt-9 flex items-center justify-center gap-2 font-mono text-[11.5px] text-[var(--text-muted)]">
             <ShieldCheck className="h-[13px] w-[13px] text-green-700" aria-hidden="true" />
-            Arquitetura zero-knowledge — nada sai do seu dispositivo sem cifragem AES-256-GCM.
+            {t("safe")}
           </p>
         </div>
       </main>

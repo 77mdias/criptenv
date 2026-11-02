@@ -24,7 +24,7 @@
     "twoFADisableError": "Erro ao desativar 2FA",
     "oauthUnlinked": "Conta {provider} desvinculada.",
     "oauthUnlinkError": "Erro ao desvincular",
-    "deleteConfirmationWord": "Digite \"DELETAR\" para confirmar.",
+    "deleteConfirmationWord": "Digite \"{word}\" para confirmar.",
     "deleteError": "Erro ao deletar conta",
     "verificationResent": "Email de verificação reenviado. Verifique sua caixa de entrada.",
     "verificationResendError": "Erro ao reenviar verificação",
@@ -47,7 +47,8 @@
     "title": "Perfil",
     "publicInfo": "Suas informações públicas",
     "verifyEmailTitle": "Verifique seu email para liberar todos os recursos",
-    "twoFAActiveTitle": "2FA ativo nesta conta"
+    "twoFAActiveTitle": "2FA ativo nesta conta",
+    "twoFAActive": "2FA ativo"
   },
   "security": {
     "title": "Segurança",
@@ -104,13 +105,14 @@
   },
   "dangerZone": {
     "title": "Zona de perigo",
-    "deleteWarning": "Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos. Digite <strong>DELETAR</strong> para confirmar.",
+    "deleteWarning": "Esta ação não pode ser desfeita. Todos os seus dados serão permanentemente removidos. Digite <strong>{word}</strong> para confirmar.",
     "deletePermanently": "Deletar permanentemente",
     "delete": "Deletar conta",
     "cancel": "Cancelar",
     "description": "Ações irreversíveis nesta conta",
     "deleteAccount": "Excluir conta",
-    "deleteAccountDescription": "Remove permanentemente seus projetos, segredos e sessões"
+    "deleteAccountDescription": "Remove permanentemente seus projetos, segredos e sessões",
+    "confirmWord": "DELETAR"
   },
   "avatar": {
     "invalidType": "Apenas imagens PNG ou JPG são permitidas.",

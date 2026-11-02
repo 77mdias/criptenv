@@ -3,11 +3,8 @@ import { z } from "zod"
 /**
  * Zod messages are baked in at schema-construction time, so any schema whose
  * messages are user-visible cannot live at module scope once the app is
- * translated. Schemas that are already migrated are exposed as factories that
- * receive a translator (see `createLoginSchema`).
- *
- * Schemas below this line are still module-scope pt-BR and are migrated as
- * their surfaces are translated.
+ * translated. Every schema is therefore a factory that receives a translator
+ * (see `createLoginSchema`).
  */
 
 /** Translator shape shared by next-intl's `useTranslations`/`getTranslations`. */
@@ -21,23 +18,26 @@ export const createLoginSchema = (t: ValidatorTranslator) =>
 
 export type LoginInput = z.infer<ReturnType<typeof createLoginSchema>>
 
-export const signupSchema = z.object({
-  name: z.string().min(2, "Nome deve ter pelo menos 2 caracteres"),
-  email: z.string().email("Email inválido"),
-  password: z
-    .string()
-    .min(8, "Mínimo 8 caracteres")
-    .regex(/[A-Z]/, "Deve conter pelo menos 1 maiúscula")
-    .regex(/[0-9]/, "Deve conter pelo menos 1 número")
-    .regex(/[^A-Za-z0-9]/, "Deve conter pelo menos 1 símbolo"),
-  confirmPassword: z.string(),
-  acceptTerms: z.boolean().refine((value) => value === true, {
-    message: "Aceite os Termos de Uso e a Política de Privacidade para continuar",
-  }),
-}).refine((data) => data.password === data.confirmPassword, {
-  message: "Senhas não conferem",
-  path: ["confirmPassword"],
-})
+export const createSignupSchema = (t: ValidatorTranslator) =>
+  z
+    .object({
+      name: z.string().min(2, t("errors.nameLength")),
+      email: z.string().email(t("errors.invalidEmail")),
+      password: z
+        .string()
+        .min(8, t("errors.passwordLength"))
+        .regex(/[A-Z]/, t("errors.passwordUppercase"))
+        .regex(/[0-9]/, t("errors.passwordNumber"))
+        .regex(/[^A-Za-z0-9]/, t("errors.passwordSymbol")),
+      confirmPassword: z.string(),
+      acceptTerms: z.boolean().refine((value) => value === true, {
+        message: t("errors.acceptTerms"),
+      }),
+    })
+    .refine((data) => data.password === data.confirmPassword, {
+      message: t("errors.passwordMismatch"),
+      path: ["confirmPassword"],
+    })
 
 export const createProjectSchema = (t: ValidatorTranslator) =>
   z
@@ -58,28 +58,21 @@ export const createProjectSchema = (t: ValidatorTranslator) =>
       path: ["confirmVaultPassword"],
     })
 
-export const createSecretSchema = z.object({
-  key: z
-    .string()
-    .min(3, "Chave deve ter 3-64 caracteres")
-    .max(64, "Chave deve ter 3-64 caracteres")
-    .regex(/^[A-Z][A-Z0-9_]*$/, "Chave deve ser UPPER_CASE"),
-  value: z.string().min(1, "Valor obrigatório").max(10240, "Máximo 10KB"),
-})
+export const createSecretSchema = (t: ValidatorTranslator) =>
+  z.object({
+    key: z
+      .string()
+      .min(3, t("errors.keyLength"))
+      .max(64, t("errors.keyLength"))
+      .regex(/^[A-Z][A-Z0-9_]*$/, t("errors.keyFormat")),
+    value: z.string().min(1, t("errors.valueRequired")).max(10240, t("errors.valueTooLarge")),
+  })
 
-export const createEnvironmentSchema = z.object({
-  name: z
-    .string()
-    .min(2, "Nome deve ter 2-20 caracteres")
-    .max(20, "Nome deve ter 2-20 caracteres")
-    .regex(/^[a-z][a-z0-9-]*$/, "Apenas lowercase, números e hífens"),
-  display_name: z.string().max(50).optional(),
-})
-
-export const inviteMemberSchema = z.object({
-  email: z.string().email("Email inválido"),
-  role: z.enum(["developer", "viewer", "admin"]),
-})
+export const createInviteMemberSchema = (t: ValidatorTranslator) =>
+  z.object({
+    email: z.string().email(t("errors.invalidEmail")),
+    role: z.enum(["developer", "viewer", "admin"]),
+  })
 
 const emptyStringToUndefined = (value: unknown) => {
   if (typeof value !== "string") return value
@@ -87,24 +80,24 @@ const emptyStringToUndefined = (value: unknown) => {
   return trimmed === "" ? undefined : trimmed
 }
 
-export const contributionSchema = z.object({
-  amount: z
-    .number({ error: "Informe um valor válido" })
-    .min(5, { error: "Valor mínimo de R$ 5,00" })
-    .max(100000, { error: "Valor máximo de R$ 100.000,00" }),
-  payer_name: z.preprocess(
-    emptyStringToUndefined,
-    z.string().max(255, { error: "Nome deve ter no máximo 255 caracteres" }).optional()
-  ),
-  payer_email: z.preprocess(
-    emptyStringToUndefined,
-    z.string().email("Email inválido").max(255, { error: "Email deve ter no máximo 255 caracteres" }).optional()
-  ),
-})
+export const createContributionSchema = (t: ValidatorTranslator) =>
+  z.object({
+    amount: z
+      .number({ error: t("errors.amountInvalid") })
+      .min(5, { error: t("errors.amountMin") })
+      .max(100000, { error: t("errors.amountMax") }),
+    payer_name: z.preprocess(
+      emptyStringToUndefined,
+      z.string().max(255, { error: t("errors.nameTooLong") }).optional()
+    ),
+    payer_email: z.preprocess(
+      emptyStringToUndefined,
+      z.string().email(t("errors.invalidEmail")).max(255, { error: t("errors.emailTooLong") }).optional()
+    ),
+  })
 
-export type SignupInput = z.infer<typeof signupSchema>
+export type SignupInput = z.infer<ReturnType<typeof createSignupSchema>>
 export type CreateProjectInput = z.infer<ReturnType<typeof createProjectSchema>>
-export type CreateSecretInput = z.infer<typeof createSecretSchema>
-export type CreateEnvironmentInput = z.infer<typeof createEnvironmentSchema>
-export type InviteMemberInput = z.infer<typeof inviteMemberSchema>
-export type ContributionInput = z.infer<typeof contributionSchema>
+export type CreateSecretInput = z.infer<ReturnType<typeof createSecretSchema>>
+export type InviteMemberInput = z.infer<ReturnType<typeof createInviteMemberSchema>>
+export type ContributionInput = z.infer<ReturnType<typeof createContributionSchema>>
