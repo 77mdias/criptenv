@@ -102,6 +102,8 @@ services:
       - apps/web/.env.local
     environment:
       NEXT_PUBLIC_API_URL: http://localhost:8000
+      # Server-side /api proxy (vite) runs inside this container: reach the api service.
+      API_URL: http://api:8000
       NEXT_PUBLIC_COOKIE_NAME: criptenv_session
       NEXT_PUBLIC_APP_URL: http://localhost:3000
     volumes:

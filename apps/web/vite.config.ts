@@ -41,7 +41,8 @@ export default defineConfig({
   server: {
     proxy: {
       "/api": {
-        target: "http://localhost:8000",
+        // Same variable the production worker uses; inside docker compose it is http://api:8000.
+        target: process.env.API_URL || "http://localhost:8000",
         changeOrigin: true,
         secure: false,
       },
