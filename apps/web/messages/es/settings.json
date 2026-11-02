@@ -58,6 +58,7 @@
       "namePlaceholder": "Ej: production-ci",
       "scopes": "Scopes",
       "envRestriction": "Restricción de entorno (opcional)",
+      "allEnvironments": "Todos los entornos",
       "expiresIn": "Expira en (días, opcional)",
       "create": "Crear",
       "cancel": "Cancelar"

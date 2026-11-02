@@ -1,11 +1,13 @@
 "use client";
 
 import { useEffect, useRef, useCallback } from "react";
+import { useLocale, useTranslations } from "next-intl";
 import { useRouter } from "@/i18n/navigation";
 import { Bell, Check, Mail, UserPlus, AlertTriangle, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useNotificationsStore } from "@/stores/notifications";
 import { cn } from "@/lib/utils";
+import type { Notification } from "@/lib/api/client";
 
 const typeIcons: Record<string, React.ReactNode> = {
   invite: <UserPlus className="h-4 w-4 text-(--accent)" />,
@@ -14,7 +16,7 @@ const typeIcons: Record<string, React.ReactNode> = {
   email: <Mail className="h-4 w-4 text-emerald-500" />,
 };
 
-function formatTimeAgo(dateString: string): string {
+function formatTimeAgo(dateString: string, locale: string, justNow: string): string {
   const date = new Date(dateString);
   const now = new Date();
   const diffMs = now.getTime() - date.getTime();
@@ -23,14 +25,16 @@ function formatTimeAgo(dateString: string): string {
   const diffHour = Math.floor(diffMin / 60);
   const diffDay = Math.floor(diffHour / 24);
 
-  if (diffSec < 60) return "agora";
+  if (diffSec < 60) return justNow;
   if (diffMin < 60) return `${diffMin}m`;
   if (diffHour < 24) return `${diffHour}h`;
   if (diffDay < 7) return `${diffDay}d`;
-  return date.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
+  return date.toLocaleDateString(locale, { day: "2-digit", month: "2-digit" });
 }
 
 export function NotificationBell() {
+  const t = useTranslations("common.notifications");
+  const locale = useLocale();
   const router = useRouter();
   const {
     notifications,
@@ -44,6 +48,23 @@ export function NotificationBell() {
   } = useNotificationsStore();
 
   const dropdownRef = useRef<HTMLDivElement>(null);
+
+  // Invite text is rebuilt from meta so it follows the viewer's locale, not the server's.
+  const describe = (notification: Notification) => {
+    const meta = notification.meta ?? {};
+    if (notification.type === "invite" && typeof meta.project_name === "string") {
+      const project = meta.project_name;
+      return {
+        title: t("invite.title", { project }),
+        message: t("invite.message", {
+          actor: (typeof meta.invited_by_name === "string" && meta.invited_by_name) || t("invite.someone"),
+          project,
+          role: String(meta.role ?? ""),
+        }),
+      };
+    }
+    return { title: notification.title, message: notification.message };
+  };
 
   // Fetch unread count on mount and periodically
   useEffect(() => {
@@ -85,7 +106,7 @@ export function NotificationBell() {
       <Button
         variant="ghost"
         size="icon"
-        aria-label="Notificações"
+        aria-label={t("title")}
         aria-expanded={isOpen}
         className="relative h-8 w-8 sm:h-10 sm:w-10"
         onClick={toggleOpen}
@@ -101,13 +122,13 @@ export function NotificationBell() {
       {isOpen && (
         <div
           role="dialog"
-          aria-label="Notificações"
+          aria-label={t("title")}
           className="fixed inset-x-3 top-16 z-50 mt-0 w-auto overflow-hidden rounded-lg border border-(--border) bg-(--surface-elevated) shadow-[var(--shadow-xl)] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-[380px] sm:max-w-[calc(100vw-1rem)]"
         >
           {/* Header */}
           <div className="flex items-center justify-between gap-3 border-b border-(--border) bg-(--surface-elevated) px-4 py-3">
             <h3 className="text-sm font-semibold text-(--text-primary)">
-              Notificações
+              {t("title")}
             </h3>
             {unreadCount > 0 && (
               <button
@@ -119,7 +140,7 @@ export function NotificationBell() {
                 className="flex shrink-0 items-center gap-1 text-xs font-medium text-(--text-tertiary) transition-colors hover:text-(--text-primary)"
               >
                 <Check className="h-3 w-3" />
-                Marcar todas
+                {t("markAll")}
               </button>
             )}
           </div>
@@ -128,7 +149,7 @@ export function NotificationBell() {
           <div className="max-h-[min(70vh,480px)] overflow-y-auto sm:max-h-[420px]">
             {isLoading && notifications.length === 0 ? (
               <div className="px-4 py-10 text-center text-sm text-(--text-tertiary)">
-                Carregando...
+                {t("loading")}
               </div>
             ) : notifications.length === 0 ? (
               <div className="px-6 py-10 text-center">
@@ -136,12 +157,13 @@ export function NotificationBell() {
                   <Bell className="h-5 w-5 text-(--text-muted)" />
                 </div>
                 <p className="text-sm font-medium text-(--text-secondary)">
-                  Nenhuma notificação ainda
+                  {t("empty")}
                 </p>
               </div>
             ) : (
               notifications.map((notification) => {
                 const isUnread = !notification.read_at;
+                const text = describe(notification);
                 return (
                   <button
                     type="button"
@@ -166,13 +188,13 @@ export function NotificationBell() {
                             : "text-(--text-secondary)"
                         )}
                       >
-                        {notification.title}
+                        {text.title}
                       </p>
                       <p className="text-xs text-(--text-muted) mt-0.5 line-clamp-2">
-                        {notification.message}
+                        {text.message}
                       </p>
                       <p className="text-[11px] text-(--text-muted) mt-1">
-                        {formatTimeAgo(notification.created_at)}
+                        {formatTimeAgo(notification.created_at, locale, t("justNow"))}
                       </p>
                     </div>
                     {isUnread && (

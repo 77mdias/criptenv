@@ -45,8 +45,8 @@ def test_list_notifications(monkeypatch):
         id=uuid4(),
         user_id=user.id,
         type="invite",
-        title="Convite para Projeto X",
-        message="Alguém convidou você",
+        title="Invitation to Project X",
+        message="Someone invited you",
         read_at=None,
         action_url="/invites/accept?token=abc",
         meta={"project_id": str(uuid4())},
@@ -74,7 +74,7 @@ def test_list_notifications(monkeypatch):
     assert data["total"] == 1
     assert data["unread_count"] == 1
     assert len(data["notifications"]) == 1
-    assert data["notifications"][0]["title"] == "Convite para Projeto X"
+    assert data["notifications"][0]["title"] == "Invitation to Project X"
 
 
 def test_get_unread_count(monkeypatch):

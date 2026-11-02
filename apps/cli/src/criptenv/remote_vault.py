@@ -136,6 +136,18 @@ class RemoteVault:
             environments = response
         else:
             environments = []
+        key_scope = response.get("api_key_environment_scope") if isinstance(response, dict) else None
+
+        if key_scope and not environments:
+            raise click.ClickException(
+                f"This API key is restricted to environment '{key_scope}', which does not exist "
+                f"in project '{self.project_id}'. Revoke it and create a new key with a valid --env."
+            )
+        if key_scope and env_name_or_id and env_name_or_id not in {e.get("id") for e in environments} | {key_scope}:
+            raise click.ClickException(
+                f"This API key is restricted to environment '{key_scope}' "
+                f"and cannot access '{env_name_or_id}'."
+            )
 
         if env_name_or_id:
             for env in environments:

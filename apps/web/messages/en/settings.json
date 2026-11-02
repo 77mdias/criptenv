@@ -58,6 +58,7 @@
       "namePlaceholder": "e.g. production-ci",
       "scopes": "Scopes",
       "envRestriction": "Environment restriction (optional)",
+      "allEnvironments": "All environments",
       "expiresIn": "Expires in (days, optional)",
       "create": "Create",
       "cancel": "Cancel"

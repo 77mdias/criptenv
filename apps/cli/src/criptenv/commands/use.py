@@ -1,5 +1,7 @@
 """Project context commands."""
 
+import os
+
 import click
 
 from criptenv.context import cli_context, run_async
@@ -22,6 +24,12 @@ def use_command(project_id: str | None, clear: bool):
         criptenv use                      # Show current project
         criptenv use --clear              # Clear default project
     """
+    if os.getenv("CRIPTENV_API_KEY"):
+        # API-key mode keeps no local state, so a saved project would be lost.
+        raise click.ClickException(
+            "'criptenv use' is unavailable with CRIPTENV_API_KEY. "
+            "Pass --project or set CRIPTENV_PROJECT instead."
+        )
     with cli_context(require_auth=True) as (db, _mk, client):
         if clear:
             run_async(queries.set_config(db, "current_project_id", ""))

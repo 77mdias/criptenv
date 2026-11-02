@@ -128,6 +128,7 @@ async def list_environments(
         .order_by(Environment.is_default.desc(), Environment.name)
     )
     environments = [env for env in result.scalars().all() if not getattr(env, "archived", False)]
+    environment_scope = None
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
         environment_scope = getattr(auth_context.api_key, "environment_scope", None)
         if environment_scope is not None:
@@ -135,7 +136,8 @@ async def list_environments(
 
     return EnvironmentListResponse(
         environments=[EnvironmentResponse.model_validate(_force_load_environment(e)) for e in environments],
-        total=len(environments)
+        total=len(environments),
+        api_key_environment_scope=environment_scope,
     )
 
 

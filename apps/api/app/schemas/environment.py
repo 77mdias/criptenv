@@ -32,3 +32,5 @@ class EnvironmentResponse(BaseModel):
 class EnvironmentListResponse(BaseModel):
     environments: list[EnvironmentResponse]
     total: int
+    # Set when the caller is an environment-restricted API key, so clients can explain empty/filtered lists.
+    api_key_environment_scope: Optional[str] = None
