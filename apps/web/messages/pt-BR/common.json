@@ -33,5 +33,17 @@
     "continueWith": "Continuar com",
     "linkWith": "Vincular com",
     "linkShort": "Vincular"
+  },
+  "notifications": {
+    "title": "Notificações",
+    "markAll": "Marcar todas",
+    "loading": "Carregando...",
+    "empty": "Nenhuma notificação ainda",
+    "justNow": "agora",
+    "invite": {
+      "title": "Convite para {project}",
+      "message": "{actor} convidou você para participar do projeto ''{project}'' como {role}.",
+      "someone": "Alguém"
+    }
   }
 }

@@ -239,6 +239,21 @@ async def resolve_project_id_async(
     )
 
 
+async def _open_db(require_auth: bool, require_master_key: bool) -> aiosqlite.Connection:
+    """Open the local vault DB, or a throwaway in-memory one in API-key mode.
+
+    CRIPTENV_API_KEY runs keep no local state, so they must not create
+    ~/.criptenv/vault.db (and must work with a read-only HOME).
+    """
+    if require_auth and not require_master_key and os.getenv("CRIPTENV_API_KEY"):
+        db = await aiosqlite.connect(":memory:")
+        db.row_factory = aiosqlite.Row
+    else:
+        db = await get_db()
+    await init_schema(db)
+    return db
+
+
 @contextmanager
 def cli_context(require_auth: bool = False, require_master_key: bool | None = None):
     """
@@ -257,8 +272,7 @@ def cli_context(require_auth: bool = False, require_master_key: bool | None = No
     if require_master_key is None:
         require_master_key = not require_auth
 
-    db = run_async(get_db())
-    run_async(init_schema(db))
+    db = run_async(_open_db(require_auth, require_master_key))
 
     try:
         if require_auth:
@@ -286,8 +300,7 @@ async def async_cli_context(require_auth: bool = False, require_master_key: bool
     if require_master_key is None:
         require_master_key = not require_auth
 
-    db = await get_db()
-    await init_schema(db)
+    db = await _open_db(require_auth, require_master_key)
 
     try:
         if require_auth:

@@ -1,4 +1,7 @@
 import { render, screen, waitFor } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
+import { NextIntlClientProvider } from "next-intl"
+import commonEn from "../../../../messages/en/common.json"
 import userEvent from "@testing-library/user-event"
 import { useRouter } from "next/navigation"
 import { NotificationBell } from "../notification-bell"
@@ -71,7 +74,7 @@ describe("NotificationBell", () => {
       hasLoaded: true,
     })
 
-    render(<NotificationBell />)
+    renderWithIntl(<NotificationBell />)
 
     await userEvent.click(screen.getByRole("button", { name: /notifica/i }))
 
@@ -83,7 +86,7 @@ describe("NotificationBell", () => {
   })
 
   it("renders a solid accessible empty-state panel", async () => {
-    render(<NotificationBell />)
+    renderWithIntl(<NotificationBell />)
 
     await userEvent.click(screen.getByRole("button", { name: /notifica/i }))
 
@@ -91,5 +94,27 @@ describe("NotificationBell", () => {
     expect(panel).toHaveClass("bg-(--surface-elevated)")
     expect(panel).toHaveClass("fixed", "inset-x-3", "sm:absolute")
     expect(screen.getByText("Nenhuma notificação ainda")).toBeInTheDocument()
+  })
+
+  it("renders invite text in the viewer's locale from meta, not the stored server text", async () => {
+    mockedListNotifications.mockResolvedValue({
+      notifications: [{
+        ...inviteNotification,
+        meta: { project_name: "Core API", invited_by_name: "Owner", role: "developer" },
+      }],
+      total: 1,
+      unread_count: 1,
+    })
+
+    render(
+      <NextIntlClientProvider locale="en" messages={{ common: commonEn }}>
+        <NotificationBell />
+      </NextIntlClientProvider>,
+    )
+
+    await userEvent.click(screen.getByRole("button", { name: /^notifications$/i }))
+    expect(await screen.findByText("Invitation to Core API")).toBeInTheDocument()
+    expect(screen.getByText("Owner invited you to join project 'Core API' as developer.")).toBeInTheDocument()
+    expect(screen.queryByText(/convidou/)).toBeNull()
   })
 })

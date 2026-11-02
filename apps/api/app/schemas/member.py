@@ -77,6 +77,12 @@ class CITokenCreate(BaseModel):
         description="Restrict token to specific environment"
     )
 
+    @field_validator("environment_scope", mode="before")
+    @classmethod
+    def strip_environment_scope(cls, v):
+        # Runs before the pattern check so " production " normalizes instead of failing.
+        return (v.strip() or None) if isinstance(v, str) else v
+
 
 class CITokenResponse(BaseModel):
     id: UUID

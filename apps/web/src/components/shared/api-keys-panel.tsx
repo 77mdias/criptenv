@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { apiKeysApi } from "@/lib/api";
+import { apiKeysApi, environmentsApi } from "@/lib/api";
 import type { APIKey, APIKeyCreateResponse } from "@/lib/api/client";
 
 // Keys, not copy: this is module scope, so no hook can run here.
@@ -42,6 +42,7 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
   const [newKeyName, setNewKeyName] = useState("");
   const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read:secrets"]);
   const [newKeyEnv, setNewKeyEnv] = useState("");
+  const [environmentNames, setEnvironmentNames] = useState<string[]>([]);
   const [newKeyExpiresDays, setNewKeyExpiresDays] = useState("");
   const [createdKey, setCreatedKey] = useState<APIKeyCreateResponse | null>(null);
   const [copied, setCopied] = useState(false);
@@ -66,6 +67,22 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
 
     return () => window.clearTimeout(timeoutId);
   }, [fetchKeys]);
+
+  useEffect(() => {
+    // The scope must name an existing environment, so offer only those (plus "all").
+    let active = true;
+    void (async () => {
+      try {
+        const resp = await environmentsApi.list(projectId);
+        if (active) setEnvironmentNames(resp.environments.map((env) => env.name));
+      } catch {
+        if (active) setEnvironmentNames([]);
+      }
+    })();
+    return () => {
+      active = false;
+    };
+  }, [projectId]);
 
   const handleCreate = async () => {
     if (!newKeyName.trim()) return;
@@ -191,14 +208,18 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
             </div>
           </div>
           <div>
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.envRestriction")}</label>
-            <input
-              type="text"
+            <label htmlFor="api-key-env-scope" className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.envRestriction")}</label>
+            <select
+              id="api-key-env-scope"
               value={newKeyEnv}
               onChange={(e) => setNewKeyEnv(e.target.value)}
-              placeholder="production"
               className="w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm font-mono"
-            />
+            >
+              <option value="">{t("form.allEnvironments")}</option>
+              {environmentNames.map((name) => (
+                <option key={name} value={name}>{name}</option>
+              ))}
+            </select>
           </div>
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.expiresIn")}</label>

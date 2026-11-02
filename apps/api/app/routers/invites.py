@@ -162,8 +162,9 @@ async def create_invite(
         await notification_service.create_notification(
             user_id=invited_user.id,
             type="invite",
-            title=f"Convite para {project.name}",
-            message=f"{current_user.name or 'Alguém'} convidou você para participar do projeto '{project.name}' como {payload.role}.",
+            # English fallback; the web rebuilds this text from meta in the viewer's locale.
+            title=f"Invitation to {project.name}",
+            message=f"{current_user.name or 'Someone'} invited you to join project '{project.name}' as {payload.role}.",
             action_url=f"/invites/accept?token={invite.token}",
             meta={
                 "project_id": str(project_uuid),

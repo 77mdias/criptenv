@@ -69,6 +69,9 @@ async def create_token(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found or insufficient permissions"
         )
+    payload.environment_scope = await project_service.validate_environment_scope(
+        project_uuid, payload.environment_scope
+    )
 
     plain_token = f"ci_{secrets.token_urlsafe(48)}"
     token_hash = hash_token(plain_token)

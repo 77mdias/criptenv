@@ -199,6 +199,7 @@ class TestApiKeysCommands:
             ],
             "total": 2,
         })
+        mock_client.list_environments = AsyncMock(return_value={"environments": []})
         mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
         mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
@@ -207,6 +208,44 @@ class TestApiKeysCommands:
         assert "CI Key" in result.output
         assert "cek_live_" in result.output
         assert "2 key(s)" in result.output
+        assert "ENV" in result.output and " all " in result.output
+
+    @patch("criptenv.commands.api_keys.async_cli_context")
+    def test_api_keys_list_flags_keys_scoped_to_missing_environment(self, mock_ctx, runner):
+        mock_client = AsyncMock()
+        mock_client.list_api_keys = AsyncMock(return_value={"items": [
+            {"id": "key_ok", "name": "Dev", "prefix": "cek_live_", "scopes": ["read:secrets"], "environment_scope": "development"},
+            {"id": "key_bad", "name": "Typo", "prefix": "cek_live_", "scopes": ["read:secrets"], "environment_scope": "developer"},
+        ]})
+        mock_client.list_environments = AsyncMock(return_value={"environments": [{"id": "e1", "name": "development"}]})
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
+
+        result = runner.invoke(main, ["api-keys", "list", "--project", "00000000-0000-4000-8000-000000000123"])
+        assert result.exit_code == 0
+        assert "developer (!)" in result.output
+        assert "1 key(s) are restricted to an environment that does not exist" in result.output
+        assert "api-keys revoke key_bad" in result.output
+        assert "revoke key_ok" not in result.output
+
+    @patch("criptenv.commands.api_keys.async_cli_context")
+    def test_api_keys_create_rejects_unknown_environment(self, mock_ctx, runner):
+        mock_client = AsyncMock()
+        mock_client.list_environments = AsyncMock(return_value={"environments": [
+            {"id": "e1", "name": "development"}, {"id": "e2", "name": "production"},
+        ]})
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
+
+        result = runner.invoke(main, ["api-keys", "create", "-p", "00000000-0000-4000-8000-000000000123", "-n", "K", "--env", "developer"])
+        assert result.exit_code != 0
+        assert "Environment 'developer' does not exist" in result.output
+        assert "development, production" in result.output
+        mock_client.create_api_key.assert_not_called()
+
+        result = runner.invoke(main, ["api-keys", "create", "-p", "00000000-0000-4000-8000-000000000123", "-n", "K", "--env", " development "])
+        assert result.exit_code == 0, result.output
+        assert mock_client.create_api_key.call_args.kwargs["environment_scope"] == "development"
 
     @patch("criptenv.commands.api_keys.async_cli_context")
     def test_api_keys_create(self, mock_ctx, runner):

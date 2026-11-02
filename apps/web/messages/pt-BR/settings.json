@@ -57,7 +57,8 @@
       "name": "Nome",
       "namePlaceholder": "Ex: produção-ci",
       "scopes": "Scopes",
-      "envRestriction": "Environment restriction (opcional)",
+      "envRestriction": "Restrição de ambiente (opcional)",
+      "allEnvironments": "Todos os ambientes",
       "expiresIn": "Expira em (dias, opcional)",
       "create": "Criar",
       "cancel": "Cancelar"

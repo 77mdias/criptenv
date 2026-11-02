@@ -54,10 +54,14 @@ async def create_api_key(
     
     Returns the plaintext key ONLY ONCE. The client must store it securely.
     """
-    await _require_project_admin(ProjectService(db), current_user, project_id)
+    project_service = ProjectService(db)
+    await _require_project_admin(project_service, current_user, project_id)
+    payload.environment_scope = await project_service.validate_environment_scope(
+        project_id, payload.environment_scope
+    )
 
     service = ApiKeyService(db, user_id=current_user.id, project_id=project_id)
-    
+
     try:
         api_key, plaintext_key = await service.create_api_key(payload)
         

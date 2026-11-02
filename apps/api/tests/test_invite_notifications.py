@@ -122,8 +122,8 @@ async def test_create_invite_creates_notification_for_existing_user_with_normali
         {
             "user_id": invited_user.id,
             "type": "invite",
-            "title": "Convite para Core API",
-            "message": "Owner convidou você para participar do projeto 'Core API' como developer.",
+            "title": "Invitation to Core API",
+            "message": "Owner invited you to join project 'Core API' as developer.",
             "action_url": f"/invites/accept?token={response.token}",
             "meta": {
                 "project_id": str(project_id),
