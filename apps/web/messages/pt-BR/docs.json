@@ -1522,6 +1522,76 @@
         "title": "Remover convite",
         "body": "Remove permanentemente um convite do projeto (apenas admins). Retorna 204 sem corpo."
       }
+    },
+    "ciTokens": {
+      "description": "Tokens de autenticação para pipelines de CI/CD. Começam com <code>ci_</code>, podem ser limitados a escopos e a um ambiente, e o valor em texto claro é exibido apenas uma vez, na criação. Na pipeline, o token é trocado por uma sessão de 1 hora (<code>ci_s_…</code>).",
+      "vaultWarning": "O token sozinho não decifra nada: os valores são cifrados com a <strong>senha do cofre</strong> do projeto. A pipeline precisa do token <strong>e</strong> da senha do cofre (por exemplo, nos secrets <code>CRIPTENV_TOKEN</code> e <code>CRIPTENV_VAULT_PASSWORD</code>).",
+      "create": {
+        "title": "Criar token",
+        "body": "o campo <code>token</code> só aparece nesta resposta.",
+        "params": {
+          "name": "Nome descritivo do token",
+          "description": "Descrição opcional",
+          "scopes": "Escopos no formato acao:recurso. Padrão: [\"read:secrets\"]",
+          "environmentScope": "Limita o token a um ambiente (ex: production), que precisa existir no projeto. Se omitido, vale para todos.",
+          "expiresAt": "Expiração opcional (ISO 8601)"
+        }
+      },
+      "list": {
+        "title": "Listar tokens",
+        "body": "Retorna os tokens do projeto. O valor do token nunca é retornado após a criação."
+      },
+      "revoke": {
+        "title": "Revogar token",
+        "body": "Revoga o token imediatamente. Responde <code>204 No Content</code>."
+      },
+      "delete": {
+        "title": "Remover token",
+        "body": "Remove o token permanentemente. Responde <code>204 No Content</code>."
+      },
+      "pipeline": {
+        "title": "Usar o token na pipeline",
+        "body": "Troque o token por uma sessão de 1 hora e baixe os blobs cifrados do ambiente. A decifragem acontece no cliente, com a senha do cofre.",
+        "callout": "Na prática, use a CLI (<code>criptenv ci login</code>) ou a GitHub Action, que fazem a troca e a decifragem por você."
+      }
+    },
+    "integrations": {
+      "description": "Conecte o CriptEnv a provedores de hospedagem para sincronizar segredos. Disponíveis hoje: Vercel e Render (Railway em breve).",
+      "callout": "A sincronização funciona nos dois sentidos: <code>push</code> envia segredos do CriptEnv para o provedor e <code>pull</code> importa do provedor.",
+      "create": {
+        "title": "Criar integração",
+        "body": "Conecta uma nova integração com um provedor de hospedagem. O token do provedor é armazenado cifrado no servidor.",
+        "params": {
+          "provider": "Provedor: vercel ou render",
+          "name": "Nome da integração",
+          "config": "Configuração do provedor. Vercel: api_token e project_id. Render: api_token e service_id."
+        }
+      },
+      "list": {
+        "title": "Listar integrações",
+        "body": "Retorna as integrações do projeto e os provedores disponíveis para conectar."
+      },
+      "get": {
+        "title": "Obter integração",
+        "body": "Retorna os detalhes de uma integração específica."
+      },
+      "delete": {
+        "title": "Remover integração",
+        "body": "Remove a integração e o token do provedor armazenado. Retorna 204 sem corpo."
+      },
+      "sync": {
+        "title": "Sincronizar",
+        "body": "Executa uma sincronização entre o CriptEnv e o provedor. Use <code>push</code> para enviar segredos ao provedor ou <code>pull</code> para importar.",
+        "params": {
+          "direction": "Direção: push ou pull",
+          "environment": "Ambiente do CriptEnv a sincronizar (padrão: production)",
+          "secrets": "Secrets já decifrados a enviar ao provedor. O servidor nunca decifra o vault, então um push sem este campo não envia nada."
+        }
+      },
+      "validate": {
+        "title": "Validar integração",
+        "body": "Verifica se a conexão com o provedor funciona com as credenciais armazenadas."
+      }
     }
   }
 }

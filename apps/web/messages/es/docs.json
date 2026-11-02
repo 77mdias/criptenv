@@ -1522,6 +1522,76 @@
         "title": "Eliminar invitación",
         "body": "Elimina permanentemente una invitación del proyecto (solo admins). Devuelve 204 sin cuerpo."
       }
+    },
+    "ciTokens": {
+      "description": "Tokens de autenticación para pipelines de CI/CD. Empiezan con <code>ci_</code>, pueden limitarse a scopes y a un entorno, y el valor en texto claro solo se muestra una vez, al crearlo. En el pipeline, el token se intercambia por una sesión de 1 hora (<code>ci_s_…</code>).",
+      "vaultWarning": "El token por sí solo no descifra nada: los valores se cifran con la <strong>contraseña del vault</strong> del proyecto. El pipeline necesita el token <strong>y</strong> la contraseña del vault (por ejemplo, en los secrets <code>CRIPTENV_TOKEN</code> y <code>CRIPTENV_VAULT_PASSWORD</code>).",
+      "create": {
+        "title": "Crear token",
+        "body": "el campo <code>token</code> solo aparece en esta respuesta.",
+        "params": {
+          "name": "Nombre descriptivo del token",
+          "description": "Descripción opcional",
+          "scopes": "Scopes con formato acción:recurso. Por defecto: [\"read:secrets\"]",
+          "environmentScope": "Restringe el token a un entorno (p. ej. production), que debe existir en el proyecto. Si se omite, vale para todos.",
+          "expiresAt": "Caducidad opcional (ISO 8601)"
+        }
+      },
+      "list": {
+        "title": "Listar tokens",
+        "body": "Devuelve los tokens del proyecto. El valor del token nunca se devuelve tras su creación."
+      },
+      "revoke": {
+        "title": "Revocar token",
+        "body": "Revoca el token de inmediato. Responde <code>204 No Content</code>."
+      },
+      "delete": {
+        "title": "Eliminar token",
+        "body": "Elimina el token permanentemente. Responde <code>204 No Content</code>."
+      },
+      "pipeline": {
+        "title": "Usar el token en el pipeline",
+        "body": "Intercambia el token por una sesión de 1 hora y descarga los blobs cifrados del entorno. El descifrado ocurre en el cliente, con la contraseña del vault.",
+        "callout": "En la práctica, usa la CLI (<code>criptenv ci login</code>) o la GitHub Action, que hacen el intercambio y el descifrado por ti."
+      }
+    },
+    "integrations": {
+      "description": "Conecta CriptEnv con proveedores de hosting para sincronizar secrets. Disponibles hoy: Vercel y Render (Railway próximamente).",
+      "callout": "La sincronización funciona en ambos sentidos: <code>push</code> envía los secrets de CriptEnv al proveedor y <code>pull</code> los importa desde el proveedor.",
+      "create": {
+        "title": "Crear integración",
+        "body": "Conecta una nueva integración con un proveedor de hosting. El token del proveedor se guarda cifrado en el servidor.",
+        "params": {
+          "provider": "Proveedor: vercel o render",
+          "name": "Nombre de la integración",
+          "config": "Configuración del proveedor. Vercel: api_token y project_id. Render: api_token y service_id."
+        }
+      },
+      "list": {
+        "title": "Listar integraciones",
+        "body": "Devuelve las integraciones del proyecto y los proveedores disponibles para conectar."
+      },
+      "get": {
+        "title": "Obtener integración",
+        "body": "Devuelve los detalles de una integración concreta."
+      },
+      "delete": {
+        "title": "Eliminar integración",
+        "body": "Elimina la integración y el token del proveedor guardado. Devuelve 204 sin cuerpo."
+      },
+      "sync": {
+        "title": "Sincronizar",
+        "body": "Ejecuta una sincronización entre CriptEnv y el proveedor. Usa <code>push</code> para enviar secrets al proveedor o <code>pull</code> para importarlos.",
+        "params": {
+          "direction": "Dirección: push o pull",
+          "environment": "Entorno de CriptEnv que sincronizar (por defecto: production)",
+          "secrets": "Secrets ya descifrados que enviar al proveedor. El servidor nunca descifra el vault, así que un push sin este campo no envía nada."
+        }
+      },
+      "validate": {
+        "title": "Validar integración",
+        "body": "Comprueba que la conexión con el proveedor funciona con las credenciales guardadas."
+      }
     }
   }
 }

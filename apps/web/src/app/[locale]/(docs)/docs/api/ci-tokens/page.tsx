@@ -8,16 +8,21 @@ import {
   ResponseBlock,
   Callout,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 const API = 'https://criptenv-api.77mdevseven.tech/api/v1';
 const codeClass = 'bg-muted px-1 rounded text-sm';
 
 export default function CITokensPage() {
+  const t = useTranslations('docs.api.ciTokens');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <code className={codeClass}>{chunks}</code>;
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'API Reference', href: '/docs/api' },
           { label: 'CI Tokens' },
         ]}
@@ -25,48 +30,40 @@ export default function CITokensPage() {
 
       <h1 className="text-4xl font-bold mt-6 mb-2">CI Tokens</h1>
       <p className="text-lg text-muted-foreground mb-8">
-        Tokens de autenticação para pipelines de CI/CD. Começam com{' '}
-        <code className={codeClass}>ci_</code>, podem ser limitados a escopos e a
-        um ambiente, e o valor em texto claro é exibido apenas uma vez, na
-        criação. Na pipeline, o token é trocado por uma sessão de 1 hora (
-        <code className={codeClass}>ci_s_…</code>).
+        {t.rich('description', { code })}
       </p>
 
       <Callout variant="warning">
-        O token sozinho não decifra nada: os valores são cifrados com a{' '}
-        <strong>senha do cofre</strong> do projeto. A pipeline precisa do token{' '}
-        <strong>e</strong> da senha do cofre (por exemplo, nos secrets{' '}
-        <code className={codeClass}>CRIPTENV_TOKEN</code> e{' '}
-        <code className={codeClass}>CRIPTENV_VAULT_PASSWORD</code>).
+        {t.rich('vaultWarning', { code, strong })}
       </Callout>
 
       {/* POST /projects/{pid}/tokens */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Criar token
+          <EndpointBadge method="POST" /> {t('create.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
           <code className={codeClass}>POST /api/v1/projects/{'{pid}'}/tokens</code>{' '}
-          — o campo <code className={codeClass}>token</code> só aparece nesta resposta.
+          — {t.rich('create.body', { code })}
         </p>
 
         <ParamTable
           params={[
-            { name: 'name', type: 'string', required: true, description: 'Nome descritivo do token' },
-            { name: 'description', type: 'string', required: false, description: 'Descrição opcional' },
+            { name: 'name', type: 'string', required: true, description: t('create.params.name') },
+            { name: 'description', type: 'string', required: false, description: t('create.params.description') },
             {
               name: 'scopes',
               type: 'string[]',
               required: false,
-              description: 'Escopos no formato acao:recurso. Padrão: ["read:secrets"]',
+              description: t('create.params.scopes'),
             },
             {
               name: 'environment_scope',
               type: 'string',
               required: false,
-              description: 'Limita o token a um ambiente (ex: production). Se omitido, vale para todos.',
+              description: t('create.params.environmentScope'),
             },
-            { name: 'expires_at', type: 'datetime', required: false, description: 'Expiração opcional (ISO 8601)' },
+            { name: 'expires_at', type: 'datetime', required: false, description: t('create.params.expiresAt') },
           ]}
         />
 
@@ -103,10 +100,10 @@ export default function CITokensPage() {
       {/* GET /projects/{pid}/tokens */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Listar tokens
+          <EndpointBadge method="GET" /> {t('list.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Retorna os tokens do projeto. O valor do token nunca é retornado após a criação.
+          {t('list.body')}
         </p>
 
         <CodeBlock
@@ -135,10 +132,10 @@ export default function CITokensPage() {
       {/* POST /projects/{pid}/tokens/{id}/revoke */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Revogar token
+          <EndpointBadge method="POST" /> {t('revoke.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Revoga o token imediatamente. Responde <code className={codeClass}>204 No Content</code>.
+          {t.rich('revoke.body', { code })}
         </p>
 
         <CodeBlock
@@ -151,10 +148,10 @@ export default function CITokensPage() {
       {/* DELETE /projects/{pid}/tokens/{id} */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="DELETE" /> Remover token
+          <EndpointBadge method="DELETE" /> {t('delete.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Remove o token permanentemente. Responde <code className={codeClass}>204 No Content</code>.
+          {t.rich('delete.body', { code })}
         </p>
 
         <CodeBlock
@@ -166,20 +163,19 @@ export default function CITokensPage() {
 
       {/* Using the token in a pipeline */}
       <section className="mt-10">
-        <h2 className="text-2xl font-bold mb-4">Usar o token na pipeline</h2>
+        <h2 className="text-2xl font-bold mb-4">{t('pipeline.title')}</h2>
         <p className="text-muted-foreground mb-4">
-          Troque o token por uma sessão de 1 hora e baixe os blobs cifrados do ambiente.
-          A decifragem acontece no cliente, com a senha do cofre.
+          {t('pipeline.body')}
         </p>
 
         <CodeBlock
           language="bash"
-          code={`# 1. Token ci_ → sessão ci_s_ (expira em 3600 s)
+          code={`# 1. ci_ token → ci_s_ session (expires in 3600 s)
 curl -X POST ${API}/auth/ci-login \\
   -H "Content-Type: application/json" \\
   -d '{"token": "'"$CRIPTENV_TOKEN"'"}'
 
-# 2. Blobs cifrados do ambiente
+# 2. Encrypted blobs for the environment
 curl "${API}/ci/secrets?environment=production" \\
   -H "Authorization: Bearer {ci_session_token}"`}
         />
@@ -195,8 +191,7 @@ curl "${API}/ci/secrets?environment=production" \\
         </ResponseBlock>
 
         <Callout variant="info">
-          Na prática, use a CLI (<code className={codeClass}>criptenv ci login</code>) ou a GitHub
-          Action, que fazem a troca e a decifragem por você.
+          {t.rich('pipeline.callout', { code })}
         </Callout>
       </section>
     </div>

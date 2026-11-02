@@ -1522,6 +1522,76 @@
         "title": "Delete invitation",
         "body": "Permanently deletes an invitation from the project (admin only). Returns 204 with no body."
       }
+    },
+    "ciTokens": {
+      "description": "Authentication tokens for CI/CD pipelines. They start with <code>ci_</code>, can be limited to scopes and to one environment, and the plaintext value is shown only once, at creation. In the pipeline, the token is exchanged for a 1-hour session (<code>ci_s_…</code>).",
+      "vaultWarning": "The token alone decrypts nothing: values are encrypted with the project's <strong>vault password</strong>. The pipeline needs the token <strong>and</strong> the vault password (for example, in the <code>CRIPTENV_TOKEN</code> and <code>CRIPTENV_VAULT_PASSWORD</code> secrets).",
+      "create": {
+        "title": "Create token",
+        "body": "the <code>token</code> field only appears in this response.",
+        "params": {
+          "name": "Descriptive token name",
+          "description": "Optional description",
+          "scopes": "Scopes in action:resource format. Default: [\"read:secrets\"]",
+          "environmentScope": "Restricts the token to one environment (e.g. production), which must exist in the project. If omitted, it applies to all.",
+          "expiresAt": "Optional expiration (ISO 8601)"
+        }
+      },
+      "list": {
+        "title": "List tokens",
+        "body": "Returns the project's tokens. The token value is never returned after creation."
+      },
+      "revoke": {
+        "title": "Revoke token",
+        "body": "Revokes the token immediately. Responds <code>204 No Content</code>."
+      },
+      "delete": {
+        "title": "Delete token",
+        "body": "Deletes the token permanently. Responds <code>204 No Content</code>."
+      },
+      "pipeline": {
+        "title": "Using the token in a pipeline",
+        "body": "Exchange the token for a 1-hour session and download the environment's encrypted blobs. Decryption happens on the client, with the vault password.",
+        "callout": "In practice, use the CLI (<code>criptenv ci login</code>) or the GitHub Action, which handle the exchange and decryption for you."
+      }
+    },
+    "integrations": {
+      "description": "Connect CriptEnv to hosting providers to sync secrets. Available today: Vercel and Render (Railway coming soon).",
+      "callout": "Sync works both ways: <code>push</code> sends CriptEnv secrets to the provider and <code>pull</code> imports them from the provider.",
+      "create": {
+        "title": "Create integration",
+        "body": "Connects a new hosting provider integration. The provider token is stored encrypted on the server.",
+        "params": {
+          "provider": "Provider: vercel or render",
+          "name": "Integration name",
+          "config": "Provider settings. Vercel: api_token and project_id. Render: api_token and service_id."
+        }
+      },
+      "list": {
+        "title": "List integrations",
+        "body": "Returns the project's integrations and the providers available to connect."
+      },
+      "get": {
+        "title": "Get integration",
+        "body": "Returns the details of one integration."
+      },
+      "delete": {
+        "title": "Delete integration",
+        "body": "Removes the integration and its stored provider token. Returns 204 with no body."
+      },
+      "sync": {
+        "title": "Sync",
+        "body": "Runs a sync between CriptEnv and the provider. Use <code>push</code> to send secrets to the provider or <code>pull</code> to import them.",
+        "params": {
+          "direction": "Direction: push or pull",
+          "environment": "CriptEnv environment to sync (default: production)",
+          "secrets": "Decrypted secrets to send to the provider. The server never decrypts the vault, so a push without this field sends nothing."
+        }
+      },
+      "validate": {
+        "title": "Validate integration",
+        "body": "Checks that the connection to the provider works with the stored credentials."
+      }
     }
   }
 }
