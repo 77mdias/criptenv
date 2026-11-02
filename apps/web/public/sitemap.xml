@@ -68,24 +68,132 @@
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/audit</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/audit"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/api/audit</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/audit"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/api/audit</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/audit"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/audit"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/authentication</loc>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/ci-tokens</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/ci-tokens"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/api/ci-tokens</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/ci-tokens"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/api/ci-tokens</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/ci-tokens"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/ci-tokens"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/environments</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/environments"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/api/environments</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/environments"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/api/environments</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/environments"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/environments"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/health</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/health"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/api/health</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/health"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/api/health</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/health"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/health"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/integrations"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/api/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/integrations"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/api/integrations</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/integrations"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/integrations"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/invites</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/invites"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/api/invites</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/invites"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/api/invites</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/api/invites"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/api/invites"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/api/members</loc>
