@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link } from "@/i18n/navigation"
 import {
   CodeBlock,
@@ -10,112 +11,112 @@ import {
 } from '@/components/docs';
 
 export default function CliOverviewPage() {
+  const t = useTranslations('docs.cli.overview');
+  const tRoot = useTranslations('docs');
+  const link = (href: string) => (chunks: React.ReactNode) => (
+    <Link href={href} className="underline font-medium">
+      {chunks}
+    </Link>
+  );
   return (
     <div className="max-w-3xl">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'CLI', href: '/docs/cli' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-4 mb-2">CriptEnv CLI</h1>
       <p className="text-lg text-muted-foreground mb-8">
-        Gerencie seus segredos diretamente do terminal — com criptografia
-        de ponta a ponta e zero conhecimento do lado do servidor.
+        {t('description')}
       </p>
 
-      <h2 className="text-2xl font-semibold mb-4">Filosofia</h2>
+      <h2 className="text-2xl font-semibold mb-4">{t('philosophy.title')}</h2>
 
       <CardGrid>
         <DocCard
-          title="Terminal-First"
-          description="Todas as operações acontecem no seu terminal. Se você consegue abrir um shell, consegue usar o CriptEnv."
+          title={t('philosophy.terminal.title')}
+          description={t('philosophy.terminal.description')}
         />
         <DocCard
-          title="Zero-Knowledge"
-          description="Seus segredos são criptografados localmente com AES-256-GCM antes de qualquer sincronização. O servidor nunca vê seus dados em texto claro."
+          title={t('philosophy.zk.title')}
+          description={t('philosophy.zk.description')}
         />
         <DocCard
-          title="Terminal Remoto"
-          description="A CLI opera no vault remoto do projeto, mantendo tudo sincronizado com o dashboard web e com a equipe."
+          title={t('philosophy.remote.title')}
+          description={t('philosophy.remote.description')}
         />
       </CardGrid>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Recursos</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('features.title')}</h2>
 
       <CardGrid>
         <DocCard
-          title="Gestão de Segredos"
-          description="Armazene, rotacione, importe e exporte variáveis de ambiente com criptografia forte e versionamento."
+          title={t('features.secrets.title')}
+          description={t('features.secrets.description')}
           href="/docs/cli/commands#secrets"
         />
         <DocCard
-          title="Sincronização"
-          description="Push importa arquivos .env para o vault remoto; pull exporta o vault remoto para arquivos locais."
+          title={t('features.sync.title')}
+          description={t('features.sync.description')}
           href="/docs/cli/commands#sync"
         />
         <DocCard
-          title="Multi-Ambientes"
-          description="Crie e gerencie ambientes isolados (dev, staging, production) dentro de um mesmo projeto."
+          title={t('features.environments.title')}
+          description={t('features.environments.description')}
           href="/docs/cli/commands#environments"
         />
         <DocCard
-          title="CI/CD"
-          description="Integre com pipelines de CI/CD. Faça login headless, liste segredos e faça deploy sem expor credenciais."
+          title={t('features.cicd.title')}
+          description={t('features.cicd.description')}
           href="/docs/cli/commands#cicd"
         />
         <DocCard
-          title="Integrações"
-          description="Conecte provedores de nuvem (Vercel, Render) e sincronize segredos automaticamente."
+          title={t('features.integrations.title')}
+          description={t('features.integrations.description')}
           href="/docs/cli/commands#integrations"
         />
         <DocCard
-          title="Rotação e Expiração"
-          description="Configure alertas de expiração e rotacione chaves com versionamento automático."
+          title={t('features.rotation.title')}
+          description={t('features.rotation.description')}
           href="/docs/cli/commands#maintenance"
         />
       </CardGrid>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Instalação Rápida</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('install.title')}</h2>
 
       <CodeBlock
         language="bash"
-        code={`# Instalar via pip
+        code={`# Install with pip
 pip install criptenv
 
-# Autenticar a CLI
+# Authenticate the CLI
 criptenv login --email-address you@example.com`}
       />
 
       <Callout variant="info">
-        Requer Python 3.10 ou superior. O CLI é multiplataforma e
-        funciona em macOS, Linux e Windows.
+        {t('install.requirements')}
       </Callout>
 
       <Callout variant="info">
-        Após a instalação, consulte a{' '}
-        <Link href="/docs/cli/commands" className="underline font-medium">
-          Referência de Comandos
-        </Link>{' '}
-        para ver todas as opções disponíveis, ou a{' '}
-        <Link href="/docs/cli/configuration" className="underline font-medium">
-          Configuração
-        </Link>{' '}
-        para entender a estrutura local.
+        {t.rich('install.after', {
+          commands: link('/docs/cli/commands'),
+          configuration: link('/docs/cli/configuration'),
+        })}
       </Callout>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Próximos Passos</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('next.title')}</h2>
 
       <CardGrid>
         <DocCard
-          title="Referência de Comandos"
-          description="Lista completa de todos os comandos, opções e exemplos de uso."
+          title={t('next.commands.title')}
+          description={t('next.commands.description')}
           href="/docs/cli/commands"
         />
         <DocCard
-          title="Configuração"
-          description="Estrutura do ~/.criptenv/, sessão local, Vault password e variáveis de ambiente."
+          title={t('next.configuration.title')}
+          description={t('next.configuration.description')}
           href="/docs/cli/configuration"
         />
       </CardGrid>

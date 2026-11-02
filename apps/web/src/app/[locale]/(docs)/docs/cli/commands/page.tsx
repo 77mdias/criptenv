@@ -1,686 +1,346 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link } from "@/i18n/navigation"
 import {
   CodeBlock,
   InlineCode,
   Callout,
   ParamTable,
-  Tabs,
-  Tab,
   Breadcrumb,
 } from '@/components/docs';
 
+type Param = readonly [name: string, type: string, required: boolean];
+
+interface Command {
+  /** i18n key under `docs.cli.commands.items` */
+  key: string;
+  name: string;
+  params?: readonly Param[];
+  code: string;
+  /** Renders `items.<key>.note` as an info callout. */
+  note?: boolean;
+}
+
+// Literal list so the i18n auditor can resolve the dynamic `items.${key}` lookups.
+// Option names and examples mirror apps/cli/src/criptenv/commands/*.py.
+export const SECTIONS = [
+  {
+    id: 'core',
+    commands: [
+      { key: 'init', name: 'criptenv init', code: 'criptenv init' },
+      {
+        key: 'login',
+        name: 'criptenv login',
+        params: [
+          ['--email-address', 'string', false],
+          ['--email', 'boolean', false],
+          ['--device', 'boolean', false],
+          ['--api-key', 'string', false],
+        ],
+        code: `criptenv login
+criptenv login --email-address user@example.com
+CRIPTENV_API_KEY=cek_xxx criptenv login`,
+      },
+      { key: 'logout', name: 'criptenv logout', code: 'criptenv logout' },
+      { key: 'doctor', name: 'criptenv doctor', code: 'criptenv doctor' },
+    ],
+  },
+  {
+    id: 'secrets',
+    commands: [
+      {
+        key: 'set',
+        name: 'criptenv set',
+        params: [['KEY=value', 'string', true], ['--env, -e', 'string', false], ['--project, -p', 'string', false]],
+        code: `criptenv set DATABASE_URL=postgres://user:pass@host/db
+criptenv set API_KEY=your_api_key_here -e staging`,
+      },
+      {
+        key: 'get',
+        name: 'criptenv get',
+        params: [['KEY', 'string', true], ['--env, -e', 'string', false], ['--project, -p', 'string', false], ['--clipboard, -c', 'boolean', false]],
+        code: `criptenv get DATABASE_URL
+criptenv get API_KEY -e production -c`,
+      },
+      {
+        key: 'list',
+        name: 'criptenv list',
+        params: [['--env, -e', 'string', false], ['--project, -p', 'string', false]],
+        code: `criptenv list
+criptenv list -e production`,
+      },
+      {
+        key: 'delete',
+        name: 'criptenv delete',
+        params: [['KEY', 'string', true], ['--env, -e', 'string', false], ['--force, -f', 'boolean', false]],
+        code: `criptenv delete OLD_API_KEY
+criptenv delete DB_PASS -e staging -f`,
+      },
+      {
+        key: 'rotate',
+        name: 'criptenv rotate',
+        params: [['KEY', 'string', true], ['--env, -e', 'string', false], ['--value, -v', 'string', false], ['--force, -f', 'boolean', false]],
+        code: `criptenv rotate API_KEY
+criptenv rotate DB_PASS -e production -v newSecurePass123`,
+      },
+    ],
+  },
+  {
+    id: 'sync',
+    commands: [
+      {
+        key: 'push',
+        name: 'criptenv push',
+        params: [['FILE', 'string', true], ['--project, -p', 'string', false], ['--env, -e', 'string', false], ['--overwrite', 'boolean', false]],
+        code: `criptenv push .env -p <project-id>
+criptenv push .env.production -e production -p <project-id> --overwrite`,
+      },
+      {
+        key: 'pull',
+        name: 'criptenv pull',
+        params: [['--project, -p', 'string', false], ['--env, -e', 'string', false], ['--output, -o', 'string', true], ['--format', 'string', false]],
+        code: `criptenv pull -p <project-id> --output .env
+criptenv pull -e production -p <project-id> -o .env.production`,
+      },
+    ],
+  },
+  {
+    id: 'data',
+    commands: [
+      {
+        key: 'import',
+        name: 'criptenv import',
+        params: [['FILE', 'string', true], ['--env, -e', 'string', false], ['--project, -p', 'string', false], ['--overwrite', 'boolean', false]],
+        code: `criptenv import .env
+criptenv import .env.production -e production
+criptenv import secrets.env --overwrite`,
+      },
+      {
+        key: 'export',
+        name: 'criptenv export',
+        params: [['--format', 'string', false], ['--env, -e', 'string', false], ['--project, -p', 'string', false], ['--output, -o', 'string', false]],
+        code: `criptenv export
+criptenv export --format json -o secrets.json
+criptenv export -e production -o .env.production`,
+      },
+      {
+        key: 'run',
+        name: 'criptenv run',
+        params: [['--env, -e', 'string', false], ['--project, -p', 'string', false]],
+        code: `criptenv run -- npm start
+criptenv run -e staging -- python manage.py migrate`,
+      },
+      {
+        key: 'diff',
+        name: 'criptenv diff',
+        params: [['--env, -e', 'string', false], ['--project, -p', 'string', false], ['--show-values', 'boolean', false]],
+        code: `criptenv diff .env
+criptenv diff .env -e production --show-values`,
+      },
+    ],
+  },
+  {
+    id: 'environments',
+    commands: [
+      {
+        key: 'envList',
+        name: 'criptenv env list',
+        params: [['--project, -p', 'string', false]],
+        code: `criptenv env list
+criptenv env list -p <project-id>`,
+      },
+      {
+        key: 'envCreate',
+        name: 'criptenv env create',
+        params: [['NAME', 'string', true], ['--project, -p', 'string', false], ['--display-name, -d', 'string', false]],
+        code: `criptenv env create staging -p <project-id>
+criptenv env create production -p <project-id> -d "Production Environment"`,
+      },
+    ],
+  },
+  {
+    id: 'projects',
+    commands: [
+      {
+        key: 'projectsCreate',
+        name: 'criptenv projects create',
+        params: [['NAME', 'string', true], ['--slug', 'string', false], ['--description', 'string', false]],
+        code: `criptenv projects create my-site
+criptenv projects create my-site --description "My Site backend"`,
+      },
+      { key: 'projectsList', name: 'criptenv projects list', code: 'criptenv projects list' },
+    ],
+  },
+  {
+    id: 'cicd',
+    commands: [
+      {
+        key: 'ciLogin',
+        name: 'criptenv ci login',
+        params: [['--token', 'string', true], ['--project', 'string', false]],
+        code: 'criptenv ci login --token $CI_TOKEN',
+      },
+      { key: 'ciLogout', name: 'criptenv ci logout', code: 'criptenv ci logout' },
+      {
+        key: 'ciSecrets',
+        name: 'criptenv ci secrets',
+        params: [['--env', 'string', true]],
+        code: 'criptenv ci secrets --env production',
+      },
+      {
+        key: 'ciDeploy',
+        name: 'criptenv ci deploy',
+        note: true,
+        params: [['--file, -f', 'string', true], ['--env', 'string', true], ['--dry-run', 'boolean', false]],
+        code: 'CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production --env production',
+      },
+      {
+        key: 'ciTokensList',
+        name: 'criptenv ci tokens list',
+        params: [['--project, -p', 'string', false], ['--include-revoked', 'boolean', false]],
+        code: 'criptenv ci tokens list -p <project-id>',
+      },
+      {
+        key: 'ciTokensCreate',
+        name: 'criptenv ci tokens create',
+        params: [['--name', 'string', true], ['--scopes', 'string', false], ['--environment', 'string', false], ['--expires-in', 'int', false], ['--project, -p', 'string', false]],
+        code: `criptenv ci tokens create --name "GitHub Actions"
+# For ci deploy: write access, restricted to one environment
+criptenv ci tokens create --name "Deploy" --scopes read:secrets,write:secrets --environment production`,
+      },
+      {
+        key: 'ciTokensRevoke',
+        name: 'criptenv ci tokens revoke',
+        params: [['TOKEN_ID', 'string', true]],
+        code: 'criptenv ci tokens revoke <token-id>',
+      },
+    ],
+  },
+  {
+    id: 'integrations',
+    commands: [
+      {
+        key: 'integrationsList',
+        name: 'criptenv integrations list',
+        params: [['--project, -p', 'string', false]],
+        code: 'criptenv integrations list',
+      },
+      {
+        key: 'integrationsConnect',
+        name: 'criptenv integrations connect',
+        params: [['PROVIDER', 'string', true], ['--token', 'string', false], ['--name', 'string', false], ['--project-id', 'string', false], ['--project', 'string', false]],
+        code: `criptenv integrations connect vercel
+criptenv integrations connect render --token <render-api-key>`,
+      },
+      {
+        key: 'integrationsDisconnect',
+        name: 'criptenv integrations disconnect',
+        params: [['INTEGRATION_ID', 'string', true], ['--project', 'string', false], ['--force', 'boolean', false]],
+        code: 'criptenv integrations disconnect <integration-id>',
+      },
+      {
+        key: 'integrationsSync',
+        name: 'criptenv integrations sync',
+        params: [['--provider', 'string', true], ['--env', 'string', false], ['--direction', 'string', false], ['--project', 'string', false]],
+        code: `criptenv integrations sync --provider vercel --env production
+criptenv integrations sync --provider render --env staging --project <project-id>`,
+      },
+    ],
+  },
+  {
+    id: 'maintenance',
+    commands: [
+      {
+        key: 'secretsExpire',
+        name: 'criptenv secrets expire',
+        params: [['KEY', 'string', true], ['--days, -d', 'int', true], ['--policy', 'string', false], ['--env, -e', 'string', false], ['--project, -p', 'string', false]],
+        code: `criptenv secrets expire API_KEY --days 90
+criptenv secrets expire DB_PASS --days 30 --policy auto -e production`,
+      },
+      {
+        key: 'secretsAlert',
+        name: 'criptenv secrets alert',
+        params: [['KEY', 'string', true], ['--days, -d', 'int', true], ['--env, -e', 'string', false], ['--project, -p', 'string', false]],
+        code: `criptenv secrets alert API_KEY --days 30
+criptenv secrets alert DB_PASS --days 14 -e staging`,
+      },
+      {
+        key: 'rotationList',
+        name: 'criptenv rotation list',
+        params: [['--env, -e', 'string', false], ['--project, -p', 'string', false], ['--days, -d', 'int', false]],
+        code: `criptenv rotation list
+criptenv rotation list --days 7 -e production`,
+      },
+      {
+        key: 'rotationHistory',
+        name: 'criptenv rotation history',
+        params: [['KEY', 'string', true], ['--env, -e', 'string', false], ['--project, -p', 'string', false]],
+        code: `criptenv rotation history API_KEY
+criptenv rotation history DB_PASS -e staging`,
+      },
+    ],
+  },
+] as const satisfies readonly { id: string; commands: readonly Command[] }[];
+
 export default function CliCommandsPage() {
+  const t = useTranslations('docs.cli.commands');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <InlineCode>{chunks}</InlineCode>;
+
   return (
     <div className="max-w-3xl">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'CLI', href: '/docs/cli' },
-          { label: 'Comandos', href: '/docs/cli/commands' },
+          { label: t('breadcrumb'), href: '/docs/cli/commands' },
         ]}
       />
 
-      <h1 className="text-3xl font-bold mt-4 mb-2">Referência de Comandos</h1>
-      <p className="text-lg text-muted-foreground mb-8">
-        Documentação completa de todos os comandos do CriptEnv CLI, organizados
-        por categoria.
-      </p>
+      <h1 className="text-3xl font-bold mt-4 mb-2">{t('title')}</h1>
+      <p className="text-lg text-muted-foreground mb-8">{t('description')}</p>
 
-      {/* ── CORE ────────────────────────────────────────────── */}
-      <h2 id="core" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Comandos Core
-      </h2>
+      {SECTIONS.map((section) => (
+        <section key={section.id}>
+          <h2 id={section.id} className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
+            {t(`sections.${section.id}`)}
+          </h2>
 
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv init</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Prepara o diretório <InlineCode>~/.criptenv/</InlineCode> e o banco de
-        metadata local. Este comando é opcional e não cria vault local de
-        secrets nem senha mestra.
-      </p>
-      <CodeBlock
-        language="bash"
-        code={`criptenv init`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv login</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Autentica com a conta CriptEnv. Armazena o token de sessão localmente.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--email-address', type: 'string', required: false, description: 'E-mail da conta (login por e-mail e senha)' },
-          { name: '--email', type: 'boolean', required: false, description: 'Login por e-mail e senha, pedindo o e-mail interativamente' },
-          { name: '--device', type: 'boolean', required: false, description: 'Device flow, para SSH/headless' },
-          { name: '--api-key', type: 'string', required: false, description: 'Login com API key (cek_...). Também lida de CRIPTENV_API_KEY; sem valor, pede de forma oculta' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv login
-criptenv login --email-address user@example.com
-CRIPTENV_API_KEY=cek_xxx criptenv login`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv logout</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Encerra a sessão atual e remove o token armazenado localmente.
-      </p>
-      <CodeBlock language="bash" code="criptenv logout" />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv doctor</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Verifica a integridade da configuração local: banco de dados, permissões,
-        conectividade e versão do CLI.
-      </p>
-      <CodeBlock language="bash" code="criptenv doctor" />
-
-      {/* ── SECRETS ─────────────────────────────────────────── */}
-      <h2 id="secrets" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Segredos
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv set</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Criptografa e armazena um segredo no vault remoto do projeto. Use a sintaxe{' '}
-        <InlineCode>KEY=value</InlineCode>.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'KEY=value', type: 'string', required: true, description: 'Chave e valor do segredo' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de destino' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de destino' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv set DATABASE_URL=postgres://user:pass@host/db
-criptenv set API_KEY=your_api_key_here -e staging`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv get</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Descriptografa em memória e exibe o valor de um segredo remoto.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'KEY', type: 'string', required: true, description: 'Nome do segredo' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de origem' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de origem' },
-          { name: '--clipboard, -c', type: 'boolean', required: false, description: 'Copia o valor para a área de transferência' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv get DATABASE_URL
-criptenv get API_KEY -e production -c`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv list</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Lista todas as chaves do vault remoto sem descriptografar valores.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--env, -e', type: 'string', required: false, description: 'Filtrar por ambiente' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Filtrar por projeto' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv list
-criptenv list -e production`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv delete</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Remove permanentemente um segredo do vault remoto.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'KEY', type: 'string', required: true, description: 'Nome do segredo a remover' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de origem' },
-          { name: '--force, -f', type: 'boolean', required: false, description: 'Pula confirmação' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv delete OLD_API_KEY
-criptenv delete DB_PASS -e staging -f`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv rotate</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Cria uma nova versão do segredo. A versão anterior é mantida
-        para referência.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'KEY', type: 'string', required: true, description: 'Nome do segredo' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente' },
-          { name: '--value, -v', type: 'string', required: false, description: 'Novo valor (auto-gerado se omitido)' },
-          { name: '--force, -f', type: 'boolean', required: false, description: 'Pula confirmação' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv rotate API_KEY
-criptenv rotate DB_PASS -e production -v newSecurePass123`}
-      />
-
-      {/* ── SYNC ────────────────────────────────────────────── */}
-      <h2 id="sync" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Sincronização
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv push</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Importa um arquivo <InlineCode>.env</InlineCode> para o vault remoto.
-        Sem arquivo, o comando falha com orientação para usar{' '}
-        <InlineCode>import</InlineCode>.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'FILE', type: 'string', required: true, description: 'Arquivo .env de origem' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto específico' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente específico' },
-          { name: '--overwrite', type: 'boolean', required: false, description: 'Sobrescreve chaves existentes' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv push .env -p <project-id>
-criptenv push .env.production -e production -p <project-id> --overwrite`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv pull</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Exporta segredos do vault remoto para um arquivo local. Sem{' '}
-        <InlineCode>--output</InlineCode>, o comando falha com orientação para
-        usar <InlineCode>export</InlineCode>.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto específico' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente específico' },
-          { name: '--output, -o', type: 'string', required: true, description: 'Arquivo de saída' },
-          { name: '--format', type: 'string', required: false, description: 'Formato: env ou json' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv pull -p <project-id> --output .env
-criptenv pull -e production -p <project-id> -o .env.production`}
-      />
-
-      {/* ── DATA ────────────────────────────────────────────── */}
-      <h2 id="data" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Importação e Exportação
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv import</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Importa segredos de um arquivo <InlineCode>.env</InlineCode> para o vault remoto.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'FILE', type: 'string', required: true, description: 'Caminho para o arquivo .env' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de destino' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de destino' },
-          { name: '--overwrite', type: 'boolean', required: false, description: 'Sobrescreve chaves existentes' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv import .env
-criptenv import .env.production -e production
-criptenv import secrets.env --overwrite`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv export</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Exporta segredos do vault remoto para um arquivo <InlineCode>.env</InlineCode> ou JSON.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--format', type: 'string', required: false, description: 'Formato: env (padrão) ou json' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de origem' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de origem' },
-          { name: '--output, -o', type: 'string', required: false, description: 'Arquivo de saída (padrão: stdout)' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv export
-criptenv export --format json -o secrets.json
-criptenv export -e production -o .env.production`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv run</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Executa um comando com os segredos do ambiente injetados como variáveis de
-        ambiente — sem escrever nenhum arquivo em disco. O código de saída do
-        processo filho é propagado.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de origem' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de origem' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv run -- npm start
-criptenv run -e staging -- python manage.py migrate`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv diff</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Compara um arquivo <InlineCode>.env</InlineCode> local com o vault remoto
-        (detecção de drift) e sai com status 1 quando houver diferenças — útil como
-        gate de CI. Com <InlineCode>--show-values</InlineCode> exibe apenas um
-        preview mascarado; valores completos nunca são impressos.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente de comparação' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto de comparação' },
-          { name: '--show-values', type: 'boolean', required: false, description: 'Preview mascarado dos valores alterados' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv diff .env
-criptenv diff .env -e production --show-values`}
-      />
-
-      {/* ── ENVIRONMENTS ────────────────────────────────────── */}
-      <h2 id="environments" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Ambientes
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv env list</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Lista todos os ambientes do projeto.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--project, -p', type: 'string', required: false, description: 'Filtrar por projeto' },
-        ]}
-      />
-      <CodeBlock language="bash" code="criptenv env list\ncriptenv env list -p <project-id>" />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv env create</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Cria um novo ambiente.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'NAME', type: 'string', required: true, description: 'Nome do ambiente (ex: staging)' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto ao qual pertence' },
-          { name: '--display-name, -d', type: 'string', required: false, description: 'Nome legível para humanos' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv env create staging -p <project-id>
-criptenv env create production -p <project-id> -d "Production Environment"`}
-      />
-
-      {/* ── PROJECTS ────────────────────────────────────────── */}
-      <h2 id="projects" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Projetos
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv projects create</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Cria um novo projeto com senha de vault.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'NAME', type: 'string', required: true, description: 'Nome do projeto' },
-          { name: '--slug', type: 'string', required: false, description: 'Slug opcional do projeto' },
-          { name: '--description', type: 'string', required: false, description: 'Descrição do projeto' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv projects create meusite
-criptenv projects create meusite --description "Backend do MeuSite"`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv projects list</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Lista todos os projetos.
-      </p>
-      <CodeBlock language="bash" code="criptenv projects list" />
-
-      {/* ── CI/CD ───────────────────────────────────────────── */}
-      <h2 id="cicd" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        CI/CD
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv ci login</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Autenticação headless para ambientes de CI/CD.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--token', type: 'string', required: true, description: 'Token de CI/CD (começa com ci_)' },
-          { name: '--project', type: 'string', required: false, description: 'ID do projeto' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv ci login --token $CI_TOKEN`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv ci logout</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Encerra a sessão de CI/CD.
-      </p>
-      <CodeBlock language="bash" code="criptenv ci logout" />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv ci secrets</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Lista segredos disponíveis no contexto de CI.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--env', type: 'string', required: true, description: 'Ambiente (ex: production)' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv ci secrets --env production`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv ci deploy</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Importa um arquivo de secrets para o vault remoto no contexto de CI.
-      </p>
-      <Callout variant="info">
-        Requer CLI 0.2.2+, um token de CI com escopo <InlineCode>write:secrets</InlineCode>{' '}
-        e <InlineCode>CRIPTENV_VAULT_PASSWORD</InlineCode>: os valores são cifrados no runner
-        e a API só recebe os blobs. Tokens restritos a um ambiente só podem fazer deploy nele.
-      </Callout>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--file, -f', type: 'string', required: true, description: 'Arquivo .env de origem' },
-          { name: '--env', type: 'string', required: true, description: 'Ambiente de deploy' },
-          { name: '--dry-run', type: 'boolean', required: false, description: 'Mostra o que seria enviado, sem enviar' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production --env production`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv ci tokens</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Gerencia tokens de CI/CD.
-      </p>
-
-      <Tabs defaultValue="list">
-        <Tab value="list" label="list">
-          <p className="mb-2">Lista todos os tokens de CI/CD.</p>
-          <CodeBlock language="bash" code="criptenv ci tokens list" />
-        </Tab>
-        <Tab value="create" label="create">
-          <p className="mb-2">Cria um novo token de CI/CD.</p>
-          <ParamTable
-            title="Opções"
-            rows={[
-              { name: '--name', type: 'string', required: true, description: 'Nome do token' },
-              { name: '--env', type: 'string', required: false, description: 'Ambiente permitido' },
-            ]}
-          />
-          <CodeBlock
-            language="bash"
-            code={`criptenv ci tokens create --name "GitHub Actions"
-# Para ci deploy: escrita, restrito a um ambiente
-criptenv ci tokens create --name "Deploy" --scopes read:secrets,write:secrets --environment production`}
-          />
-        </Tab>
-        <Tab value="revoke" label="revoke">
-          <p className="mb-2">Revoga um token de CI/CD.</p>
-          <ParamTable
-            title="Opções"
-            rows={[
-              { name: 'TOKEN_ID', type: 'string', required: true, description: 'ID do token a revogar' },
-            ]}
-          />
-          <CodeBlock language="bash" code="criptenv ci tokens revoke <token-id>" />
-        </Tab>
-      </Tabs>
-
-      {/* ── INTEGRATIONS ────────────────────────────────────── */}
-      <h2 id="integrations" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Integrações
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv integrations list</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Lista integrações de provedores de nuvem conectadas.
-      </p>
-      <CodeBlock language="bash" code="criptenv integrations list" />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv integrations connect</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Conecta um novo provedor de nuvem.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'PROVIDER', type: 'string', required: true, description: 'Provedor: vercel ou render' },
-          { name: '--token', type: 'string', required: false, description: 'Token de API do provedor' },
-          { name: '--name', type: 'string', required: false, description: 'Nome da integração' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv integrations connect vercel
-criptenv integrations connect render --token <render-api-key>`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv integrations disconnect</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Desconecta um provedor de nuvem.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'PROVIDER', type: 'string', required: true, description: 'Provedor a desconectar' },
-        ]}
-      />
-      <CodeBlock language="bash" code="criptenv integrations disconnect vercel" />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv integrations sync</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Sincroniza segredos do CriptEnv com o provedor conectado.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'PROVIDER', type: 'string', required: true, description: 'Provedor alvo' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente a sincronizar' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv integrations sync vercel -e production
-criptenv integrations sync render -e production`}
-      />
-
-      {/* ── MAINTENANCE ─────────────────────────────────────── */}
-      <h2 id="maintenance" className="text-2xl font-semibold mt-12 mb-4 scroll-mt-20">
-        Manutenção
-      </h2>
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv secrets expire</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Define a data de expiração de um segredo.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'KEY', type: 'string', required: true, description: 'Nome do segredo' },
-          { name: '--days, -d', type: 'int', required: true, description: 'Dias até expiração' },
-          { name: '--policy', type: 'string', required: false, description: 'Política: manual, notify (padrão), auto' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv secrets expire API_KEY --days 90
-criptenv secrets expire DB_PASS --days 30 --policy auto -e production`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv secrets alert</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Configura alertas de expiração para um segredo.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'KEY', type: 'string', required: true, description: 'Nome do segredo' },
-          { name: '--days, -d', type: 'int', required: true, description: 'Dias antes da expiração para alertar' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv secrets alert API_KEY --days 30
-criptenv secrets alert DB_PASS --days 14 -e staging`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv rotation list</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Lista segredos com rotação pendente.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: '--env, -e', type: 'string', required: false, description: 'Filtrar por ambiente' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Filtrar por projeto' },
-          { name: '--days, -d', type: 'int', required: false, description: 'Dias à frente para verificar (padrão: 30)' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv rotation list
-criptenv rotation list --days 7 -e production`}
-      />
-
-      <h3 className="text-xl font-semibold mt-8 mb-3">
-        <InlineCode>criptenv rotation history</InlineCode>
-      </h3>
-      <p className="mb-4">
-        Mostra o histórico de rotações de um segredo.
-      </p>
-      <ParamTable
-        title="Opções"
-        rows={[
-          { name: 'KEY', type: 'string', required: true, description: 'Nome do segredo' },
-          { name: '--env, -e', type: 'string', required: false, description: 'Ambiente' },
-          { name: '--project, -p', type: 'string', required: false, description: 'Projeto' },
-        ]}
-      />
-      <CodeBlock
-        language="bash"
-        code={`criptenv rotation history API_KEY
-criptenv rotation history DB_PASS -e staging`}
-      />
+          {section.commands.map((command: Command) => (
+            <div key={command.key}>
+              <h3 className="text-xl font-semibold mt-8 mb-3">
+                <InlineCode>{command.name}</InlineCode>
+              </h3>
+              <p className="mb-4">{t.rich(`items.${command.key}.description`, { code })}</p>
+              {command.note && (
+                <Callout variant="info">{t.rich(`items.${command.key}.note`, { code })}</Callout>
+              )}
+              {command.params && (
+                <ParamTable
+                  title={t('options')}
+                  rows={command.params.map(([name, type, required], i) => ({
+                    name,
+                    type,
+                    required,
+                    description: t(`items.${command.key}.params.${i}`),
+                  }))}
+                />
+              )}
+              <CodeBlock language="bash" code={command.code} />
+            </div>
+          ))}
+        </section>
+      ))}
 
       <Callout variant="info">
-        Para mais detalhes sobre a configuração do CLI, consulte a{' '}
-        <Link href="/docs/cli/configuration" className="underline font-medium">
-          página de Configuração
-        </Link>.
+        {t.rich('configurationLink', {
+          link: (chunks) => (
+            <Link href="/docs/cli/configuration" className="underline font-medium">
+              {chunks}
+            </Link>
+          ),
+        })}
       </Callout>
     </div>
   );
