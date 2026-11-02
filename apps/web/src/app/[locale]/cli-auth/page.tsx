@@ -52,6 +52,7 @@ function CLIAuthContent() {
   const searchParams = useSearchParams();
   const { user, login, isLoading: authLoading } = useAuth();
   const tAuth = useTranslations("auth");
+  const t = useTranslations("auth.cliAuth");
 
   // Built per locale: Zod bakes messages in at construction time.
   const loginSchema = useMemo(() => createLoginSchema(tAuth), [tAuth]);
@@ -66,7 +67,7 @@ function CLIAuthContent() {
   const [errorMsg, setErrorMsg] = useState<string | null>(
     hasValidParams
       ? null
-      : "Parâmetros inválidos. Inicie o login a partir da CLI.",
+      : t("errors.invalidParams"),
   );
   const [loginError, setLoginError] = useState<string | null>(null);
 
@@ -100,11 +101,11 @@ function CLIAuthContent() {
         setExplicitStep("confirm");
       } catch (err: unknown) {
         const message =
-          err instanceof Error ? err.message : "Email ou senha inválidos";
+          err instanceof Error ? err.message : t("errors.invalidCredentials");
         setLoginError(message);
       }
     },
-    [login],
+    [login, t],
   );
 
   const handleAuthorize = useCallback(async () => {
@@ -121,7 +122,7 @@ function CLIAuthContent() {
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || "Falha ao autorizar CLI");
+          throw new Error(data.detail || t("errors.authorizeFailed"));
         }
 
         const data = await res.json();
@@ -152,23 +153,23 @@ function CLIAuthContent() {
 
         if (!res.ok) {
           const data = await res.json().catch(() => ({}));
-          throw new Error(data.detail || "Falha ao autorizar dispositivo");
+          throw new Error(data.detail || t("errors.deviceFailed"));
         }
 
         setExplicitStep("success");
       }
     } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : "Erro desconhecido";
+      const message = err instanceof Error ? err.message : t("errors.unknown");
       setErrorMsg(message);
       setExplicitStep("error");
     }
-  }, [state, userCode]);
+  }, [state, userCode, t]);
 
   if (step === "checking") {
     return (
       <div className="flex flex-col items-center justify-center min-h-100 space-y-4">
         <Loader2 className="h-8 w-8 animate-spin text-(--accent)" />
-        <p className="text-sm text-(--text-tertiary)">Verificando sessão...</p>
+        <p className="text-sm text-(--text-tertiary)">{t("checkingSession")}</p>
       </div>
     );
   }
@@ -180,11 +181,11 @@ function CLIAuthContent() {
           <AlertCircle className="h-6 w-6" />
         </div>
         <h2 className="text-xl font-semibold text-(--text-primary)">
-          Erro na autorização
+          {t("errorTitle")}
         </h2>
         <p className="text-sm text-(--text-tertiary) text-center">{errorMsg}</p>
         <Link href="/login">
-          <Button variant="outline">Voltar para login</Button>
+          <Button variant="outline">{t("backToLogin")}</Button>
         </Link>
       </div>
     );
@@ -198,10 +199,10 @@ function CLIAuthContent() {
             <Terminal className="h-6 w-6" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Autorizar CLI
+            {t("title")}
           </h1>
           <p className="text-sm text-(--text-tertiary)">
-            Faça login para autorizar o acesso do CriptEnv CLI ao sua conta.
+            {t("loginSubtitle")}
           </p>
         </div>
 
@@ -214,28 +215,28 @@ function CLIAuthContent() {
 
         <form onSubmit={handleSubmit(onLoginSubmit)} className="space-y-4">
           <Input
-            label="Email"
+            label={t("emailLabel")}
             type="email"
-            placeholder="voce@email.com"
+            placeholder={t("emailPlaceholder")}
             error={errors.email?.message}
             {...register("email")}
           />
           <Input
-            label="Senha"
+            label={t("passwordLabel")}
             type="password"
             placeholder="••••••••"
             error={errors.password?.message}
             {...register("password")}
           />
           <Button type="submit" fullWidth loading={isSubmitting}>
-            Entrar e autorizar
+            {t("loginSubmit")}
           </Button>
         </form>
 
         <div className="relative">
           <Separator className="my-4" />
           <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-(--background) px-2 text-xs text-(--text-tertiary)">
-            ou continue com
+            {t("orContinueWith")}
           </span>
         </div>
 
@@ -252,11 +253,10 @@ function CLIAuthContent() {
             <Terminal className="h-6 w-6" />
           </div>
           <h1 className="text-2xl font-semibold tracking-tight">
-            Autorizar CLI
+            {t("title")}
           </h1>
           <p className="text-sm text-(--text-tertiary)">
-            Você está autorizando o <strong>CriptEnv CLI</strong> a acessar sua
-            conta.
+            {t.rich("confirmSubtitle", { strong: (chunks) => <strong>{chunks}</strong> })}
           </p>
         </div>
 
@@ -277,13 +277,12 @@ function CLIAuthContent() {
         </div>
 
         <Button onClick={handleAuthorize} fullWidth>
-          Confirmar autorização
+          {t("confirm")}
           <ArrowRight className="ml-2 h-4 w-4" />
         </Button>
 
         <p className="text-center text-xs text-(--text-tertiary)">
-          Você pode revogar o acesso do CLI a qualquer momento nas configurações
-          da conta.
+          {t("revokeHint")}
         </p>
       </div>
     );
@@ -295,10 +294,10 @@ function CLIAuthContent() {
         <Loader2 className="h-8 w-8 animate-spin text-(--accent)" />
         <div className="text-center space-y-2">
           <h2 className="text-xl font-semibold text-(--text-primary)">
-            Autorizando...
+            {t("authorizing")}
           </h2>
           <p className="text-sm text-(--text-tertiary)">
-            Redirecionando de volta para o terminal
+            {t("redirectingTerminal")}
           </p>
         </div>
       </div>
@@ -313,17 +312,17 @@ function CLIAuthContent() {
         </div>
         <div className="text-center space-y-2">
           <h2 className="text-xl font-semibold text-(--text-primary)">
-            CLI autorizado!
+            {t("successTitle")}
           </h2>
           <p className="text-sm text-(--text-tertiary)">
             {userCode
-              ? "Você pode fechar esta janela e voltar ao terminal."
-              : "Redirecionando de volta para o CLI..."}
+              ? t("successDevice")
+              : t("successRedirect")}
           </p>
         </div>
         {userCode && (
           <Link href="/dashboard">
-            <Button variant="outline">Ir para Dashboard</Button>
+            <Button variant="outline">{t("goToDashboard")}</Button>
           </Link>
         )}
       </div>
@@ -334,13 +333,14 @@ function CLIAuthContent() {
 }
 
 export default function CLIAuthPage() {
+  const t = useTranslations("auth.cliAuth");
   return (
     <div className="flex min-h-screen items-center justify-center px-4">
       <Suspense
         fallback={
           <div className="flex flex-col items-center justify-center min-h-100 space-y-4">
             <Loader2 className="h-8 w-8 animate-spin text-(--accent)" />
-            <p className="text-sm text-(--text-tertiary)">Carregando...</p>
+            <p className="text-sm text-(--text-tertiary)">{t("loading")}</p>
           </div>
         }
       >

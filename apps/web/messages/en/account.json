@@ -24,7 +24,7 @@
     "twoFADisableError": "Failed to disable 2FA",
     "oauthUnlinked": "Account {provider} unlinked.",
     "oauthUnlinkError": "Failed to unlink",
-    "deleteConfirmationWord": "Type \"DELETAR\" to confirm.",
+    "deleteConfirmationWord": "Type \"{word}\" to confirm.",
     "deleteError": "Failed to delete account",
     "verificationResent": "Verification email resent. Check your inbox.",
     "verificationResendError": "Failed to resend verification",
@@ -47,7 +47,8 @@
     "title": "Profile",
     "publicInfo": "Your public information",
     "verifyEmailTitle": "Verify your email to unlock every feature",
-    "twoFAActiveTitle": "2FA active on this account"
+    "twoFAActiveTitle": "2FA active on this account",
+    "twoFAActive": "2FA active"
   },
   "security": {
     "title": "Security",
@@ -104,13 +105,14 @@
   },
   "dangerZone": {
     "title": "Danger zone",
-    "deleteWarning": "This action cannot be undone. All your data will be permanently removed. Type <strong>DELETAR</strong> to confirm.",
+    "deleteWarning": "This action cannot be undone. All your data will be permanently removed. Type <strong>{word}</strong> to confirm.",
     "deletePermanently": "Delete permanently",
     "delete": "Delete account",
     "cancel": "Cancel",
     "description": "Irreversible actions on this account",
     "deleteAccount": "Delete account",
-    "deleteAccountDescription": "Permanently removes your projects, secrets and sessions"
+    "deleteAccountDescription": "Permanently removes your projects, secrets and sessions",
+    "confirmWord": "DELETE"
   },
   "avatar": {
     "invalidType": "Only PNG or JPG images are allowed.",

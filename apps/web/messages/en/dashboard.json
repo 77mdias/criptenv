@@ -181,5 +181,33 @@
       "title": "How to use this project",
       "description": "Ready-to-run commands with this project's ID"
     }
+  },
+  "projectLayout": {
+    "backToProjects": "Back to projects",
+    "unavailable": "Project unavailable",
+    "notFound": "Project not found.",
+    "projects": "Projects",
+    "project": "Project",
+    "noDescription": "No description for this project.",
+    "errors": {
+      "loadFailed": "Could not load the project"
+    }
+  },
+  "commandPalette": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "newProject": "New project",
+    "newProjectHint": "Create project",
+    "secrets": "Secrets",
+    "newSecret": "New secret",
+    "newSecretHint": "Create a secret in the current project",
+    "team": "Team",
+    "inviteMember": "Invite member",
+    "inviteMemberHint": "Send invitation",
+    "audit": "Audit Log",
+    "settings": "Settings",
+    "close": "Close command palette",
+    "searchPlaceholder": "Search commands...",
+    "empty": "No commands found."
   }
 }

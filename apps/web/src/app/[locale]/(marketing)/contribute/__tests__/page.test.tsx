@@ -1,4 +1,5 @@
-import { act, render, screen, waitFor } from "@testing-library/react"
+import { act, screen, waitFor } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
 import userEvent from "@testing-library/user-event"
 import ContributePage from "../page"
 import { contributionsApi } from "@/lib/api/contributions"
@@ -57,7 +58,7 @@ describe("ContributePage", () => {
   })
 
   it("validates required contribution amount", async () => {
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await userEvent.click(screen.getByRole("button", { name: "Gerar Pix" }))
 
@@ -71,7 +72,7 @@ describe("ContributePage", () => {
       pendingStatus(pendingContribution.expires_at)
     )
 
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await userEvent.type(screen.getByLabelText("Valor"), "25")
     await userEvent.type(screen.getByLabelText("Nome"), "  ")
@@ -95,7 +96,7 @@ describe("ContributePage", () => {
       paidStatus(pendingContribution.expires_at)
     )
 
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await user.type(screen.getByLabelText("Valor"), "25")
     await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
@@ -122,7 +123,7 @@ describe("ContributePage", () => {
       pendingStatus(providerExpiresAt)
     )
 
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await user.type(screen.getByLabelText("Valor"), "25")
     await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
@@ -149,7 +150,7 @@ describe("ContributePage", () => {
       pendingStatus(providerExpiresAt)
     )
 
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await user.type(screen.getByLabelText("Valor"), "25")
     await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
@@ -185,7 +186,7 @@ describe("ContributePage", () => {
         : pendingStatus(providerExpiresAt)
     )
 
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await user.type(screen.getByLabelText("Valor"), "25")
     await user.click(screen.getByRole("button", { name: "Gerar Pix" }))
@@ -206,7 +207,7 @@ describe("ContributePage", () => {
       expires_at: new Date(Date.now() - 1_000).toISOString(),
     })
 
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await userEvent.type(screen.getByLabelText("Valor"), "25")
     await userEvent.click(screen.getByRole("button", { name: "Gerar Pix" }))
@@ -217,7 +218,7 @@ describe("ContributePage", () => {
   it("shows an error banner when Pix creation fails", async () => {
     mockedContributionsApi.createPixContribution.mockRejectedValue(new Error("Mercado Pago indisponível"))
 
-    render(<ContributePage />)
+    renderWithIntl(<ContributePage />)
 
     await userEvent.type(screen.getByLabelText("Valor"), "25")
     await userEvent.click(screen.getByRole("button", { name: "Gerar Pix" }))

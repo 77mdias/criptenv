@@ -43,7 +43,8 @@
     "send": "Error al enviar la invitación",
     "updateRole": "Error al actualizar el rol",
     "remove": "Error al eliminar el miembro",
-    "revoke": "Error al revocar la invitación"
+    "revoke": "Error al revocar la invitación",
+    "invalidEmail": "Email inválido"
   },
   "notices": {
     "roleUpdated": "Rol actualizado",

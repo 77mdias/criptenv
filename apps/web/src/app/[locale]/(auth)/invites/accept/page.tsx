@@ -1,12 +1,14 @@
 "use client"
 
 import { useEffect, useState, Suspense } from "react"
+import { useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation";
 import { Link, useRouter } from "@/i18n/navigation";
 import { Mail, Check, AlertTriangle, Loader2, ArrowRight, ShieldCheck } from "lucide-react"
 import { Button } from "@/components/ui/button"
 
 function AcceptInviteForm() {
+  const t = useTranslations("auth.acceptInvite")
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get("token")
@@ -21,7 +23,7 @@ function AcceptInviteForm() {
     const timeoutId = window.setTimeout(() => {
       if (!token) {
         setLoading(false)
-        setError("Link de convite inválido.")
+        setError(t("errors.invalidLink"))
         return
       }
 
@@ -32,7 +34,7 @@ function AcceptInviteForm() {
           const data = await request("GET", `/api/auth/invites/lookup?token=${encodeURIComponent(token)}`)
           setInviteInfo(data)
         } catch (err) {
-          setError(err instanceof Error ? err.message : "Convite inválido ou expirado.")
+          setError(err instanceof Error ? err.message : t("errors.invalidInvite"))
         } finally {
           setLoading(false)
         }
@@ -42,7 +44,7 @@ function AcceptInviteForm() {
     }, 0)
 
     return () => window.clearTimeout(timeoutId)
-  }, [token])
+  }, [token, t])
 
   const handleAccept = async () => {
     if (!token) return
@@ -53,7 +55,7 @@ function AcceptInviteForm() {
       await request("POST", `/api/auth/invites/accept?token=${encodeURIComponent(token)}`)
       setAccepted(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao aceitar convite.")
+      setError(err instanceof Error ? err.message : t("errors.acceptFailed"))
     } finally {
       setAccepting(false)
     }
@@ -63,7 +65,7 @@ function AcceptInviteForm() {
     return (
       <div className="flex min-h-[280px] flex-col items-center justify-center text-center">
         <Loader2 className="h-7 w-7 animate-spin text-[var(--accent)]" />
-        <p className="mt-4 text-sm font-mono text-[var(--text-tertiary)]">Verificando convite...</p>
+        <p className="mt-4 text-sm font-mono text-[var(--text-tertiary)]">{t("checking")}</p>
       </div>
     )
   }
@@ -75,13 +77,13 @@ function AcceptInviteForm() {
           <Check className="h-6 w-6 text-[var(--success)]" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Convite aceito</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">{t("acceptedTitle")}</h1>
           <p className="mx-auto max-w-sm text-sm leading-6 text-[var(--text-secondary)]">
-            Seu acesso foi liberado. Você já pode abrir o projeto e sincronizar os secrets com segurança.
+            {t("acceptedMessage")}
           </p>
         </div>
         <Button className="w-full" onClick={() => router.push("/projects")} icon={ArrowRight} iconPosition="right">
-          Ver projetos
+          {t("viewProjects")}
         </Button>
       </div>
     )
@@ -94,9 +96,9 @@ function AcceptInviteForm() {
           <Mail className="h-5 w-5 text-[var(--text-primary)]" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">Convite para projeto</h1>
+          <h1 className="text-2xl font-semibold tracking-tight text-[var(--text-primary)]">{t("title")}</h1>
           <p className="text-sm leading-6 text-[var(--text-secondary)]">
-            Revise os detalhes e aceite para entrar no workspace criptografado da equipe.
+            {t("subtitle")}
           </p>
         </div>
       </div>
@@ -111,11 +113,11 @@ function AcceptInviteForm() {
       {inviteInfo && (
         <dl className="overflow-hidden rounded-lg border border-[var(--border)] bg-[var(--background-subtle)]">
           <div className="flex items-center justify-between gap-4 border-b border-[var(--border)] px-4 py-3">
-            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Email</dt>
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{t("email")}</dt>
             <dd className="min-w-0 truncate text-right text-sm font-medium text-[var(--text-primary)]">{inviteInfo.email}</dd>
           </div>
           <div className="flex items-center justify-between gap-4 px-4 py-3">
-            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-tertiary)]">Função</dt>
+            <dt className="text-xs font-medium uppercase tracking-[0.14em] text-[var(--text-tertiary)]">{t("role")}</dt>
             <dd className="rounded-full border border-[var(--border)] bg-[var(--surface)] px-2.5 py-1 text-xs font-semibold capitalize text-[var(--text-primary)]">
               {inviteInfo.role}
             </dd>
@@ -130,7 +132,7 @@ function AcceptInviteForm() {
         disabled={!inviteInfo || !!error}
         icon={ShieldCheck}
       >
-        Aceitar convite
+        {t("accept")}
       </Button>
 
       <div className="text-center">
@@ -138,7 +140,7 @@ function AcceptInviteForm() {
           href="/login"
           className="text-sm font-medium text-[var(--text-tertiary)] transition-colors hover:text-[var(--text-primary)]"
         >
-          Entrar com outra conta
+          {t("otherAccount")}
         </Link>
       </div>
     </div>
@@ -146,10 +148,11 @@ function AcceptInviteForm() {
 }
 
 export default function AcceptInvitePage() {
+  const t = useTranslations("auth.acceptInvite")
   return (
     <Suspense fallback={
       <div className="flex min-h-[280px] items-center justify-center">
-        <p className="text-center text-[var(--text-tertiary)] font-mono">Carregando...</p>
+        <p className="text-center text-[var(--text-tertiary)] font-mono">{t("loading")}</p>
       </div>
     }>
       <AcceptInviteForm />

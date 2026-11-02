@@ -259,10 +259,10 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         title={t("deleteSelected")}
         description={
           selectedSecrets.length > 0
-            ? `Excluir ${selectedSecrets.length} secrets do ambiente ${state.activeEnvName}? Esta ação atualizará o vault criptografado e não poderá ser desfeita.`
+            ? t("bulkDeleteDescription", { count: selectedSecrets.length, env: state.activeEnvName })
             : ""
         }
-        confirmLabel={`Excluir ${selectedSecrets.length} secrets`}
+        confirmLabel={t("bulkDeleteConfirm", { count: selectedSecrets.length })}
         destructive
         loading={state.saving}
         onOpenChange={(open) => setBulkDeleteOpen(open)}
@@ -279,7 +279,7 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         title={t("rotateSecret")}
         description={
           rotateTarget
-            ? `Rotacionar ${rotateTarget.key}? Um novo valor aleatório será gerado e salvo no vault.`
+            ? t("rotateDescription", { key: rotateTarget.key })
             : ""
         }
         confirmLabel={t("rotate")}

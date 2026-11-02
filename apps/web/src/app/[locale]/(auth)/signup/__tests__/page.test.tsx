@@ -1,20 +1,9 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
 import userEvent from "@testing-library/user-event"
 import { useRouter } from "next/navigation"
 import { useAuth } from "@/hooks/use-auth"
 import SignupPage from "../page"
-
-// OAuthButton resolve os labels de `common.oauth`; a página de signup em si
-// ainda não é internationalizada, então provemos os labels via mock pontual.
-jest.mock("next-intl", () => ({
-  useTranslations:
-    () => (key: string) =>
-      ({
-        continueWith: "Continuar com",
-        linkWith: "Vincular com",
-        linkShort: "Vincular",
-      })[key] ?? key,
-}));
 
 jest.mock("@/hooks/use-auth")
 
@@ -37,7 +26,7 @@ describe("SignupPage", () => {
   it("validates required form fields", async () => {
     mockedUseAuth.mockReturnValue({ signup: jest.fn() } as unknown as ReturnType<typeof useAuth>)
 
-    render(<SignupPage />)
+    renderWithIntl(<SignupPage />)
     await userEvent.click(screen.getByRole("button", { name: "Criar Conta" }))
 
     expect(await screen.findByText("Nome deve ter pelo menos 2 caracteres")).toBeInTheDocument()
@@ -52,7 +41,7 @@ describe("SignupPage", () => {
     const signup = jest.fn()
     mockedUseAuth.mockReturnValue({ signup } as unknown as ReturnType<typeof useAuth>)
 
-    render(<SignupPage />)
+    renderWithIntl(<SignupPage />)
     await fillValidForm()
     await userEvent.click(screen.getByRole("button", { name: "Criar Conta" }))
 
@@ -68,7 +57,7 @@ describe("SignupPage", () => {
     mockedUseAuth.mockReturnValue({ signup } as unknown as ReturnType<typeof useAuth>)
     mockedUseRouter.mockReturnValue({ push } as unknown as ReturnType<typeof useRouter>)
 
-    render(<SignupPage />)
+    renderWithIntl(<SignupPage />)
     await fillValidForm()
     await userEvent.click(screen.getByRole("checkbox"))
     await userEvent.click(screen.getByRole("button", { name: "Criar Conta" }))
@@ -82,7 +71,7 @@ describe("SignupPage", () => {
       signup: jest.fn().mockRejectedValue(new Error("Email já cadastrado")),
     } as unknown as ReturnType<typeof useAuth>)
 
-    render(<SignupPage />)
+    renderWithIntl(<SignupPage />)
     await fillValidForm()
     await userEvent.click(screen.getByRole("checkbox"))
     await userEvent.click(screen.getByRole("button", { name: "Criar Conta" }))
@@ -93,7 +82,7 @@ describe("SignupPage", () => {
   it("links to the legal pages from the OAuth notice and the acceptance label", () => {
     mockedUseAuth.mockReturnValue({ signup: jest.fn() } as unknown as ReturnType<typeof useAuth>)
 
-    render(<SignupPage />)
+    renderWithIntl(<SignupPage />)
 
     const termsLinks = screen.getAllByRole("link", { name: "Termos de Uso" })
     expect(termsLinks).toHaveLength(2)

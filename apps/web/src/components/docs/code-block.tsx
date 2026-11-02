@@ -1,6 +1,7 @@
 "use client"
 
 import * as React from "react"
+import { useTranslations } from "next-intl"
 import { cn } from "@/lib/utils"
 import { Check, Copy } from "lucide-react"
 
@@ -21,6 +22,7 @@ function CodeBlock({
   ...props
 }: CodeBlockProps) {
   const content = code || children
+  const t = useTranslations("common.codeBlock")
   const [copied, setCopied] = React.useState(false)
   const codeRef = React.useRef<HTMLElement>(null)
 
@@ -43,17 +45,17 @@ function CodeBlock({
           <button
             onClick={handleCopy}
             className="flex items-center gap-1.5 px-2 py-1 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors rounded-md hover:bg-[var(--background-subtle)]"
-            aria-label="Copiar código"
+            aria-label={t("copyCode")}
           >
             {copied ? (
               <>
                 <Check className="h-3.5 w-3.5 text-emerald-500" />
-                <span className="text-emerald-500">Copiado!</span>
+                <span className="text-emerald-500">{t("copied")}</span>
               </>
             ) : (
               <>
                 <Copy className="h-3.5 w-3.5" />
-                <span>Copiar</span>
+                <span>{t("copy")}</span>
               </>
             )}
           </button>
@@ -66,7 +68,7 @@ function CodeBlock({
           <button
             onClick={handleCopy}
             className="absolute top-3 right-3 z-10 flex items-center gap-1.5 px-2 py-1 text-xs text-[var(--text-tertiary)] hover:text-[var(--text-primary)] transition-colors rounded-md hover:bg-[var(--background-muted)] opacity-0 group-hover:opacity-100"
-            aria-label="Copiar código"
+            aria-label={t("copyCode")}
           >
             {copied ? (
               <Check className="h-3.5 w-3.5 text-emerald-500" />

@@ -231,5 +231,70 @@
       },
       "footnote": "Sin lock-in comercial: los planes alojados pueden evolucionar en el futuro, pero el self-hosting y la transparencia siguen siendo prioridades."
     }
+  },
+  "contribute": {
+    "back": "Volver",
+    "heroTitle": "Apoya a",
+    "heroDescription": "Apoya una alternativa open source de gestión de secrets con arquitectura zero-knowledge. El pago se hace por Pix y se sigue en esta página.",
+    "creating": "Generando Pix...",
+    "openSource": "CriptEnv usa la licencia MIT. Las contribuciones ayudan a mantener la infraestructura, las auditorías, la documentación y la evolución del producto sin comprometer el principio zero-knowledge.",
+    "disclaimer": "Las contribuciones son voluntarias, no otorgan funciones exclusivas y no son reembolsables. El pago lo procesa Mercado Pago según sus términos. Consulta la sección 5 de los <terms>Términos de Uso</terms>.",
+    "idle": {
+      "title": "Pix instantáneo",
+      "description": "Tu contribución ayuda a mantener CriptEnv open source, auditable y disponible para quien necesite proteger secrets sin depender de plataformas cerradas.",
+      "point1": "Pago procesado por Mercado Pago",
+      "point2": "Un webhook confirma el estado automáticamente",
+      "point3": "Ningún dato de vault o secret pasa por este flujo"
+    },
+    "form": {
+      "title": "Generar contribución",
+      "description": "Elige un monto desde R$ 5,00. El nombre y el email son opcionales.",
+      "amount": "Monto",
+      "amountPlaceholder": "25,00",
+      "name": "Nombre",
+      "namePlaceholder": "Tu nombre",
+      "email": "Email",
+      "emailPlaceholder": "tu@email.com",
+      "submit": "Generar Pix"
+    },
+    "errors": {
+      "statusFailed": "No se pudo actualizar el estado del pago",
+      "createFailed": "No se pudo generar el Pix",
+      "amountInvalid": "Introduce un monto válido",
+      "amountMin": "Monto mínimo de R$ 5,00",
+      "amountMax": "Monto máximo de R$ 100.000,00",
+      "nameTooLong": "El nombre debe tener como máximo 255 caracteres",
+      "invalidEmail": "Email inválido",
+      "emailTooLong": "El email debe tener como máximo 255 caracteres"
+    }
+  },
+  "contributionQr": {
+    "paidTitle": "¡Pago confirmado!",
+    "paidThanks": "Gracias por contribuir con <strong>{amount}</strong>.",
+    "paidSupport": "Tu apoyo mantiene CriptEnv vivo y open source.",
+    "another": "Hacer otra contribución",
+    "expiredTitle": "Código QR caducado",
+    "failedTitle": "Pago no realizado",
+    "expiredMessage": "Se agotó el tiempo para pagar con Pix.",
+    "failedMessage": "No se pudo procesar este pago.",
+    "retry": "Intentar de nuevo",
+    "expiresIn": "Caduca en {time}",
+    "window": "Ventana Pix de 2 minutos",
+    "timeRemaining": "Tiempo restante del Pix",
+    "windowHint": "Genera un nuevo código si la confirmación no llega dentro de esta ventana.",
+    "qrAlt": "Código QR de Pix",
+    "orCopy": "O copia el código Pix",
+    "copy": "Copiar código Pix",
+    "copied": "Copiado",
+    "instructions": "Abre la app de tu banco, elige pagar con Pix y escanea el código QR o pega el código de arriba.",
+    "status": {
+      "pending": "Esperando el pago",
+      "inProcess": "Procesando",
+      "paid": "Pago confirmado",
+      "expired": "Caducado",
+      "cancelled": "Cancelado",
+      "failed": "Falló",
+      "refunded": "Reembolsado"
+    }
   }
 }

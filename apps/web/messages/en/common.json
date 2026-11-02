@@ -34,6 +34,43 @@
     "linkWith": "Link with",
     "linkShort": "Link"
   },
+  "notFound": {
+    "metaTitle": "404 — Page not found · CriptEnv",
+    "badge": "Page not found",
+    "title": "This page doesn't exist",
+    "titleAccent": "(or never did)",
+    "description": "The address you visited doesn't match any CriptEnv route. Check the URL or go back to a known page.",
+    "commandArg": "this-page",
+    "home": "Go to home",
+    "signIn": "Sign in"
+  },
+  "a11y": {
+    "skipToContent": "Skip to content"
+  },
+  "errorPage": {
+    "badge": "Unexpected error",
+    "title": "Something went wrong",
+    "titleAccent": "on our side",
+    "description": "We hit an unexpected failure while rendering this page. Our team has been notified.",
+    "errorId": "Error ID",
+    "retry": "Try again",
+    "home": "Go to home",
+    "safe": "Your secrets are still safe — encrypted with AES-256-GCM on your device."
+  },
+  "dashboardError": {
+    "badge": "Failed to load",
+    "title": "Couldn't load",
+    "titleAccent": "this section",
+    "description": "Something unexpected happened, but don't worry: your secrets are protected.",
+    "errorId": "Error ID",
+    "retry": "Try again",
+    "safe": "Zero-knowledge architecture — nothing leaves your device without AES-256-GCM encryption."
+  },
+  "codeBlock": {
+    "copy": "Copy",
+    "copied": "Copied!",
+    "copyCode": "Copy code"
+  },
   "notifications": {
     "title": "Notifications",
     "markAll": "Mark all as read",

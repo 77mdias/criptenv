@@ -1,6 +1,6 @@
 "use client"
 
-import { useTranslations } from "next-intl"
+import { useLocale, useTranslations } from "next-intl"
 import { LogOut, Monitor, Smartphone } from "lucide-react"
 
 import { RowIcon, SectionHeader, formatDate, formatRelative } from "./account-ui"
@@ -27,6 +27,7 @@ export function SessionsCard({
   onRevokeAll,
 }: SessionsCardProps) {
   const t = useTranslations("account.sessions")
+  const locale = useLocale()
   const otherSessionsCount = sessions.filter((session) => !session.current).length
 
   return (
@@ -85,8 +86,8 @@ export function SessionsCard({
                       {session.ip_address || t("ipUnknown")}
                       {" · "}
                       {session.last_accessed_at
-                        ? t("lastActive", { time: formatRelative(session.last_accessed_at) })
-                        : t("createdOn", { date: formatDate(session.created_at) })}
+                        ? t("lastActive", { time: formatRelative(session.last_accessed_at, locale) })
+                        : t("createdOn", { date: formatDate(session.created_at, locale) })}
                     </span>
                     {isCurrent && (
                       <span

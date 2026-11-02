@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback } from "react";
-import { useTranslations } from "next-intl";
+import { useLocale, useTranslations } from "next-intl";
 import {
   Key,
   Plus,
@@ -35,6 +35,7 @@ interface CITokensPanelProps {
 
 export function CITokensPanel({ projectId }: CITokensPanelProps) {
   const t = useTranslations("settings");
+  const locale = useLocale();
   const cachedTokens = peekCached<CITokenListResponse>(`/api/v1/projects/${projectId}/tokens`, {
     include_revoked: "true",
   });
@@ -109,7 +110,7 @@ export function CITokensPanel({ projectId }: CITokensPanelProps) {
 
   const formatDate = (dateStr: string | null) => {
     if (!dateStr) return "—";
-    return new Date(dateStr).toLocaleDateString("pt-BR", {
+    return new Date(dateStr).toLocaleDateString(locale, {
       day: "2-digit",
       month: "2-digit",
       year: "numeric",

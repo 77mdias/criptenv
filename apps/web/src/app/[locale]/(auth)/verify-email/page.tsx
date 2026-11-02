@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, Suspense } from "react"
+import { useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation"
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button"
@@ -8,6 +9,7 @@ import { authApi } from "@/lib/api"
 import { CheckCircle2, AlertCircle, Loader2 } from "lucide-react"
 
 function VerifyEmailForm() {
+  const t = useTranslations("auth.verifyEmail")
   const searchParams = useSearchParams()
   const token = searchParams.get("token")
 
@@ -18,7 +20,7 @@ function VerifyEmailForm() {
     if (!token) {
       window.setTimeout(() => {
         setStatus("error")
-        setError("Token de verificação inválido ou ausente.")
+        setError(t("errors.missingToken"))
       }, 0)
       return
     }
@@ -35,7 +37,7 @@ function VerifyEmailForm() {
         if (!cancelled) {
           window.setTimeout(() => {
             setStatus("error")
-            setError(err instanceof Error ? err.message : "Token inválido ou expirado.")
+            setError(err instanceof Error ? err.message : t("errors.invalidToken"))
           }, 0)
         }
       }
@@ -46,7 +48,7 @@ function VerifyEmailForm() {
     return () => {
       cancelled = true
     }
-  }, [token])
+  }, [token, t])
 
   if (status === "verifying") {
     return (
@@ -55,9 +57,9 @@ function VerifyEmailForm() {
           <Loader2 className="h-7 w-7 animate-spin" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Verificando email</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("verifyingTitle")}</h1>
           <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-            Aguarde enquanto confirmamos seu endereço de email...
+            {t("verifyingMessage")}
           </p>
         </div>
       </div>
@@ -71,13 +73,13 @@ function VerifyEmailForm() {
           <CheckCircle2 className="h-7 w-7" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Email verificado!</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("successTitle")}</h1>
           <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-            Sua conta foi ativada com sucesso. Agora você pode fazer login e acessar o dashboard.
+            {t("successMessage")}
           </p>
         </div>
         <Button asChild fullWidth>
-          <Link href="/login">Entrar na conta</Link>
+          <Link href="/login">{t("signIn")}</Link>
         </Button>
       </div>
     )
@@ -89,15 +91,15 @@ function VerifyEmailForm() {
         <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-xl border border-red-500/30 bg-red-500/10 text-red-300">
           <AlertCircle className="h-7 w-7" />
         </div>
-        <h1 className="text-3xl font-semibold tracking-tight">Verificação falhou</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("failedTitle")}</h1>
         <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-          {error || "O link de verificação é inválido ou expirou."}
+          {error || t("failedMessage")}
         </p>
       </div>
 
       <div className="space-y-3">
         <Button asChild variant="secondary" fullWidth>
-          <Link href="/login">Voltar para login</Link>
+          <Link href="/login">{t("backToLogin")}</Link>
         </Button>
       </div>
     </div>
@@ -105,6 +107,7 @@ function VerifyEmailForm() {
 }
 
 export default function VerifyEmailPage() {
+  const t = useTranslations("auth.verifyEmail")
   return (
     <Suspense
       fallback={
@@ -113,7 +116,7 @@ export default function VerifyEmailPage() {
             <Loader2 className="h-7 w-7 animate-spin" />
           </div>
           <div className="space-y-2">
-            <h1 className="text-3xl font-semibold tracking-tight">Carregando...</h1>
+            <h1 className="text-3xl font-semibold tracking-tight">{t("loading")}</h1>
           </div>
         </div>
       }

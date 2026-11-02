@@ -181,5 +181,33 @@
       "title": "Cómo usar este proyecto",
       "description": "Comandos listos con el ID de este proyecto"
     }
+  },
+  "projectLayout": {
+    "backToProjects": "Volver a proyectos",
+    "unavailable": "Proyecto no disponible",
+    "notFound": "Proyecto no encontrado.",
+    "projects": "Proyectos",
+    "project": "Proyecto",
+    "noDescription": "Este proyecto no tiene descripción.",
+    "errors": {
+      "loadFailed": "No se pudo cargar el proyecto"
+    }
+  },
+  "commandPalette": {
+    "dashboard": "Dashboard",
+    "projects": "Proyectos",
+    "newProject": "Nuevo proyecto",
+    "newProjectHint": "Crear proyecto",
+    "secrets": "Secrets",
+    "newSecret": "Nuevo secret",
+    "newSecretHint": "Crear un secret en el proyecto actual",
+    "team": "Equipo",
+    "inviteMember": "Invitar miembro",
+    "inviteMemberHint": "Enviar invitación",
+    "audit": "Auditoría",
+    "settings": "Configuración",
+    "close": "Cerrar paleta de comandos",
+    "searchPlaceholder": "Buscar comandos...",
+    "empty": "No se encontraron comandos."
   }
 }

@@ -1,6 +1,7 @@
 "use client"
 
 import { FormEvent, useState } from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation";
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
@@ -12,6 +13,7 @@ import { safeRedirectPath } from "@/lib/safe-redirect"
 import { useAuthStore } from "@/stores/auth"
 
 export default function TwoFactorPage() {
+  const t = useTranslations("auth.twoFactor")
   const router = useRouter()
   const searchParams = useSearchParams()
   const setUser = useAuthStore((state) => state.setUser)
@@ -28,7 +30,7 @@ export default function TwoFactorPage() {
 
     const normalizedCode = code.trim().replace(/\s+/g, "")
     if (normalizedCode.length < 6) {
-      setError("Informe o código do autenticador ou um código de backup.")
+      setError(t("errors.codeRequired"))
       return
     }
 
@@ -42,10 +44,10 @@ export default function TwoFactorPage() {
       router.push(next)
     } catch (err: unknown) {
       if (err instanceof ApiError && err.status === 401) {
-        setError("Código inválido ou desafio expirado. Faça login novamente se necessário.")
+        setError(t("errors.invalidCode"))
         return
       }
-      setError(err instanceof Error ? err.message : "Não foi possível validar o 2FA.")
+      setError(err instanceof Error ? err.message : t("errors.verifyFailed"))
     } finally {
       setIsSubmitting(false)
     }
@@ -58,9 +60,9 @@ export default function TwoFactorPage() {
           <ShieldCheck className="h-5 w-5" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Verificação em duas etapas</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
           <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-            Digite o código do app autenticador ou um código de backup para concluir o acesso.
+            {t("subtitle")}
           </p>
         </div>
       </div>
@@ -74,7 +76,7 @@ export default function TwoFactorPage() {
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
-          label="Código 2FA"
+          label={t("codeLabel")}
           type="text"
           inputMode="numeric"
           autoComplete="one-time-code"
@@ -91,18 +93,18 @@ export default function TwoFactorPage() {
             onChange={(event) => setRememberDevice(event.target.checked)}
             className="mt-0.5 h-4 w-4 rounded border-[var(--border)] accent-[var(--accent)]"
           />
-          <span>Lembrar este dispositivo por 30 dias</span>
+          <span>{t("rememberDevice")}</span>
         </label>
 
         <Button type="submit" fullWidth loading={isSubmitting}>
-          Verificar e continuar
+          {t("submit")}
         </Button>
       </form>
 
       <p className="text-center text-sm text-[var(--text-tertiary)]">
-        Precisa trocar de conta?{" "}
+        {t("switchAccount")}{" "}
         <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
-          Voltar ao login
+          {t("backToLogin")}
         </Link>
       </p>
     </div>

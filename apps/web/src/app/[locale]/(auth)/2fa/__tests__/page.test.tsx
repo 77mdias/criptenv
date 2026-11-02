@@ -1,4 +1,5 @@
-import { render, screen, waitFor } from "@testing-library/react"
+import { screen, waitFor } from "@testing-library/react"
+import { renderWithIntl } from "@/test/render-with-intl"
 import userEvent from "@testing-library/user-event"
 import { useRouter, useSearchParams } from "next/navigation"
 import { authApi, ApiError } from "@/lib/api"
@@ -37,7 +38,7 @@ describe("TwoFactorPage", () => {
       session: { id: "ses_1" },
     })
 
-    render(<TwoFactorPage />)
+    renderWithIntl(<TwoFactorPage />)
     await userEvent.type(screen.getByLabelText("Código 2FA"), "123456")
     await userEvent.click(screen.getByLabelText("Lembrar este dispositivo por 30 dias"))
     await userEvent.click(screen.getByRole("button", { name: "Verificar e continuar" }))
@@ -56,7 +57,7 @@ describe("TwoFactorPage", () => {
     const mockedVerify = authApi.verify2FAChallenge as jest.Mock
     mockedVerify.mockRejectedValue(new ApiError("Invalid verification code", 401, {}))
 
-    render(<TwoFactorPage />)
+    renderWithIntl(<TwoFactorPage />)
     await userEvent.type(screen.getByLabelText("Código 2FA"), "000000")
     await userEvent.click(screen.getByRole("button", { name: "Verificar e continuar" }))
 

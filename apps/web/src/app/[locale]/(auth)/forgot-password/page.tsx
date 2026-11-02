@@ -1,6 +1,7 @@
 "use client"
 
 import { useState } from "react"
+import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
@@ -8,6 +9,7 @@ import { authApi } from "@/lib/api"
 import { AlertCircle, CheckCircle2, Mail } from "lucide-react"
 
 export default function ForgotPasswordPage() {
+  const t = useTranslations("auth.forgotPassword")
   const [email, setEmail] = useState("")
   const [loading, setLoading] = useState(false)
   const [sent, setSent] = useState(false)
@@ -23,7 +25,7 @@ export default function ForgotPasswordPage() {
       await authApi.forgotPassword({ email })
       setSent(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao enviar email")
+      setError(err instanceof Error ? err.message : t("errors.sendFailed"))
     } finally {
       setLoading(false)
     }
@@ -36,13 +38,13 @@ export default function ForgotPasswordPage() {
           <CheckCircle2 className="h-7 w-7" />
         </div>
         <div className="space-y-2">
-          <h1 className="text-3xl font-semibold tracking-tight">Email enviado</h1>
+          <h1 className="text-3xl font-semibold tracking-tight">{t("sentTitle")}</h1>
           <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-            Enviamos um link de recuperação para{" "}
+            {t("sentTo")}{" "}
             <span className="font-semibold text-[var(--text-primary)]">{email}</span>.
           </p>
           <p className="text-xs leading-5 text-[var(--text-muted)]">
-            Verifique sua caixa de spam se não receber em alguns minutos.
+            {t("checkSpam")}
           </p>
         </div>
         <div className="space-y-3">
@@ -54,10 +56,10 @@ export default function ForgotPasswordPage() {
               setEmail("")
             }}
           >
-            Enviar novamente
+            {t("sendAgain")}
           </Button>
           <Button asChild variant="ghost" fullWidth>
-            <Link href="/login">Voltar para login</Link>
+            <Link href="/login">{t("backToLogin")}</Link>
           </Button>
         </div>
       </div>
@@ -67,17 +69,17 @@ export default function ForgotPasswordPage() {
   return (
     <div className="space-y-7">
       <div className="space-y-2">
-        <h1 className="text-3xl font-semibold tracking-tight">Recuperar acesso</h1>
+        <h1 className="text-3xl font-semibold tracking-tight">{t("title")}</h1>
         <p className="text-sm leading-6 text-[var(--text-tertiary)]">
-          Informe o email da conta para receber um link de recuperação seguro.
+          {t("subtitle")}
         </p>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-5">
         <Input
-          label="Email"
+          label={t("emailLabel")}
           type="email"
-          placeholder="voce@email.com"
+          placeholder={t("emailPlaceholder")}
           value={email}
           onChange={(e) => setEmail(e.target.value)}
           icon={Mail}
@@ -92,14 +94,14 @@ export default function ForgotPasswordPage() {
         )}
 
         <Button type="submit" loading={loading} fullWidth>
-          Enviar link de recuperação
+          {t("submit")}
         </Button>
       </form>
 
       <p className="text-center text-sm text-[var(--text-tertiary)]">
-        Lembrou sua senha?{" "}
+        {t("rememberedPassword")}{" "}
         <Link href="/login" className="font-medium text-[var(--accent)] hover:underline">
-          Voltar para login
+          {t("backToLogin")}
         </Link>
       </p>
     </div>

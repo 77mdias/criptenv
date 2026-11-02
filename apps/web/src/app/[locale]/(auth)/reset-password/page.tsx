@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, Suspense } from "react"
+import { useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation";
 import { useRouter } from "@/i18n/navigation";
 import { Button } from "@/components/ui/button"
@@ -9,6 +10,7 @@ import { Input } from "@/components/ui/input"
 import { authApi } from "@/lib/api"
 
 function ResetPasswordForm() {
+  const t = useTranslations("auth.resetPassword")
   const searchParams = useSearchParams()
   const router = useRouter()
   const token = searchParams.get("token")
@@ -22,15 +24,15 @@ function ResetPasswordForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!token) {
-      setError("Token inválido ou expirado.")
+      setError(t("errors.invalidToken"))
       return
     }
     if (password.length < 8) {
-      setError("A senha deve ter pelo menos 8 caracteres.")
+      setError(t("errors.passwordLength"))
       return
     }
     if (password !== confirm) {
-      setError("As senhas não conferem.")
+      setError(t("errors.passwordMismatch"))
       return
     }
 
@@ -40,7 +42,7 @@ function ResetPasswordForm() {
       await authApi.resetPassword({ token, new_password: password })
       setDone(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Erro ao redefinir senha")
+      setError(err instanceof Error ? err.message : t("errors.resetFailed"))
     } finally {
       setLoading(false)
     }
@@ -56,12 +58,12 @@ function ResetPasswordForm() {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
             </div>
-            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Senha redefinida</h2>
+            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">{t("doneTitle")}</h2>
             <p className="text-[var(--text-tertiary)] font-mono text-sm">
-              Sua senha foi alterada com sucesso. Faça login com a nova senha.
+              {t("doneMessage")}
             </p>
             <Button variant="secondary" className="w-full mt-4" onClick={() => router.push("/login")}>
-              Ir para login
+              {t("goToLogin")}
             </Button>
           </div>
         </Card>
@@ -74,18 +76,18 @@ function ResetPasswordForm() {
       <Card className="w-full max-w-md p-8">
         <div className="space-y-6">
           <div className="text-center space-y-2">
-            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">Redefinir senha</h2>
-            <p className="text-sm text-[var(--text-tertiary)] font-mono">Digite sua nova senha abaixo.</p>
+            <h2 className="text-2xl font-semibold text-[var(--text-primary)]">{t("title")}</h2>
+            <p className="text-sm text-[var(--text-tertiary)] font-mono">{t("subtitle")}</p>
           </div>
 
           {!token && (
-            <p className="text-red-500 text-sm font-mono">Token inválido ou expirado. Solicite um novo link.</p>
+            <p className="text-red-500 text-sm font-mono">{t("invalidTokenNotice")}</p>
           )}
 
           <form onSubmit={handleSubmit} className="space-y-4">
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                Nova senha
+                {t("newPassword")}
               </label>
               <Input
                 type="password"
@@ -98,7 +100,7 @@ function ResetPasswordForm() {
             </div>
             <div className="space-y-1.5">
               <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
-                Confirmar nova senha
+                {t("confirmPassword")}
               </label>
               <Input
                 type="password"
@@ -113,7 +115,7 @@ function ResetPasswordForm() {
             {error && <p className="text-red-500 text-sm font-mono">{error}</p>}
 
             <Button type="submit" loading={loading} fullWidth disabled={!token}>
-              Redefinir senha
+              {t("submit")}
             </Button>
           </form>
         </div>
@@ -123,11 +125,12 @@ function ResetPasswordForm() {
 }
 
 export default function ResetPasswordPage() {
+  const t = useTranslations("auth.resetPassword")
   return (
     <Suspense fallback={
       <div className="min-h-screen flex items-center justify-center bg-[var(--background)]">
         <Card className="w-full max-w-md p-8">
-          <p className="text-center text-[var(--text-tertiary)] font-mono">Carregando...</p>
+          <p className="text-center text-[var(--text-tertiary)] font-mono">{t("loading")}</p>
         </Card>
       </div>
     }>

@@ -1,6 +1,7 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
 import { usePathname, useRouter } from "@/i18n/navigation";
 import {
   FolderOpen,
@@ -29,6 +30,7 @@ interface CommandItem {
 }
 
 export function CommandPalette() {
+  const t = useTranslations("dashboard.commandPalette")
   const router = useRouter()
   const pathname = usePathname()
   const { commandPaletteOpen, setCommandPaletteOpen } = useUIStore()
@@ -75,13 +77,13 @@ export function CommandPalette() {
     }
 
     return [
-      { label: "Dashboard", hint: "/dashboard", icon: LayoutDashboard, run: runRoute("/dashboard") },
-      { label: "Projects", hint: "/projects", icon: FolderOpen, run: runRoute("/projects") },
-      { label: "Novo projeto", hint: "Criar projeto", icon: Plus, run: runEvent("criptenv:new-project", "/projects") },
+      { label: t("dashboard"), hint: "/dashboard", icon: LayoutDashboard, run: runRoute("/dashboard") },
+      { label: t("projects"), hint: "/projects", icon: FolderOpen, run: runRoute("/projects") },
+      { label: t("newProject"), hint: t("newProjectHint"), icon: Plus, run: runEvent("criptenv:new-project", "/projects") },
       ...(projectId
         ? [
             {
-              label: "Secrets",
+              label: t("secrets"),
               hint: `/projects/${projectId}/secrets`,
               icon: KeyRound,
               run: runRoute(`/projects/${projectId}/secrets`),
@@ -89,15 +91,15 @@ export function CommandPalette() {
             ...(canWriteProjectSecrets(projectRole)
               ? [
                   {
-                    label: "Novo secret",
-                    hint: "Criar secret no projeto atual",
+                    label: t("newSecret"),
+                    hint: t("newSecretHint"),
                     icon: Plus,
                     run: runEvent("criptenv:new-secret", `/projects/${projectId}/secrets`),
                   },
                 ]
               : []),
             {
-              label: "Team",
+              label: t("team"),
               hint: `/projects/${projectId}/members`,
               icon: Users,
               run: runRoute(`/projects/${projectId}/members`),
@@ -105,15 +107,15 @@ export function CommandPalette() {
             ...(canInviteProjectMembers(projectRole)
               ? [
                   {
-                    label: "Convidar membro",
-                    hint: "Enviar convite",
+                    label: t("inviteMember"),
+                    hint: t("inviteMemberHint"),
                     icon: Plus,
                     run: runEvent("criptenv:invite-member", `/projects/${projectId}/members`),
                   },
                 ]
               : []),
             {
-              label: "Audit Log",
+              label: t("audit"),
               hint: `/projects/${projectId}/audit`,
               icon: ScrollText,
               run: runRoute(`/projects/${projectId}/audit`),
@@ -121,7 +123,7 @@ export function CommandPalette() {
             ...(canManageProject(projectRole)
               ? [
                   {
-                    label: "Settings",
+                    label: t("settings"),
                     hint: `/projects/${projectId}/settings`,
                     icon: Settings,
                     run: runRoute(`/projects/${projectId}/settings`),
@@ -131,7 +133,7 @@ export function CommandPalette() {
           ]
         : []),
     ]
-  }, [close, pathname, projectId, projectRole, router])
+  }, [close, pathname, projectId, projectRole, router, t])
 
   const filtered = commands.filter((command) => {
     const haystack = `${command.label} ${command.hint}`.toLowerCase()
@@ -144,7 +146,7 @@ export function CommandPalette() {
     <div className="fixed inset-0 z-[70] flex items-start justify-center px-4 pt-24">
       <button
         type="button"
-        aria-label="Fechar command palette"
+        aria-label={t("close")}
         className="fixed inset-0 bg-black/40 backdrop-blur-sm"
         onClick={close}
       />
@@ -155,7 +157,7 @@ export function CommandPalette() {
             autoFocus
             value={query}
             onChange={(event) => setQuery(event.target.value)}
-            placeholder="Buscar comandos..."
+            placeholder={t("searchPlaceholder")}
             className="h-9 flex-1 bg-transparent text-sm text-[var(--text-primary)] outline-none placeholder:text-[var(--text-muted)]"
           />
           <Button variant="ghost" size="icon" className="h-8 w-8" onClick={close}>
@@ -186,7 +188,7 @@ export function CommandPalette() {
           ))}
           {filtered.length === 0 && (
             <p className="px-3 py-8 text-center font-mono text-sm text-[var(--text-muted)]">
-              Nenhum comando encontrado.
+              {t("empty")}
             </p>
           )}
         </div>

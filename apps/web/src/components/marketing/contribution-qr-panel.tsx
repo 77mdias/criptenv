@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useEffect, useCallback } from "react"
+import { useLocale, useTranslations } from "next-intl"
 import { Copy, Check, Timer, RefreshCw } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -54,17 +55,25 @@ function statusBadgeVariant(status: string) {
   }
 }
 
-function statusLabel(status: string): string {
-  const labels: Record<string, string> = {
-    PENDING: "Aguardando pagamento",
-    IN_PROCESS: "Processando",
-    PAID: "Pagamento confirmado",
-    EXPIRED: "Expirado",
-    CANCELLED: "Cancelado",
-    FAILED: "Falhou",
-    REFUNDED: "Reembolsado",
+function statusLabel(status: string, t: (key: string) => string): string {
+  switch (status) {
+    case "PENDING":
+      return t("status.pending")
+    case "IN_PROCESS":
+      return t("status.inProcess")
+    case "PAID":
+      return t("status.paid")
+    case "EXPIRED":
+      return t("status.expired")
+    case "CANCELLED":
+      return t("status.cancelled")
+    case "FAILED":
+      return t("status.failed")
+    case "REFUNDED":
+      return t("status.refunded")
+    default:
+      return status
   }
-  return labels[status] || status
 }
 
 export function ContributionQRPanel({
@@ -76,6 +85,9 @@ export function ContributionQRPanel({
   amount,
   onRetry,
 }: ContributionQRPanelProps) {
+  const t = useTranslations("marketing.contributionQr")
+  const locale = useLocale()
+  const formattedAmount = new Intl.NumberFormat(locale, { style: "currency", currency: "BRL" }).format(amount)
   const [copied, setCopied] = useState(false)
   const [windowState, setWindowState] = useState(() =>
     getWindowState(startedAt, expiresAt)
@@ -113,16 +125,20 @@ export function ContributionQRPanel({
         </div>
         <div>
           <h3 className="text-xl font-semibold text-[var(--text-primary)]">
-            Pagamento confirmado!
+            {t("paidTitle")}
           </h3>
           <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-            Obrigado por contribuir com <strong className="text-[var(--text-secondary)]">R$ {amount.toFixed(2)}</strong>.<br />
-            Seu apoio mantém o CriptEnv vivo e open source.
+            {t.rich("paidThanks", {
+              amount: formattedAmount,
+              strong: (chunks) => <strong className="text-[var(--text-secondary)]">{chunks}</strong>,
+            })}
+            <br />
+            {t("paidSupport")}
           </p>
         </div>
         <Button variant="secondary" onClick={onRetry}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Fazer outra contribuição
+          {t("another")}
         </Button>
       </div>
     )
@@ -136,17 +152,15 @@ export function ContributionQRPanel({
         </div>
         <div>
           <h3 className="text-xl font-semibold text-[var(--text-primary)]">
-            {isExpired ? "QR Code expirado" : "Pagamento não realizado"}
+            {isExpired ? t("expiredTitle") : t("failedTitle")}
           </h3>
           <p className="mt-2 text-sm text-[var(--text-tertiary)]">
-            {isExpired
-              ? "O tempo para pagamento com Pix expirou."
-              : "Não foi possível processar este pagamento."}
+            {isExpired ? t("expiredMessage") : t("failedMessage")}
           </p>
         </div>
         <Button variant="secondary" onClick={onRetry}>
           <RefreshCw className="mr-2 h-4 w-4" />
-          Tentar novamente
+          {t("retry")}
         </Button>
       </div>
     )
@@ -157,11 +171,11 @@ export function ContributionQRPanel({
       {/* Status */}
       <div className="flex items-center justify-between gap-3">
         {isTerminal ? (
-          <Badge variant={statusBadgeVariant(status)}>{statusLabel(status)}</Badge>
+          <Badge variant={statusBadgeVariant(status)}>{statusLabel(status, t)}</Badge>
         ) : (
           <span className="flex items-center gap-1.5 font-mono text-xs text-[var(--text-muted)]">
             <Timer className="h-3.5 w-3.5" />
-            Expira em {windowState.timeLeft}
+            {t("expiresIn", { time: windowState.timeLeft })}
           </span>
         )}
       </div>
@@ -170,7 +184,7 @@ export function ContributionQRPanel({
         <div className="rounded-lg border border-[var(--border)] bg-[var(--background-subtle)] p-3">
           <div className="mb-2 flex items-center justify-between gap-3">
             <span className="text-xs font-medium text-[var(--text-secondary)]">
-              Janela Pix de 2 minutos
+              {t("window")}
             </span>
             <span className="font-mono text-xs text-[var(--text-muted)]">
               {windowState.timeLeft}
@@ -181,14 +195,14 @@ export function ContributionQRPanel({
               className="h-full rounded-full bg-[var(--accent)] transition-all duration-1000 ease-linear"
               style={{ width: `${windowState.progressPercent}%` }}
               role="progressbar"
-              aria-label="Tempo restante do Pix"
+              aria-label={t("timeRemaining")}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(windowState.progressPercent)}
             />
           </div>
           <p className="mt-2 text-[11px] leading-relaxed text-[var(--text-muted)]">
-            Gere um novo código se a confirmação não chegar dentro desta janela.
+            {t("windowHint")}
           </p>
         </div>
       )}
@@ -199,7 +213,7 @@ export function ContributionQRPanel({
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={`data:image/png;base64,${qrCodeBase64}`}
-            alt="QR Code Pix"
+            alt={t("qrAlt")}
             width={200}
             height={200}
             className="block"
@@ -210,7 +224,7 @@ export function ContributionQRPanel({
       {/* Copy-paste code */}
       <div className="space-y-2">
         <span className="text-xs font-medium text-[var(--text-muted)]">
-          Ou copie o código Pix
+          {t("orCopy")}
         </span>
         <div className="relative">
           <div
@@ -223,8 +237,8 @@ export function ContributionQRPanel({
           <button
             onClick={handleCopy}
             className="absolute right-2 top-1/2 -translate-y-1/2 rounded-md p-1.5 text-[var(--text-muted)] transition-colors hover:bg-[var(--background-muted)] hover:text-[var(--text-primary)]"
-            aria-label={copied ? "Copiado" : "Copiar código Pix"}
-            title={copied ? "Copiado" : "Copiar código Pix"}
+            aria-label={copied ? t("copied") : t("copy")}
+            title={copied ? t("copied") : t("copy")}
           >
             {copied ? (
               <Check className="h-4 w-4 text-green-500" />
@@ -238,8 +252,7 @@ export function ContributionQRPanel({
       {/* Instructions */}
       <div className="rounded-lg border border-[var(--border)] bg-[var(--background-subtle)] p-3">
         <p className="text-xs leading-relaxed text-[var(--text-tertiary)]">
-          Abra o app do seu banco, escolha pagamento via Pix e escaneie o QR code
-          ou cole o código acima.
+          {t("instructions")}
         </p>
       </div>
     </div>

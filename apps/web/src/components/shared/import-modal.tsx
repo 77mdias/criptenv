@@ -15,6 +15,9 @@ import {
 import { type DecryptedSecret } from "@/components/shared/secret-row"
 import { createSecretSchema } from "@/lib/validators/schemas"
 
+// Only validity matters while parsing an import, so messages are left untranslated keys.
+const secretSchema = createSecretSchema((key) => key)
+
 interface ImportModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
@@ -33,7 +36,7 @@ function parseEnv(text: string): DecryptedSecret[] {
       const value = rawValue.replace(/^(['"])(.*)\1$/, "$2")
       return { key, value }
     })
-    .filter((secret) => createSecretSchema.safeParse(secret).success)
+    .filter((secret) => secretSchema.safeParse(secret).success)
 }
 
 export function ImportModal({ open, onOpenChange, onImport }: ImportModalProps) {

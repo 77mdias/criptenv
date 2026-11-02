@@ -43,7 +43,8 @@
     "send": "Erro ao enviar convite",
     "updateRole": "Erro ao atualizar role",
     "remove": "Erro ao remover membro",
-    "revoke": "Erro ao revogar convite"
+    "revoke": "Erro ao revogar convite",
+    "invalidEmail": "Email inválido"
   },
   "notices": {
     "roleUpdated": "Role atualizada",
