@@ -1497,7 +1497,7 @@
     },
     "invites": {
       "description": "Gestiona invitaciones por email para añadir nuevos miembros a un proyecto. Las invitaciones caducan a los 7 días y están vinculadas a un rol concreto.",
-      "callout": "Todos los endpoints siguientes requieren autenticación y están bajo <code>/api/v1/projects/{pid}/invites</code>. Crear y eliminar invitaciones requiere el rol admin; el rol owner no se puede conceder por invitación.",
+      "callout": "Todos los endpoints siguientes requieren autenticación y están bajo <code>/api/v1/projects/'{pid}'/invites</code>. Crear y eliminar invitaciones requiere el rol admin; el rol owner no se puede conceder por invitación.",
       "create": {
         "title": "Crear invitación",
         "body": "Envía una invitación por email a un nuevo miembro (solo admins). La invitación caduca automáticamente a los 7 días. El token de la invitación solo se devuelve en esta respuesta.",

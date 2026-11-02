@@ -1497,7 +1497,7 @@
     },
     "invites": {
       "description": "Gerencie convites por email para adicionar novos membros a um projeto. Convites possuem expiração de 7 dias e são vinculados a um papel específico.",
-      "callout": "Todos os endpoints abaixo requerem autenticação e pertencem à rota base <code>/api/v1/projects/{pid}/invites</code>. Criar e remover convites exige o papel admin; o papel owner não pode ser concedido por convite.",
+      "callout": "Todos os endpoints abaixo requerem autenticação e pertencem à rota base <code>/api/v1/projects/'{pid}'/invites</code>. Criar e remover convites exige o papel admin; o papel owner não pode ser concedido por convite.",
       "create": {
         "title": "Criar convite",
         "body": "Envia um convite por email para um novo membro (apenas admins). O convite expira em 7 dias automaticamente. O token do convite só é retornado nesta resposta.",

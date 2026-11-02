@@ -1497,7 +1497,7 @@
     },
     "invites": {
       "description": "Manage email invitations to add new members to a project. Invitations expire after 7 days and are tied to a specific role.",
-      "callout": "Every endpoint below requires authentication and lives under <code>/api/v1/projects/{pid}/invites</code>. Creating and deleting invitations requires the admin role; the owner role cannot be granted through an invitation.",
+      "callout": "Every endpoint below requires authentication and lives under <code>/api/v1/projects/'{pid}'/invites</code>. Creating and deleting invitations requires the admin role; the owner role cannot be granted through an invitation.",
       "create": {
         "title": "Create invitation",
         "body": "Emails an invitation to a new member (admin only). The invitation expires automatically after 7 days. The invite token is returned only in this response.",
