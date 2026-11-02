@@ -84,7 +84,7 @@ export default function CITokensPage() {
 
         <ResponseBlock status={201}>
           {`{
-  "token": "ci_a1b2c3d4e5f6...",
+  "token": "ci_<TOKEN>",
   "token_info": {
     "id": "6f1c…-uuid",
     "project_id": "{pid}",
