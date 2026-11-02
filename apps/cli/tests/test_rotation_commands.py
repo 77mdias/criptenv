@@ -87,7 +87,7 @@ class TestRotateCommand:
 
     def test_rotate_with_project_option(self, runner):
         """rotate command should accept --project option."""
-        result = runner.invoke(main, ["rotate", "API_KEY", "--project", "my-proj", "--help"])
+        result = runner.invoke(main, ["rotate", "API_KEY", "--project", "00000000-0000-4000-8000-00000000abcd", "--help"])
         assert result.exit_code == 0
         assert "--project" in result.output
 
@@ -260,7 +260,7 @@ class TestRotationListCommand:
 
     def test_rotation_list_with_project_option(self, runner):
         """rotation list should accept --project option."""
-        result = runner.invoke(main, ["rotation", "list", "--project", "my-proj", "--help"])
+        result = runner.invoke(main, ["rotation", "list", "--project", "00000000-0000-4000-8000-00000000abcd", "--help"])
         assert result.exit_code == 0
         assert "--project" in result.output
 
@@ -283,7 +283,7 @@ class TestRotationListCommand:
 
     def test_rotation_history_with_project_option(self, runner):
         """rotation history should accept --project option."""
-        result = runner.invoke(main, ["rotation", "history", "API_KEY", "--project", "my-proj", "--help"])
+        result = runner.invoke(main, ["rotation", "history", "API_KEY", "--project", "00000000-0000-4000-8000-00000000abcd", "--help"])
         assert result.exit_code == 0
         assert "--project" in result.output
 

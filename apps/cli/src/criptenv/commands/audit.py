@@ -29,7 +29,7 @@ def audit_list(project_id: str | None, action: str | None, resource: str | None,
     """
     async def _do_list():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.list_audit(resolved_project_id,
                 action=action,
                 resource_type=resource,
@@ -77,7 +77,7 @@ def audit_export(project_id: str | None, format: str, output: str | None):
 
     async def _do_export():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.list_audit(resolved_project_id, page=1, per_page=100)
             logs = result.get("logs", [])
 

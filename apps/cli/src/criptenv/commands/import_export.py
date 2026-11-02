@@ -1,9 +1,10 @@
 """Import/export commands for .env files."""
 
+import json
 import os
+import re
 
 import click
-import json
 
 from criptenv.context import cli_context, run_async, resolve_project_id
 from criptenv.remote_vault import RemoteVault
@@ -29,7 +30,7 @@ def import_entries_remote(
 ) -> tuple[int, int]:
     """Import parsed key/value entries into the remote project vault."""
     with cli_context(require_auth=True) as (db, _master_key, client):
-        resolved_project_id = resolve_project_id(db, project)
+        resolved_project_id = resolve_project_id(db, project, client)
         vault = RemoteVault(client, resolved_project_id)
         state = run_async(vault.load_state(env_name))
         by_key = {blob["key_id"]: blob for blob in state.blobs}
@@ -66,7 +67,7 @@ def export_entries_remote(
 ) -> dict[str, str]:
     """Export remote project vault entries as plaintext key/value pairs."""
     with cli_context(require_auth=True) as (db, _master_key, client):
-        resolved_project_id = resolve_project_id(db, project)
+        resolved_project_id = resolve_project_id(db, project, client)
         vault = RemoteVault(client, resolved_project_id)
         state = run_async(vault.load_state(env_name))
         return run_async(vault.decrypt_all(state))
@@ -75,8 +76,20 @@ def export_entries_remote(
 def _format_entries(entries: dict[str, str], fmt: str) -> str:
     if fmt == "json":
         return json.dumps(entries, indent=2)
-    lines = [f"{key}={value}" for key, value in entries.items()]
-    return "\n".join(lines) + "\n"
+    return "".join(f"{key}={_quote_env_value(value)}\n" for key, value in entries.items())
+
+
+_SAFE_ENV_VALUE = re.compile(r"[A-Za-z0-9_./:@%+,=-]*")
+
+
+def _quote_env_value(value: str) -> str:
+    """Quote a value so dotenv parsers (and _parse_env_file) read it back unchanged."""
+    if _SAFE_ENV_VALUE.fullmatch(value):
+        return value
+    if "'" not in value and "\n" not in value:
+        return f"'{value}'"  # single quotes: literal, no escapes or interpolation
+    escaped = value.replace("\\", "\\\\").replace('"', '\\"').replace("\n", "\\n")
+    return f'"{escaped}"'
 
 
 @click.command("import")
@@ -146,15 +159,15 @@ def export_command(env_name: str | None, project: str | None, output: str | None
         raise SystemExit(1)
 
     if not entries:
-        click.echo("No secrets to export.")
-        return
+        # stderr: stdout stays parseable (empty JSON object / empty env file)
+        click.echo("No secrets to export.", err=True)
 
     content = _format_entries(entries, fmt)
 
     # Write output
     if output:
         _write_secret_file(output, content)
-        click.echo(f"✓ Exported {len(entries)} secret(s) to {output}")
+        click.echo(f"✓ Exported {len(entries)} secret(s) to {output}", err=True)
     else:
         click.echo(content, nl=False)
 
@@ -182,7 +195,9 @@ def _parse_env_file(filepath: str) -> list[tuple[str, str]]:
 
                         # Remove surrounding quotes
                         if len(value) >= 2 and value[0] == value[-1] and value[0] in ('"', "'"):
-                            value = value[1:-1]
+                            quote, value = value[0], value[1:-1]
+                            if quote == '"':
+                                value = _unescape_double_quoted(value)
 
                         if key:
                             entries.append((key, value))
@@ -191,3 +206,8 @@ def _parse_env_file(filepath: str) -> list[tuple[str, str]]:
             continue
 
     return entries
+
+
+def _unescape_double_quoted(value: str) -> str:
+    """Reverse the escapes _quote_env_value writes inside double quotes."""
+    return re.sub(r"\\(.)", lambda m: "\n" if m.group(1) == "n" else m.group(1), value)

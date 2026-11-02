@@ -3,6 +3,7 @@
 import pytest
 from click.testing import CliRunner
 
+from criptenv import __version__
 from criptenv.cli import main
 
 
@@ -20,7 +21,7 @@ class TestCLIHelp:
     def test_version(self, runner):
         result = runner.invoke(main, ["--version"])
         assert result.exit_code == 0
-        assert "0.2.2" in result.output
+        assert __version__ in result.output
 
     def test_init_help(self, runner):
         result = runner.invoke(main, ["init", "--help"])

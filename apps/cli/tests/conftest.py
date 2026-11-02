@@ -44,7 +44,7 @@ class RemoteVaultFakeClient:
         self.vault_config, _proof = build_project_vault_config(vault_password)
         self.blobs: list[dict] = []
         self.version = 0
-        self.project_id = "prj_123"
+        self.project_id = "00000000-0000-4000-8000-000000000123"
         self.environment_id = "env_prod"
 
     async def get_project(self, project_id: str) -> dict:

@@ -69,7 +69,7 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_success(self):
         self.send_response(200)
-        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
         self.wfile.write("""<!DOCTYPE html>
 <html>
@@ -85,7 +85,7 @@ class _CallbackHandler(http.server.BaseHTTPRequestHandler):
 
     def _send_error(self, message: str):
         self.send_response(400)
-        self.send_header("Content-Type", "text/html")
+        self.send_header("Content-Type", "text/html; charset=utf-8")
         self.end_headers()
         html = f"""<!DOCTYPE html>
 <html>

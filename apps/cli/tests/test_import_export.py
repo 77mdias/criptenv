@@ -30,11 +30,11 @@ class TestImportExport:
             patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
             patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
         ):
-            result = runner.invoke(main, ["import", str(env_file), "-p", "prj_123"])
+            result = runner.invoke(main, ["import", str(env_file), "-p", "00000000-0000-4000-8000-000000000123"])
             assert result.exit_code == 0
             assert "Imported 4 secret(s)" in result.output
 
-            result = runner.invoke(main, ["list", "-p", "prj_123"])
+            result = runner.invoke(main, ["list", "-p", "00000000-0000-4000-8000-000000000123"])
             assert result.exit_code == 0
             assert "API_KEY" in result.output
             assert "DB_HOST" in result.output
@@ -49,13 +49,13 @@ class TestImportExport:
             patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
             patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
         ):
-            runner.invoke(main, ["set", "API_KEY=original", "-p", "prj_123"])
-            result = runner.invoke(main, ["import", str(env_file), "-p", "prj_123"])
+            runner.invoke(main, ["set", "API_KEY=original", "-p", "00000000-0000-4000-8000-000000000123"])
+            result = runner.invoke(main, ["import", str(env_file), "-p", "00000000-0000-4000-8000-000000000123"])
             assert result.exit_code == 0
             assert "Skipped 1" in result.output
             assert "Imported 1" in result.output
 
-            result = runner.invoke(main, ["get", "API_KEY", "-p", "prj_123"])
+            result = runner.invoke(main, ["get", "API_KEY", "-p", "00000000-0000-4000-8000-000000000123"])
             assert "original" in result.output
 
     def test_import_overwrite(self, runner, remote_vault_client, tmp_path):
@@ -66,12 +66,12 @@ class TestImportExport:
             patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
             patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
         ):
-            runner.invoke(main, ["set", "API_KEY=original", "-p", "prj_123"])
-            result = runner.invoke(main, ["import", str(env_file), "--overwrite", "-p", "prj_123"])
+            runner.invoke(main, ["set", "API_KEY=original", "-p", "00000000-0000-4000-8000-000000000123"])
+            result = runner.invoke(main, ["import", str(env_file), "--overwrite", "-p", "00000000-0000-4000-8000-000000000123"])
             assert result.exit_code == 0
             assert "Imported 1" in result.output
 
-            result = runner.invoke(main, ["get", "API_KEY", "-p", "prj_123"])
+            result = runner.invoke(main, ["get", "API_KEY", "-p", "00000000-0000-4000-8000-000000000123"])
             assert "new_value" in result.output
 
     def test_export_env_format(self, runner, remote_vault_client, tmp_path):
@@ -81,9 +81,9 @@ class TestImportExport:
             patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
             patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
         ):
-            runner.invoke(main, ["set", "KEY_A=val_a", "-p", "prj_123"])
-            runner.invoke(main, ["set", "KEY_B=val_b", "-p", "prj_123"])
-            result = runner.invoke(main, ["export", "-o", str(output_file), "-p", "prj_123"])
+            runner.invoke(main, ["set", "KEY_A=val_a", "-p", "00000000-0000-4000-8000-000000000123"])
+            runner.invoke(main, ["set", "KEY_B=val_b", "-p", "00000000-0000-4000-8000-000000000123"])
+            result = runner.invoke(main, ["export", "-o", str(output_file), "-p", "00000000-0000-4000-8000-000000000123"])
             assert result.exit_code == 0
             assert "Exported 2 secret(s)" in result.output
 
@@ -98,8 +98,8 @@ class TestImportExport:
             patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)),
             patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)),
         ):
-            runner.invoke(main, ["set", "KEY_A=val_a", "-p", "prj_123"])
-            result = runner.invoke(main, ["export", "--format", "json", "-o", str(output_file), "-p", "prj_123"])
+            runner.invoke(main, ["set", "KEY_A=val_a", "-p", "00000000-0000-4000-8000-000000000123"])
+            result = runner.invoke(main, ["export", "--format", "json", "-o", str(output_file), "-p", "00000000-0000-4000-8000-000000000123"])
             assert result.exit_code == 0
 
         import json
@@ -109,7 +109,7 @@ class TestImportExport:
 
     def test_export_empty(self, runner, remote_vault_client):
         with patch("criptenv.commands.import_export.cli_context", remote_cli_context_for(remote_vault_client)):
-            result = runner.invoke(main, ["export", "-p", "prj_123"])
+            result = runner.invoke(main, ["export", "-p", "00000000-0000-4000-8000-000000000123"])
 
         assert result.exit_code == 0
         assert "No secrets" in result.output
@@ -118,7 +118,7 @@ class TestImportExport:
         env_file = tmp_path / "empty.env"
         env_file.write_text("# Only comments\n\n")
 
-        result = runner.invoke(main, ["import", str(env_file), "-p", "prj_123"])
+        result = runner.invoke(main, ["import", str(env_file), "-p", "00000000-0000-4000-8000-000000000123"])
         assert result.exit_code == 0
         assert "No entries" in result.output
 

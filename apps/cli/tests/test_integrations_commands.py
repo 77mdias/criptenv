@@ -51,7 +51,7 @@ def test_integrations_validate(mock_ctx):
     mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
     mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-    result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "prj_123"])
+    result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "00000000-0000-4000-8000-000000000123"])
     assert result.exit_code == 0
     assert "valid" in result.output
 
@@ -64,7 +64,7 @@ def test_integrations_validate_invalid(mock_ctx):
     mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
     mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
-    result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "prj_123"])
+    result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "00000000-0000-4000-8000-000000000123"])
     assert result.exit_code == 0
     assert "invalid" in result.output
 
@@ -105,8 +105,8 @@ def test_connect_does_not_raise_unbound_local(monkeypatch):
     async def fake_cli_context(*_args, **_kwargs):
         yield object(), None, FakeClient()
 
-    async def fake_resolve_project_id(db, project):
-        return "prj_123"
+    async def fake_resolve_project_id(db, project, client=None):
+        return "00000000-0000-4000-8000-000000000123"
 
     monkeypatch.setattr(integrations_module, "async_cli_context", fake_cli_context)
     monkeypatch.setattr(

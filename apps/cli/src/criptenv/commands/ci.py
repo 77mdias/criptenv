@@ -389,7 +389,7 @@ def ci_tokens_list(project_id: Optional[str], include_revoked: bool):
         criptenv ci tokens list
     """
     with cli_context(require_auth=True) as (db, _master_key, client):
-        resolved_project_id = resolve_project_id(db, project_id)
+        resolved_project_id = resolve_project_id(db, project_id, client)
 
         try:
             response = asyncio.run(client.list_ci_tokens(resolved_project_id, include_revoked))
@@ -439,7 +439,7 @@ def ci_tokens_create(project_id: Optional[str], name: str, scopes: str, environm
         criptenv ci tokens create --name "Deploy Bot" --scopes "read:secrets,write:secrets" --environment production
     """
     with cli_context(require_auth=True) as (db, _master_key, client):
-        resolved_project_id = resolve_project_id(db, project_id)
+        resolved_project_id = resolve_project_id(db, project_id, client)
 
         scope_list = [s.strip() for s in scopes.split(",")]
 
@@ -480,7 +480,7 @@ def ci_tokens_revoke(token_id: str, project_id: Optional[str], force: bool):
         criptenv ci tokens revoke 550e8400-e29b-41d4-a716-446655440000
     """
     with cli_context(require_auth=True) as (db, _master_key, client):
-        resolved_project_id = resolve_project_id(db, project_id)
+        resolved_project_id = resolve_project_id(db, project_id, client)
 
         if not force:
             if not click.confirm(f"Revoke token {token_id}? This cannot be undone."):

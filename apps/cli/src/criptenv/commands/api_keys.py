@@ -33,7 +33,7 @@ def api_keys_list(project_id: str | None):
     """
     async def _do_list():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.list_api_keys(resolved_project_id)
             items = result.get("items", [])
 
@@ -75,7 +75,7 @@ def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], e
     """
     async def _do_create():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             reserved_scopes = sorted(set(scope) - {"read:secrets"})
             if reserved_scopes:
                 click.echo(
@@ -121,7 +121,7 @@ def api_keys_revoke(key_id: str, project_id: str | None, force: bool):
 
     async def _do_revoke():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
-            resolved_project_id = await resolve_project_id_async(db, project_id)
+            resolved_project_id = await resolve_project_id_async(db, project_id, client)
             result = await client.revoke_api_key(resolved_project_id, key_id)
             click.echo(f"✓ Revoked API key {key_id}")
             if result.get("name"):
