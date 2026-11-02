@@ -13,11 +13,6 @@ import {
 export default function CliOverviewPage() {
   const t = useTranslations('docs.cli.overview');
   const tRoot = useTranslations('docs');
-  const link = (href: string) => (chunks: React.ReactNode) => (
-    <Link href={href} className="underline font-medium">
-      {chunks}
-    </Link>
-  );
   return (
     <div className="max-w-3xl">
       <Breadcrumb
@@ -101,8 +96,16 @@ criptenv login --email-address you@example.com`}
 
       <Callout variant="info">
         {t.rich('install.after', {
-          commands: link('/docs/cli/commands'),
-          configuration: link('/docs/cli/configuration'),
+          commands: (chunks) => (
+            <Link href="/docs/cli/commands" className="underline font-medium">
+              {chunks}
+            </Link>
+          ),
+          configuration: (chunks) => (
+            <Link href="/docs/cli/configuration" className="underline font-medium">
+              {chunks}
+            </Link>
+          ),
         })}
       </Callout>
 
