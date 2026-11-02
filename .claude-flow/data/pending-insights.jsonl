@@ -19,3 +19,13 @@
 {"type":"edit","file":"/home/jeandias/.claude/projects/-home-jeandias-projects-criptenv/memory/criptenv-dev-gotchas.md","success":true,"timestamp":1793629594004,"sessionId":null}
 {"type":"edit","file":"/home/jeandias/projects/criptenv/.gitleaksignore","success":true,"timestamp":1793630112398,"sessionId":null}
 {"type":"edit","file":"/home/jeandias/projects/criptenv/apps/web/vite.config.ts","success":true,"timestamp":1793631495835,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/api/app/services/project_service.py","success":true,"timestamp":1793638483724,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/api/app/services/project_service.py","success":true,"timestamp":1793638484449,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/api/app/routers/api_keys.py","success":true,"timestamp":1793638491826,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/api/app/routers/tokens.py","success":true,"timestamp":1793638492459,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/api/app/schemas/member.py","success":true,"timestamp":1793638502364,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/api/tests/test_environment_scope_validation.py","success":true,"timestamp":1793638537380,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/cli/src/criptenv/remote_vault.py","success":true,"timestamp":1793638589070,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/cli/tests/test_team_commands.py","success":true,"timestamp":1793638684603,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/projects/criptenv/apps/cli/src/criptenv/commands/use.py","success":true,"timestamp":1793638720621,"sessionId":null}
+{"type":"edit","file":"/home/jeandias/.claude/projects/-home-jeandias-projects-criptenv/memory/criptenv-dev-gotchas.md","success":true,"timestamp":1793641995826,"sessionId":null}
