@@ -1592,6 +1592,50 @@
         "title": "Validar integración",
         "body": "Comprueba que la conexión con el proveedor funciona con las credenciales guardadas."
       }
+    },
+    "environments": {
+      "title": "Entornos",
+      "description": "Los entornos aíslan conjuntos de secrets dentro de un proyecto; normalmente <code>production</code>, <code>staging</code> y <code>development</code>. Cada entorno tiene su propia clave de cifrado, derivada en el cliente a partir de la contraseña del vault del proyecto.",
+      "params": {
+        "projectId": "ID del proyecto (parámetro de ruta)",
+        "environmentId": "ID del entorno (parámetro de ruta)"
+      },
+      "create": {
+        "title": "Crear entorno",
+        "body": "Crea un nuevo entorno en un proyecto. Requiere el rol <code>admin</code>.",
+        "params": {
+          "name": "Nombre del entorno: minúsculas, números y guiones (p. ej. staging). Debe ser único en el proyecto.",
+          "displayName": "Nombre legible",
+          "isDefault": "Lo marca como entorno por defecto del proyecto"
+        },
+        "example": "Ejemplo — crear entorno"
+      },
+      "list": {
+        "title": "Listar entornos",
+        "body": "Devuelve los entornos activos (no archivados) del proyecto. Si se llama con una API key restringida a un entorno, solo se devuelve ese entorno y <code>api_key_environment_scope</code> indica cuál.",
+        "example": "Ejemplo — listar entornos"
+      },
+      "get": {
+        "title": "Obtener entorno por ID",
+        "body": "Devuelve un entorno concreto. Los entornos archivados devuelven 404.",
+        "example": "Ejemplo — obtener entorno"
+      },
+      "update": {
+        "title": "Actualizar entorno",
+        "body": "Actualiza el nombre visible o el indicador de entorno por defecto. El <code>name</code> no se puede cambiar. Requiere el rol <code>admin</code>.",
+        "params": {
+          "displayName": "Nuevo nombre visible",
+          "isDefault": "Lo convierte en el entorno por defecto"
+        },
+        "example": "Ejemplo — actualizar entorno"
+      },
+      "delete": {
+        "title": "Archivar entorno",
+        "body": "<strong>Archiva</strong> el entorno: desaparece de los listados y sus endpoints devuelven 404. El entorno por defecto no se puede eliminar. Requiere el rol <code>admin</code>.",
+        "callout": "Los entornos archivados dejan de ser accesibles desde la API y la CLI. Para seguir usando sus secrets, expórtalos antes de archivarlos.",
+        "response": "Respuesta vacía: el entorno se archivó.",
+        "example": "Ejemplo — archivar entorno"
+      }
     }
   }
 }

@@ -1592,6 +1592,50 @@
         "title": "Validar integração",
         "body": "Verifica se a conexão com o provedor funciona com as credenciais armazenadas."
       }
+    },
+    "environments": {
+      "title": "Ambientes",
+      "description": "Ambientes permitem isolar conjuntos de segredos dentro de um projeto — normalmente <code>production</code>, <code>staging</code> e <code>development</code>. Cada ambiente possui sua própria chave de criptografia, derivada no cliente a partir da senha do vault do projeto.",
+      "params": {
+        "projectId": "ID do projeto (path parameter)",
+        "environmentId": "ID do ambiente (path parameter)"
+      },
+      "create": {
+        "title": "Criar Ambiente",
+        "body": "Cria um novo ambiente dentro de um projeto. Requer papel de <code>admin</code>.",
+        "params": {
+          "name": "Nome do ambiente: letras minúsculas, números e hífens (ex: staging). Deve ser único no projeto.",
+          "displayName": "Nome legível",
+          "isDefault": "Marca como ambiente padrão do projeto"
+        },
+        "example": "Exemplo — Criar ambiente"
+      },
+      "list": {
+        "title": "Listar Ambientes",
+        "body": "Retorna os ambientes ativos (não arquivados) do projeto. Quando chamado com uma API key restrita a um ambiente, só esse ambiente é retornado e <code>api_key_environment_scope</code> indica qual.",
+        "example": "Exemplo — Listar ambientes"
+      },
+      "get": {
+        "title": "Obter Ambiente por ID",
+        "body": "Retorna um ambiente específico. Ambientes arquivados retornam 404.",
+        "example": "Exemplo — Obter ambiente"
+      },
+      "update": {
+        "title": "Atualizar Ambiente",
+        "body": "Atualiza o nome de exibição ou o indicador de padrão de um ambiente. O <code>name</code> não pode ser alterado. Requer papel de <code>admin</code>.",
+        "params": {
+          "displayName": "Novo nome de exibição",
+          "isDefault": "Torna o ambiente padrão"
+        },
+        "example": "Exemplo — Atualizar ambiente"
+      },
+      "delete": {
+        "title": "Arquivar Ambiente",
+        "body": "<strong>Arquiva</strong> o ambiente: ele some das listagens e seus endpoints passam a retornar 404. O ambiente padrão não pode ser removido. Requer papel de <code>admin</code>.",
+        "callout": "Ambientes arquivados deixam de ser acessíveis pela API e pela CLI. Para continuar usando os secrets, exporte-os antes de arquivar.",
+        "response": "Resposta vazia — o ambiente foi arquivado.",
+        "example": "Exemplo — Arquivar ambiente"
+      }
     }
   }
 }

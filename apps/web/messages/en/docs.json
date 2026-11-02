@@ -1592,6 +1592,50 @@
         "title": "Validate integration",
         "body": "Checks that the connection to the provider works with the stored credentials."
       }
+    },
+    "environments": {
+      "title": "Environments",
+      "description": "Environments isolate sets of secrets within a project — commonly <code>production</code>, <code>staging</code> and <code>development</code>. Each environment has its own encryption key, derived on the client from the project's vault password.",
+      "params": {
+        "projectId": "Project ID (path parameter)",
+        "environmentId": "Environment ID (path parameter)"
+      },
+      "create": {
+        "title": "Create environment",
+        "body": "Creates a new environment in a project. Requires the <code>admin</code> role.",
+        "params": {
+          "name": "Environment name: lowercase letters, digits and hyphens (e.g. staging). Must be unique in the project.",
+          "displayName": "Human-readable name",
+          "isDefault": "Mark as the project's default environment"
+        },
+        "example": "Example — create environment"
+      },
+      "list": {
+        "title": "List environments",
+        "body": "Returns the project's active (non-archived) environments. When called with an environment-restricted API key, only that environment is returned and <code>api_key_environment_scope</code> says which one.",
+        "example": "Example — list environments"
+      },
+      "get": {
+        "title": "Get environment by ID",
+        "body": "Returns one environment. Archived environments return 404.",
+        "example": "Example — get environment"
+      },
+      "update": {
+        "title": "Update environment",
+        "body": "Updates an environment's display name or default flag. The <code>name</code> cannot be changed. Requires the <code>admin</code> role.",
+        "params": {
+          "displayName": "New display name",
+          "isDefault": "Make it the default environment"
+        },
+        "example": "Example — update environment"
+      },
+      "delete": {
+        "title": "Archive environment",
+        "body": "<strong>Archives</strong> the environment: it disappears from listings and its endpoints return 404. The default environment cannot be removed. Requires the <code>admin</code> role.",
+        "callout": "Archived environments are no longer reachable through the API or the CLI. To keep using their secrets, export them before archiving.",
+        "response": "Empty response — the environment was archived.",
+        "example": "Example — archive environment"
+      }
     }
   }
 }
