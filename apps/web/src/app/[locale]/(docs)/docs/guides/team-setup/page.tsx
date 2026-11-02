@@ -7,73 +7,70 @@ import {
   Steps,
   Step,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function TeamSetupPage() {
+  const t = useTranslations('docs.guides.teamSetup');
+  const tRoot = useTranslations('docs');
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Guias', href: '/docs/guides' },
-          { label: 'Configuração de Equipe', href: '/docs/guides/team-setup' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('guides.overview.title'), href: '/docs/guides' },
+          { label: t('title'), href: '/docs/guides/team-setup' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-6 mb-4">
-        Configuração de Equipe
+        {t('title')}
       </h1>
       <p className="text-muted-foreground mb-8">
-        Aprenda a convidar membros, definir permissões e organizar sua equipe
-        no CriptEnv para colaborar no gerenciamento de secrets de forma segura.
+        {t('description')}
       </p>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Convidando membros</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('invite.title')}</h2>
 
       <Steps>
-        <Step title="Acesse as configurações da equipe">
+        <Step title={t('invite.step1.title')}>
           <p className="text-muted-foreground">
-            No painel do CriptEnv, navegue até{' '}
-            <strong>Configurações → Equipe</strong>. Aqui você pode ver todos
-            os membros atuais e gerenciar convites.
+            {t.rich('invite.step1.body', { strong })}
           </p>
         </Step>
 
-        <Step title="Envie um convite">
+        <Step title={t('invite.step2.title')}>
           <p className="text-muted-foreground">
-            Clique em <strong>&quot;Convidar Membro&quot;</strong> e insira o
-            email da pessoa que deseja adicionar. Selecione o papel (role) que
-            ela terá na equipe.
+            {t.rich('invite.step2.body', { strong })}
           </p>
-          <CodeBlock language="text" title="Exemplo de convite">
-{`Email: dev@empresa.com
-Papel: Developer
-Projetos: meu-app, api-gateway`}
+          <CodeBlock language="text" title={t('invite.step2.codeTitle')}>
+{`Email: dev@company.com
+Role: Developer
+Projects: my-app, api-gateway`}
           </CodeBlock>
         </Step>
 
-        <Step title="Aceite o convite">
-          <p className="text-muted-ground">
-            O membro receberá um email com o link para aceitar o convite. Após
-            aceitar, ele terá acesso aos projetos conforme as permissões
-            definidas.
+        <Step title={t('invite.step3.title')}>
+          <p className="text-muted-foreground">
+            {t('invite.step3.body')}
           </p>
         </Step>
       </Steps>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Papéis e Permissões</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('roles.title')}</h2>
       <p className="text-muted-foreground mb-4">
-        O CriptEnv oferece 4 níveis de permissão para membros da equipe:
+        {t('roles.body')}
       </p>
 
       <div className="border rounded-lg overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="text-left p-3 font-medium">Papel</th>
-              <th className="text-left p-3 font-medium">Ver secrets</th>
-              <th className="text-left p-3 font-medium">Editar secrets</th>
-              <th className="text-left p-3 font-medium">Gerenciar equipe</th>
-              <th className="text-left p-3 font-medium">Configurações</th>
+              <th className="text-left p-3 font-medium">{t('roles.role')}</th>
+              <th className="text-left p-3 font-medium">{t('roles.view')}</th>
+              <th className="text-left p-3 font-medium">{t('roles.edit')}</th>
+              <th className="text-left p-3 font-medium">{t('roles.manageTeam')}</th>
+              <th className="text-left p-3 font-medium">{t('roles.settings')}</th>
             </tr>
           </thead>
           <tbody>
@@ -110,45 +107,41 @@ Projetos: meu-app, api-gateway`}
       </div>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Permissões por Projeto
+        {t('perProject.title')}
       </h2>
       <p className="text-muted-foreground mb-4">
-        Você pode configurar permissões granulares por projeto. Um membro pode
-        ser Admin em um projeto e Viewer em outro.
+        {t('perProject.body')}
       </p>
-      <CodeBlock language="text" title="Exemplo de permissões por projeto">
-{`Membro: dev@empresa.com
-├── meu-app         → Developer
+      <CodeBlock language="text" title={t('perProject.codeTitle')}>
+{`Member: dev@company.com
+├── my-app          → Developer
 ├── api-gateway     → Developer
 └── infra-secrets   → Viewer`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Gerenciando via CLI
+        {t('cli.title')}
       </h2>
-      <CodeBlock language="bash" title="Comandos de equipe no CLI">
-{`# Listar membros da equipe
-criptenv team list
+      <CodeBlock language="bash" title={t('cli.codeTitle')}>
+{`# List project members
+criptenv members list -p <project-id>
 
-# Convidar um novo membro
-criptenv team invite dev@empresa.com --role developer --project meu-app
+# Invite a new member by email
+criptenv invites create dev@company.com --role developer -p <project-id>
 
-# Alterar papel de um membro
-criptenv team update dev@empresa.com --role admin
+# Change a member's role (member ID from \`members list\`)
+criptenv members update <member-id> --role admin -p <project-id>
 
-# Remover um membro
-criptenv team remove dev@empresa.com`}
+# Remove a member
+criptenv members remove <member-id> -p <project-id>`}
       </CodeBlock>
 
       <Callout variant="tip">
-        Recomendamos seguir o princípio do menor privilegio: conceda apenas as
-        permissões necessárias para cada membro realizar suas tarefas.
+        {t('leastPrivilege')}
       </Callout>
 
       <Callout variant="warning">
-        Membros com papel <strong>Owner</strong> têm acesso total à conta,
-        incluindo cobrança e exclusão de projetos. Limite este papel a
-        pessoas de extrema confiança.
+        {t.rich('ownerWarning', { strong })}
       </Callout>
     </div>
   );

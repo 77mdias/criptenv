@@ -466,5 +466,385 @@
         "warning": "Files exported as <code>.env</code> contain plaintext. Add them to <code>.gitignore</code> and treat them as local secrets."
       }
     }
+  },
+  "integrations": {
+    "overview": {
+      "title": "Integrations",
+      "description": "CriptEnv integrates with the main deploy and CI/CD platforms. Set up automatic sync of encrypted environment variables straight into your deploy pipeline.",
+      "cards": {
+        "githubAction": "Run CriptEnv directly in your GitHub Actions workflows to inject secrets securely during build and deploy.",
+        "vercel": "Automatically sync your encrypted environment variables with Vercel Environment Variables.",
+        "railway": "Coming soon. Railway integration for environment variable sync.",
+        "render": "Connect CriptEnv to Render to sync secrets with your Environment Groups automatically."
+      }
+    },
+    "railway": {
+      "title": "Railway integration",
+      "comingSoon": "The Railway integration is in development and will be available soon. Today CriptEnv supports integrations with <vercel>Vercel</vercel> and <render>Render</render>.",
+      "whenLaunched": "Once launched, the Railway integration will sync your encrypted environment variables with Railway services automatically and securely."
+    },
+    "vercel": {
+      "title": "Vercel integration",
+      "description": "Set up automatic environment variable sync between CriptEnv and Vercel. As soon as you update your secrets in CriptEnv, they are propagated to your Vercel projects.",
+      "infoCallout": "The Vercel integration uses the official Vercel API to create and update Environment Variables securely.",
+      "setup": {
+        "title": "Setup",
+        "step1": {
+          "title": "Create a Vercel access token",
+          "body": "Go to <link>vercel.com/account/tokens</link> and create a new token with write permission."
+        },
+        "step2": {
+          "title": "Connect Vercel in the CriptEnv dashboard",
+          "body": "In the CriptEnv dashboard, go to <strong>Project → Integrations → Vercel</strong> and paste the token. Select the Vercel project you want to sync."
+        },
+        "step3": {
+          "title": "Map environments",
+          "body": "Map CriptEnv environments to Vercel environments:",
+          "codeTitle": "Environment mapping"
+        },
+        "step4": {
+          "title": "Turn on automatic sync",
+          "body": "Turn on automatic sync so that changes in CriptEnv are propagated to Vercel automatically."
+        }
+      },
+      "manual": {
+        "title": "Manual sync via CLI",
+        "body": "You can also sync manually with the CriptEnv CLI:",
+        "codeTitle": "Sync with Vercel"
+      },
+      "example": {
+        "title": "Example Vercel project"
+      },
+      "overwriteWarning": "With automatic sync on, CriptEnv overwrites existing Vercel variables that have the same name. Make sure the variable names are correct."
+    },
+    "render": {
+      "title": "Render integration",
+      "description": "Connect CriptEnv to Render to manage your Environment Groups in one place. Keep your secrets synced automatically between CriptEnv and your Render services.",
+      "setup": {
+        "title": "Setup",
+        "step1": {
+          "title": "Create a Render API key",
+          "body": "In Render, go to <strong>Account Settings → API Keys</strong> and create a new API key. Write the value down: it is shown only once."
+        },
+        "step2": {
+          "title": "Connect Render in CriptEnv",
+          "body": "In the CriptEnv dashboard, go to <strong>Project → Integrations → Render</strong>. Enter the Render API key and select the Environment Group you want to sync."
+        },
+        "step3": {
+          "title": "Choose the variables to sync",
+          "body": "Choose which CriptEnv variables are synced. You can sync every variable in an environment or pick them one by one."
+        },
+        "step4": {
+          "title": "Turn on sync",
+          "body": "Turn on automatic sync. From then on, changes to CriptEnv secrets are reflected in Render automatically."
+        }
+      },
+      "cli": {
+        "title": "Sync via CLI",
+        "codeTitle": "Sync with Render"
+      },
+      "example": {
+        "title": "Example with render.yaml"
+      },
+      "groupsTip": "Render Environment Groups let you share variables across multiple services. Use this integration to keep all your services in sync with the same CriptEnv variables.",
+      "apiKeyWarning": "A Render API key has broad access to your account. We recommend creating a key dedicated to the CriptEnv integration."
+    },
+    "githubAction": {
+      "description": "Use CriptEnv's official Action (<code>@criptenv/action</code>) to decrypt and inject your environment variables straight into your GitHub Actions workflows.",
+      "tokenCallout": "The CriptEnv GitHub Action needs a valid API token. You can create one in <link>Dashboard → Tokens</link>.",
+      "setup": {
+        "title": "Setup",
+        "step1": {
+          "title": "Store the CI token and vault password in GitHub",
+          "body": "In the CriptEnv dashboard, create a CI token (starts with <code>ci_</code>) with the <code>read:secrets</code> scope. Because CriptEnv is zero-knowledge, the token alone only downloads encrypted values: to get plaintext values the Action also needs the project's <strong>vault password</strong>. Store both as <strong>Repository Secrets</strong>.",
+          "codeTitle": "Add secrets in GitHub"
+        },
+        "step2": {
+          "title": "Get the project ID",
+          "body": "Copy your project ID from the CriptEnv dashboard. The action needs it to know which project to decrypt."
+        },
+        "step3": {
+          "title": "Add the Action to your workflow",
+          "body": "Configure your GitHub Actions workflow to run the CriptEnv action before your build or deploy commands."
+        }
+      },
+      "inputs": {
+        "title": "Inputs",
+        "body": "The Action accepts the following inputs:",
+        "token": "CriptEnv CI token (starts with ci_). Pass it through GitHub Secrets.",
+        "project": "Project ID in CriptEnv.",
+        "vaultPassword": "Project vault password (via GitHub Secrets). With it, the Action exports plaintext values; without it, variables receive the ciphertext.",
+        "environment": "Target environment (e.g. production, staging). Default: production.",
+        "apiUrl": "CriptEnv API URL. Default: https://criptenv-api.77mdevseven.tech/api/v1.",
+        "prefix": "Prefix for the environment variables. Default: SECRET_."
+      },
+      "fullExample": {
+        "title": "Full example",
+        "codeTitle": "Workflow with multiple environments"
+      },
+      "tokenWarning": "Never expose the CriptEnv token in public logs. Always use GitHub Secrets to store tokens and sensitive credentials."
+    }
+  },
+  "guides": {
+    "overview": {
+      "title": "Guides",
+      "description": "Practical step-by-step guides for common CriptEnv scenarios.",
+      "cards": {
+        "firstProject": {
+          "title": "Your First Project",
+          "description": "From zero to your first managed secret in 5 minutes. Create an account and a project, and manage your environment variables."
+        },
+        "teamSetup": {
+          "title": "Team Setup",
+          "description": "Invite members, assign roles (admin, developer, viewer) and manage permissions per project."
+        },
+        "cicd": {
+          "title": "CI/CD with CriptEnv",
+          "description": "Integrate with GitHub Actions, GitLab CI, CircleCI and more. CI tokens and the official GitHub Action."
+        },
+        "secretRotation": {
+          "title": "Secret Rotation",
+          "description": "Set manual, notify or auto rotation policies. Automate with scheduled GitHub Actions workflows."
+        },
+        "migration": {
+          "title": "Migrating from .env",
+          "description": "Import your existing .env files into CriptEnv with a single command."
+        }
+      }
+    },
+    "firstProject": {
+      "title": "Your First Project",
+      "description": "Learn to set up CriptEnv from scratch and manage your first secrets securely. This guide takes under 5 minutes.",
+      "prerequisites": {
+        "title": "Prerequisites",
+        "account": "A CriptEnv account (free)",
+        "python": "Python 3.10+ installed",
+        "terminal": "Terminal access"
+      },
+      "steps": {
+        "title": "Step by step",
+        "account": {
+          "title": "Create your account",
+          "body": "Go to <link>criptenv.77mdevseven.tech</link> and create your free account. You can sign in with GitHub, Google or Discord to speed things up."
+        },
+        "install": {
+          "title": "Install the CLI",
+          "codeTitle": "Install the CLI"
+        },
+        "login": {
+          "title": "Sign in",
+          "codeTitle": "Authenticate the CLI"
+        },
+        "project": {
+          "title": "Create a new project",
+          "body": "Create a project with the CLI (you can also create it from the web dashboard):",
+          "codeTitle": "Create project",
+          "tip": "You'll be asked to set a vault password for the project. It is used to encrypt this project's secrets."
+        },
+        "secrets": {
+          "title": "Add your environment variables",
+          "body": "Add your secrets with the CLI:",
+          "codeTitle": "Add secrets"
+        },
+        "import": {
+          "title": "Import an existing .env",
+          "body": "If you already have a .env file, import it into the remote vault:",
+          "codeTitle": "Import into the remote vault"
+        },
+        "export": {
+          "title": "Load the variables in your project",
+          "body": "Export the secrets to a local .env file:",
+          "codeTitle": "Export to .env"
+        }
+      },
+      "done": "Congratulations! Your first project is set up. Your secrets are now encrypted and safe in CriptEnv.",
+      "next": {
+        "title": "Next steps",
+        "action": "<link>Set up the GitHub Action</link> to sync secrets in CI/CD",
+        "team": "<link>Invite your team</link> to collaborate on secret management",
+        "commands": "<link>Explore the full command reference</link>"
+      }
+    },
+    "teamSetup": {
+      "title": "Team Setup",
+      "description": "Learn how to invite members, set permissions and organize your team in CriptEnv to collaborate on secret management securely.",
+      "invite": {
+        "title": "Inviting members",
+        "step1": {
+          "title": "Open the team settings",
+          "body": "In the CriptEnv dashboard, go to <strong>Settings → Team</strong>. There you can see all current members and manage invitations."
+        },
+        "step2": {
+          "title": "Send an invitation",
+          "body": "Click <strong>\"Invite Member\"</strong> and enter the email of the person you want to add. Pick the role they will have on the team.",
+          "codeTitle": "Invitation example"
+        },
+        "step3": {
+          "title": "Accept the invitation",
+          "body": "The member gets an email with a link to accept the invitation. Once accepted, they can access the projects according to the permissions you set."
+        }
+      },
+      "roles": {
+        "title": "Roles and permissions",
+        "body": "CriptEnv offers 4 permission levels for team members:",
+        "role": "Role",
+        "view": "View secrets",
+        "edit": "Edit secrets",
+        "manageTeam": "Manage team",
+        "settings": "Settings"
+      },
+      "perProject": {
+        "title": "Per-project permissions",
+        "body": "Permissions are granular per project. A member can be Admin in one project and Viewer in another.",
+        "codeTitle": "Per-project permissions example"
+      },
+      "cli": {
+        "title": "Managing with the CLI",
+        "codeTitle": "Team commands in the CLI"
+      },
+      "leastPrivilege": "Follow the principle of least privilege: grant each member only the permissions they need for their work.",
+      "ownerWarning": "Members with the <strong>Owner</strong> role have full access to the project, including deleting it. Limit this role to people you fully trust."
+    },
+    "cicd": {
+      "title": "CI/CD Setup",
+      "description": "Set up CriptEnv in your CI/CD pipeline to load secrets securely during build, tests and deploy. Works with GitHub Actions and other platforms through the CLI.",
+      "github": {
+        "body": "The simplest way to integrate. Use the official CriptEnv Action:",
+        "step1": {
+          "title": "Add the token and vault password as secrets",
+          "body": "In the GitHub repository, go to <strong>Settings → Secrets and variables → Actions</strong> and add the CriptEnv CI token and the project vault password as new secrets. Without the vault password, the Action only receives encrypted values.",
+          "codeTitle": "Secret configuration"
+        },
+        "step2": {
+          "title": "Configure the workflow"
+        }
+      },
+      "practices": {
+        "title": "CI/CD best practices",
+        "environments": "<strong>Use separate environments:</strong> keep different secrets for staging and production",
+        "scope": "<strong>Minimal-scope tokens:</strong> create CI/CD-specific tokens with read-only permission",
+        "logs": "<strong>Never log secrets:</strong> avoid printing environment variables in CI logs",
+        "rotate": "<strong>Rotate tokens:</strong> refresh your CriptEnv tokens periodically"
+      },
+      "commitWarning": "Never commit CriptEnv tokens to your code. Always use environment variables or the CI/CD platform's native secrets."
+    },
+    "secretRotation": {
+      "title": "Secret Rotation",
+      "description": "Rotating secrets regularly is an essential security practice. Learn how to set up and automate environment variable rotation with CriptEnv.",
+      "infoCallout": "Rotation shrinks the exposure window if a credential is compromised. We recommend rotating every 30-90 days, depending on sensitivity.",
+      "why": {
+        "title": "Why rotate?",
+        "leaks": "Limits the impact of leaks and compromises",
+        "compliance": "Meets compliance requirements (SOC2, ISO 27001, LGPD)",
+        "offboarding": "Cuts off access for people who have left the company",
+        "hygiene": "Keeps good security hygiene"
+      },
+      "manual": {
+        "title": "Manual rotation",
+        "step1": {
+          "title": "Generate the new secret",
+          "body": "Generate the new secret in the corresponding service (database, API, etc.). Make sure it works before updating it in CriptEnv."
+        },
+        "step2": {
+          "title": "Update it in CriptEnv",
+          "body": "Use the CLI to update the variable with the new value:",
+          "codeTitle": "Update variable"
+        },
+        "step3": {
+          "title": "Sync your integrations",
+          "body": "If you have integrations set up (Vercel, Render), sync them manually:",
+          "codeTitle": "Sync integrations"
+        },
+        "step4": {
+          "title": "Check the application",
+          "body": "Confirm the application works with the new secret. Watch logs and metrics for a few minutes."
+        }
+      },
+      "automated": {
+        "title": "Automated rotation",
+        "body": "Set up automatic rotation with GitHub Actions:",
+        "codeTitle": "Automatic rotation with GitHub Actions"
+      },
+      "policies": {
+        "title": "Rotation policies",
+        "body": "Set rotation policies per secret type:",
+        "type": "Secret type",
+        "frequency": "Recommended frequency",
+        "priority": "Priority",
+        "every30": "Every 30 days",
+        "every90": "Every 90 days",
+        "every180": "Every 180 days",
+        "high": "High",
+        "medium": "Medium",
+        "critical": "Critical"
+      },
+      "expiry": {
+        "title": "Expiration and alerts",
+        "body": "Set automatic expiration and alerts for your secrets:",
+        "codeTitle": "Set expiration and alerts"
+      },
+      "overlapWarning": "When rotating production secrets, make sure every dependent service is updated at the same time to avoid downtime. Consider an overlap period in which both the old and the new secret are valid."
+    },
+    "migration": {
+      "breadcrumb": "Migrating from .env",
+      "title": "Migrating .env files",
+      "description": "Move the variables from an existing <code>.env</code> into the CriptEnv vault and inject them in memory, with no file holding values on disk.",
+      "step1": {
+        "title": "Create the project and environment",
+        "body": "Creating the project sets the vault password: keep it in a password manager. Commands accept the project ID or name.",
+        "codeTitle": "Project and environment"
+      },
+      "step2": {
+        "title": "Import the file",
+        "body": "Each <code>KEY=value</code> line becomes a secret encrypted on the client. Existing keys are kept unless you pass <code>--overwrite</code>.",
+        "codeTitle": "Import"
+      },
+      "step3": {
+        "title": "Check nothing was left behind",
+        "body": "<code>diff</code> compares the file with the vault and exits with code 1 if they differ (also handy as a CI gate).",
+        "codeTitle": "Compare"
+      },
+      "step4": {
+        "title": "Run the app with secrets in memory",
+        "body": "<code>run</code> decrypts the values and replaces its own process with the command (signals such as <code>SIGTERM</code> reach the app directly). CriptEnv credentials are not passed to the app.",
+        "codeTitle": "Run"
+      },
+      "step5": {
+        "title": "Delete the old file",
+        "body": "Once everything runs through CriptEnv, delete the file with values and keep only a <code>.env.example</code> with the names.",
+        "codeTitle": "Remove"
+      },
+      "servers": {
+        "title": "On servers and containers",
+        "body": "Without a terminal, the CLI reads credentials from the environment: <code>CRIPTENV_API_KEY</code> (a <code>cek_...</code> API key with the <code>read:secrets</code> scope) authenticates the process without writing a session to disk, and <code>CRIPTENV_VAULT_PASSWORD</code> opens the vault. If either is missing, the command fails with an error instead of waiting for a prompt."
+      },
+      "exportWarning": "<code>criptenv export</code> produces plaintext. If you need it, prefer <code>--format json</code> read directly by the process; in the <code>env</code> format, values with spaces, <code>#</code>, quotes or line breaks are quoted."
+    }
+  },
+  "sdks": {
+    "overview": {
+      "description": "Use CriptEnv's official SDKs to bring secret management straight into your application. Decrypt environment variables simply and securely with a few lines of code.",
+      "cards": {
+        "javascript": "Official SDK for Node.js, Deno and browsers. Full TypeScript support with bundled types. Install via npm, yarn or pnpm.",
+        "python": "Official SDK for Python 3.8+. Manage your secrets with a simple, Pythonic API. Install via pip or poetry."
+      },
+      "comparison": {
+        "title": "Comparison",
+        "feature": "Feature",
+        "decrypt": "Decrypt variables",
+        "manage": "Manage secrets",
+        "cache": "Local cache"
+      }
+    },
+    "javascript": {
+      "title": "JavaScript / TypeScript SDK",
+      "inDevelopment": "The official JavaScript/TypeScript SDK is in development. Follow progress on the <repo>GitHub repository</repo>.",
+      "meanwhile": "Until the SDK ships, you can use the <api>REST API</api> directly or the <action>GitHub Action</action> for CI/CD."
+    },
+    "python": {
+      "title": "Python SDK",
+      "inDevelopment": "The official Python SDK is in development. Follow progress on the <repo>GitHub repository</repo>.",
+      "meanwhile": "Until the SDK ships, you can use the <cli>CLI</cli> directly or the <api>REST API</api> for programmatic integrations."
+    }
   }
 }

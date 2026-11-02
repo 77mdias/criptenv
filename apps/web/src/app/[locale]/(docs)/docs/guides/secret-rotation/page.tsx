@@ -7,105 +7,101 @@ import {
   Steps,
   Step,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function SecretRotationPage() {
+  const t = useTranslations('docs.guides.secretRotation');
+  const tRoot = useTranslations('docs');
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Guias', href: '/docs/guides' },
-          { label: 'Rotação de Secrets', href: '/docs/guides/secret-rotation' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('guides.overview.title'), href: '/docs/guides' },
+          { label: t('title'), href: '/docs/guides/secret-rotation' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-6 mb-4">
-        Rotação de Secrets
+        {t('title')}
       </h1>
       <p className="text-muted-foreground mb-8">
-        A rotação regular de secrets é uma prática essencial de segurança.
-        Aprenda a configurar e automatizar a rotação de variáveis de ambiente
-        usando o CriptEnv.
+        {t('description')}
       </p>
 
       <Callout variant="info">
-        A rotação de secrets reduz a janela de exposição caso uma credencial
-        seja comprometida. Recomendamos rodar a cada 30-90 dias, dependendo
-        do nível de sensibilidade.
+        {t('infoCallout')}
       </Callout>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Por que rotacionar?
+        {t('why.title')}
       </h2>
       <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-        <li>Reduz o impacto de vazamentos e comprometimentos</li>
-        <li>Atende a requisitos de compliance (SOC2, ISO 27001, LGPD)</li>
-        <li>Remove acessos de funcionários que saíram da empresa</li>
-        <li>Mantém boas práticas de higiene de segurança</li>
+        <li>{t('why.leaks')}</li>
+        <li>{t('why.compliance')}</li>
+        <li>{t('why.offboarding')}</li>
+        <li>{t('why.hygiene')}</li>
       </ul>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Rotação Manual
+        {t('manual.title')}
       </h2>
 
       <Steps>
-        <Step title="Gere o novo secret">
+        <Step title={t('manual.step1.title')}>
           <p className="text-muted-foreground">
-            Gere o novo secret no serviço correspondente (banco de dados, API,
-            etc.). Certifique-se de que o novo secret está funcionando antes de
-            atualizar no CriptEnv.
+            {t('manual.step1.body')}
           </p>
         </Step>
 
-        <Step title="Atualize no CriptEnv">
+        <Step title={t('manual.step2.title')}>
           <p className="text-muted-foreground">
-            Use o CLI para atualizar a variável com o novo valor:
+            {t('manual.step2.body')}
           </p>
-          <CodeBlock language="bash" title="Atualizar variável">
-{`# Atualizar uma variável específica
-criptenv rotate API_KEY -v "novo-valor-seguro" -p <project-id>
+          <CodeBlock language="bash" title={t('manual.step2.codeTitle')}>
+{`# Set a specific new value
+criptenv rotate API_KEY -v "new-secure-value" -p <project-id>
 
-# Rotacionar com valor auto-gerado
+# Rotate with an auto-generated value
 criptenv rotate API_KEY -p <project-id>`}
           </CodeBlock>
         </Step>
 
-        <Step title="Sincronize com as integrações">
+        <Step title={t('manual.step3.title')}>
           <p className="text-muted-foreground">
-            Se você tem integrações configuradas (Vercel, Render), sincronize manualmente:
+            {t('manual.step3.body')}
           </p>
-          <CodeBlock language="bash" title="Sincronizar integrações">
-{`# Sincronizar com Vercel
-criptenv integrations sync vercel -p <project-id>
+          <CodeBlock language="bash" title={t('manual.step3.codeTitle')}>
+{`# Sync with Vercel
+criptenv integrations sync --provider vercel --project <project-id>
 
-# Sincronizar com Render
-criptenv integrations sync render -p <project-id>`}
+# Sync with Render
+criptenv integrations sync --provider render --project <project-id>`}
           </CodeBlock>
         </Step>
 
-        <Step title="Verifique a aplicação">
+        <Step title={t('manual.step4.title')}>
           <p className="text-muted-foreground">
-            Confirme que a aplicação está funcionando corretamente com o novo
-            secret. Monitore logs e métricas por alguns minutos.
+            {t('manual.step4.body')}
           </p>
         </Step>
       </Steps>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Rotação Automatizada
+        {t('automated.title')}
       </h2>
       <p className="text-muted-foreground mb-4">
-        Configure a rotação automática usando o GitHub Actions:
+        {t('automated.body')}
       </p>
 
-      <CodeBlock language="yaml" title="Rotação automática com GitHub Actions">
+      <CodeBlock language="yaml" title={t('automated.codeTitle')}>
 {`name: Secret Rotation
 
 on:
   schedule:
-    # Executa todo dia 1 do mês às 3h UTC
+    # Runs on the 1st of every month at 03:00 UTC
     - cron: '0 3 1 * *'
-  workflow_dispatch:  # Permite execução manual
+  workflow_dispatch:  # Allows manual runs
 
 jobs:
   rotate:
@@ -113,102 +109,101 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Gerar novo secret
+      - name: Generate new secret
         id: generate
         run: |
           NEW_SECRET=$(openssl rand -hex 32)
           echo "secret=$NEW_SECRET" >> $GITHUB_OUTPUT
 
-      - name: Atualizar no CriptEnv
+      - name: Update in CriptEnv
         env:
           CRIPTENV_TOKEN: \${{ secrets.CRIPTENV_TOKEN }}
+          # rotate re-encrypts the value, so it needs the project vault password
+          CRIPTENV_VAULT_PASSWORD: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
         run: |
           pip install criptenv
           criptenv ci login --token $CRIPTENV_TOKEN
           criptenv rotate API_KEY -v "\${{ steps.generate.outputs.secret }}" -p <project-id>
 
-      - name: Sincronizar com Vercel
+      - name: Sync with Vercel
         run: |
-          criptenv integrations sync vercel -p <project-id>
+          criptenv integrations sync --provider vercel --project <project-id>
 
-      - name: Notificar equipe
+      - name: Notify the team
         uses: slackapi/slack-github-action@v1
         with:
           payload: |
-            {"text": "✅ API Key rotacionada com sucesso no projeto"}
+            {"text": "✅ API key rotated successfully"}
         env:
           SLACK_WEBHOOK_URL: \${{ secrets.SLACK_WEBHOOK }}`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Políticas de Rotação
+        {t('policies.title')}
       </h2>
       <p className="text-muted-foreground mb-4">
-        Defina políticas de rotação por tipo de secret:
+        {t('policies.body')}
       </p>
 
       <div className="border rounded-lg overflow-hidden mb-6">
         <table className="w-full text-sm">
           <thead className="bg-muted">
             <tr>
-              <th className="text-left p-3 font-medium">Tipo de Secret</th>
-              <th className="text-left p-3 font-medium">Frequência Recomendada</th>
-              <th className="text-left p-3 font-medium">Prioridade</th>
+              <th className="text-left p-3 font-medium">{t('policies.type')}</th>
+              <th className="text-left p-3 font-medium">{t('policies.frequency')}</th>
+              <th className="text-left p-3 font-medium">{t('policies.priority')}</th>
             </tr>
           </thead>
           <tbody>
             <tr className="border-t">
               <td className="p-3">API Keys</td>
-              <td className="p-3">A cada 30 dias</td>
-              <td className="p-3">Alta</td>
+              <td className="p-3">{t('policies.every30')}</td>
+              <td className="p-3">{t('policies.high')}</td>
             </tr>
             <tr className="border-t">
               <td className="p-3">Database credentials</td>
-              <td className="p-3">A cada 90 dias</td>
-              <td className="p-3">Alta</td>
+              <td className="p-3">{t('policies.every90')}</td>
+              <td className="p-3">{t('policies.high')}</td>
             </tr>
             <tr className="border-t">
               <td className="p-3">JWT secrets</td>
-              <td className="p-3">A cada 30 dias</td>
-              <td className="p-3">Alta</td>
+              <td className="p-3">{t('policies.every30')}</td>
+              <td className="p-3">{t('policies.high')}</td>
             </tr>
             <tr className="border-t">
               <td className="p-3">Third-party tokens</td>
-              <td className="p-3">A cada 90 dias</td>
-              <td className="p-3">Média</td>
+              <td className="p-3">{t('policies.every90')}</td>
+              <td className="p-3">{t('policies.medium')}</td>
             </tr>
             <tr className="border-t">
               <td className="p-3">Encryption keys</td>
-              <td className="p-3">A cada 180 dias</td>
-              <td className="p-3">Crítica</td>
+              <td className="p-3">{t('policies.every180')}</td>
+              <td className="p-3">{t('policies.critical')}</td>
             </tr>
           </tbody>
         </table>
       </div>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Expiração e Alertas
+        {t('expiry.title')}
       </h2>
       <p className="text-muted-foreground mb-4">
-        Configure expiração automática e alertas para seus secrets:
+        {t('expiry.body')}
       </p>
 
-      <CodeBlock language="bash" title="Configurar expiração e alertas">
-{`# Definir expiração de 90 dias com política notify
+      <CodeBlock language="bash" title={t('expiry.codeTitle')}>
+{`# Set a 90-day expiration with the notify policy
 criptenv secrets expire API_KEY --days 90 --policy notify -p <project-id>
 
-# Configurar alerta 14 dias antes da expiração
+# Alert 14 days before expiration
 criptenv secrets alert API_KEY --days 14 -p <project-id>
 
-# Listar secrets próximos da expiração
+# List secrets close to expiring
 criptenv rotation list --days 30 -p <project-id>`}
       </CodeBlock>
 
       <Callout variant="warning">
-        Ao rotacionar secrets em produção, certifique-se de que todos os
-        serviços dependentes são atualizados simultaneamente para evitar
-        downtime. Considere usar rotação com período de sobreposição (overlap)
-        onde tanto o secret antigo quanto o novo são válidos por um período.
+        {t('overlapWarning')}
       </Callout>
     </div>
   );
