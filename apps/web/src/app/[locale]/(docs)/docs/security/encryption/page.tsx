@@ -8,255 +8,250 @@ import {
   Tabs,
   Tab,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function EncryptionPage() {
+  const t = useTranslations('docs.security.encryption');
+  const tRoot = useTranslations('docs');
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Segurança', href: '/docs/security' },
-          { label: 'Criptografia', href: '/docs/security/encryption' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('security.overview.title'), href: '/docs/security' },
+          { label: t('breadcrumb'), href: '/docs/security/encryption' },
         ]}
       />
 
-      <h1 className="text-3xl font-bold mt-6 mb-4">Protocolo de Criptografia</h1>
+      <h1 className="text-3xl font-bold mt-6 mb-4">{t('title')}</h1>
 
       <p className="text-muted-foreground mb-6">
-        O CriptEnv utiliza uma cadeia de derivação de chaves em múltiplas camadas para
-        garantir que cada ambiente tenha uma chave criptográfica única e isolada. Todo
-        o processo acontece no navegador do usuário — o servidor nunca tem acesso às
-        chaves ou aos dados em texto claro.
+        {t('description')}
       </p>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Fluxo de Derivação de Chaves</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('flow.title')}</h2>
 
       <p className="text-muted-foreground mb-4">
-        O processo completo de derivação segue estas etapas:
+        {t('flow.body')}
       </p>
 
       <CodeBlock
         language="text"
         code={`┌─────────────────────────────────────────────────────────┐
-│  1. SENHA MESTRA (input do usuário)                     │
-│     Exemplo: "minha-senha-segura-123"                   │
+│  1. VAULT PASSWORD (user input, per project)            │
+│     Example: "my-secure-password-123"                   │
 └──────────────────────┬──────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────┐
 │  2. PBKDF2-HMAC-SHA256                                  │
-│     Iterações: 100.000                                  │
-│     Salt: 32 bytes aleatórios (gerado no registro)      │
-│     Output: 256-bit Master Key                          │
+│     Iterations: 100,000                                 │
+│     Salt: 32 random bytes (per project, with the vault) │
+│     Output: 256-bit vault key                           │
 └──────────────────────┬──────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────┐
-│  3. HKDF-SHA256 (por ambiente)                          │
-│     IKM: Master Key                                     │
-│     Salt: environment_id (UUID do ambiente)             │
+│  3. HKDF-SHA256 (per environment)                       │
+│     IKM: vault key                                      │
+│     Salt: environment_id (environment UUID)             │
 │     Info: "criptenv-vault-v1"                           │
-│     Output: 256-bit Environment Key                     │
+│     Output: 256-bit environment key                     │
 └──────────────────────┬──────────────────────────────────┘
                        │
                        ▼
 ┌─────────────────────────────────────────────────────────┐
 │  4. AES-256-GCM                                         │
-│     Key: 256-bit Environment Key                        │
-│     IV: 12 bytes aleatórios (por operação)              │
-│     Auth Tag: 128 bits                                  │
+│     Key: 256-bit environment key                        │
+│     IV: 12 random bytes (per operation)                 │
+│     Auth tag: 128 bits                                  │
 │     Output: ciphertext + IV + auth_tag                  │
 └─────────────────────────────────────────────────────────┘`}
       />
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Parâmetros Criptográficos</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('params.title')}</h2>
 
-      <h3 className="text-xl font-semibold mt-8 mb-3">PBKDF2 (Derivação da Chave Mestra)</h3>
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t('params.pbkdf2.title')}</h3>
 
       <ParamTable
         params={[
           {
-            name: 'Algoritmo',
+            name: t('params.algorithm'),
             type: 'string',
-            description: 'HMAC-SHA256 — Função pseudo-aleatória baseada em hash',
+            description: t('params.pbkdf2.algorithm'),
           },
           {
-            name: 'Iterações',
+            name: t('params.iterations'),
             type: 'number',
-            description: '100.000 iterações — proteção contra força bruta',
+            description: t('params.pbkdf2.iterations'),
           },
           {
-            name: 'Tamanho do Salt',
+            name: t('params.saltSize'),
             type: 'number',
-            description: '32 bytes (256 bits) — gerado aleatoriamente no momento do registro',
+            description: t('params.pbkdf2.salt'),
           },
           {
-            name: 'Tamanho da Chave',
+            name: t('params.keySize'),
             type: 'number',
-            description: '32 bytes (256 bits) — chave mestra de saída',
+            description: t('params.pbkdf2.keySize'),
           },
         ]}
       />
 
-      <h3 className="text-xl font-semibold mt-8 mb-3">HKDF (Derivação por Ambiente)</h3>
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t('params.hkdf.title')}</h3>
 
       <ParamTable
         params={[
           {
-            name: 'Algoritmo',
+            name: t('params.algorithm'),
             type: 'string',
-            description: 'SHA-256 — Função de hash subjacente',
+            description: t('params.hkdf.algorithm'),
           },
           {
             name: 'IKM (Input Key Material)',
             type: 'string',
-            description: 'Chave mestra de 256 bits derivada do PBKDF2',
+            description: t('params.hkdf.ikm'),
           },
           {
             name: 'Salt',
             type: 'string',
-            description: 'ID do ambiente (UUID) — garante chave única por ambiente',
+            description: t('params.hkdf.salt'),
           },
           {
             name: 'Info',
             type: 'string',
-            description: '"criptenv-vault-v1" — contexto do domíneo de aplicação',
+            description: t('params.hkdf.info'),
           },
           {
-            name: 'Tamanho da Chave',
+            name: t('params.keySize'),
             type: 'number',
-            description: '32 bytes (256 bits) — chave do ambiente de saída',
+            description: t('params.hkdf.keySize'),
           },
         ]}
       />
 
-      <h3 className="text-xl font-semibold mt-8 mb-3">AES-256-GCM (Criptografia dos Dados)</h3>
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t('params.aes.title')}</h3>
 
       <ParamTable
         params={[
           {
-            name: 'Algoritmo',
+            name: t('params.algorithm'),
             type: 'string',
-            description: 'AES-256-GCM — Criptografia autenticada com Galois/Counter Mode',
+            description: t('params.aes.algorithm'),
           },
           {
-            name: 'Tamanho da Chave',
+            name: t('params.keySize'),
             type: 'number',
-            description: '32 bytes (256 bits) — chave do ambiente derivada via HKDF',
+            description: t('params.aes.keySize'),
           },
           {
             name: 'IV (Nonce)',
             type: 'number',
-            description: '12 bytes (96 bits) — gerado aleatoriamente para cada operação de criptografia',
+            description: t('params.aes.iv'),
           },
           {
             name: 'Auth Tag',
             type: 'number',
-            description: '16 bytes (128 bits) — tag de autenticação para verificação de integridade',
+            description: t('params.aes.tag'),
           },
         ]}
       />
 
       <Callout variant="warning">
-        O IV (vetor de inicialização) é gerado aleatoriamente para cada operação de
-        criptografia. Nunca reutilize um IV com a mesma chave — isso comprometeria
-        a segurança do GCM.
+        {t('params.ivWarning')}
       </Callout>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Derivação do Vault Proof</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('proof.title')}</h2>
 
       <p className="text-muted-foreground mb-4">
-        Além da chave de criptografia, o CriptEnv deriva uma chave de prova separada
-        usada para autorização na API. Isso permite autenticar o usuário sem revelar
-        a Vault password ou a chave de criptografia.
+        {t('proof.body')}
       </p>
 
       <CodeBlock
         language="text"
         code={`┌─────────────────────────────────────────────────────────┐
 │  PBKDF2-HMAC-SHA256                                     │
-│     Password: Vault Password                            │
-│     Salt: "proof_salt" (constante do sistema)           │
-│     Iterações: 100.000                                  │
-│     Output: Vault Proof (256-bit)                       │
+│     Password: vault password                            │
+│     Salt: proof_salt (32 random bytes, per project)     │
+│     Iterations: 100,000                                 │
+│     Output: vault proof (256-bit)                       │
 └─────────────────────────────────────────────────────────┘
 
-O Vault Proof é enviado ao servidor para verificação.
-O servidor armazena apenas o hash do proof para comparação.
-A chave de criptografia real nunca é transmitida.`}
+The vault proof is sent to the server for verification.
+The server stores only a bcrypt hash of the proof.
+The actual encryption key is never transmitted.`}
       />
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Metadata Local vs. Vault Remoto</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('storage.title')}</h2>
 
       <Tabs defaultValue="local">
-        <Tab value="local" label="Metadata Local">
+        <Tab value="local" label={t('storage.localTab')}>
           <div className="mt-4">
             <p className="text-muted-foreground mb-4">
-              O CLI mantém metadata local em SQLite no diretório do usuário:
+              {t('storage.localBody')}
             </p>
 
             <CodeBlock
               language="text"
-              code={`Localização: ~/.criptenv/vault.db
+              code={`Location: ~/.criptenv/vault.db
 
-Estrutura do banco de dados:
-├── sessions     → Sessões autenticadas (criptografadas)
-├── ci_sessions  → Sessões de CI criptografadas
-├── projects     → Metadata/cache de projetos
-└── environments → Metadata/cache de ambientes
+Database layout:
+├── sessions     → authenticated sessions (encrypted)
+├── ci_sessions  → encrypted CI sessions
+├── projects     → project metadata/cache
+└── environments → environment metadata/cache
 
-Recursos de segurança:
-• Banco de dados com permissões restritivas (0600)
-• Sessões com expiração automática
-• auth.key separado para criptografar tokens locais
-• Cleanup automático de sessões expiradas`}
+Security features:
+• Restrictive file permissions (0600)
+• Sessions expire automatically
+• Separate auth.key to encrypt local tokens
+• Expired sessions are cleaned up automatically`}
             />
 
             <Callout variant="info">
-              O fluxo principal da CLI não armazena secrets localmente. Secrets
-              vivem no vault remoto e são descriptografados apenas em memória.
+              {t('storage.localCallout')}
             </Callout>
           </div>
         </Tab>
 
-        <Tab value="cloud" label="Vault Remoto">
+        <Tab value="cloud" label={t('storage.cloudTab')}>
           <div className="mt-4">
             <p className="text-muted-foreground mb-4">
-              O cofre na nuvem armazena apenas dados já criptografados:
+              {t('storage.cloudBody')}
             </p>
 
             <CodeBlock
               language="text"
-              code={`O que é armazenado no servidor:
+              code={`Stored on the server:
 ┌─────────────────────────────────────────────────────┐
-│ • Vault Proof (hash derivado da senha)              │
-│ • Salt do PBKDF2 (32 bytes, público)                │
-│ • Dados criptografados (ciphertext + IV + auth_tag) │
-│ • IDs de ambientes e projetos (não-secretos)        │
+│ • bcrypt hash of the vault proof                    │
+│ • PBKDF2 salts (32 bytes each, public)              │
+│ • Encrypted values (ciphertext + IV + auth_tag)     │
+│ • Variable names (keys) — only values are encrypted │
+│ • Environment and project IDs (non-secret)          │
 └─────────────────────────────────────────────────────┘
 
-O que NÃO é armazenado:
+NOT stored:
 ┌─────────────────────────────────────────────────────┐
 │ ✗ Vault password                                    │
-│ ✗ Chave do vault derivada                           │
-│ ✗ Chaves de ambiente                                │
-│ ✗ Dados em texto claro                              │
-│ ✗ Chaves de sessão                                  │
+│ ✗ Derived vault key                                 │
+│ ✗ Environment keys                                  │
+│ ✗ Plaintext values                                  │
 └─────────────────────────────────────────────────────┘`}
             />
           </div>
         </Tab>
       </Tabs>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Implementação</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('implementation.title')}</h2>
 
       <p className="text-muted-foreground mb-4">
-        Exemplo simplificado do fluxo de criptografia usando a Web Crypto API:
+        {t('implementation.body')}
       </p>
 
       <CodeBlock
         language="typescript"
-        code={`// 1. Derivação da chave mestra via PBKDF2
+        code={`// 1. Derive the vault key with PBKDF2
 const masterKey = await crypto.subtle.importKey(
   'raw',
   new TextEncoder().encode(password),
@@ -268,7 +263,7 @@ const masterKey = await crypto.subtle.importKey(
 const derivedKey = await crypto.subtle.deriveKey(
   {
     name: 'PBKDF2',
-    salt: salt,           // 32 bytes aleatórios
+    salt: salt,           // 32 random bytes
     iterations: 100_000,
     hash: 'SHA-256',
   },
@@ -278,11 +273,11 @@ const derivedKey = await crypto.subtle.deriveKey(
   ['deriveKey']
 );
 
-// 2. Derivação da chave do ambiente via HKDF
+// 2. Derive the environment key with HKDF
 const envKey = await crypto.subtle.deriveKey(
   {
     name: 'HKDF',
-    salt: new TextEncoder().encode(envId),  // UUID do ambiente
+    salt: new TextEncoder().encode(envId),  // environment UUID
     info: new TextEncoder().encode('criptenv-vault-v1'),
     hash: 'SHA-256',
   },
@@ -292,7 +287,7 @@ const envKey = await crypto.subtle.deriveKey(
   ['encrypt', 'decrypt']
 );
 
-// 3. Criptografia com AES-256-GCM
+// 3. Encrypt with AES-256-GCM
 const iv = crypto.getRandomValues(new Uint8Array(12)); // 96 bits
 const encrypted = await crypto.subtle.encrypt(
   { name: 'AES-GCM', iv, tagLength: 128 },
@@ -300,7 +295,7 @@ const encrypted = await crypto.subtle.encrypt(
   plaintext
 );
 
-// Resultado: ciphertext + IV (12 bytes) + auth_tag (16 bytes)`}
+// Result: ciphertext + IV (12 bytes) + auth_tag (16 bytes)`}
       />
     </div>
   );

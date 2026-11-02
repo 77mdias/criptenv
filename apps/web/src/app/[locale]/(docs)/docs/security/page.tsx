@@ -6,105 +6,95 @@ import {
   CardGrid,
   DocCard,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function SecurityOverviewPage() {
+  const t = useTranslations('docs.security.overview');
+  const tRoot = useTranslations('docs');
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Segurança', href: '/docs/security' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: t('title'), href: '/docs/security' },
         ]}
       />
 
-      <h1 className="text-3xl font-bold mt-6 mb-4">Segurança</h1>
+      <h1 className="text-3xl font-bold mt-6 mb-4">{t('title')}</h1>
 
       <p className="text-muted-foreground mb-6">
-        O CriptEnv foi projetado com uma arquitetura de <strong>conhecimento zero</strong> (zero-knowledge),
-        garantindo que seus segredos de ambiente nunca sejam expostos ao servidor.
-        Toda criptografia acontece no lado do cliente — o servidor armazena apenas
-        dados criptografados que não podem ser decifrados sem a Vault password
-        do projeto.
+        {t.rich('description', { strong })}
       </p>
 
       <Callout variant="info">
-        A Vault password do projeto nunca é enviada ao servidor. Ela é usada
-        localmente para derivar chaves criptográficas que nunca saem do seu
-        dispositivo.
+        {t('passwordCallout')}
       </Callout>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Princípios de Segurança</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('principles.title')}</h2>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-8">
         <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg mb-2">🔒 Confidencialidade</h3>
+          <h3 className="font-semibold text-lg mb-2">🔒 {t('principles.confidentiality.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            Todos os segredos são criptografados com AES-256-GCM antes de qualquer
-            armazenamento ou transmissão. O servidor nunca vê dados em texto claro.
+            {t('principles.confidentiality.body')}
           </p>
         </div>
 
         <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg mb-2">🛡️ Integridade</h3>
+          <h3 className="font-semibold text-lg mb-2">🛡️ {t('principles.integrity.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            O AES-GCM fornece autenticação integrada (GCM Auth Tag de 128 bits),
-            garantindo que qualquer adulteração nos dados criptografados seja detectada
-            imediatamente durante a descriptografia.
+            {t('principles.integrity.body')}
           </p>
         </div>
 
         <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg mb-2">🔄 Sigilo Perfeito (Forward Secrecy)</h3>
+          <h3 className="font-semibold text-lg mb-2">🧩 {t('principles.isolation.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            Chaves de sessão não são persistidas. Cada sessão gera chaves efêmeras que
-            são descartadas ao final da sessão, garantindo que a comprometimento de uma
-            sessão não afete dados anteriores ou futuros.
+            {t('principles.isolation.body')}
           </p>
         </div>
 
         <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg mb-2">💪 Resistência a Força Bruta</h3>
+          <h3 className="font-semibold text-lg mb-2">💪 {t('principles.bruteForce.title')}</h3>
           <p className="text-sm text-muted-foreground">
-            A derivação de chaves utiliza PBKDF2 com 100.000 iterações de HMAC-SHA256,
-            tornando ataques de força bruta computacionalmente inviáveis mesmo com
-            hardware especializado.
+            {t('principles.bruteForce.body')}
           </p>
         </div>
       </div>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Hierarquia de Chaves</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('hierarchy.title')}</h2>
 
       <p className="text-muted-foreground mb-4">
-        O CriptEnv utiliza uma hierarquia de chaves bem definida para isolar ambientes
-        e projetos:
+        {t('hierarchy.body')}
       </p>
 
       <div className="bg-muted rounded-lg p-4 font-mono text-sm mb-8">
         <p>Vault Password</p>
-        <p className="ml-4">↓ PBKDF2-HMAC-SHA256 (100k iterações)</p>
-        <p className="ml-4">Chave do Vault (256-bit)</p>
+        <p className="ml-4">↓ PBKDF2-HMAC-SHA256 ({t('hierarchy.iterations')})</p>
+        <p className="ml-4">{t('hierarchy.vaultKey')}</p>
         <p className="ml-8">↓ HKDF-SHA256 (salt=env_id)</p>
-        <p className="ml-8">Chave do Ambiente (256-bit)</p>
+        <p className="ml-8">{t('hierarchy.envKey')}</p>
         <p className="ml-12">↓ AES-256-GCM</p>
-        <p className="ml-12">Segredos Criptografados</p>
+        <p className="ml-12">{t('hierarchy.encrypted')}</p>
       </div>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Documentação de Segurança</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('docs.title')}</h2>
 
       <CardGrid>
         <DocCard
-          title="Protocolo de Criptografia"
-          description="Detalhes técnicos sobre algoritmos, parâmetros e fluxo completo de derivação de chaves."
+          title={t('docs.encryption.title')}
+          description={t('docs.encryption.description')}
           href="/docs/security/encryption"
         />
         <DocCard
-          title="Arquitetura Zero-Knowledge"
-          description="Como o modelo de conhecimento zero protege seus dados e o que o servidor pode e não pode ver."
+          title={t('docs.zeroKnowledge.title')}
+          description={t('docs.zeroKnowledge.description')}
           href="/docs/security/zero-knowledge"
         />
         <DocCard
-          title="Modelo de Ameaças"
-          description="Análise de cenários de ataque, níveis de risco e mitigações implementadas."
+          title={t('docs.threatModel.title')}
+          description={t('docs.threatModel.description')}
           href="/docs/security/threat-model"
         />
       </CardGrid>

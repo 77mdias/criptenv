@@ -846,5 +846,257 @@
       "inDevelopment": "El SDK oficial de Python está en desarrollo. Sigue el progreso en el <repo>repositorio de GitHub</repo>.",
       "meanwhile": "Mientras el SDK no se publique, puedes usar la <cli>CLI</cli> directamente o la <api>API REST</api> para integraciones programáticas."
     }
+  },
+  "security": {
+    "overview": {
+      "title": "Seguridad",
+      "description": "CriptEnv está diseñado con una arquitectura de <strong>conocimiento cero</strong> (zero-knowledge), de modo que tus secrets de entorno nunca se exponen al servidor. Todo el cifrado ocurre en el cliente: el servidor solo almacena datos cifrados que no se pueden descifrar sin la contraseña del vault del proyecto.",
+      "passwordCallout": "La contraseña del vault del proyecto nunca se envía al servidor. Se usa localmente para derivar claves de cifrado que nunca salen de tu dispositivo.",
+      "principles": {
+        "title": "Principios de seguridad",
+        "confidentiality": {
+          "title": "Confidencialidad",
+          "body": "Todos los secrets se cifran con AES-256-GCM antes de almacenarse o transmitirse. El servidor nunca ve datos en texto claro."
+        },
+        "integrity": {
+          "title": "Integridad",
+          "body": "AES-GCM ofrece autenticación integrada (auth tag GCM de 128 bits), de modo que cualquier manipulación de los datos cifrados se detecta de inmediato al descifrar."
+        },
+        "isolation": {
+          "title": "Aislamiento entre entornos",
+          "body": "Cada entorno tiene su propia clave, derivada con HKDF a partir de la clave del vault y del ID del entorno. La clave de un entorno no descifra los secrets de otro."
+        },
+        "bruteForce": {
+          "title": "Resistencia a la fuerza bruta",
+          "body": "La derivación de claves usa PBKDF2 con 100.000 iteraciones de HMAC-SHA256, lo que encarece computacionalmente los ataques de fuerza bruta incluso con hardware especializado."
+        }
+      },
+      "hierarchy": {
+        "title": "Jerarquía de claves",
+        "body": "CriptEnv usa una jerarquía de claves bien definida para aislar entornos y proyectos:",
+        "iterations": "100k iteraciones",
+        "vaultKey": "Clave del vault (256-bit)",
+        "envKey": "Clave del entorno (256-bit)",
+        "encrypted": "Secrets cifrados"
+      },
+      "docs": {
+        "title": "Documentación de seguridad",
+        "encryption": {
+          "title": "Protocolo de cifrado",
+          "description": "Detalles técnicos sobre algoritmos, parámetros y el flujo completo de derivación de claves."
+        },
+        "zeroKnowledge": {
+          "title": "Arquitectura zero-knowledge",
+          "description": "Cómo protege tus datos el modelo de conocimiento cero y qué puede y qué no puede ver el servidor."
+        },
+        "threatModel": {
+          "title": "Modelo de amenazas",
+          "description": "Análisis de escenarios de ataque, niveles de riesgo y mitigaciones implementadas."
+        }
+      }
+    },
+    "zeroKnowledge": {
+      "title": "Arquitectura zero-knowledge",
+      "description": "La arquitectura de conocimiento cero de CriptEnv garantiza que el servidor <strong>nunca tenga acceso</strong> a los valores de tus secrets en texto claro. Todo el cifrado y descifrado ocurre exclusivamente en el cliente del usuario, con la contraseña del vault del proyecto, que nunca se transmite.",
+      "simpleCallout": "En pocas palabras: aunque el servidor se viera completamente comprometido, los atacantes solo obtendrían datos cifrados, inútiles sin la contraseña del vault del proyecto.",
+      "what": {
+        "title": "¿Qué es el conocimiento cero?",
+        "p1": "En CriptEnv, \"conocimiento cero\" significa que el servidor puede confirmar que tienes la contraseña correcta (mediante el vault proof) sin llegar a conocer esa contraseña ni las claves derivadas de ella.",
+        "p2": "Esto difiere de los sistemas tradicionales, donde el servidor almacena hashes de contraseña <em>y</em> los datos: en CriptEnv, los valores cifrados son inútiles incluso para quien controla el servidor."
+      },
+      "clientSide": {
+        "title": "Cómo funciona el cifrado en el cliente",
+        "body": "Todo el proceso de cifrado ocurre en el navegador con la Web Crypto API:"
+      },
+      "visibility": {
+        "title": "Qué ve y qué no ve el servidor",
+        "seesTab": "El servidor ve",
+        "notSeesTab": "El servidor NO ve",
+        "sees": "✓ Ciphertext (valores cifrados con AES-256-GCM)\n✓ Nombres de las variables (claves) — solo se cifran los valores\n✓ IVs (vectores de inicialización — no son secretos)\n✓ Auth tags (etiquetas de autenticación GCM)\n✓ Salts de PBKDF2 (aleatorios por proyecto, públicos por diseño)\n✓ Hash bcrypt del vault proof\n✓ IDs de entornos y proyectos (metadatos no secretos)\n✓ Fechas de creación y modificación\n✓ Estructura organizativa (proyectos, entornos)",
+        "notSees": "✗ La contraseña del vault del proyecto\n✗ La clave del vault derivada (salida de PBKDF2)\n✗ Las claves de entorno (salida de HKDF)\n✗ Los valores de las variables de entorno en texto claro\n✗ Capacidad de descifrar los valores"
+      },
+      "proof": {
+        "title": "Mecanismo del vault proof",
+        "body": "El vault proof permite que el servidor compruebe que el usuario conoce la contraseña correcta sin que se transmitan la contraseña ni las claves de cifrado.",
+        "callout": "El proof se deriva de la misma contraseña del vault, pero con un salt propio y aleatorio (proof_salt), distinto del salt de la clave de cifrado. Así el proof no sirve para derivar la clave de cifrado, y el servidor solo guarda un hash bcrypt de él."
+      },
+      "implications": {
+        "title": "Implicaciones prácticas",
+        "forgot": {
+          "title": "¿Olvidaste la contraseña?",
+          "body": "No hay mecanismo de recuperación. Como el servidor nunca tuvo acceso a tu contraseña ni a tus claves, no es posible recuperar los datos sin ella. Es una <strong>característica</strong>, no un bug: garantiza que nadie más que tú pueda acceder a tus secrets."
+        },
+        "teams": {
+          "title": "Seguridad para equipos",
+          "body": "En entornos compartidos, cada miembro solo accede a los proyectos autorizados y el descifrado sigue ocurriendo en el cliente."
+        },
+        "audit": {
+          "title": "Auditoría",
+          "body": "El servidor puede registrar eventos de acceso (fechas, IPs, IDs de entorno) sin llegar a ver los valores de los secrets. Esto permite auditar la seguridad sin comprometer la arquitectura zero-knowledge."
+        }
+      }
+    },
+    "encryption": {
+      "breadcrumb": "Cifrado",
+      "title": "Protocolo de cifrado",
+      "description": "CriptEnv usa una cadena de derivación de claves en varias capas para que cada entorno tenga su propia clave de cifrado aislada. Todo el proceso ocurre en el navegador del usuario: el servidor nunca tiene acceso a las claves ni a los valores en texto claro.",
+      "flow": {
+        "title": "Flujo de derivación de claves",
+        "body": "La derivación completa sigue estos pasos:"
+      },
+      "params": {
+        "title": "Parámetros criptográficos",
+        "algorithm": "Algoritmo",
+        "iterations": "Iteraciones",
+        "saltSize": "Tamaño del salt",
+        "keySize": "Tamaño de la clave",
+        "pbkdf2": {
+          "title": "PBKDF2 (derivación de la clave del vault)",
+          "algorithm": "HMAC-SHA256 — función pseudoaleatoria basada en hash",
+          "iterations": "100.000 iteraciones — dificulta los ataques de fuerza bruta",
+          "salt": "32 bytes (256 bits) — generado aleatoriamente por proyecto al crear el vault",
+          "keySize": "32 bytes (256 bits) — clave del vault resultante"
+        },
+        "hkdf": {
+          "title": "HKDF (derivación por entorno)",
+          "algorithm": "SHA-256 — función hash subyacente",
+          "ikm": "Clave del vault de 256 bits derivada con PBKDF2",
+          "salt": "ID del entorno (UUID) — da a cada entorno una clave única",
+          "info": "\"criptenv-vault-v1\" — contexto de la aplicación",
+          "keySize": "32 bytes (256 bits) — clave del entorno resultante"
+        },
+        "aes": {
+          "title": "AES-256-GCM (cifrado de datos)",
+          "algorithm": "AES-256-GCM — cifrado autenticado en modo Galois/Counter",
+          "keySize": "32 bytes (256 bits) — clave del entorno derivada con HKDF",
+          "iv": "12 bytes (96 bits) — generado aleatoriamente en cada operación de cifrado",
+          "tag": "16 bytes (128 bits) — etiqueta de autenticación para verificar la integridad"
+        },
+        "ivWarning": "El IV (vector de inicialización) se genera aleatoriamente en cada operación de cifrado. Nunca reutilices un IV con la misma clave: comprometería la seguridad de GCM."
+      },
+      "proof": {
+        "title": "Derivación del vault proof",
+        "body": "Además de la clave de cifrado, CriptEnv deriva una prueba independiente que se usa para autorizar escrituras en el vault mediante la API. Demuestra que conoces la contraseña del vault sin revelar la contraseña ni la clave de cifrado."
+      },
+      "storage": {
+        "title": "Metadatos locales vs. vault remoto",
+        "localTab": "Metadatos locales",
+        "cloudTab": "Vault remoto",
+        "localBody": "La CLI guarda metadatos locales en SQLite en el directorio del usuario:",
+        "localCallout": "El flujo principal de la CLI no guarda secrets localmente. Los secrets viven en el vault remoto y solo se descifran en memoria.",
+        "cloudBody": "El vault en la nube solo almacena valores ya cifrados:"
+      },
+      "implementation": {
+        "title": "Implementación",
+        "body": "Ejemplo simplificado del flujo de cifrado con la Web Crypto API:"
+      }
+    },
+    "threatModel": {
+      "title": "Modelo de amenazas",
+      "description": "Esta página analiza los escenarios de ataque más relevantes para CriptEnv, el nivel de riesgo de cada uno y lo que la arquitectura protege, y lo que no.",
+      "assumption": "El modelo de amenazas asume que el atacante puede controlar por completo el servidor, la base de datos y la infraestructura, pero no el dispositivo del usuario.",
+      "summary": {
+        "title": "Resumen de amenazas",
+        "scenario": "Escenario",
+        "risk": "Riesgo",
+        "impact": "Impacto",
+        "status": "Estado"
+      },
+      "risk": {
+        "critical": "Crítico",
+        "high": "Alto",
+        "medium": "Medio"
+      },
+      "riskBadge": {
+        "critical": "Riesgo crítico",
+        "high": "Riesgo alto",
+        "medium": "Riesgo medio"
+      },
+      "detail": {
+        "title": "Análisis detallado",
+        "mitigation": "Mitigación:"
+      },
+      "threats": {
+        "database": {
+          "title": "Base de datos comprometida",
+          "impact": "Ciphertext y nombres de variables expuestos; valores ilegibles sin la contraseña del vault",
+          "status": "Mitigado",
+          "scenario": "<strong>Escenario:</strong> un atacante obtiene acceso completo a la base de datos del servidor, incluidos usuarios, entornos y secrets almacenados.",
+          "mitigations": {
+            "0": "Valores almacenados solo como ciphertext AES-256-GCM",
+            "1": "Los salts de PBKDF2 y los IVs son públicos por diseño",
+            "2": "Solo se guarda un hash bcrypt del vault proof, nunca la contraseña ni las claves",
+            "3": "Los nombres de las variables (claves) quedan en texto claro: no pongas secretos en los nombres"
+          },
+          "result": "<strong>Resultado:</strong> los valores robados son inútiles sin la contraseña del vault. El ataque que queda es la fuerza bruta offline contra esa contraseña, ralentizada por PBKDF2; por eso una contraseña fuerte es esencial."
+        },
+        "admin": {
+          "title": "Administrador malicioso",
+          "impact": "Puede leer metadatos; podría servir código web manipulado para capturar contraseñas",
+          "status": "Parcialmente mitigado",
+          "scenario": "<strong>Escenario:</strong> un administrador del servidor o alguien con acceso privilegiado intenta leer los datos de los usuarios.",
+          "mitigations": {
+            "0": "Los valores almacenados no se pueden descifrar con lo que guarda el servidor",
+            "1": "La CLI cifra localmente y no ejecuta código servido por la aplicación web",
+            "2": "El código es open source, así que la lógica del cliente puede revisarse"
+          },
+          "result": "<strong>Resultado:</strong> el administrador ve metadatos (fechas, IDs, nombres de variables), pero no los valores. Como en cualquier app zero-knowledge basada en la web, quien controla el servidor podría servir JavaScript alterado que capture la contraseña escrita en el navegador; quien necesite descartar este riesgo debe usar la CLI."
+        },
+        "mitm": {
+          "title": "Man-in-the-middle (MITM)",
+          "impact": "Interceptación del tráfico, pero los valores viajan ya cifrados",
+          "status": "Mitigado",
+          "scenario": "<strong>Escenario:</strong> un atacante intercepta el tráfico de red entre el cliente y el servidor.",
+          "mitigations": {
+            "0": "TLS (HTTPS) en todas las comunicaciones",
+            "1": "HSTS para impedir el downgrade a HTTP",
+            "2": "Los valores se cifran antes del envío",
+            "3": "La contraseña del vault y las claves derivadas nunca viajan por la red"
+          },
+          "result": "<strong>Resultado:</strong> incluso con TLS roto, el atacante solo vería ciphertext AES-256-GCM. Un TLS roto aún podría exponer tokens de sesión, metadatos y el código de la aplicación web."
+        },
+        "xss": {
+          "title": "Ataque XSS (cross-site scripting)",
+          "impact": "Código ejecutándose en la app podría leer datos descifrados en memoria",
+          "status": "Parcialmente mitigado",
+          "scenario": "<strong>Escenario:</strong> un atacante inyecta scripts que se ejecutan en el contexto del navegador del usuario.",
+          "mitigations": {
+            "0": "Content Security Policy (CSP) restrictiva",
+            "1": "React escapa el contenido renderizado por defecto",
+            "2": "Cookies HttpOnly para los tokens de sesión"
+          },
+          "result": "<strong>Resultado:</strong> si un XSS tiene éxito pese a estas medidas, el atacante podría leer los secrets descifrados en memoria y la contraseña del vault escrita durante esa sesión."
+        },
+        "session": {
+          "title": "Secuestro de sesión (session hijacking)",
+          "impact": "Acceso a la API como el usuario, pero solo a datos cifrados",
+          "status": "Mitigado",
+          "scenario": "<strong>Escenario:</strong> un atacante roba el token de sesión del usuario y se hace pasar por él en el servidor.",
+          "mitigations": {
+            "0": "Las sesiones caducan automáticamente",
+            "1": "El usuario puede listar y revocar sus sesiones activas",
+            "2": "La contraseña del vault no forma parte de la sesión"
+          },
+          "result": "<strong>Resultado:</strong> el atacante puede acceder a la API, pero los datos devueltos están cifrados. Sin la contraseña del vault no puede descifrar nada, aunque podría leer metadatos y borrar datos hasta que se revoque la sesión."
+        },
+        "bruteForce": {
+          "title": "Ataque de fuerza bruta a la contraseña",
+          "impact": "Intento de adivinar la contraseña del vault",
+          "status": "Depende de la fortaleza de la contraseña",
+          "scenario": "<strong>Escenario:</strong> un atacante intenta adivinar la contraseña del vault del proyecto probando muchas combinaciones: online contra la API, u offline con una base de datos robada.",
+          "mitigations": {
+            "0": "PBKDF2 con 100.000 iteraciones hace lenta cada prueba",
+            "1": "Salt aleatorio por proyecto (impide las rainbow tables y atacar varios vaults a la vez)",
+            "2": "Rate limiting en la API (solo para intentos online)",
+            "3": "La auth tag de AES-GCM hace que una contraseña incorrecta falle de inmediato"
+          },
+          "result": "<strong>Resultado:</strong> a ~100 ms por intento en un núcleo de CPU, probar mil millones de contraseñas lleva unos 3 años, y las GPU hacen muchos intentos en paralelo. El rate limiting no ayuda contra un ataque offline, así que la seguridad depende de una contraseña larga y aleatoria."
+        }
+      },
+      "layers": {
+        "title": "Defensa en profundidad"
+      },
+      "userResponsibility": "<strong>Tu responsabilidad:</strong> la seguridad del sistema depende fundamentalmente de la fortaleza de la contraseña del vault. Usa una contraseña larga, única y generada por un gestor de contraseñas. La arquitectura zero-knowledge no puede proteger una contraseña débil o reutilizada."
+    }
   }
 }
