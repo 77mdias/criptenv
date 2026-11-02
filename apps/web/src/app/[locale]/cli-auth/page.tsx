@@ -135,6 +135,8 @@ function CLIAuthContent() {
         if (callbackUrl) {
           const target = new URL(callbackUrl);
           target.searchParams.set("code", authCode);
+          // The CLI rejects callbacks whose state differs from the one it initiated.
+          target.searchParams.set("state", state);
           window.location.href = target.toString();
         } else {
           setExplicitStep("success");
