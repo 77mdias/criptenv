@@ -7,13 +7,16 @@ import {
   ResponseBlock,
   Callout,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function HealthPage() {
+  const t = useTranslations('docs.api.health');
+  const tRoot = useTranslations('docs');
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'API Reference', href: '/docs/api' },
           { label: 'Health' },
         ]}
@@ -21,23 +24,20 @@ export default function HealthPage() {
 
       <h1 className="text-4xl font-bold mt-6 mb-2">Health Checks</h1>
       <p className="text-lg text-muted-foreground mb-8">
-        Endpoints públicos para verificar a disponibilidade da API. Úteis para
-        monitoramento, load balancers e verificações de integração.
+        {t('description')}
       </p>
 
       <Callout variant="info">
-        Estes endpoints não requerem autenticação e retornam rapidamente para
-        uso em health checks de infraestrutura.
+        {t('callout')}
       </Callout>
 
       {/* GET /health */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Status da API
+          <EndpointBadge method="GET" /> {t('status.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Retorna o status geral da API e a versão atual. Este endpoint sempre
-          responde 200 se o servidor estiver ativo.
+          {t('status.body')}
         </p>
 
         <CodeBlock
@@ -47,20 +47,17 @@ export default function HealthPage() {
 
         <ResponseBlock status={200}>{`{
   "status": "ok",
-  "version": "1.4.2",
-  "uptime": "72h14m30s"
+  "service": "criptenv-api"
 }`}</ResponseBlock>
       </section>
 
       {/* GET /health/ready */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Prontidão
+          <EndpointBadge method="GET" /> {t('ready.title')}
         </h2>
         <p className="text-muted-foreground mb-4">
-          Verifica se a API está pronta para receber requisições, incluindo a
-          conectividade com o banco de dados. Retorna 200 se tudo estiver
-          operacional, ou 503 se houver problemas.
+          {t('ready.body')}
         </p>
 
         <CodeBlock
@@ -70,10 +67,12 @@ export default function HealthPage() {
 
         <ResponseBlock status={200}>{`{
   "status": "ready",
-  "checks": {
-    "database": "ok",
-    "cache": "ok"
-  }
+  "database": "connected"
+}`}</ResponseBlock>
+
+        <ResponseBlock status={503}>{`{
+  "status": "not ready",
+  "database": "disconnected"
 }`}</ResponseBlock>
       </section>
     </div>

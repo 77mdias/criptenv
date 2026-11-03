@@ -1467,5 +1467,175 @@
         }
       }
     }
+  },
+  "api": {
+    "health": {
+      "description": "Public endpoints to check API availability. Useful for monitoring, load balancers and integration checks.",
+      "callout": "These endpoints need no authentication and respond quickly, for infrastructure health checks.",
+      "status": {
+        "title": "API status",
+        "body": "Returns the API's overall status. It always responds 200 while the server is up."
+      },
+      "ready": {
+        "title": "Readiness",
+        "body": "Checks whether the API is ready to take requests, including database connectivity. Returns 200 when everything works, or 503 when the database is unreachable."
+      }
+    },
+    "audit": {
+      "description": "Review the record of actions taken in the project. Audit logs track changes to the vault, secrets, environments, members, invitations, tokens, API keys and settings.",
+      "callout": "Reads (pull, get, export) are not logged; only changes are. Audit logs are removed together with the project or account.",
+      "list": {
+        "title": "List audit logs",
+        "body": "Returns the project's audit logs, paginated and filterable. Each entry has the actor, action, affected resource, origin (auth_type) and timestamp.",
+        "params": {
+          "page": "Page (default: 1)",
+          "perPage": "Items per page (default: 50, max: 100)",
+          "action": "Filter by action, e.g. vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
+          "resourceType": "Filter by resource type, e.g. vault, environment, member, invite, integration, ci_token, api_key, project"
+        }
+      }
+    },
+    "invites": {
+      "description": "Manage email invitations to add new members to a project. Invitations expire after 7 days and are tied to a specific role.",
+      "callout": "Every endpoint below requires authentication and lives under <code>/api/v1/projects/'{pid}'/invites</code>. Creating and deleting invitations requires the admin role; the owner role cannot be granted through an invitation.",
+      "create": {
+        "title": "Create invitation",
+        "body": "Emails an invitation to a new member (admin only). The invitation expires automatically after 7 days. The invite token is returned only in this response.",
+        "params": {
+          "email": "Invitee's email",
+          "role": "Member role: viewer, developer or admin"
+        }
+      },
+      "list": {
+        "title": "List invitations",
+        "body": "Returns the project's invitations. Invitations revoked through the revoke endpoint are deleted permanently."
+      },
+      "accept": {
+        "title": "Accept invitation",
+        "body": "Accepts a pending invitation. The authenticated user gets access to the project with the invitation's role."
+      },
+      "revoke": {
+        "title": "Revoke invitation",
+        "body": "Revokes a pending invitation and permanently removes the link. Developers can only revoke pending invitations they created; admins can revoke any."
+      },
+      "delete": {
+        "title": "Delete invitation",
+        "body": "Permanently deletes an invitation from the project (admin only). Returns 204 with no body."
+      }
+    },
+    "ciTokens": {
+      "description": "Authentication tokens for CI/CD pipelines. They start with <code>ci_</code>, can be limited to scopes and to one environment, and the plaintext value is shown only once, at creation. In the pipeline, the token is exchanged for a 1-hour session (<code>ci_s_…</code>).",
+      "vaultWarning": "The token alone decrypts nothing: values are encrypted with the project's <strong>vault password</strong>. The pipeline needs the token <strong>and</strong> the vault password (for example, in the <code>CRIPTENV_TOKEN</code> and <code>CRIPTENV_VAULT_PASSWORD</code> secrets).",
+      "create": {
+        "title": "Create token",
+        "body": "the <code>token</code> field only appears in this response.",
+        "params": {
+          "name": "Descriptive token name",
+          "description": "Optional description",
+          "scopes": "Scopes in action:resource format. Default: [\"read:secrets\"]",
+          "environmentScope": "Restricts the token to one environment (e.g. production), which must exist in the project. If omitted, it applies to all.",
+          "expiresAt": "Optional expiration (ISO 8601)"
+        }
+      },
+      "list": {
+        "title": "List tokens",
+        "body": "Returns the project's tokens. The token value is never returned after creation."
+      },
+      "revoke": {
+        "title": "Revoke token",
+        "body": "Revokes the token immediately. Responds <code>204 No Content</code>."
+      },
+      "delete": {
+        "title": "Delete token",
+        "body": "Deletes the token permanently. Responds <code>204 No Content</code>."
+      },
+      "pipeline": {
+        "title": "Using the token in a pipeline",
+        "body": "Exchange the token for a 1-hour session and download the environment's encrypted blobs. Decryption happens on the client, with the vault password.",
+        "callout": "In practice, use the CLI (<code>criptenv ci login</code>) or the GitHub Action, which handle the exchange and decryption for you."
+      }
+    },
+    "integrations": {
+      "description": "Connect CriptEnv to hosting providers to sync secrets. Available today: Vercel and Render (Railway coming soon).",
+      "callout": "Sync works both ways: <code>push</code> sends CriptEnv secrets to the provider and <code>pull</code> imports them from the provider.",
+      "create": {
+        "title": "Create integration",
+        "body": "Connects a new hosting provider integration. The provider token is stored encrypted on the server.",
+        "params": {
+          "provider": "Provider: vercel or render",
+          "name": "Integration name",
+          "config": "Provider settings. Vercel: api_token and project_id. Render: api_token and service_id."
+        }
+      },
+      "list": {
+        "title": "List integrations",
+        "body": "Returns the project's integrations and the providers available to connect."
+      },
+      "get": {
+        "title": "Get integration",
+        "body": "Returns the details of one integration."
+      },
+      "delete": {
+        "title": "Delete integration",
+        "body": "Removes the integration and its stored provider token. Returns 204 with no body."
+      },
+      "sync": {
+        "title": "Sync",
+        "body": "Runs a sync between CriptEnv and the provider. Use <code>push</code> to send secrets to the provider or <code>pull</code> to import them.",
+        "params": {
+          "direction": "Direction: push or pull",
+          "environment": "CriptEnv environment to sync (default: production)",
+          "secrets": "Decrypted secrets to send to the provider. The server never decrypts the vault, so a push without this field sends nothing."
+        }
+      },
+      "validate": {
+        "title": "Validate integration",
+        "body": "Checks that the connection to the provider works with the stored credentials."
+      }
+    },
+    "environments": {
+      "title": "Environments",
+      "description": "Environments isolate sets of secrets within a project — commonly <code>production</code>, <code>staging</code> and <code>development</code>. Each environment has its own encryption key, derived on the client from the project's vault password.",
+      "params": {
+        "projectId": "Project ID (path parameter)",
+        "environmentId": "Environment ID (path parameter)"
+      },
+      "create": {
+        "title": "Create environment",
+        "body": "Creates a new environment in a project. Requires the <code>admin</code> role.",
+        "params": {
+          "name": "Environment name: lowercase letters, digits and hyphens (e.g. staging). Must be unique in the project.",
+          "displayName": "Human-readable name",
+          "isDefault": "Mark as the project's default environment"
+        },
+        "example": "Example — create environment"
+      },
+      "list": {
+        "title": "List environments",
+        "body": "Returns the project's active (non-archived) environments. When called with an environment-restricted API key, only that environment is returned and <code>api_key_environment_scope</code> says which one.",
+        "example": "Example — list environments"
+      },
+      "get": {
+        "title": "Get environment by ID",
+        "body": "Returns one environment. Archived environments return 404.",
+        "example": "Example — get environment"
+      },
+      "update": {
+        "title": "Update environment",
+        "body": "Updates an environment's display name or default flag. The <code>name</code> cannot be changed. Requires the <code>admin</code> role.",
+        "params": {
+          "displayName": "New display name",
+          "isDefault": "Make it the default environment"
+        },
+        "example": "Example — update environment"
+      },
+      "delete": {
+        "title": "Archive environment",
+        "body": "<strong>Archives</strong> the environment: it disappears from listings and its endpoints return 404. The default environment cannot be removed. Requires the <code>admin</code> role.",
+        "callout": "Archived environments are no longer reachable through the API or the CLI. To keep using their secrets, export them before archiving.",
+        "response": "Empty response — the environment was archived.",
+        "example": "Example — archive environment"
+      }
+    }
   }
 }

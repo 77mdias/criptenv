@@ -1467,5 +1467,175 @@
         }
       }
     }
+  },
+  "api": {
+    "health": {
+      "description": "Endpoints públicos para comprobar la disponibilidad de la API. Útiles para monitorización, balanceadores de carga y comprobaciones de integración.",
+      "callout": "Estos endpoints no requieren autenticación y responden rápido, para health checks de infraestructura.",
+      "status": {
+        "title": "Estado de la API",
+        "body": "Devuelve el estado general de la API. Siempre responde 200 mientras el servidor esté activo."
+      },
+      "ready": {
+        "title": "Disponibilidad",
+        "body": "Comprueba si la API está lista para recibir peticiones, incluida la conectividad con la base de datos. Devuelve 200 si todo funciona, o 503 si la base de datos no está accesible."
+      }
+    },
+    "audit": {
+      "description": "Consulta el registro de las acciones realizadas en el proyecto. Los audit logs registran cambios en el vault, secrets, entornos, miembros, invitaciones, tokens, API keys y configuración.",
+      "callout": "Las lecturas (pull, get, export) no se registran; solo los cambios. Los audit logs se eliminan junto con el proyecto o la cuenta.",
+      "list": {
+        "title": "Listar audit logs",
+        "body": "Devuelve los logs de auditoría del proyecto, paginados y filtrables. Cada entrada incluye el autor, la acción, el recurso afectado, el origen (auth_type) y la fecha.",
+        "params": {
+          "page": "Página (por defecto: 1)",
+          "perPage": "Elementos por página (por defecto: 50, máx.: 100)",
+          "action": "Filtrar por acción, p. ej. vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
+          "resourceType": "Filtrar por tipo de recurso, p. ej. vault, environment, member, invite, integration, ci_token, api_key, project"
+        }
+      }
+    },
+    "invites": {
+      "description": "Gestiona invitaciones por email para añadir nuevos miembros a un proyecto. Las invitaciones caducan a los 7 días y están vinculadas a un rol concreto.",
+      "callout": "Todos los endpoints siguientes requieren autenticación y están bajo <code>/api/v1/projects/'{pid}'/invites</code>. Crear y eliminar invitaciones requiere el rol admin; el rol owner no se puede conceder por invitación.",
+      "create": {
+        "title": "Crear invitación",
+        "body": "Envía una invitación por email a un nuevo miembro (solo admins). La invitación caduca automáticamente a los 7 días. El token de la invitación solo se devuelve en esta respuesta.",
+        "params": {
+          "email": "Email de la persona invitada",
+          "role": "Rol del miembro: viewer, developer o admin"
+        }
+      },
+      "list": {
+        "title": "Listar invitaciones",
+        "body": "Devuelve las invitaciones del proyecto. Las invitaciones revocadas con el endpoint de revoke se eliminan permanentemente."
+      },
+      "accept": {
+        "title": "Aceptar invitación",
+        "body": "Acepta una invitación pendiente. El usuario autenticado obtiene acceso al proyecto con el rol de la invitación."
+      },
+      "revoke": {
+        "title": "Revocar invitación",
+        "body": "Revoca una invitación pendiente y elimina el enlace permanentemente. Los developers solo pueden revocar las invitaciones pendientes que crearon; los admins pueden revocar cualquiera."
+      },
+      "delete": {
+        "title": "Eliminar invitación",
+        "body": "Elimina permanentemente una invitación del proyecto (solo admins). Devuelve 204 sin cuerpo."
+      }
+    },
+    "ciTokens": {
+      "description": "Tokens de autenticación para pipelines de CI/CD. Empiezan con <code>ci_</code>, pueden limitarse a scopes y a un entorno, y el valor en texto claro solo se muestra una vez, al crearlo. En el pipeline, el token se intercambia por una sesión de 1 hora (<code>ci_s_…</code>).",
+      "vaultWarning": "El token por sí solo no descifra nada: los valores se cifran con la <strong>contraseña del vault</strong> del proyecto. El pipeline necesita el token <strong>y</strong> la contraseña del vault (por ejemplo, en los secrets <code>CRIPTENV_TOKEN</code> y <code>CRIPTENV_VAULT_PASSWORD</code>).",
+      "create": {
+        "title": "Crear token",
+        "body": "el campo <code>token</code> solo aparece en esta respuesta.",
+        "params": {
+          "name": "Nombre descriptivo del token",
+          "description": "Descripción opcional",
+          "scopes": "Scopes con formato acción:recurso. Por defecto: [\"read:secrets\"]",
+          "environmentScope": "Restringe el token a un entorno (p. ej. production), que debe existir en el proyecto. Si se omite, vale para todos.",
+          "expiresAt": "Caducidad opcional (ISO 8601)"
+        }
+      },
+      "list": {
+        "title": "Listar tokens",
+        "body": "Devuelve los tokens del proyecto. El valor del token nunca se devuelve tras su creación."
+      },
+      "revoke": {
+        "title": "Revocar token",
+        "body": "Revoca el token de inmediato. Responde <code>204 No Content</code>."
+      },
+      "delete": {
+        "title": "Eliminar token",
+        "body": "Elimina el token permanentemente. Responde <code>204 No Content</code>."
+      },
+      "pipeline": {
+        "title": "Usar el token en el pipeline",
+        "body": "Intercambia el token por una sesión de 1 hora y descarga los blobs cifrados del entorno. El descifrado ocurre en el cliente, con la contraseña del vault.",
+        "callout": "En la práctica, usa la CLI (<code>criptenv ci login</code>) o la GitHub Action, que hacen el intercambio y el descifrado por ti."
+      }
+    },
+    "integrations": {
+      "description": "Conecta CriptEnv con proveedores de hosting para sincronizar secrets. Disponibles hoy: Vercel y Render (Railway próximamente).",
+      "callout": "La sincronización funciona en ambos sentidos: <code>push</code> envía los secrets de CriptEnv al proveedor y <code>pull</code> los importa desde el proveedor.",
+      "create": {
+        "title": "Crear integración",
+        "body": "Conecta una nueva integración con un proveedor de hosting. El token del proveedor se guarda cifrado en el servidor.",
+        "params": {
+          "provider": "Proveedor: vercel o render",
+          "name": "Nombre de la integración",
+          "config": "Configuración del proveedor. Vercel: api_token y project_id. Render: api_token y service_id."
+        }
+      },
+      "list": {
+        "title": "Listar integraciones",
+        "body": "Devuelve las integraciones del proyecto y los proveedores disponibles para conectar."
+      },
+      "get": {
+        "title": "Obtener integración",
+        "body": "Devuelve los detalles de una integración concreta."
+      },
+      "delete": {
+        "title": "Eliminar integración",
+        "body": "Elimina la integración y el token del proveedor guardado. Devuelve 204 sin cuerpo."
+      },
+      "sync": {
+        "title": "Sincronizar",
+        "body": "Ejecuta una sincronización entre CriptEnv y el proveedor. Usa <code>push</code> para enviar secrets al proveedor o <code>pull</code> para importarlos.",
+        "params": {
+          "direction": "Dirección: push o pull",
+          "environment": "Entorno de CriptEnv que sincronizar (por defecto: production)",
+          "secrets": "Secrets ya descifrados que enviar al proveedor. El servidor nunca descifra el vault, así que un push sin este campo no envía nada."
+        }
+      },
+      "validate": {
+        "title": "Validar integración",
+        "body": "Comprueba que la conexión con el proveedor funciona con las credenciales guardadas."
+      }
+    },
+    "environments": {
+      "title": "Entornos",
+      "description": "Los entornos aíslan conjuntos de secrets dentro de un proyecto; normalmente <code>production</code>, <code>staging</code> y <code>development</code>. Cada entorno tiene su propia clave de cifrado, derivada en el cliente a partir de la contraseña del vault del proyecto.",
+      "params": {
+        "projectId": "ID del proyecto (parámetro de ruta)",
+        "environmentId": "ID del entorno (parámetro de ruta)"
+      },
+      "create": {
+        "title": "Crear entorno",
+        "body": "Crea un nuevo entorno en un proyecto. Requiere el rol <code>admin</code>.",
+        "params": {
+          "name": "Nombre del entorno: minúsculas, números y guiones (p. ej. staging). Debe ser único en el proyecto.",
+          "displayName": "Nombre legible",
+          "isDefault": "Lo marca como entorno por defecto del proyecto"
+        },
+        "example": "Ejemplo — crear entorno"
+      },
+      "list": {
+        "title": "Listar entornos",
+        "body": "Devuelve los entornos activos (no archivados) del proyecto. Si se llama con una API key restringida a un entorno, solo se devuelve ese entorno y <code>api_key_environment_scope</code> indica cuál.",
+        "example": "Ejemplo — listar entornos"
+      },
+      "get": {
+        "title": "Obtener entorno por ID",
+        "body": "Devuelve un entorno concreto. Los entornos archivados devuelven 404.",
+        "example": "Ejemplo — obtener entorno"
+      },
+      "update": {
+        "title": "Actualizar entorno",
+        "body": "Actualiza el nombre visible o el indicador de entorno por defecto. El <code>name</code> no se puede cambiar. Requiere el rol <code>admin</code>.",
+        "params": {
+          "displayName": "Nuevo nombre visible",
+          "isDefault": "Lo convierte en el entorno por defecto"
+        },
+        "example": "Ejemplo — actualizar entorno"
+      },
+      "delete": {
+        "title": "Archivar entorno",
+        "body": "<strong>Archiva</strong> el entorno: desaparece de los listados y sus endpoints devuelven 404. El entorno por defecto no se puede eliminar. Requiere el rol <code>admin</code>.",
+        "callout": "Los entornos archivados dejan de ser accesibles desde la API y la CLI. Para seguir usando sus secrets, expórtalos antes de archivarlos.",
+        "response": "Respuesta vacía: el entorno se archivó.",
+        "example": "Ejemplo — archivar entorno"
+      }
+    }
   }
 }

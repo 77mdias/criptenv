@@ -1467,5 +1467,175 @@
         }
       }
     }
+  },
+  "api": {
+    "health": {
+      "description": "Endpoints públicos para verificar a disponibilidade da API. Úteis para monitoramento, load balancers e verificações de integração.",
+      "callout": "Estes endpoints não requerem autenticação e retornam rapidamente para uso em health checks de infraestrutura.",
+      "status": {
+        "title": "Status da API",
+        "body": "Retorna o status geral da API. Este endpoint sempre responde 200 se o servidor estiver ativo."
+      },
+      "ready": {
+        "title": "Prontidão",
+        "body": "Verifica se a API está pronta para receber requisições, incluindo a conectividade com o banco de dados. Retorna 200 se tudo estiver operacional, ou 503 se o banco estiver inacessível."
+      }
+    },
+    "audit": {
+      "description": "Consulte o registro das ações realizadas no projeto. Os audit logs rastreiam alterações no vault, secrets, ambientes, membros, convites, tokens, API keys e configurações.",
+      "callout": "Leituras (pull, get, export) não são registradas; apenas alterações. Os audit logs são removidos junto com o projeto ou a conta.",
+      "list": {
+        "title": "Listar audit logs",
+        "body": "Retorna os logs de auditoria do projeto de forma paginada e filtrável. Cada entrada contém o autor, a ação, o recurso afetado, a origem (auth_type) e o timestamp.",
+        "params": {
+          "page": "Página (padrão: 1)",
+          "perPage": "Itens por página (padrão: 50, máx: 100)",
+          "action": "Filtrar por ação, ex.: vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
+          "resourceType": "Filtrar por tipo de recurso, ex.: vault, environment, member, invite, integration, ci_token, api_key, project"
+        }
+      }
+    },
+    "invites": {
+      "description": "Gerencie convites por email para adicionar novos membros a um projeto. Convites possuem expiração de 7 dias e são vinculados a um papel específico.",
+      "callout": "Todos os endpoints abaixo requerem autenticação e pertencem à rota base <code>/api/v1/projects/'{pid}'/invites</code>. Criar e remover convites exige o papel admin; o papel owner não pode ser concedido por convite.",
+      "create": {
+        "title": "Criar convite",
+        "body": "Envia um convite por email para um novo membro (apenas admins). O convite expira em 7 dias automaticamente. O token do convite só é retornado nesta resposta.",
+        "params": {
+          "email": "Email do convidado",
+          "role": "Papel do membro: viewer, developer ou admin"
+        }
+      },
+      "list": {
+        "title": "Listar convites",
+        "body": "Retorna os convites do projeto. Convites revogados pelo endpoint de revoke são removidos permanentemente."
+      },
+      "accept": {
+        "title": "Aceitar convite",
+        "body": "Aceita um convite pendente. O usuário autenticado passa a ter acesso ao projeto com o papel definido no convite."
+      },
+      "revoke": {
+        "title": "Revogar convite",
+        "body": "Revoga um convite pendente e remove o link permanentemente do banco. Developers só podem revogar convites pendentes criados por eles; admins podem revogar qualquer um."
+      },
+      "delete": {
+        "title": "Remover convite",
+        "body": "Remove permanentemente um convite do projeto (apenas admins). Retorna 204 sem corpo."
+      }
+    },
+    "ciTokens": {
+      "description": "Tokens de autenticação para pipelines de CI/CD. Começam com <code>ci_</code>, podem ser limitados a escopos e a um ambiente, e o valor em texto claro é exibido apenas uma vez, na criação. Na pipeline, o token é trocado por uma sessão de 1 hora (<code>ci_s_…</code>).",
+      "vaultWarning": "O token sozinho não decifra nada: os valores são cifrados com a <strong>senha do cofre</strong> do projeto. A pipeline precisa do token <strong>e</strong> da senha do cofre (por exemplo, nos secrets <code>CRIPTENV_TOKEN</code> e <code>CRIPTENV_VAULT_PASSWORD</code>).",
+      "create": {
+        "title": "Criar token",
+        "body": "o campo <code>token</code> só aparece nesta resposta.",
+        "params": {
+          "name": "Nome descritivo do token",
+          "description": "Descrição opcional",
+          "scopes": "Escopos no formato acao:recurso. Padrão: [\"read:secrets\"]",
+          "environmentScope": "Limita o token a um ambiente (ex: production), que precisa existir no projeto. Se omitido, vale para todos.",
+          "expiresAt": "Expiração opcional (ISO 8601)"
+        }
+      },
+      "list": {
+        "title": "Listar tokens",
+        "body": "Retorna os tokens do projeto. O valor do token nunca é retornado após a criação."
+      },
+      "revoke": {
+        "title": "Revogar token",
+        "body": "Revoga o token imediatamente. Responde <code>204 No Content</code>."
+      },
+      "delete": {
+        "title": "Remover token",
+        "body": "Remove o token permanentemente. Responde <code>204 No Content</code>."
+      },
+      "pipeline": {
+        "title": "Usar o token na pipeline",
+        "body": "Troque o token por uma sessão de 1 hora e baixe os blobs cifrados do ambiente. A decifragem acontece no cliente, com a senha do cofre.",
+        "callout": "Na prática, use a CLI (<code>criptenv ci login</code>) ou a GitHub Action, que fazem a troca e a decifragem por você."
+      }
+    },
+    "integrations": {
+      "description": "Conecte o CriptEnv a provedores de hospedagem para sincronizar segredos. Disponíveis hoje: Vercel e Render (Railway em breve).",
+      "callout": "A sincronização funciona nos dois sentidos: <code>push</code> envia segredos do CriptEnv para o provedor e <code>pull</code> importa do provedor.",
+      "create": {
+        "title": "Criar integração",
+        "body": "Conecta uma nova integração com um provedor de hospedagem. O token do provedor é armazenado cifrado no servidor.",
+        "params": {
+          "provider": "Provedor: vercel ou render",
+          "name": "Nome da integração",
+          "config": "Configuração do provedor. Vercel: api_token e project_id. Render: api_token e service_id."
+        }
+      },
+      "list": {
+        "title": "Listar integrações",
+        "body": "Retorna as integrações do projeto e os provedores disponíveis para conectar."
+      },
+      "get": {
+        "title": "Obter integração",
+        "body": "Retorna os detalhes de uma integração específica."
+      },
+      "delete": {
+        "title": "Remover integração",
+        "body": "Remove a integração e o token do provedor armazenado. Retorna 204 sem corpo."
+      },
+      "sync": {
+        "title": "Sincronizar",
+        "body": "Executa uma sincronização entre o CriptEnv e o provedor. Use <code>push</code> para enviar segredos ao provedor ou <code>pull</code> para importar.",
+        "params": {
+          "direction": "Direção: push ou pull",
+          "environment": "Ambiente do CriptEnv a sincronizar (padrão: production)",
+          "secrets": "Secrets já decifrados a enviar ao provedor. O servidor nunca decifra o vault, então um push sem este campo não envia nada."
+        }
+      },
+      "validate": {
+        "title": "Validar integração",
+        "body": "Verifica se a conexão com o provedor funciona com as credenciais armazenadas."
+      }
+    },
+    "environments": {
+      "title": "Ambientes",
+      "description": "Ambientes permitem isolar conjuntos de segredos dentro de um projeto — normalmente <code>production</code>, <code>staging</code> e <code>development</code>. Cada ambiente possui sua própria chave de criptografia, derivada no cliente a partir da senha do vault do projeto.",
+      "params": {
+        "projectId": "ID do projeto (path parameter)",
+        "environmentId": "ID do ambiente (path parameter)"
+      },
+      "create": {
+        "title": "Criar Ambiente",
+        "body": "Cria um novo ambiente dentro de um projeto. Requer papel de <code>admin</code>.",
+        "params": {
+          "name": "Nome do ambiente: letras minúsculas, números e hífens (ex: staging). Deve ser único no projeto.",
+          "displayName": "Nome legível",
+          "isDefault": "Marca como ambiente padrão do projeto"
+        },
+        "example": "Exemplo — Criar ambiente"
+      },
+      "list": {
+        "title": "Listar Ambientes",
+        "body": "Retorna os ambientes ativos (não arquivados) do projeto. Quando chamado com uma API key restrita a um ambiente, só esse ambiente é retornado e <code>api_key_environment_scope</code> indica qual.",
+        "example": "Exemplo — Listar ambientes"
+      },
+      "get": {
+        "title": "Obter Ambiente por ID",
+        "body": "Retorna um ambiente específico. Ambientes arquivados retornam 404.",
+        "example": "Exemplo — Obter ambiente"
+      },
+      "update": {
+        "title": "Atualizar Ambiente",
+        "body": "Atualiza o nome de exibição ou o indicador de padrão de um ambiente. O <code>name</code> não pode ser alterado. Requer papel de <code>admin</code>.",
+        "params": {
+          "displayName": "Novo nome de exibição",
+          "isDefault": "Torna o ambiente padrão"
+        },
+        "example": "Exemplo — Atualizar ambiente"
+      },
+      "delete": {
+        "title": "Arquivar Ambiente",
+        "body": "<strong>Arquiva</strong> o ambiente: ele some das listagens e seus endpoints passam a retornar 404. O ambiente padrão não pode ser removido. Requer papel de <code>admin</code>.",
+        "callout": "Ambientes arquivados deixam de ser acessíveis pela API e pela CLI. Para continuar usando os secrets, exporte-os antes de arquivar.",
+        "response": "Resposta vazia — o ambiente foi arquivado.",
+        "example": "Exemplo — Arquivar ambiente"
+      }
+    }
   }
 }

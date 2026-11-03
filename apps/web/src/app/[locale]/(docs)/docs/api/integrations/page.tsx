@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
   Breadcrumb,
   CodeBlock,
@@ -9,223 +10,173 @@ import {
   Callout,
 } from '@/components/docs';
 
+const API = 'https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations';
+const codeClass = 'bg-muted px-1 rounded text-sm';
+
+const INTEGRATION = `{
+  "id": "5d6e7f8a-9b0c-4d1e-2f3a-4b5c6d7e8f9a",
+  "project_id": "9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
+  "provider": "vercel",
+  "name": "Production",
+  "status": "active",
+  "last_sync_at": "2026-02-01T10:00:00Z",
+  "last_error": null,
+  "created_at": "2026-01-31T12:00:00Z"
+}`;
+
 export default function IntegrationsPage() {
+  const t = useTranslations('docs.api.integrations');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <code className={codeClass}>{chunks}</code>;
+
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'API Reference', href: '/docs/api' },
           { label: 'Integrations' },
         ]}
       />
 
       <h1 className="text-4xl font-bold mt-6 mb-2">Integrations</h1>
-      <p className="text-lg text-muted-foreground mb-8">
-        Conecte o CriptEnv a provedores de hospedagem para sincronizar segredos
-        automaticamente. Suportados: Vercel, Railway e Render.
-      </p>
+      <p className="text-lg text-muted-foreground mb-8">{t('description')}</p>
 
-      <Callout variant="info">
-        As integrações permitem sincronização bidirecional — você pode enviar
-        segredos do CriptEnv para o provedor (push) ou importar do provedor para
-        o CriptEnv (pull).
-      </Callout>
+      <Callout variant="info">{t.rich('callout', { code })}</Callout>
 
       {/* POST /integrations */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Criar integração
+          <EndpointBadge method="POST" /> {t('create.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Conecta uma nova integração com um provedor de hospedagem.
-        </p>
+        <p className="text-muted-foreground mb-4">{t('create.body')}</p>
 
         <ParamTable
           params={[
-            {
-              name: 'provider',
-              type: 'string',
-              required: true,
-              description: 'Provedor: vercel, railway, render',
-            },
-            {
-              name: 'api_key',
-              type: 'string',
-              required: true,
-              description: 'Chave de API do provedor',
-            },
-            {
-              name: 'project_id',
-              type: 'string',
-              required: true,
-              description: 'ID do projeto no provedor',
-            },
-            {
-              name: 'environment',
-              type: 'string',
-              required: false,
-              description: 'Ambiente alvo no provedor (ex: production)',
-            },
+            { name: 'provider', type: 'string', required: true, description: t('create.params.provider') },
+            { name: 'name', type: 'string', required: true, description: t('create.params.name') },
+            { name: 'config', type: 'object', required: true, description: t('create.params.config') },
           ]}
         />
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations \\
+          code={`curl -X POST ${API} \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{
     "provider": "vercel",
-    "api_key": "vercel_token_xxx",
-    "project_id": "prj_abc123",
-    "environment": "production"
+    "name": "Production",
+    "config": {
+      "api_token": "<vercel-token>",
+      "project_id": "prj_abc123"
+    }
   }'`}
         />
 
-        <ResponseBlock status={201}>{`{
-  "id": "int_xyz789",
-  "provider": "vercel",
-  "status": "connected",
-  "project_id": "prj_abc123",
-  "environment": "production",
-  "created_at": "2025-01-31T12:00:00Z"
-}`}</ResponseBlock>
+        <ResponseBlock status={201}>{INTEGRATION}</ResponseBlock>
       </section>
 
       {/* GET /integrations */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Listar integrações
+          <EndpointBadge method="GET" /> {t('list.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Retorna todas as integrações configuradas no projeto.
-        </p>
+        <p className="text-muted-foreground mb-4">{t('list.body')}</p>
 
         <CodeBlock
           language="bash"
-          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations \\
+          code={`curl ${API} \\
   -H "Authorization: Bearer {token}"`}
         />
 
         <ResponseBlock status={200}>{`{
   "integrations": [
-    {
-      "id": "int_xyz789",
-      "provider": "vercel",
-      "status": "connected",
-      "environment": "production",
-      "last_sync_at": "2025-02-01T10:00:00Z"
-    }
-  ]
+    ${INTEGRATION.split('\n').join('\n    ')}
+  ],
+  "total": 1,
+  "available_providers": ["vercel", "render"]
 }`}</ResponseBlock>
       </section>
 
       {/* GET /integrations/:id */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Obter integração
+          <EndpointBadge method="GET" /> {t('get.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Retorna os detalhes de uma integração específica.
-        </p>
+        <p className="text-muted-foreground mb-4">{t('get.body')}</p>
 
         <CodeBlock
           language="bash"
-          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789 \\
+          code={`curl ${API}/{integration_id} \\
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock status={200}>{`{
-  "id": "int_xyz789",
-  "provider": "vercel",
-  "status": "connected",
-  "project_id": "prj_abc123",
-  "environment": "production",
-  "created_at": "2025-01-31T12:00:00Z",
-  "last_sync_at": "2025-02-01T10:00:00Z"
-}`}</ResponseBlock>
+        <ResponseBlock status={200}>{INTEGRATION}</ResponseBlock>
       </section>
 
       {/* DELETE /integrations/:id */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="DELETE" /> Remover integração
+          <EndpointBadge method="DELETE" /> {t('delete.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Remove a integração e desfaz a conexão com o provedor.
-        </p>
+        <p className="text-muted-foreground mb-4">{t('delete.body')}</p>
 
         <CodeBlock
           language="bash"
-          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789 \\
+          code={`curl -X DELETE ${API}/{integration_id} \\
   -H "Authorization: Bearer {token}"`}
         />
 
-        <ResponseBlock status={200}>{`{ "deleted": true }`}</ResponseBlock>
+        <ResponseBlock status={204}>{`(no content)`}</ResponseBlock>
       </section>
 
       {/* POST /integrations/:id/sync */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Sincronizar
+          <EndpointBadge method="POST" /> {t('sync.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Executa uma sincronização entre o CriptEnv e o provedor. Use{' '}
-          <code className="bg-muted px-1 rounded text-sm">direction: push</code>{' '}
-          para enviar segredos ao provedor ou{' '}
-          <code className="bg-muted px-1 rounded text-sm">pull</code> para
-          importar.
-        </p>
+        <p className="text-muted-foreground mb-4">{t.rich('sync.body', { code })}</p>
 
         <ParamTable
           params={[
-            {
-              name: 'direction',
-              type: 'string',
-              required: true,
-              description: 'Direção: push ou pull',
-            },
+            { name: 'direction', type: 'string', required: true, description: t('sync.params.direction') },
+            { name: 'environment', type: 'string', required: false, description: t('sync.params.environment') },
+            { name: 'secrets', type: 'object[]', required: false, description: t('sync.params.secrets') },
           ]}
         />
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789/sync \\
+          code={`curl -X POST ${API}/{integration_id}/sync \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
-  -d '{"direction": "push"}'`}
+  -d '{"direction": "push", "environment": "production"}'`}
         />
 
         <ResponseBlock status={200}>{`{
-  "sync_id": "sync_abc123",
-  "direction": "push",
-  "status": "completed",
-  "secrets_synced": 5,
-  "completed_at": "2025-02-01T10:05:00Z"
+  "success": true,
+  "message": "Synced 5 secrets",
+  "synced_count": 5
 }`}</ResponseBlock>
       </section>
 
       {/* POST /integrations/:id/validate */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Validar integração
+          <EndpointBadge method="POST" /> {t('validate.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Verifica se a conexão com o provedor está funcionando corretamente.
-        </p>
+        <p className="text-muted-foreground mb-4">{t('validate.body')}</p>
 
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/integrations/int_xyz789/validate \\
+          code={`curl -X POST ${API}/{integration_id}/validate \\
   -H "Authorization: Bearer {token}"`}
         />
 
         <ResponseBlock status={200}>{`{
   "valid": true,
-  "provider": "vercel",
-  "project_name": "meu-app",
-  "checked_at": "2025-02-01T10:10:00Z"
+  "error": null
 }`}</ResponseBlock>
       </section>
     </div>
