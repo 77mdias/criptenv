@@ -18,7 +18,7 @@ const BLOB = `{
   "iv": "MTIzNDU2Nzg5MDEy",
   "ciphertext": "YWJjZGVmZ2hpamtsbW5vcA==",
   "auth_tag": "QUJDREVGR0hJSktMTU5P",
-  "checksum": "9b74c9897bac770ffc029102a200c5de",
+  "checksum": "<sha256-checksum>",
   "version": 1
 }`;
 
@@ -31,7 +31,7 @@ const PULLED_BLOB = `{
   "ciphertext": "YWJjZGVmZ2hpamtsbW5vcA==",
   "auth_tag": "QUJDREVGR0hJSktMTU5P",
   "version": 1,
-  "checksum": "9b74c9897bac770ffc029102a200c5de",
+  "checksum": "<sha256-checksum>",
   "created_at": "2026-01-20T14:30:00Z"
 }`;
 
