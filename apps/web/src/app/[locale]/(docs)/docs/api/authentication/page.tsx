@@ -1,5 +1,6 @@
 "use client";
 
+import { useTranslations } from "next-intl";
 import {
   Breadcrumb,
   Callout,
@@ -7,431 +8,229 @@ import {
   InlineCode,
 } from "@/components/docs";
 
+const API = "https://criptenv-api.77mdevseven.tech";
+
+// Literal lists so the i18n auditor can resolve the dynamic lookups below.
+export const TOKEN_TYPES = ["session", "apiKey", "ciToken"] as const;
+export const SCOPES = ["readSecrets", "writeSecrets", "adminProject", "envScope", "envNull"] as const;
+export const PROVIDERS = ["github", "google", "discord"] as const;
+export const PRACTICES = ["apiKeys", "ciTokens", "noFrontend", "rotate", "envScope"] as const;
+
+const SCOPE_LABELS: Record<(typeof SCOPES)[number], string> = {
+  readSecrets: "read:secrets",
+  writeSecrets: "write:secrets",
+  adminProject: "admin:project",
+  envScope: 'environment_scope: "production"',
+  envNull: "environment_scope: null",
+};
+
 export default function ApiAuthenticationPage() {
+  const t = useTranslations("docs.api.authentication");
+  const tRoot = useTranslations("docs");
+  const code = (chunks: React.ReactNode) => <InlineCode>{chunks}</InlineCode>;
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
+
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: "Docs", href: "/docs" },
+          { label: tRoot("breadcrumb.docs"), href: "/docs" },
           { label: "API Reference", href: "/docs/api" },
-          { label: "Autenticação", href: "/docs/api/authentication" },
+          { label: t("title"), href: "/docs/api/authentication" },
         ]}
       />
 
-      <h1 className="text-3xl font-bold mt-6 mb-4">Autenticação</h1>
+      <h1 className="text-3xl font-bold mt-6 mb-4">{t("title")}</h1>
+      <p className="text-muted-foreground mb-6">{t("description")}</p>
 
-      <p className="text-muted-foreground mb-6">
-        A API do CriptEnv suporta múltiplos métodos de autenticação para atender
-        diferentes cenários: dashboard web, integrações de terceiros e pipelines
-        de CI/CD.
-      </p>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t("overview.title")}</h2>
+      <p className="text-muted-foreground mb-4">{t("overview.body")}</p>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Visão Geral</h2>
-
-      <p className="text-muted-foreground mb-4">
-        Todas as requisições autenticadas devem incluir um token válido. A API
-        identifica automaticamente o tipo de token pelo formato:
-      </p>
-
-      <div className="overflow-x-auto rounded-lg border border-(--border) my-4">
+      <div className="overflow-x-auto rounded-lg border border-[var(--border)] my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-(--background-muted) border-b border-(--border)">
-              <th className="px-4 py-3 text-left font-semibold">Tipo</th>
-              <th className="px-4 py-3 text-left font-semibold">Prefixo</th>
-              <th className="px-4 py-3 text-left font-semibold">TTL</th>
-              <th className="px-4 py-3 text-left font-semibold">Uso</th>
+            <tr className="bg-[var(--background-muted)] border-b border-[var(--border)]">
+              <th className="px-4 py-3 text-left font-semibold">{t("overview.type")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("overview.prefix")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("overview.ttl")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("overview.use")}</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-(--border)">
-              <td className="px-4 py-3">Sessão</td>
-              <td className="px-4 py-3">
-                <InlineCode>cookie</InlineCode>
-              </td>
-              <td className="px-4 py-3">30 dias</td>
-              <td className="px-4 py-3">Dashboard web</td>
-            </tr>
-            <tr className="border-b border-(--border) bg-(--background-subtle)">
-              <td className="px-4 py-3">API Key</td>
-              <td className="px-4 py-3">
-                <InlineCode>cek_</InlineCode>
-              </td>
-              <td className="px-4 py-3">Permanente (revogável)</td>
-              <td className="px-4 py-3">Integrações, scripts</td>
-            </tr>
-            <tr className="border-b border-(--border)">
-              <td className="px-4 py-3">CI Token</td>
-              <td className="px-4 py-3">
-                <InlineCode>ci_</InlineCode>
-              </td>
-              <td className="px-4 py-3">1 hora</td>
-              <td className="px-4 py-3">CI/CD pipelines</td>
-            </tr>
+            {TOKEN_TYPES.map((type) => (
+              <tr key={type} className="border-b border-[var(--border)] last:border-0">
+                <td className="px-4 py-3 font-medium">{t(`overview.rows.${type}.name`)}</td>
+                <td className="px-4 py-3 font-mono">{t(`overview.rows.${type}.prefix`)}</td>
+                <td className="px-4 py-3">{t(`overview.rows.${type}.ttl`)}</td>
+                <td className="px-4 py-3">{t(`overview.rows.${type}.use`)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Sessão (Cookies)</h2>
+      {/* Session */}
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t("session.title")}</h2>
+      <p className="text-muted-foreground mb-4">{t("session.body")}</p>
+      <Callout variant="info">{t.rich("session.cookie", { code })}</Callout>
 
-      <p className="text-muted-foreground mb-4">
-        Quando você faz login pelo dashboard web, o servidor cria um cookie
-        HTTP-only seguro que é enviado automaticamente em todas as requisições
-        subsequentes do navegador.
-      </p>
-
-      <Callout variant="info">
-        O cookie de sessão é <InlineCode>HttpOnly</InlineCode>,{" "}
-        <InlineCode>Secure</InlineCode> e usa{" "}
-        <InlineCode>SameSite=Lax</InlineCode>. Ele não pode ser acessado via
-        JavaScript, protegendo contra ataques XSS.
-      </Callout>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">Fluxo de Login</h3>
-
-      <CodeBlock language="bash" title="Login via API">
-        {`# Fazer login e receber cookie de sessão
-curl -X POST "https://criptenv-api.77mdevseven.tech/api/auth/signin" \\
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t("session.loginTitle")}</h3>
+      <CodeBlock language="bash">
+        {`# Sign in and store the session cookie
+curl -X POST "${API}/api/auth/signin" \\
   -H "Content-Type: application/json" \\
   -c cookies.txt \\
-  -d '{
-    "email": "usuario@exemplo.com",
-    "password": "senha-segura-123"
-  }'`}
-      </CodeBlock>
+  -d '{ "email": "user@example.com", "password": "secure-password-123" }'
 
-      <CodeBlock
-        language="bash"
-        title="Usar sessão em requisições subsequentes"
-      >
-        {`# Usar o cookie salvo em requisições seguintes
-curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
-  -b cookies.txt`}
+# Reuse the cookie on the next requests
+curl "${API}/api/v1/projects" -b cookies.txt`}
       </CodeBlock>
-
-      <CodeBlock language="json" title="Resposta do login (200 OK)">
+      <CodeBlock language="json">
         {`{
-  "data": {
-    "user": {
-      "id": "usr_a1b2c3d4",
-      "email": "usuario@exemplo.com",
-      "name": "João Silva"
-    },
-    "expires_at": "2025-02-14T10:30:00Z"
+  "user": { "id": "1a2b3c4d-…", "email": "user@example.com", "name": "Jane Doe", "...": "..." },
+  "session": {
+    "id": "5e6f7a8b-…",
+    "user_id": "1a2b3c4d-…",
+    "expires_at": "2026-03-02T10:30:00Z",
+    "created_at": "2026-01-31T10:30:00Z",
+    "last_accessed_at": "2026-01-31T10:30:00Z"
   }
 }`}
       </CodeBlock>
 
-      <p className="text-muted-foreground mb-4">
-        Se a conta tiver 2FA ativo e o navegador não estiver lembrado, o login
-        retorna um desafio temporário e não cria cookie de sessão até a
-        validação do segundo fator.
-      </p>
-
-      <CodeBlock language="json" title="Resposta quando 2FA é obrigatório">
-        {`{
-  "requires_two_factor": true,
-  "expires_at": "2026-05-28T10:40:00Z"
-}`}
-      </CodeBlock>
-
-      <CodeBlock language="bash" title="Validar desafio 2FA">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/auth/2fa/challenge/verify" \\
+      <p className="text-muted-foreground mb-4">{t("session.twoFactor")}</p>
+      <CodeBlock language="json">{`{ "requires_two_factor": true, "expires_at": "2026-05-28T10:40:00Z" }`}</CodeBlock>
+      <CodeBlock language="bash">
+        {`curl -X POST "${API}/api/auth/2fa/challenge/verify" \\
   -H "Content-Type: application/json" \\
-  -b cookies.txt \\
-  -c cookies.txt \\
-  -d '{
-    "code": "123456",
-    "remember_device": true
-  }'`}
+  -b cookies.txt -c cookies.txt \\
+  -d '{ "code": "123456", "remember_device": true }'`}
       </CodeBlock>
 
-      <h3 className="text-lg font-semibold mt-6 mb-3">Refresh de Sessão</h3>
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t("session.expiryTitle")}</h3>
+      <p className="text-muted-foreground mb-4">{t("session.expiry")}</p>
 
-      <p className="text-muted-foreground mb-4">
-        A sessão é renovada automaticamente a cada requisição bem-sucedida. Se
-        nenhuma requisição for feita por 30 dias, a sessão expira e é necessário
-        fazer login novamente.
-      </p>
+      {/* API keys */}
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t("apiKeys.title")}</h2>
+      <p className="text-muted-foreground mb-4">{t.rich("apiKeys.body", { code })}</p>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">API Keys</h2>
-
-      <p className="text-muted-foreground mb-4">
-        API Keys são tokens permanentes (até serem revogados) com prefixo{" "}
-        <InlineCode>cek_</InlineCode>. Elas são ideais para integrações
-        server-to-server que precisam ler projetos, ambientes e vault blobs
-        criptografados pela API pública.
-      </p>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">Escopos</h3>
-
-      <p className="text-muted-foreground mb-4">
-        Hoje a API pública aplica <InlineCode>read:secrets</InlineCode> para
-        leitura de vault e respeita <InlineCode>environment_scope</InlineCode>.
-        Escopos de escrita ficam reservados para endpoints públicos futuros.
-      </p>
-
-      <div className="overflow-x-auto rounded-lg border border-(--border) my-4">
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t("apiKeys.scopesTitle")}</h3>
+      <p className="text-muted-foreground mb-4">{t.rich("apiKeys.scopesBody", { code })}</p>
+      <div className="overflow-x-auto rounded-lg border border-[var(--border)] my-4">
         <table className="w-full text-sm">
           <thead>
-            <tr className="bg-(--background-muted) border-b border-(--border)">
-              <th className="px-4 py-3 text-left font-semibold">Escopo</th>
-              <th className="px-4 py-3 text-left font-semibold">Permissão</th>
+            <tr className="bg-[var(--background-muted)] border-b border-[var(--border)]">
+              <th className="px-4 py-3 text-left font-semibold">{t("apiKeys.scope")}</th>
+              <th className="px-4 py-3 text-left font-semibold">{t("apiKeys.permission")}</th>
             </tr>
           </thead>
           <tbody>
-            <tr className="border-b border-(--border)">
-              <td className="px-4 py-3">
-                <InlineCode>read:secrets</InlineCode>
-              </td>
-              <td className="px-4 py-3">
-                Leitura de projetos, ambientes e vault blobs criptografados
-              </td>
-            </tr>
-            <tr className="border-b border-(--border) bg-(--background-subtle)">
-              <td className="px-4 py-3">
-                <InlineCode>write:secrets</InlineCode>
-              </td>
-              <td className="px-4 py-3">
-                Reservado para escrita futura via API pública
-              </td>
-            </tr>
-            <tr className="border-b border-(--border)">
-              <td className="px-4 py-3">
-                <InlineCode>admin:project</InlineCode>
-              </td>
-              <td className="px-4 py-3">Reservado para administração futura via API pública</td>
-            </tr>
-            <tr className="border-b border-(--border) bg-(--background-subtle)">
-              <td className="px-4 py-3">
-                <InlineCode>environment_scope: &quot;production&quot;</InlineCode>
-              </td>
-              <td className="px-4 py-3">
-                Restringe a key ao ambiente informado
-              </td>
-            </tr>
-            <tr className="border-b border-(--border)">
-              <td className="px-4 py-3">
-                <InlineCode>null</InlineCode>
-              </td>
-              <td className="px-4 py-3">
-                Permite leitura em todos os ambientes do projeto
-              </td>
-            </tr>
+            {SCOPES.map((scope) => (
+              <tr key={scope} className="border-b border-[var(--border)] last:border-0">
+                <td className="px-4 py-3"><InlineCode>{SCOPE_LABELS[scope]}</InlineCode></td>
+                <td className="px-4 py-3">{t(`apiKeys.scopes.${scope}`)}</td>
+              </tr>
+            ))}
           </tbody>
         </table>
       </div>
 
-      <h3 className="text-lg font-semibold mt-6 mb-3">Criar uma API Key</h3>
-
-      <CodeBlock language="bash" title="Criar API Key via painel ou API">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/v1/projects/{project_id}/api-keys" \\
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t("apiKeys.createTitle")}</h3>
+      <CodeBlock language="bash">
+        {`curl -X POST "${API}/api/v1/projects/{project_id}/api-keys" \\
   -H "Authorization: Bearer <SESSION_TOKEN>" \\
   -H "Content-Type: application/json" \\
-  -d '{
-    "name": "Read Bot",
-    "scopes": ["read:secrets"],
-    "environment_scope": "production"
-  }'`}
+  -d '{ "name": "Read Bot", "scopes": ["read:secrets"], "environment_scope": "production" }'`}
       </CodeBlock>
-
-      <CodeBlock language="json" title="Resposta (201 Created)">
+      <CodeBlock language="json">
         {`{
-	  "id": "key_m2n4p6q8",
-	  "name": "Read Bot",
-	  "prefix": "cek_live_",
-	  "key": "<YOUR_API_KEY>",
-	  "scopes": ["read:secrets"],
-	  "environment_scope": "production",
-	  "created_at": "2026-05-28T10:30:00Z"
-	}`}
-      </CodeBlock>
-
-      <Callout variant="warning">
-        O campo <InlineCode>key</InlineCode> é retornado apenas na criação.
-        Guarde-o em um local seguro. Se perder, será necessário revogar e criar
-        uma nova chave.
-      </Callout>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">
-        Usar API Key nas requisições
-      </h3>
-
-      <CodeBlock language="bash" title="Bearer token no header Authorization">
-        {`curl -X GET "https://criptenv-api.77mdevseven.tech/api/v1/projects" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`}
-      </CodeBlock>
-
-      <h2 className="text-2xl font-semibold mt-10 mb-4">CI Tokens</h2>
-
-      <p className="text-muted-foreground mb-4">
-        CI Tokens têm prefixo <InlineCode>ci_</InlineCode> e são projetados para
-        pipelines de CI/CD. O pipeline troca o token por uma sessão temporária
-        <InlineCode>ci_s_</InlineCode> de 1 hora, com escopos como{" "}
-        <InlineCode>read:secrets</InlineCode>,{" "}
-        <InlineCode>write:secrets</InlineCode> e{" "}
-        <InlineCode>write:integrations</InlineCode>.
-      </p>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">Gerar um CI Token</h3>
-
-      <CodeBlock language="bash" title="Gerar CI Token com sessão humana">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/api/v1/projects/{project_id}/tokens" \\
-  -H "Authorization: Bearer <SESSION_TOKEN>" \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "name": "GitHub Actions",
-    "scopes": ["read:secrets", "write:secrets"],
-    "environment_scope": "production"
-  }'`}
-      </CodeBlock>
-
-      <CodeBlock language="json" title="Resposta (201 Created)">
-        {`{
-  "token": "ci_...",
-  "token_info": {
-    "id": "6f1c…-uuid",
-    "name": "GitHub Actions",
-    "scopes": ["read:secrets", "write:secrets"],
-    "environment_scope": "production",
-    "expires_at": null,
-    "created_at": "2026-01-31T12:00:00Z"
-  }
+  "id": "4c5d6e7f-…",
+  "name": "Read Bot",
+  "key": "cek_live_<KEY>",
+  "prefix": "cek_live_",
+  "scopes": ["read:secrets"],
+  "environment_scope": "production",
+  "expires_at": null,
+  "created_at": "2026-05-28T10:30:00Z"
 }`}
       </CodeBlock>
+      <Callout variant="warning">{t.rich("apiKeys.keyOnce", { code })}</Callout>
 
-      <h3 className="text-lg font-semibold mt-6 mb-3">
-        Usar CI Token no GitHub Actions
-      </h3>
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t("apiKeys.useTitle")}</h3>
+      <CodeBlock language="bash">
+        {`curl "${API}/api/v1/projects" \\
+  -H "Authorization: Bearer cek_live_<KEY>"`}
+      </CodeBlock>
 
-      <p className="text-muted-foreground mb-4">
-        Guarde o token (<InlineCode>ci_...</InlineCode>) e a senha do cofre
-        como GitHub Secrets. A Action troca o token por uma sessão{" "}
-        <InlineCode>ci_s_</InlineCode> (<InlineCode>POST /api/v1/auth/ci-login</InlineCode>),
-        baixa os blobs (<InlineCode>GET /api/v1/ci/secrets</InlineCode>) e
-        decifra localmente com a senha do cofre.
-      </p>
+      {/* CI tokens */}
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t("ci.title")}</h2>
+      <p className="text-muted-foreground mb-4">{t.rich("ci.body", { code })}</p>
 
-      <CodeBlock language="yaml" title=".github/workflows/deploy.yml">
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t("ci.createTitle")}</h3>
+      <CodeBlock language="bash">
+        {`curl -X POST "${API}/api/v1/projects/{project_id}/tokens" \\
+  -H "Authorization: Bearer <SESSION_TOKEN>" \\
+  -H "Content-Type: application/json" \\
+  -d '{ "name": "GitHub Actions", "scopes": ["read:secrets", "write:secrets"], "environment_scope": "production" }'`}
+      </CodeBlock>
+
+      <h3 className="text-xl font-semibold mt-8 mb-3">{t("ci.actionTitle")}</h3>
+      <p className="text-muted-foreground mb-4">{t.rich("ci.actionBody", { code })}</p>
+      <CodeBlock language="yaml">
         {`name: Deploy
 on:
   push:
     branches: [main]
-
 jobs:
   deploy:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-
       - uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
           project: \${{ secrets.CRIPTENV_PROJECT_ID }}
           environment: production
-
       - run: npm run deploy`}
       </CodeBlock>
 
+      {/* OAuth */}
       <h2 className="text-2xl font-semibold mt-10 mb-4">OAuth</h2>
-
-      <p className="text-muted-foreground mb-4">
-        O CriptEnv suporta login social via OAuth 2.0 com os seguintes
-        provedores:
-      </p>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-        <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg mb-2">GitHub</h3>
-          <p className="text-sm text-muted-foreground">
-            Ideal para desenvolvedores que já usam GitHub no dia a dia.
-          </p>
-        </div>
-        <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg mb-2">Google</h3>
-          <p className="text-sm text-muted-foreground">
-            Login rápido com sua conta Google corporativa ou pessoal.
-          </p>
-        </div>
-        <div className="border rounded-lg p-5">
-          <h3 className="font-semibold text-lg mb-2">Discord</h3>
-          <p className="text-sm text-muted-foreground">
-            Para membros da comunidade CriptEnv no Discord.
-          </p>
-        </div>
-      </div>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">Fluxo OAuth 2.0</h3>
-
-      <CodeBlock
-        language="bash"
-        title="1. Iniciar fluxo OAuth — redirecionar o usuário"
-      >
-        {`# Abrir no navegador (provider: github | google | discord):
-https://criptenv-api.77mdevseven.tech/api/auth/oauth/github`}
+      <p className="text-muted-foreground mb-4">{t("oauth.body")}</p>
+      <ul className="list-disc pl-6 space-y-2 text-muted-foreground mb-6">
+        {PROVIDERS.map((provider) => (
+          <li key={provider}>{t.rich(`oauth.providers.${provider}`, { strong })}</li>
+        ))}
+      </ul>
+      <CodeBlock language="text">
+        {`# Open in the browser (provider: github | google | discord)
+${API}/api/auth/oauth/github`}
       </CodeBlock>
+      <p className="text-muted-foreground mb-4">{t.rich("oauth.flow", { code })}</p>
 
-      <p className="text-muted-foreground mb-4">
-        O provedor devolve o usuário para{" "}
-        <InlineCode>/api/auth/oauth/github/callback?code=…&amp;state=…</InlineCode>.
-        A API valida o <InlineCode>state</InlineCode>, troca o código, cria ou
-        vincula a conta e redireciona para o app.
-      </p>
-
-      <Callout variant="info">
-        Após o login OAuth bem-sucedido, um cookie de sessão é criado
-        automaticamente. As requisições subsequentes usam esse cookie
-        normalmente.
-      </Callout>
-
-      <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Erros de Autenticação
-      </h2>
-
-      <CodeBlock
-        language="json"
-        title="401 Unauthorized — Token inválido ou expirado"
-      >
-        {`{
-  "error": {
-    "code": "unauthorized",
-    "message": "Token inválido ou expirado."
+      {/* Errors */}
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t("errors.title")}</h2>
+      <p className="text-muted-foreground mb-4">{t.rich("errors.body", { code })}</p>
+      <CodeBlock language="json">{`// 401
+{ "detail": "Invalid or expired session" }`}</CodeBlock>
+      <CodeBlock language="json">
+        {`// 403
+{
+  "detail": {
+    "code": "INSUFFICIENT_SCOPE",
+    "message": "API key requires read:secrets scope",
+    "required_scope": "read:secrets"
   }
 }`}
       </CodeBlock>
 
-      <CodeBlock language="json" title="403 Forbidden — Escopo insuficiente">
-        {`{
-  "error": {
-    "code": "forbidden",
-    "message": "Esta API Key não tem permissão para escrever neste ambiente.",
-    "details": {
-      "required_scope": "write:secrets"
-    }
-  }
-}`}
-      </CodeBlock>
-
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Boas Práticas</h2>
-
-      <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-        <li>
-          Use <strong>API Keys</strong> para integrações server-to-server com
-          escopos mínimos necessários.
-        </li>
-        <li>
-          Use <strong>CI Tokens</strong> em pipelines para limitar a janela de
-          exposição a 1 hora.
-        </li>
-        <li>Nunca exponha API Keys no frontend ou em logs de CI.</li>
-        <li>
-          Rotacione API Keys periodicamente e revogue chaves não utilizadas.
-        </li>
-        <li>
-          Use escopos de ambiente (<InlineCode>env:production</InlineCode>) para
-          limitar o impacto de uma chave comprometida.
-        </li>
+      {/* Best practices */}
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t("practices.title")}</h2>
+      <ul className="list-disc pl-6 space-y-2 text-muted-foreground">
+        {PRACTICES.map((practice) => (
+          <li key={practice}>{t.rich(`practices.items.${practice}`, { code, strong })}</li>
+        ))}
       </ul>
     </div>
   );

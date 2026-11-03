@@ -1850,6 +1850,95 @@
         "response": "Devuelve el proyecto actualizado.",
         "example": "Ejemplo — re-key"
       }
+    },
+    "authentication": {
+      "title": "Autenticación",
+      "description": "La API de CriptEnv admite varios métodos de autenticación para distintos escenarios: el dashboard web, integraciones de terceros y pipelines de CI/CD.",
+      "overview": {
+        "title": "Visión general",
+        "body": "Todas las peticiones autenticadas deben incluir una credencial válida. La API distingue el tipo por su formato:",
+        "type": "Tipo",
+        "prefix": "Prefijo",
+        "ttl": "Duración",
+        "use": "Uso",
+        "rows": {
+          "session": {
+            "name": "Sesión",
+            "prefix": "cookie",
+            "ttl": "30 días, o 7 días sin uso",
+            "use": "Dashboard web"
+          },
+          "apiKey": {
+            "name": "API key",
+            "prefix": "cek_",
+            "ttl": "Hasta que se revoque o su caducidad opcional",
+            "use": "Integraciones, scripts"
+          },
+          "ciToken": {
+            "name": "Token de CI",
+            "prefix": "ci_ → ci_s_",
+            "ttl": "Token hasta que se revoque; cada sesión ci_s_ dura 1 hora",
+            "use": "Pipelines de CI/CD"
+          }
+        }
+      },
+      "session": {
+        "title": "Sesión (cookies)",
+        "body": "Cuando inicias sesión en el dashboard web, el servidor crea una cookie HTTP-only segura que el navegador envía automáticamente en cada petición siguiente.",
+        "cookie": "La cookie de sesión es <code>HttpOnly</code>, <code>Secure</code> y usa <code>SameSite=Lax</code>. JavaScript no puede leerla, lo que la protege frente a XSS.",
+        "loginTitle": "Flujo de inicio de sesión",
+        "twoFactor": "Si la cuenta tiene 2FA y el navegador no está recordado, el inicio de sesión devuelve un desafío temporal y no crea la cookie de sesión hasta validar el segundo factor.",
+        "expiryTitle": "Caducidad de la sesión",
+        "expiry": "La sesión caduca 30 días después de iniciar sesión, o antes, tras 7 días sin ninguna petición. No se amplía más allá de 30 días; después hay que volver a iniciar sesión."
+      },
+      "apiKeys": {
+        "title": "API keys",
+        "body": "Las API keys empiezan con <code>cek_</code> y valen hasta que se revocan (o hasta su caducidad opcional). Son ideales para integraciones server-to-server que leen proyectos, entornos y vault blobs cifrados mediante la API pública.",
+        "scopesTitle": "Scopes",
+        "scopesBody": "Hoy la API pública aplica <code>read:secrets</code> para la lectura del vault y respeta <code>environment_scope</code>, que debe ser un entorno existente. Los scopes de escritura quedan reservados para futuros endpoints públicos.",
+        "scope": "Scope",
+        "permission": "Permiso",
+        "scopes": {
+          "readSecrets": "Lectura de proyectos, entornos y vault blobs cifrados",
+          "writeSecrets": "Reservado para futuras escrituras mediante la API pública",
+          "adminProject": "Reservado para futura administración mediante la API pública",
+          "envScope": "Restringe la key a ese entorno",
+          "envNull": "Permite la lectura en todos los entornos del proyecto"
+        },
+        "createTitle": "Crear una API key",
+        "keyOnce": "El campo <code>key</code> solo se devuelve al crearla. Guárdalo en un lugar seguro; si lo pierdes, revoca la clave y crea una nueva.",
+        "useTitle": "Usar la API key en las peticiones"
+      },
+      "ci": {
+        "title": "Tokens de CI",
+        "body": "Los tokens de CI empiezan con <code>ci_</code> y están pensados para pipelines de CI/CD. El pipeline intercambia el token por una sesión temporal <code>ci_s_</code> de 1 hora, con scopes como <code>read:secrets</code>, <code>write:secrets</code> y <code>write:integrations</code>.",
+        "createTitle": "Crear un token de CI",
+        "actionTitle": "Usar un token de CI en GitHub Actions",
+        "actionBody": "Guarda el token (<code>ci_...</code>) y la contraseña del vault como GitHub Secrets. La Action intercambia el token por una sesión <code>ci_s_</code> (<code>POST /api/v1/auth/ci-login</code>), descarga los blobs (<code>GET /api/v1/ci/secrets</code>) y los descifra localmente con la contraseña del vault."
+      },
+      "oauth": {
+        "body": "CriptEnv admite el inicio de sesión social mediante OAuth 2.0 con estos proveedores:",
+        "providers": {
+          "github": "<strong>GitHub</strong> — ideal para desarrolladores que ya usan GitHub a diario.",
+          "google": "<strong>Google</strong> — inicio de sesión rápido con tu cuenta de Google personal o de empresa.",
+          "discord": "<strong>Discord</strong> — para miembros de la comunidad de CriptEnv en Discord."
+        },
+        "flow": "El proveedor devuelve al usuario a <code>/api/auth/oauth/github/callback?code=…&state=…</code>. La API valida el <code>state</code>, intercambia el código, crea o vincula la cuenta, crea la cookie de sesión y redirige a la app."
+      },
+      "errors": {
+        "title": "Errores de autenticación",
+        "body": "Los errores siguen el formato de FastAPI: un campo <code>detail</code> con el mensaje, o un objeto con <code>code</code> y <code>message</code> para los errores de scope y de entorno."
+      },
+      "practices": {
+        "title": "Buenas prácticas",
+        "items": {
+          "apiKeys": "Usa <strong>API keys</strong> para integraciones server-to-server con los scopes mínimos necesarios.",
+          "ciTokens": "Usa <strong>tokens de CI</strong> en los pipelines: cada sesión dura solo 1 hora.",
+          "noFrontend": "Nunca expongas API keys en el frontend ni en los logs de CI.",
+          "rotate": "Rota las API keys periódicamente y revoca las que no uses.",
+          "envScope": "Define <code>environment_scope</code> para limitar el impacto de una clave comprometida."
+        }
+      }
     }
   }
 }
