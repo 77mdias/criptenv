@@ -1636,6 +1636,50 @@
         "response": "Empty response — the environment was archived.",
         "example": "Example — archive environment"
       }
+    },
+    "vault": {
+      "description": "The vault stores and syncs each environment's encrypted secrets. Data always travels encrypted; the server never sees the values in plaintext (zero-knowledge).",
+      "flow": {
+        "title": "Zero-knowledge flow",
+        "body": "Before using these endpoints, understand the encryption flow. All encryption and decryption happen on the client:"
+      },
+      "permissions": "Reads accept a member session, an API key with <code>read:secrets</code> (restricted to its environment, if scoped) or a CI session. Writes require the <code>admin</code> role for people, or a CI session with the <code>write:secrets</code> scope; API keys are read-only here.",
+      "push": {
+        "title": "Push secrets",
+        "body": "Sends the environment's encrypted blobs. The push <strong>replaces the whole set</strong> stored for the environment, so send every secret, not just the changed ones. Pass <code>expected_version</code> for optimistic concurrency control.",
+        "params": {
+          "blobs": "Complete list of the environment's encrypted secrets",
+          "keyId": "Secret name (e.g. DATABASE_URL) — stored in plaintext",
+          "iv": "AES-GCM IV (12 bytes, base64)",
+          "ciphertext": "Encrypted value (base64)",
+          "authTag": "AES-GCM auth tag (16 bytes, base64)",
+          "checksum": "Integrity checksum computed by the client",
+          "version": "Secret version (≥ 1)",
+          "vaultProof": "Proof of the vault password; required when the project has a vault configured",
+          "expectedVersion": "Environment version you based the change on; omit to skip the conflict check"
+        },
+        "example": "Example — push secrets"
+      },
+      "conflict": {
+        "title": "Conflict detection",
+        "body": "If the environment changed since <code>expected_version</code>, the API rejects the push with a conflict. A wrong vault proof returns 403.",
+        "callout": "On a conflict, <code>pull</code> the latest version, reapply your change and <code>push</code> again."
+      },
+      "pull": {
+        "title": "Pull secrets",
+        "body": "Returns every encrypted blob in the environment and its current version. Decrypt them on the client with the key derived from the vault password.",
+        "example": "Example — pull secrets"
+      },
+      "version": {
+        "title": "Vault version",
+        "body": "Returns the environment's current vault version and blob count — a cheap way to check for changes without downloading the blobs.",
+        "example": "Example — check version"
+      },
+      "deploy": {
+        "title": "Full example — deploy",
+        "body": "In a pipeline, let the CLI handle pull and decryption: it derives the keys and injects the values in memory.",
+        "example": "Deploy with the secrets in memory"
+      }
     }
   }
 }

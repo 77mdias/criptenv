@@ -1636,6 +1636,50 @@
         "response": "Respuesta vacía: el entorno se archivó.",
         "example": "Ejemplo — archivar entorno"
       }
+    },
+    "vault": {
+      "description": "El vault almacena y sincroniza los secrets cifrados de cada entorno. Los datos siempre viajan cifrados; el servidor nunca ve los valores en texto claro (zero-knowledge).",
+      "flow": {
+        "title": "Flujo zero-knowledge",
+        "body": "Antes de usar estos endpoints, conviene entender el flujo de cifrado. Todo el cifrado y descifrado ocurre en el cliente:"
+      },
+      "permissions": "Las lecturas aceptan una sesión de miembro, una API key con <code>read:secrets</code> (restringida a su entorno, si tiene scope) o una sesión de CI. Las escrituras requieren el rol <code>admin</code> para personas, o una sesión de CI con el scope <code>write:secrets</code>; aquí las API keys son de solo lectura.",
+      "push": {
+        "title": "Push de secrets",
+        "body": "Envía los blobs cifrados del entorno. El push <strong>sustituye todo el conjunto</strong> guardado en el entorno, así que envía todos los secrets, no solo los modificados. Pasa <code>expected_version</code> para el control de concurrencia optimista.",
+        "params": {
+          "blobs": "Lista completa de los secrets cifrados del entorno",
+          "keyId": "Nombre del secret (p. ej. DATABASE_URL), guardado en texto claro",
+          "iv": "IV de AES-GCM (12 bytes, base64)",
+          "ciphertext": "Valor cifrado (base64)",
+          "authTag": "Auth tag de AES-GCM (16 bytes, base64)",
+          "checksum": "Checksum de integridad calculado por el cliente",
+          "version": "Versión del secret (≥ 1)",
+          "vaultProof": "Prueba de la contraseña del vault; obligatoria si el proyecto tiene vault configurado",
+          "expectedVersion": "Versión del entorno en la que se basa tu cambio; omítela para saltar la comprobación de conflictos"
+        },
+        "example": "Ejemplo — push de secrets"
+      },
+      "conflict": {
+        "title": "Detección de conflictos",
+        "body": "Si el entorno cambió desde <code>expected_version</code>, la API rechaza el push con un conflicto. Una prueba de vault incorrecta devuelve 403.",
+        "callout": "Si hay un conflicto, haz <code>pull</code> de la versión más reciente, vuelve a aplicar tu cambio y haz <code>push</code> de nuevo."
+      },
+      "pull": {
+        "title": "Pull de secrets",
+        "body": "Devuelve todos los blobs cifrados del entorno y su versión actual. Descífralos en el cliente con la clave derivada de la contraseña del vault.",
+        "example": "Ejemplo — pull de secrets"
+      },
+      "version": {
+        "title": "Versión del vault",
+        "body": "Devuelve la versión actual del vault del entorno y el número de blobs: una forma barata de comprobar cambios sin descargar los blobs.",
+        "example": "Ejemplo — comprobar la versión"
+      },
+      "deploy": {
+        "title": "Ejemplo completo — deploy",
+        "body": "En el pipeline, deja que la CLI se encargue del pull y del descifrado: deriva las claves e inyecta los valores en memoria.",
+        "example": "Deploy con los secrets en memoria"
+      }
     }
   }
 }

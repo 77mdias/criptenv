@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
   Breadcrumb,
   Callout,
@@ -10,12 +11,43 @@ import {
   ResponseBlock,
 } from '@/components/docs';
 
+const BASE = 'https://criptenv-api.77mdevseven.tech/api/v1/projects/{project_id}/environments/{environment_id}/vault';
+
+const BLOB = `{
+  "key_id": "DATABASE_URL",
+  "iv": "MTIzNDU2Nzg5MDEy",
+  "ciphertext": "YWJjZGVmZ2hpamtsbW5vcA==",
+  "auth_tag": "QUJDREVGR0hJSktMTU5P",
+  "checksum": "9b74c9897bac770ffc029102a200c5de",
+  "version": 1
+}`;
+
+const PULLED_BLOB = `{
+  "id": "7e8f9a0b-1c2d-4e3f-4a5b-6c7d8e9f0a1b",
+  "project_id": "9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
+  "environment_id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e",
+  "key_id": "DATABASE_URL",
+  "iv": "MTIzNDU2Nzg5MDEy",
+  "ciphertext": "YWJjZGVmZ2hpamtsbW5vcA==",
+  "auth_tag": "QUJDREVGR0hJSktMTU5P",
+  "version": 1,
+  "checksum": "9b74c9897bac770ffc029102a200c5de",
+  "created_at": "2026-01-20T14:30:00Z"
+}`;
+
+const indent = (text: string, spaces: number) => text.split('\n').join(`\n${' '.repeat(spaces)}`);
+
 export default function ApiVaultPage() {
+  const t = useTranslations('docs.api.vault');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <InlineCode>{chunks}</InlineCode>;
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
+
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'API Reference', href: '/docs/api' },
           { label: 'Vault', href: '/docs/api/vault' },
         ]}
@@ -23,281 +55,150 @@ export default function ApiVaultPage() {
 
       <h1 className="text-3xl font-bold mt-6 mb-4">Vault</h1>
 
-      <p className="text-muted-foreground mb-6">
-        O Vault é o coração do CriptEnv — ele gerencia o armazenamento e a sincronização
-        de segredos criptografados. Todos os dados trafegam já criptografados; o servidor
-        nunca tem acesso aos valores em texto claro (arquitetura zero-knowledge).
-      </p>
+      <p className="text-muted-foreground mb-6">{t('description')}</p>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Fluxo Zero-Knowledge</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('flow.title')}</h2>
 
-      <p className="text-muted-foreground mb-4">
-        Antes de usar os endpoints do Vault, é importante entender o fluxo de
-        criptografia. Toda a criptografia e descriptografia acontece no cliente:
-      </p>
+      <p className="text-muted-foreground mb-4">{t('flow.body')}</p>
 
-      <div className="bg-muted rounded-lg p-4 font-mono text-sm mb-8">
-        <p className="text-emerald-500">Push (enviar segredos):</p>
-        <p className="ml-4">1. Cliente obtém a Vault password do projeto</p>
-        <p className="ml-4">2. Deriva chave do vault via PBKDF2 (100k iterações)</p>
-        <p className="ml-4">3. Deriva chave do ambiente via HKDF (salt = env_id)</p>
-        <p className="ml-4">4. Criptografa cada segredo com AES-256-GCM</p>
-        <p className="ml-4">5. Envia ciphertext + nonce + tag ao servidor</p>
-        <p className="mt-4 text-emerald-500">Pull (receber segredos):</p>
-        <p className="ml-4">1. Cliente recebe ciphertext + nonce + tag do servidor</p>
-        <p className="ml-4">2. Deriva chaves (mesmo processo do push)</p>
-        <p className="ml-4">3. Descriptografa localmente com AES-256-GCM</p>
-      </div>
+      <CodeBlock
+        language="text"
+        code={`Push:
+  1. Read the project's vault password
+  2. Derive the vault key with PBKDF2 (100k iterations)
+  3. Derive the environment key with HKDF (salt = environment_id)
+  4. Encrypt each value with AES-256-GCM
+  5. Send every blob (iv + ciphertext + auth_tag) plus the vault proof
 
-      <Callout variant="info">
-        O servidor armazena apenas dados opacos (ciphertext). Sem a Vault password
-        do projeto, é impossível recuperar os valores originais — nem o CriptEnv, nem
-        qualquer pessoa com acesso ao banco de dados, consegue ler os segredos.
-        Escritas de vault por sessão humana exigem papel de admin/owner; CI sessions
-        continuam podendo escrever quando possuem escopo explícito <InlineCode>write:secrets</InlineCode>.
-      </Callout>
+Pull:
+  1. Download the environment's blobs
+  2. Derive the same keys
+  3. Decrypt locally with AES-256-GCM`}
+      />
 
-      <CodeBlock language="text">
-        {`https://criptenv-api.77mdevseven.tech/v1/vault`}
-      </CodeBlock>
+      <Callout variant="info">{t.rich('permissions', { code })}</Callout>
 
-      {/* ─── POST /vault/push ─── */}
+      <CodeBlock language="text">{BASE}</CodeBlock>
+
+      {/* ─── POST push ─── */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="POST" /> Push Segredos
+        <EndpointBadge method="POST" /> {t('push.title')}
       </h2>
 
-      <p className="text-muted-foreground mb-4">
-        Envia segredos criptografados para um ambiente. Suporta detecção de conflitos
-        via versionamento otimista — se os segredos foram alterados por outro usuário
-        desde a última sincronização, a API retorna um conflito. Requer admin/owner
-        em sessões humanas.
-      </p>
-
-      <CodeBlock language="text">
-        {`POST /v1/vault/push`}
-      </CodeBlock>
+      <p className="text-muted-foreground mb-4">{t.rich('push.body', { code, strong })}</p>
 
       <ParamTable
         params={[
-          { name: 'environment_id', type: 'string', required: true, description: 'ID do ambiente destino' },
-          { name: 'key_id', type: 'string', required: true, description: 'ID da chave de criptografia usada' },
-          { name: 'secrets', type: 'object[]', required: true, description: 'Array de segredos criptografados' },
-          { name: 'secrets[].name', type: 'string', required: true, description: 'Nome do segredo (ex: DATABASE_URL)' },
-          { name: 'secrets[].ciphertext', type: 'string', required: true, description: 'Valor criptografado em base64' },
-          { name: 'secrets[].nonce', type: 'string', required: true, description: 'Nonce do AES-GCM em base64' },
-          { name: 'secrets[].tag', type: 'string', required: true, description: 'Auth tag do AES-GCM em base64' },
-          { name: 'base_version', type: 'integer', description: 'Versão base para detecção de conflitos (omitir para forçar overwrite)' },
-          { name: 'strategy', type: 'string', default: 'merge', description: 'Estratégia de merge: merge (padrão) ou replace (substitui todos)' },
+          { name: 'blobs', type: 'object[]', required: true, description: t('push.params.blobs') },
+          { name: 'blobs[].key_id', type: 'string', required: true, description: t('push.params.keyId') },
+          { name: 'blobs[].iv', type: 'string', required: true, description: t('push.params.iv') },
+          { name: 'blobs[].ciphertext', type: 'string', required: true, description: t('push.params.ciphertext') },
+          { name: 'blobs[].auth_tag', type: 'string', required: true, description: t('push.params.authTag') },
+          { name: 'blobs[].checksum', type: 'string', required: true, description: t('push.params.checksum') },
+          { name: 'blobs[].version', type: 'integer', required: true, description: t('push.params.version') },
+          { name: 'vault_proof', type: 'string', description: t('push.params.vaultProof') },
+          { name: 'expected_version', type: 'integer', description: t('push.params.expectedVersion') },
         ]}
       />
 
-      <CodeBlock language="bash" title="Exemplo — Push de segredos">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/vault/push" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>" \\
+      <CodeBlock language="bash" title={t('push.example')}>
+        {`curl -X POST "${BASE}/push" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "environment_id": "env_a1b2c3",
-    "key_id": "key_m2n4p6q8",
-    "base_version": 5,
-    "strategy": "merge",
-    "secrets": [
-      {
-        "name": "DATABASE_URL",
-        "ciphertext": "YWJjZGVmZ2hpamtsbW5vcA==",
-        "nonce": "MTIzNDU2Nzg5MDEy",
-        "tag": "QUJDREVGR0hJSktMTU5P"
-      },
-      {
-        "name": "REDIS_URL",
-        "ciphertext": "cXJzdHV2d3h5ejAxMjM0",
-        "nonce": "OTg3NjU0MzIxMDk4",
-        "tag": "UEhJR0pLTE1OT1FSU1RV"
-      }
+    "expected_version": 5,
+    "vault_proof": "<vault-proof>",
+    "blobs": [
+      ${indent(BLOB, 6)}
     ]
   }'`}
       </CodeBlock>
 
-      <ResponseBlock status={200} statusText="OK">
+      <ResponseBlock status={201} statusText="Created">
         <CodeBlock language="json">
           {`{
-  "data": {
-    "environment_id": "env_a1b2c3",
-    "version": 6,
-    "secrets_pushed": 2,
-    "secrets_total": 14,
-    "pushed_at": "2025-01-20T14:30:00Z"
-  }
+  "blobs": [
+    ${indent(PULLED_BLOB, 4)}
+  ],
+  "version": 6
 }`}
         </CodeBlock>
       </ResponseBlock>
 
-      <h3 className="text-lg font-semibold mt-6 mb-3">Detecção de Conflitos</h3>
+      <h3 className="text-lg font-semibold mt-6 mb-3">{t('conflict.title')}</h3>
 
-      <p className="text-muted-foreground mb-4">
-        Se outro membro modificou os segredos desde a última sincronização, a API retorna
-        um conflito com os detalhes:
-      </p>
+      <p className="text-muted-foreground mb-4">{t.rich('conflict.body', { code })}</p>
 
       <ResponseBlock status={409} statusText="Conflict">
         <CodeBlock language="json">
           {`{
-  "error": {
-    "code": "version_conflict",
-    "message": "Os segredos foram modificados por outro usuário desde sua última sincronização.",
-    "details": {
-      "your_base_version": 5,
-      "current_version": 7,
-      "conflicting_keys": ["DATABASE_URL"],
-      "modified_by": "usr_x9y8z7w6",
-      "modified_at": "2025-01-20T14:25:00Z"
-    }
+  "detail": {
+    "message": "Version conflict detected",
+    "current_version": 7,
+    "expected_version": 5
   }
 }`}
         </CodeBlock>
       </ResponseBlock>
 
-      <Callout variant="warning">
-        Em caso de conflito, faça um <InlineCode>pull</InlineCode> para obter a versão
-        mais recente, resolva o conflito manualmente e tente novamente o <InlineCode>push</InlineCode>.
-      </Callout>
+      <ResponseBlock status={403} statusText="Forbidden">
+        <CodeBlock language="json">{`{ "detail": "Invalid vault password" }`}</CodeBlock>
+      </ResponseBlock>
 
-      {/* ─── GET /vault/pull ─── */}
+      <Callout variant="warning">{t.rich('conflict.callout', { code })}</Callout>
+
+      {/* ─── GET pull ─── */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="GET" /> Pull Segredos
+        <EndpointBadge method="GET" /> {t('pull.title')}
       </h2>
 
-      <p className="text-muted-foreground mb-4">
-        Retorna todos os segredos criptografados de um ambiente. Os dados retornados
-        devem ser descriptografados no cliente usando a chave derivada da Vault password.
-      </p>
+      <p className="text-muted-foreground mb-4">{t('pull.body')}</p>
 
-      <CodeBlock language="text">
-        {`GET /v1/vault/pull`}
-      </CodeBlock>
-
-      <ParamTable
-        params={[
-          { name: 'environment_id', type: 'string', required: true, description: 'ID do ambiente para puxar segredos' },
-          { name: 'format', type: 'string', default: 'json', description: 'Formato de saída: json ou env' },
-          { name: 'names_only', type: 'boolean', default: 'false', description: 'Se true, retorna apenas os nomes dos segredos (sem ciphertext)' },
-        ]}
-      />
-
-      <CodeBlock language="bash" title="Exemplo — Pull de segredos">
-        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`}
+      <CodeBlock language="bash" title={t('pull.example')}>
+        {`curl "${BASE}/pull" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
         <CodeBlock language="json">
           {`{
-  "data": {
-    "environment_id": "env_a1b2c3",
-    "version": 6,
-    "key_id": "key_m2n4p6q8",
-    "secrets": [
-      {
-        "name": "DATABASE_URL",
-        "ciphertext": "YWJjZGVmZ2hpamtsbW5vcA==",
-        "nonce": "MTIzNDU2Nzg5MDEy",
-        "tag": "QUJDREVGR0hJSktMTU5P"
-      },
-      {
-        "name": "REDIS_URL",
-        "ciphertext": "cXJzdHV2d3h5ejAxMjM0",
-        "nonce": "OTg3NjU0MzIxMDk4",
-        "tag": "UEhJR0pLTE1OT1FSU1RV"
-      }
-    ],
-    "pulled_at": "2025-01-20T14:35:00Z"
-  }
+  "blobs": [
+    ${indent(PULLED_BLOB, 4)}
+  ],
+  "version": 6
 }`}
         </CodeBlock>
       </ResponseBlock>
 
-      <CodeBlock language="bash" title="Pull com names_only (para diff)">
-        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3&names_only=true" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`}
-      </CodeBlock>
-
-      <ResponseBlock status={200} statusText="OK">
-        <CodeBlock language="json">
-          {`{
-  "data": {
-    "environment_id": "env_a1b2c3",
-    "version": 6,
-    "secret_names": [
-      "DATABASE_URL",
-      "REDIS_URL",
-      "JWT_SECRET",
-      "STRIPE_API_KEY"
-    ],
-    "total": 14
-  }
-}`}
-        </CodeBlock>
-      </ResponseBlock>
-
-      {/* ─── GET /vault/version ─── */}
+      {/* ─── GET version ─── */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="GET" /> Versão do Vault
+        <EndpointBadge method="GET" /> {t('version.title')}
       </h2>
 
-      <p className="text-muted-foreground mb-4">
-        Retorna a versão atual do vault de um ambiente, útil para verificar se houve
-        alterações desde a última sincronização sem precisar baixar todos os segredos.
-      </p>
+      <p className="text-muted-foreground mb-4">{t('version.body')}</p>
 
-      <CodeBlock language="text">
-        {`GET /v1/vault/version`}
-      </CodeBlock>
-
-      <ParamTable
-        params={[
-          { name: 'environment_id', type: 'string', required: true, description: 'ID do ambiente' },
-        ]}
-      />
-
-      <CodeBlock language="bash" title="Exemplo — Verificar versão">
-        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/vault/version?environment_id=env_a1b2c3" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`}
+      <CodeBlock language="bash" title={t('version.example')}>
+        {`curl "${BASE}/version" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>"`}
       </CodeBlock>
 
       <ResponseBlock status={200} statusText="OK">
-        <CodeBlock language="json">
-          {`{
-  "data": {
-    "environment_id": "env_a1b2c3",
-    "version": 6,
-    "last_modified_at": "2025-01-20T14:30:00Z",
-    "last_modified_by": "usr_a1b2c3d4",
-    "secret_count": 14
-  }
-}`}
-        </CodeBlock>
+        <CodeBlock language="json">{`{
+  "version": 6,
+  "blob_count": 14
+}`}</CodeBlock>
       </ResponseBlock>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Exemplo Completo — Fluxo de Deploy</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('deploy.title')}</h2>
 
-      <p className="text-muted-foreground mb-4">
-        Veja como usar os endpoints do Vault em um fluxo típico de CI/CD:
-      </p>
+      <p className="text-muted-foreground mb-4">{t('deploy.body')}</p>
 
-      <CodeBlock language="bash" title="Fluxo completo: verificar → pull → decrypt → deploy">
-        {`# 1. Verificar versão atual (evita pull desnecessário)
-VERSION=$(curl -s "https://criptenv-api.77mdevseven.tech/v1/vault/version?environment_id=env_a1b2c3" \\
-  -H "Authorization: Bearer $CI_TOKEN" | jq -r '.data.version')
+      <CodeBlock language="bash" title={t('deploy.example')}>
+        {`# The CLI pulls, derives the keys and decrypts in memory; nothing is written to disk.
+export CRIPTENV_API_KEY="cek_..."            # read:secrets, optionally scoped to production
+export CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD"
 
-# 2. Pull dos segredos criptografados
-curl -s "https://criptenv-api.77mdevseven.tech/v1/vault/pull?environment_id=env_a1b2c3" \\
-  -H "Authorization: Bearer $CI_TOKEN" \\
-  -o encrypted-secrets.json
-
-# 3. Descriptografar localmente (usando CLI do CriptEnv)
-criptenv decrypt --input encrypted-secrets.json --output .env --password "$MASTER_PASSWORD"
-
-# 4. Deploy com segredos descriptografados
-docker compose up -d`}
+criptenv run -p <project-id> -e production -- docker compose up -d`}
       </CodeBlock>
     </div>
   );

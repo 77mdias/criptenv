@@ -1636,6 +1636,50 @@
         "response": "Resposta vazia — o ambiente foi arquivado.",
         "example": "Exemplo — Arquivar ambiente"
       }
+    },
+    "vault": {
+      "description": "O Vault armazena e sincroniza os segredos criptografados de cada ambiente. Os dados sempre trafegam criptografados; o servidor nunca vê os valores em texto claro (zero-knowledge).",
+      "flow": {
+        "title": "Fluxo Zero-Knowledge",
+        "body": "Antes de usar os endpoints do Vault, é importante entender o fluxo de criptografia. Toda a criptografia e descriptografia acontece no cliente:"
+      },
+      "permissions": "Leituras aceitam sessão de membro, API key com <code>read:secrets</code> (restrita ao seu ambiente, se tiver escopo) ou sessão de CI. Escritas exigem papel <code>admin</code> para pessoas, ou uma sessão de CI com escopo <code>write:secrets</code>; aqui as API keys são somente leitura.",
+      "push": {
+        "title": "Push Segredos",
+        "body": "Envia os blobs criptografados do ambiente. O push <strong>substitui todo o conjunto</strong> armazenado no ambiente, então envie todos os segredos, não só os alterados. Passe <code>expected_version</code> para controle de concorrência otimista.",
+        "params": {
+          "blobs": "Lista completa dos segredos criptografados do ambiente",
+          "keyId": "Nome do segredo (ex: DATABASE_URL) — armazenado em texto claro",
+          "iv": "IV do AES-GCM (12 bytes, base64)",
+          "ciphertext": "Valor criptografado (base64)",
+          "authTag": "Auth tag do AES-GCM (16 bytes, base64)",
+          "checksum": "Checksum de integridade calculado pelo cliente",
+          "version": "Versão do segredo (≥ 1)",
+          "vaultProof": "Prova da senha do vault; obrigatória quando o projeto tem vault configurado",
+          "expectedVersion": "Versão do ambiente em que sua alteração se baseia; omita para pular a verificação de conflito"
+        },
+        "example": "Exemplo — Push de segredos"
+      },
+      "conflict": {
+        "title": "Detecção de Conflitos",
+        "body": "Se o ambiente mudou desde <code>expected_version</code>, a API rejeita o push com um conflito. Uma prova de vault incorreta retorna 403.",
+        "callout": "Em caso de conflito, faça um <code>pull</code> da versão mais recente, reaplique sua alteração e faça o <code>push</code> novamente."
+      },
+      "pull": {
+        "title": "Pull Segredos",
+        "body": "Retorna todos os blobs criptografados do ambiente e a versão atual. Descriptografe-os no cliente com a chave derivada da senha do vault.",
+        "example": "Exemplo — Pull de segredos"
+      },
+      "version": {
+        "title": "Versão do Vault",
+        "body": "Retorna a versão atual do vault do ambiente e a quantidade de blobs — uma forma barata de verificar alterações sem baixar os blobs.",
+        "example": "Exemplo — Verificar versão"
+      },
+      "deploy": {
+        "title": "Exemplo Completo — Deploy",
+        "body": "Na pipeline, deixe a CLI cuidar do pull e da descriptografia: ela deriva as chaves e injeta os valores em memória.",
+        "example": "Deploy com os segredos em memória"
+      }
     }
   }
 }
