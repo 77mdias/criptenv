@@ -1740,6 +1740,53 @@
           "webhookUrl": "HTTPS URL that receives webhook alerts"
         }
       }
+    },
+    "members": {
+      "title": "Members",
+      "description": "Members control who can access each project and with which permission level. Each member belongs to a project with one role.",
+      "roles": {
+        "title": "Roles",
+        "role": "Role",
+        "permissions": "Permissions",
+        "owner": "Project creator. Everything an admin can do; cannot be granted through an invitation.",
+        "admin": "Full access: settings, environments, members, invitations, vault writes, rotation, expiration and vault re-key.",
+        "developer": "Reads and uses secrets; can revoke invitations they created. No settings, member management or vault writes.",
+        "viewer": "Reads the project without administrative actions."
+      },
+      "rekeyCallout": "Removing a member does not change the vault password they knew. To lock a former member out of the encrypted data, an admin should re-key the vault (<code>POST /api/v1/projects/'{id}'/vault/rekey</code>) after the removal.",
+      "params": {
+        "projectId": "Project ID (path parameter)",
+        "memberId": "Member ID (path parameter)",
+        "role": "Role: admin, developer or viewer"
+      },
+      "add": {
+        "title": "Add member",
+        "body": "Adds an existing CriptEnv user to the project by <code>user_id</code>. Requires the <code>admin</code> role. To invite someone by email, use the <invites>Invites API</invites>.",
+        "params": {
+          "userId": "ID of the user to add"
+        },
+        "example": "Example — add member"
+      },
+      "list": {
+        "title": "List members",
+        "body": "Returns every member of the project. Any member can call it.",
+        "example": "Example — list members"
+      },
+      "get": {
+        "title": "Get member",
+        "body": "Returns one member of the project."
+      },
+      "update": {
+        "title": "Update member role",
+        "body": "Changes a member's role. Requires the <code>admin</code> role.",
+        "example": "Example — change role"
+      },
+      "remove": {
+        "title": "Remove member",
+        "body": "Removes a member from the project. Requires the <code>admin</code> role.",
+        "response": "Empty response — the member was removed.",
+        "example": "Example — remove member"
+      }
     }
   }
 }

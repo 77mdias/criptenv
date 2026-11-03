@@ -1740,6 +1740,53 @@
           "webhookUrl": "URL HTTPS que recibe las alertas por webhook"
         }
       }
+    },
+    "members": {
+      "title": "Miembros",
+      "description": "Los miembros controlan quién accede a cada proyecto y con qué nivel de permiso. Cada miembro pertenece a un proyecto con un rol.",
+      "roles": {
+        "title": "Roles",
+        "role": "Rol",
+        "permissions": "Permisos",
+        "owner": "Creador del proyecto. Todo lo que puede hacer un admin; no se puede conceder por invitación.",
+        "admin": "Acceso total: configuración, entornos, miembros, invitaciones, escritura en el vault, rotación, caducidad y re-key del vault.",
+        "developer": "Lee y usa secrets; puede revocar las invitaciones que creó. Sin configuración, gestión de miembros ni escritura en el vault.",
+        "viewer": "Lectura del proyecto sin acciones administrativas."
+      },
+      "rekeyCallout": "Eliminar a un miembro no cambia la contraseña del vault que conocía. Para impedir que un exmiembro acceda a los datos cifrados, un admin debe hacer re-key del vault (<code>POST /api/v1/projects/'{id}'/vault/rekey</code>) tras la eliminación.",
+      "params": {
+        "projectId": "ID del proyecto (parámetro de ruta)",
+        "memberId": "ID del miembro (parámetro de ruta)",
+        "role": "Rol: admin, developer o viewer"
+      },
+      "add": {
+        "title": "Añadir miembro",
+        "body": "Añade al proyecto un usuario existente de CriptEnv por su <code>user_id</code>. Requiere el rol <code>admin</code>. Para invitar a alguien por email, usa la <invites>API de Invitaciones</invites>.",
+        "params": {
+          "userId": "ID del usuario que añadir"
+        },
+        "example": "Ejemplo — añadir miembro"
+      },
+      "list": {
+        "title": "Listar miembros",
+        "body": "Devuelve todos los miembros del proyecto. Cualquier miembro puede llamarlo.",
+        "example": "Ejemplo — listar miembros"
+      },
+      "get": {
+        "title": "Obtener miembro",
+        "body": "Devuelve un miembro del proyecto."
+      },
+      "update": {
+        "title": "Actualizar el rol del miembro",
+        "body": "Cambia el rol de un miembro. Requiere el rol <code>admin</code>.",
+        "example": "Ejemplo — cambiar el rol"
+      },
+      "remove": {
+        "title": "Eliminar miembro",
+        "body": "Elimina a un miembro del proyecto. Requiere el rol <code>admin</code>.",
+        "response": "Respuesta vacía: el miembro se eliminó.",
+        "example": "Ejemplo — eliminar miembro"
+      }
     }
   }
 }

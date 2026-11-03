@@ -1740,6 +1740,53 @@
           "webhookUrl": "URL HTTPS que recebe os alertas por webhook"
         }
       }
+    },
+    "members": {
+      "title": "Membros",
+      "description": "O sistema de membros controla quem tem acesso a cada projeto e com qual nível de permissão. Cada membro é associado a um projeto com um papel.",
+      "roles": {
+        "title": "Papéis (Roles)",
+        "role": "Papel",
+        "permissions": "Permissões",
+        "owner": "Criador do projeto. Tudo o que um admin pode fazer; não pode ser concedido por convite.",
+        "admin": "Acesso total: configurações, ambientes, membros, convites, escrita no vault, rotação, expiração e re-key do vault.",
+        "developer": "Lê e usa segredos; pode revogar convites que criou. Sem configurações, gestão de membros ou escrita no vault.",
+        "viewer": "Leitura do projeto sem ações administrativas."
+      },
+      "rekeyCallout": "Remover um membro não muda a senha do vault que ele conhecia. Para impedir o acesso de um ex-membro aos dados cifrados, um admin deve fazer o re-key do vault (<code>POST /api/v1/projects/'{id}'/vault/rekey</code>) após a remoção.",
+      "params": {
+        "projectId": "ID do projeto (path parameter)",
+        "memberId": "ID do membro (path parameter)",
+        "role": "Papel: admin, developer ou viewer"
+      },
+      "add": {
+        "title": "Adicionar membro",
+        "body": "Adiciona ao projeto um usuário existente do CriptEnv pelo <code>user_id</code>. Requer papel <code>admin</code>. Para convidar alguém por email, use a <invites>API de Convites</invites>.",
+        "params": {
+          "userId": "ID do usuário a adicionar"
+        },
+        "example": "Exemplo — Adicionar membro"
+      },
+      "list": {
+        "title": "Listar Membros",
+        "body": "Retorna todos os membros do projeto. Qualquer membro pode chamar.",
+        "example": "Exemplo — Listar membros"
+      },
+      "get": {
+        "title": "Obter membro",
+        "body": "Retorna um membro do projeto."
+      },
+      "update": {
+        "title": "Atualizar Papel do Membro",
+        "body": "Altera o papel de um membro. Requer papel <code>admin</code>.",
+        "example": "Exemplo — Alterar papel"
+      },
+      "remove": {
+        "title": "Remover Membro",
+        "body": "Remove um membro do projeto. Requer papel <code>admin</code>.",
+        "response": "Resposta vazia — o membro foi removido.",
+        "example": "Exemplo — Remover membro"
+      }
     }
   }
 }
