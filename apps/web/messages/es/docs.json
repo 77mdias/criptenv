@@ -1787,6 +1787,69 @@
         "response": "Respuesta vacía: el miembro se eliminó.",
         "example": "Ejemplo — eliminar miembro"
       }
+    },
+    "projects": {
+      "title": "Proyectos",
+      "description": "Los proyectos son la unidad organizativa principal de CriptEnv. Cada proyecto tiene sus entornos, miembros y su propio vault, protegido por la contraseña del vault del proyecto.",
+      "vaultCallout": "La contraseña del vault nunca llega al servidor. Al crearlo, el cliente deriva las claves y solo envía <code>vault_config</code> (salts, parámetros del KDF y un verificador cifrado) y <code>vault_proof</code>. Usa el dashboard web o <code>criptenv projects create</code>, que lo hacen por ti.",
+      "params": {
+        "projectId": "ID del proyecto (parámetro de ruta)"
+      },
+      "create": {
+        "title": "Crear proyecto",
+        "body": "Crea un proyecto. El usuario autenticado pasa a ser su owner.",
+        "params": {
+          "name": "Nombre del proyecto",
+          "slug": "Slug opcional (minúsculas, números y guiones); se genera a partir del nombre si se omite",
+          "description": "Descripción opcional",
+          "settings": "Configuración libre del proyecto",
+          "vaultConfig": "Parámetros del vault generados por el cliente (salts, iteraciones, verificador cifrado)",
+          "vaultProof": "Prueba derivada de la contraseña del vault"
+        },
+        "example": "Ejemplo — crear proyecto"
+      },
+      "list": {
+        "title": "Listar proyectos",
+        "body": "Devuelve los proyectos de los que el usuario es miembro, con su rol en cada uno.",
+        "params": {
+          "includeArchived": "Incluye los proyectos archivados"
+        },
+        "example": "Ejemplo — listar proyectos"
+      },
+      "get": {
+        "title": "Obtener proyecto por ID",
+        "body": "Devuelve un proyecto del que el usuario es miembro."
+      },
+      "update": {
+        "title": "Actualizar proyecto",
+        "body": "Actualiza el nombre, la descripción, la configuración o el indicador de archivado del proyecto. Requiere el rol <code>admin</code>.",
+        "params": {
+          "name": "Nuevo nombre",
+          "description": "Nueva descripción",
+          "settings": "Nueva configuración",
+          "archived": "Archiva o desarchiva el proyecto"
+        },
+        "example": "Ejemplo — actualizar proyecto"
+      },
+      "delete": {
+        "title": "Eliminar proyecto",
+        "body": "Elimina permanentemente el proyecto. Requiere el rol <code>owner</code>.",
+        "callout": "Esto elimina el proyecto con todos sus entornos, secrets cifrados, miembros e invitaciones. No se puede deshacer. Para ocultar un proyecto sin perder datos, archívalo.",
+        "response": "Respuesta vacía: el proyecto se eliminó.",
+        "example": "Ejemplo — eliminar proyecto"
+      },
+      "rekey": {
+        "title": "Re-key del vault",
+        "body": "Cambia la contraseña del vault del proyecto. El cliente descifra todos los entornos con la contraseña actual, los vuelve a cifrar con la nueva y lo envía todo en una petición; el servidor comprueba <code>current_vault_proof</code> y sustituye la configuración y los blobs. Requiere el rol <code>admin</code>.",
+        "params": {
+          "currentProof": "Prueba de la contraseña actual del vault",
+          "newConfig": "Parámetros del vault para la nueva contraseña",
+          "newProof": "Prueba de la nueva contraseña del vault",
+          "environments": "Todos los entornos con sus blobs cifrados de nuevo con la nueva contraseña"
+        },
+        "response": "Devuelve el proyecto actualizado.",
+        "example": "Ejemplo — re-key"
+      }
     }
   }
 }

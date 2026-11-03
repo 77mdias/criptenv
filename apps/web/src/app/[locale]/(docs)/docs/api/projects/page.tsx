@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
   Breadcrumb,
   Callout,
@@ -10,332 +11,187 @@ import {
   ResponseBlock,
 } from '@/components/docs';
 
+const BASE = 'https://criptenv-api.77mdevseven.tech/api/v1/projects';
+
+const VAULT_CONFIG = `{
+  "version": 1,
+  "kdf": "PBKDF2-SHA256",
+  "iterations": 100000,
+  "salt": "<base64>",
+  "proof_salt": "<base64>",
+  "verifier_iv": "<base64>",
+  "verifier_ciphertext": "<base64>",
+  "verifier_auth_tag": "<base64>"
+}`;
+
+const PROJECT = `{
+  "id": "9f8e7d6c-5b4a-4c3d-2e1f-0a9b8c7d6e5f",
+  "owner_id": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+  "name": "my-app",
+  "slug": "my-app",
+  "description": "Main API",
+  "encryption_key_id": null,
+  "settings": {},
+  "vault_config": { "version": 1, "kdf": "PBKDF2-SHA256", "iterations": 100000, "...": "..." },
+  "current_user_role": "owner",
+  "archived": false,
+  "created_at": "2026-01-10T08:00:00Z",
+  "updated_at": "2026-01-10T08:00:00Z"
+}`;
+
+const indent = (text: string, spaces: number) => text.split('\n').join(`\n${' '.repeat(spaces)}`);
+
 export default function ApiProjectsPage() {
+  const t = useTranslations('docs.api.projects');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <InlineCode>{chunks}</InlineCode>;
+  const projectIdParam = { name: 'project_id', type: 'string', required: true, description: t('params.projectId') };
+
   return (
     <div className="max-w-3xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'API Reference', href: '/docs/api' },
-          { label: 'Projetos', href: '/docs/api/projects' },
+          { label: t('title'), href: '/docs/api/projects' },
         ]}
       />
 
-      <h1 className="text-3xl font-bold mt-6 mb-4">Projetos</h1>
+      <h1 className="text-3xl font-bold mt-6 mb-4">{t('title')}</h1>
+      <p className="text-muted-foreground mb-6">{t('description')}</p>
 
-      <p className="text-muted-foreground mb-6">
-        Projetos são a unidade organizacional principal do CriptEnv. Cada projeto contém
-        ambientes e segredos, e pode ter múltiplos membros com diferentes papéis.
-      </p>
+      <Callout variant="info">{t.rich('vaultCallout', { code })}</Callout>
 
-      <CodeBlock language="text">
-        {`https://criptenv-api.77mdevseven.tech/v1/projects`}
-      </CodeBlock>
+      <CodeBlock language="text">{BASE}</CodeBlock>
 
-      {/* ─── POST /projects ─── */}
+      {/* POST */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="POST" /> Criar Projeto
+        <EndpointBadge method="POST" /> {t('create.title')}
       </h2>
-
-      <p className="text-muted-foreground mb-4">
-        Cria um novo projeto. O usuário autenticado torna-se automaticamente o
-        proprietário (admin) do projeto.
-      </p>
-
-      <CodeBlock language="text">
-        {`POST /v1/projects`}
-      </CodeBlock>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">Parâmetros do Body</h3>
-
+      <p className="text-muted-foreground mb-4">{t('create.body')}</p>
       <ParamTable
         params={[
-          { name: 'name', type: 'string', required: true, description: 'Nome do projeto (3-64 caracteres, slug-friendly)' },
-          { name: 'description', type: 'string', description: 'Descrição opcional do projeto (máx: 256 caracteres)' },
-          { name: 'encryption', type: 'string', default: 'aes-256-gcm', description: 'Algoritmo de criptografia. Opções: aes-256-gcm' },
+          { name: 'name', type: 'string', required: true, description: t('create.params.name') },
+          { name: 'slug', type: 'string', description: t('create.params.slug') },
+          { name: 'description', type: 'string', description: t('create.params.description') },
+          { name: 'settings', type: 'object', description: t('create.params.settings') },
+          { name: 'vault_config', type: 'object', required: true, description: t('create.params.vaultConfig') },
+          { name: 'vault_proof', type: 'string', required: true, description: t('create.params.vaultProof') },
         ]}
       />
-
-      <CodeBlock language="bash" title="Exemplo — Criar projeto">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>" \\
+      <CodeBlock language="bash" title={t('create.example')}>
+        {`curl -X POST "${BASE}" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "name": "meu-app",
-    "description": "Backend do aplicativo principal"
+    "name": "my-app",
+    "description": "Main API",
+    "vault_config": ${indent(VAULT_CONFIG, 4)},
+    "vault_proof": "<base64>"
   }'`}
       </CodeBlock>
-
       <ResponseBlock status={201} statusText="Created">
-        <CodeBlock language="json">
-          {`{
-  "data": {
-    "id": "proj_k8j2m4n6",
-    "name": "meu-app",
-    "description": "Backend do aplicativo principal",
-    "encryption": "aes-256-gcm",
-    "created_at": "2025-01-15T10:30:00Z",
-    "updated_at": "2025-01-15T10:30:00Z",
-    "owner_id": "usr_a1b2c3d4"
-  }
-}`}
-        </CodeBlock>
+        <CodeBlock language="json">{PROJECT}</CodeBlock>
       </ResponseBlock>
 
-      {/* ─── GET /projects ─── */}
+      {/* GET list */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="GET" /> Listar Projetos
+        <EndpointBadge method="GET" /> {t('list.title')}
       </h2>
-
-      <p className="text-muted-foreground mb-4">
-        Retorna todos os projetos dos quais o usuário autenticado é membro.
-        Suporta paginação e filtros.
-      </p>
-
-      <CodeBlock language="text">
-        {`GET /v1/projects`}
-      </CodeBlock>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">Query Parameters</h3>
-
+      <p className="text-muted-foreground mb-4">{t('list.body')}</p>
       <ParamTable
-        params={[
-          { name: 'page', type: 'integer', default: '1', description: 'Número da página' },
-          { name: 'per_page', type: 'integer', default: '20', description: 'Itens por página (máx: 100)' },
-          { name: 'search', type: 'string', description: 'Busca por nome do projeto' },
-        ]}
+        params={[{ name: 'include_archived', type: 'boolean', default: 'false', description: t('list.params.includeArchived') }]}
       />
-
-      <CodeBlock language="bash" title="Exemplo — Listar projetos">
-        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects?page=1&per_page=10" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`}
+      <CodeBlock language="bash" title={t('list.example')}>
+        {`curl "${BASE}" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>"`}
       </CodeBlock>
-
       <ResponseBlock status={200} statusText="OK">
         <CodeBlock language="json">
           {`{
-  "data": [
-    {
-      "id": "proj_k8j2m4n6",
-      "name": "meu-app",
-      "description": "Backend do aplicativo principal",
-      "created_at": "2025-01-15T10:30:00Z",
-      "member_count": 3,
-      "environment_count": 2
-    },
-    {
-      "id": "proj_m2n4p6q8",
-      "name": "frontend-app",
-      "description": "Aplicação React",
-      "created_at": "2025-01-10T08:00:00Z",
-      "member_count": 5,
-      "environment_count": 3
-    }
+  "projects": [
+    ${indent(PROJECT, 4)}
   ],
-  "pagination": {
-    "page": 1,
-    "per_page": 10,
-    "total": 2,
-    "total_pages": 1
-  }
+  "total": 1
 }`}
         </CodeBlock>
       </ResponseBlock>
 
-      {/* ─── GET /projects/:id ─── */}
+      {/* GET one */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="GET" /> Obter Projeto por ID
+        <EndpointBadge method="GET" /> {t('get.title')}
       </h2>
-
-      <p className="text-muted-foreground mb-4">
-        Retorna os detalhes completos de um projeto específico, incluindo metadados
-        de ambientes e contagem de segredos.
-      </p>
-
-      <CodeBlock language="text">
-        {`GET /v1/projects/{project_id}`}
+      <p className="text-muted-foreground mb-4">{t('get.body')}</p>
+      <ParamTable params={[projectIdParam]} />
+      <CodeBlock language="bash">
+        {`curl "${BASE}/{project_id}" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>"`}
       </CodeBlock>
 
-      <h3 className="text-lg font-semibold mt-6 mb-3">Path Parameters</h3>
-
+      {/* PATCH */}
+      <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
+        <EndpointBadge method="PATCH" /> {t('update.title')}
+      </h2>
+      <p className="text-muted-foreground mb-4">{t.rich('update.body', { code })}</p>
       <ParamTable
         params={[
-          { name: 'project_id', type: 'string', required: true, description: 'ID do projeto (ex: proj_k8j2m4n6)' },
+          projectIdParam,
+          { name: 'name', type: 'string', description: t('update.params.name') },
+          { name: 'description', type: 'string', description: t('update.params.description') },
+          { name: 'settings', type: 'object', description: t('update.params.settings') },
+          { name: 'archived', type: 'boolean', description: t('update.params.archived') },
         ]}
       />
-
-      <CodeBlock language="bash" title="Exemplo — Obter projeto">
-        {`curl -X GET "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`}
-      </CodeBlock>
-
-      <ResponseBlock status={200} statusText="OK">
-        <CodeBlock language="json">
-          {`{
-  "data": {
-    "id": "proj_k8j2m4n6",
-    "name": "meu-app",
-    "description": "Backend do aplicativo principal",
-    "encryption": "aes-256-gcm",
-    "created_at": "2025-01-15T10:30:00Z",
-    "updated_at": "2025-01-15T10:30:00Z",
-    "owner_id": "usr_a1b2c3d4",
-    "member_count": 3,
-    "environments": [
-      { "id": "env_a1b2c3", "name": "production", "secret_count": 12 },
-      { "id": "env_d4e5f6", "name": "staging", "secret_count": 10 }
-    ]
-  }
-}`}
-        </CodeBlock>
-      </ResponseBlock>
-
-      <ResponseBlock status={404} statusText="Not Found">
-        <CodeBlock language="json">
-          {`{
-  "error": {
-    "code": "not_found",
-    "message": "Projeto não encontrado."
-  }
-}`}
-        </CodeBlock>
-      </ResponseBlock>
-
-      {/* ─── PATCH /projects/:id ─── */}
-      <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="PATCH" /> Atualizar Projeto
-      </h2>
-
-      <p className="text-muted-foreground mb-4">
-        Atualiza os metadados de um projeto. Requer papel de <InlineCode>admin</InlineCode> no projeto.
-      </p>
-
-      <CodeBlock language="text">
-        {`PATCH /v1/projects/{project_id}`}
-      </CodeBlock>
-
-      <h3 className="text-lg font-semibold mt-6 mb-3">Parâmetros do Body</h3>
-
-      <ParamTable
-        params={[
-          { name: 'name', type: 'string', description: 'Novo nome do projeto' },
-          { name: 'description', type: 'string', description: 'Nova descrição do projeto' },
-        ]}
-      />
-
-      <CodeBlock language="bash" title="Exemplo — Atualizar projeto">
-        {`curl -X PATCH "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>" \\
+      <CodeBlock language="bash" title={t('update.example')}>
+        {`curl -X PATCH "${BASE}/{project_id}" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>" \\
   -H "Content-Type: application/json" \\
-  -d '{
-    "name": "meu-app-v2",
-    "description": "Backend refatorado v2"
-  }'`}
+  -d '{ "description": "Main API (v2)" }'`}
       </CodeBlock>
 
-      <ResponseBlock status={200} statusText="OK">
-        <CodeBlock language="json">
-          {`{
-  "data": {
-    "id": "proj_k8j2m4n6",
-    "name": "meu-app-v2",
-    "description": "Backend refatorado v2",
-    "encryption": "aes-256-gcm",
-    "created_at": "2025-01-15T10:30:00Z",
-    "updated_at": "2025-01-20T14:22:00Z",
-    "owner_id": "usr_a1b2c3d4"
-  }
-}`}
-        </CodeBlock>
-      </ResponseBlock>
-
-      {/* ─── DELETE /projects/:id ─── */}
+      {/* DELETE */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="DELETE" /> Deletar Projeto
+        <EndpointBadge method="DELETE" /> {t('delete.title')}
       </h2>
-
-      <p className="text-muted-foreground mb-4">
-        Remove permanentemente o projeto, todos os seus ambientes, segredos e
-        associações de membros. Esta ação é <strong>irreversível</strong>.
-      </p>
-
-      <CodeBlock language="text">
-        {`DELETE /v1/projects/{project_id}`}
+      <p className="text-muted-foreground mb-4">{t.rich('delete.body', { code })}</p>
+      <Callout variant="warning">{t('delete.callout')}</Callout>
+      <CodeBlock language="bash" title={t('delete.example')}>
+        {`curl -X DELETE "${BASE}/{project_id}" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>"`}
       </CodeBlock>
-
-      <Callout variant="warning">
-        A exclusão de um projeto é permanente. Todos os segredos criptografados serão
-        removidos e não poderão ser recuperados. Certifique-se de ter um backup antes
-        de executar esta operação.
-      </Callout>
-
-      <CodeBlock language="bash" title="Exemplo — Deletar projeto">
-        {`curl -X DELETE "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>"`}
-      </CodeBlock>
-
       <ResponseBlock status={204} statusText="No Content">
-        <p className="text-sm text-muted-foreground">
-          Resposta vazia — o projeto foi removido com sucesso.
-        </p>
+        <p className="text-sm text-muted-foreground">{t('delete.response')}</p>
       </ResponseBlock>
 
-      {/* ─── POST /projects/:id/vault/rekey ─── */}
+      {/* POST rekey */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
-        <EndpointBadge method="POST" /> Re-encrypt Vault
+        <EndpointBadge method="POST" /> {t('rekey.title')}
       </h2>
-
-      <p className="text-muted-foreground mb-4">
-        Re-criptografa todos os segredos do projeto com uma nova chave mestra. Esta
-        operação é necessária quando um membro é removido do projeto para garantir
-        que ele não possa mais acessar os segredos (forward secrecy).
-      </p>
-
-      <CodeBlock language="text">
-        {`POST /v1/projects/{project_id}/vault/rekey`}
-      </CodeBlock>
-
+      <p className="text-muted-foreground mb-4">{t.rich('rekey.body', { code })}</p>
       <ParamTable
         params={[
-          { name: 'new_key_id', type: 'string', required: true, description: 'ID da nova chave de criptografia gerada no cliente' },
-          { name: 'reencrypted_secrets', type: 'object[]', required: true, description: 'Array de segredos re-criptografados com a nova chave' },
+          projectIdParam,
+          { name: 'current_vault_proof', type: 'string', required: true, description: t('rekey.params.currentProof') },
+          { name: 'new_vault_config', type: 'object', required: true, description: t('rekey.params.newConfig') },
+          { name: 'new_vault_proof', type: 'string', required: true, description: t('rekey.params.newProof') },
+          { name: 'environments', type: 'object[]', required: true, description: t('rekey.params.environments') },
         ]}
       />
-
-      <CodeBlock language="bash" title="Exemplo — Re-encrypt vault">
-        {`curl -X POST "https://criptenv-api.77mdevseven.tech/v1/projects/proj_k8j2m4n6/vault/rekey" \\
-  -H "Authorization: Bearer <YOUR_API_KEY>" \\
+      <CodeBlock language="bash" title={t('rekey.example')}>
+        {`curl -X POST "${BASE}/{project_id}/vault/rekey" \\
+  -H "Authorization: Bearer <YOUR_TOKEN>" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "new_key_id": "key_new123abc",
-    "reencrypted_secrets": [
-      {
-        "env_id": "env_a1b2c3",
-        "secrets": [
-          {
-            "name": "DATABASE_URL",
-            "ciphertext": "base64_novo_ciphertext",
-            "nonce": "base64_nonce",
-            "tag": "base64_tag"
-          }
-        ]
-      }
+    "current_vault_proof": "<base64>",
+    "new_vault_config": { "...": "..." },
+    "new_vault_proof": "<base64>",
+    "environments": [
+      { "environment_id": "2b3c4d5e-6f7a-4b8c-9d0e-1f2a3b4c5d6e", "blobs": [ ... ] }
     ]
   }'`}
       </CodeBlock>
-
       <ResponseBlock status={200} statusText="OK">
-        <CodeBlock language="json">
-          {`{
-  "data": {
-    "project_id": "proj_k8j2m4n6",
-    "reencrypted_count": 25,
-    "environments_processed": 3,
-    "new_key_id": "key_new123abc",
-    "completed_at": "2025-01-20T14:30:00Z"
-  }
-}`}
-        </CodeBlock>
+        <p className="text-sm text-muted-foreground">{t('rekey.response')}</p>
       </ResponseBlock>
     </div>
   );
