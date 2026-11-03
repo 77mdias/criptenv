@@ -214,7 +214,8 @@
     "whatIs": {
       "title": "¿Qué es CriptEnv?",
       "paragraph1": "CriptEnv es una plataforma open-source de gestión de secrets con arquitectura <strong>Zero-Knowledge</strong>. Alternativa a Doppler e Infisical, permite que desarrolladores y equipos gestionen variables de entorno, API keys y credenciales sensibles con cifrado de extremo a extremo.",
-      "paragraph2": "Todos los secrets se cifran <strong>100% en el cliente</strong> con AES-256-GCM. El servidor nunca recibe datos en plaintext — incluso con acceso total a la base de datos, es imposible descifrar tus credenciales."
+      "paragraph2": "Todos los secrets se cifran <strong>100% en el cliente</strong> con AES-256-GCM. El servidor nunca recibe datos en plaintext — incluso con acceso total a la base de datos, es imposible descifrar tus credenciales.",
+      "exampleTitle": "Ejemplo rápido"
     },
     "principles": {
       "title": "Principios de la API",
@@ -1937,6 +1938,126 @@
           "noFrontend": "Nunca expongas API keys en el frontend ni en los logs de CI.",
           "rotate": "Rota las API keys periódicamente y revoca las que no uses.",
           "envScope": "Define <code>environment_scope</code> para limitar el impacto de una clave comprometida."
+        }
+      }
+    },
+    "overview": {
+      "description": "La API REST de CriptEnv permite integrar la gestión de secrets en cualquier pipeline, herramienta o aplicación. Esta referencia cubre los endpoints disponibles, la autenticación, el formato de respuesta y el manejo de errores.",
+      "baseUrl": {
+        "title": "URL base",
+        "body": "Todos los endpoints de la API están bajo esta URL base:",
+        "authNote": "Los endpoints de autenticación (inicio de sesión, sesiones, 2FA, OAuth) están bajo <code>/api/auth</code>. Todas las peticiones deben usar HTTPS."
+      },
+      "auth": {
+        "title": "Autenticación",
+        "body": "La API acepta tres tipos de credenciales, cada uno adecuado para un escenario distinto:",
+        "cards": {
+          "session": {
+            "title": "Sesión",
+            "body": "Cookie HTTP-only creada al iniciar sesión, para el dashboard web. Dura 30 días, o 7 días sin uso."
+          },
+          "apiKey": {
+            "title": "API key",
+            "body": "Token con prefijo <code>cek_</code> para integraciones y scripts. Puede restringirse a un entorno."
+          },
+          "ciToken": {
+            "title": "Token de CI",
+            "body": "Token con prefijo <code>ci_</code> para pipelines de CI/CD, que se intercambia por sesiones <code>ci_s_</code> de 1 hora."
+          }
+        },
+        "more": "Para más detalles sobre cada método, consulta la <link>documentación de autenticación</link>."
+      },
+      "format": {
+        "title": "Formato de respuesta",
+        "body": "Todas las respuestas son JSON, con Content-Type <code>application/json</code>.",
+        "success": "Respuesta correcta",
+        "list": "Respuesta de lista",
+        "listBody": "Las listas vienen dentro de un objeto, con los elementos y un total.",
+        "error": "Respuesta de error"
+      },
+      "status": {
+        "title": "Códigos de estado HTTP",
+        "codes": {
+          "200": "Éxito: operación completada",
+          "201": "Creado: recurso creado",
+          "204": "Sin contenido: operación sin cuerpo (p. ej. DELETE)",
+          "400": "Petición incorrecta: datos u operación no válidos",
+          "401": "No autenticado: credencial ausente o no válida",
+          "403": "Prohibido: sin permiso para esta operación",
+          "404": "No encontrado: el recurso no existe o no tienes acceso",
+          "409": "Conflicto: el recurso ya existe o la versión está desactualizada",
+          "422": "No procesable: la petición no superó la validación",
+          "429": "Demasiadas peticiones: límite superado",
+          "500": "Error interno: error inesperado del servidor"
+        }
+      },
+      "rateLimit": {
+        "title": "Rate limiting",
+        "body": "La API aplica límites de tasa para proteger el servicio frente a abusos. Los límites dependen del tipo de autenticación:",
+        "type": "Credencial",
+        "limit": "Límite",
+        "window": "Ventana",
+        "perMinute": "por minuto",
+        "rows": {
+          "public": "Endpoints públicos (por IP)",
+          "apiKey": "API key (por clave)",
+          "ciToken": "Token de CI (por token)",
+          "auth": "Endpoints de auth (por IP)"
+        },
+        "headers": "Las cabeceras de rate limit se incluyen en las respuestas:",
+        "exceeded": "Cuando se supera el límite, la API devuelve <code>429 Too Many Requests</code> con un campo <code>retry_after</code> (en segundos) en el cuerpo de la respuesta."
+      },
+      "pagination": {
+        "title": "Paginación",
+        "body": "La mayoría de las listas devuelven todos los elementos de una vez. Los endpoints paginados documentan sus propios parámetros; por ejemplo, el audit log usa <code>page</code> y <code>per_page</code> (por defecto 50, máx. 100)."
+      },
+      "domains": {
+        "title": "Referencia por dominio",
+        "items": {
+          "authentication": {
+            "title": "Autenticación",
+            "description": "Sesiones, API keys, tokens de CI y OAuth."
+          },
+          "projects": {
+            "title": "Proyectos",
+            "description": "CRUD de proyectos y re-key del vault."
+          },
+          "environments": {
+            "title": "Entornos",
+            "description": "Entornos dentro de un proyecto."
+          },
+          "vault": {
+            "title": "Vault",
+            "description": "Push, pull y versionado de secrets cifrados."
+          },
+          "members": {
+            "title": "Miembros",
+            "description": "Roles y acceso a los proyectos."
+          },
+          "invites": {
+            "title": "Invitaciones",
+            "description": "Invitaciones por email para unirse a un proyecto."
+          },
+          "ciTokens": {
+            "title": "Tokens de CI",
+            "description": "Tokens para pipelines de CI/CD."
+          },
+          "rotation": {
+            "title": "Rotación",
+            "description": "Rotación, caducidad y alertas."
+          },
+          "integrations": {
+            "title": "Integraciones",
+            "description": "Sincronización con Vercel y Render."
+          },
+          "audit": {
+            "title": "Auditoría",
+            "description": "Registro de auditoría del proyecto."
+          },
+          "health": {
+            "title": "Health",
+            "description": "Comprobaciones de disponibilidad."
+          }
         }
       }
     }

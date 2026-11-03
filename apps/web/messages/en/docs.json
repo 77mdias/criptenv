@@ -214,7 +214,8 @@
     "whatIs": {
       "title": "What is CriptEnv?",
       "paragraph1": "CriptEnv is an open-source secrets management platform with a <strong>Zero-Knowledge</strong> architecture. An alternative to Doppler and Infisical, it lets developers and teams manage environment variables, API keys and sensitive credentials with end-to-end encryption.",
-      "paragraph2": "All secrets are encrypted <strong>100% client-side</strong> with AES-256-GCM. The server never receives plaintext data — even with full access to the database, it is impossible to decrypt your credentials."
+      "paragraph2": "All secrets are encrypted <strong>100% client-side</strong> with AES-256-GCM. The server never receives plaintext data — even with full access to the database, it is impossible to decrypt your credentials.",
+      "exampleTitle": "Quick example"
     },
     "principles": {
       "title": "API Principles",
@@ -1937,6 +1938,126 @@
           "noFrontend": "Never expose API keys in frontend code or CI logs.",
           "rotate": "Rotate API keys periodically and revoke unused ones.",
           "envScope": "Set <code>environment_scope</code> to limit the impact of a leaked key."
+        }
+      }
+    },
+    "overview": {
+      "description": "The CriptEnv REST API lets you bring secret management into any pipeline, tool or application. This reference covers the available endpoints, authentication, response format and error handling.",
+      "baseUrl": {
+        "title": "Base URL",
+        "body": "Every API endpoint lives under this base URL:",
+        "authNote": "Authentication endpoints (sign-in, sessions, 2FA, OAuth) live under <code>/api/auth</code> instead. Every request must use HTTPS."
+      },
+      "auth": {
+        "title": "Authentication",
+        "body": "The API accepts three kinds of credentials, each suited to a different scenario:",
+        "cards": {
+          "session": {
+            "title": "Session",
+            "body": "HTTP-only cookie created at sign-in, for the web dashboard. Lasts 30 days, or 7 days without use."
+          },
+          "apiKey": {
+            "title": "API key",
+            "body": "Token prefixed <code>cek_</code> for integrations and scripts. Can be restricted to one environment."
+          },
+          "ciToken": {
+            "title": "CI token",
+            "body": "Token prefixed <code>ci_</code> for CI/CD pipelines, exchanged for 1-hour <code>ci_s_</code> sessions."
+          }
+        },
+        "more": "For details on each method, see the <link>authentication docs</link>."
+      },
+      "format": {
+        "title": "Response format",
+        "body": "Every response is JSON, with Content-Type <code>application/json</code>.",
+        "success": "Success response",
+        "list": "List response",
+        "listBody": "Lists come wrapped in an object with the items and a total.",
+        "error": "Error response"
+      },
+      "status": {
+        "title": "HTTP status codes",
+        "codes": {
+          "200": "Success — operation completed",
+          "201": "Created — resource created",
+          "204": "No content — operation with no body (e.g. DELETE)",
+          "400": "Bad request — invalid data or operation",
+          "401": "Unauthenticated — missing or invalid credential",
+          "403": "Forbidden — no permission for this operation",
+          "404": "Not found — resource doesn't exist or you can't access it",
+          "409": "Conflict — resource already exists or outdated version",
+          "422": "Unprocessable — request failed validation",
+          "429": "Too many requests — rate limit exceeded",
+          "500": "Internal error — unexpected server error"
+        }
+      },
+      "rateLimit": {
+        "title": "Rate limiting",
+        "body": "The API rate-limits requests to protect the service from abuse. Limits depend on how you authenticate:",
+        "type": "Credential",
+        "limit": "Limit",
+        "window": "Window",
+        "perMinute": "per minute",
+        "rows": {
+          "public": "Public endpoints (per IP)",
+          "apiKey": "API key (per key)",
+          "ciToken": "CI token (per token)",
+          "auth": "Auth endpoints (per IP)"
+        },
+        "headers": "Rate limit headers are included in the responses:",
+        "exceeded": "When the limit is exceeded, the API returns <code>429 Too Many Requests</code> with a <code>retry_after</code> field (in seconds) in the response body."
+      },
+      "pagination": {
+        "title": "Pagination",
+        "body": "Most lists return every item at once. Paginated endpoints document their own parameters — for example, the audit log uses <code>page</code> and <code>per_page</code> (default 50, max 100)."
+      },
+      "domains": {
+        "title": "Reference by domain",
+        "items": {
+          "authentication": {
+            "title": "Authentication",
+            "description": "Sessions, API keys, CI tokens and OAuth."
+          },
+          "projects": {
+            "title": "Projects",
+            "description": "Project CRUD and vault re-key."
+          },
+          "environments": {
+            "title": "Environments",
+            "description": "Environments within a project."
+          },
+          "vault": {
+            "title": "Vault",
+            "description": "Push, pull and versioning of encrypted secrets."
+          },
+          "members": {
+            "title": "Members",
+            "description": "Roles and project access."
+          },
+          "invites": {
+            "title": "Invites",
+            "description": "Email invitations to join a project."
+          },
+          "ciTokens": {
+            "title": "CI tokens",
+            "description": "Tokens for CI/CD pipelines."
+          },
+          "rotation": {
+            "title": "Rotation",
+            "description": "Rotation, expiration and alerts."
+          },
+          "integrations": {
+            "title": "Integrations",
+            "description": "Sync with Vercel and Render."
+          },
+          "audit": {
+            "title": "Audit",
+            "description": "The project's audit log."
+          },
+          "health": {
+            "title": "Health",
+            "description": "Availability checks."
+          }
         }
       }
     }

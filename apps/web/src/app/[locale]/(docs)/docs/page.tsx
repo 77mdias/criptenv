@@ -82,7 +82,7 @@ export default async function DocsPage() {
         </p>
       </div>
 
-      {/* O que é o CriptEnv */}
+      {/* What CriptEnv is */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-3">
           {t("whatIs.title")}
@@ -102,7 +102,7 @@ export default async function DocsPage() {
           })}
         </p>
 
-        <CodeBlock language="bash" title="Exemplo rápido">
+        <CodeBlock language="bash" title={t("whatIs.exampleTitle")}>
 {`# Definir um secret
 $ criptenv set DATABASE_URL=postgresql://localhost/mydb
 $ criptenv set API_KEY=your_api_key_here
@@ -115,7 +115,7 @@ $ criptenv list`}
         </CodeBlock>
       </section>
 
-      {/* Princípios — AbacatePay card style */}
+      {/* Principles — AbacatePay card style */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-5">
           {t("principles.title")}
@@ -132,7 +132,7 @@ $ criptenv list`}
         </div>
       </section>
 
-      {/* O que você pode fazer */}
+      {/* What you can do */}
       <section className="mb-12">
         <h2 className="text-xl font-semibold text-[var(--text-primary)] mb-5">
           {t("capabilities.title")}

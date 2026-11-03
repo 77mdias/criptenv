@@ -89,7 +89,7 @@ criptenv set API_KEY="your_api_key_here"`}
           <CodeBlock
             language="bash"
             code={`criptenv list
-# Saída:
+# Output:
 # DATABASE_URL
 # API_KEY`}
           />
@@ -105,7 +105,7 @@ criptenv set API_KEY="your_api_key_here"`}
           <CodeBlock
             language="bash"
             code={`criptenv get DATABASE_URL
-# Saída: postgres://user:pass@host/db`}
+# Output: postgres://user:pass@host/db`}
           />
         </Step>
 
