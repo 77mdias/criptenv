@@ -101,12 +101,66 @@
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/cli</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/cli</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/cli</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/cli/commands</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli/commands"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/cli/commands</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli/commands"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/cli/commands</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli/commands"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli/commands"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/cli/configuration</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli/configuration"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/cli/configuration</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli/configuration"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/cli/configuration</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/cli/configuration"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/cli/configuration"/>
   </url>
   <url>
     <loc>https://criptenv.77mdevseven.tech/docs/getting-started/concepts</loc>

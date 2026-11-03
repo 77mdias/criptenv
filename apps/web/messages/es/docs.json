@@ -1098,5 +1098,374 @@
       },
       "userResponsibility": "<strong>Tu responsabilidad:</strong> la seguridad del sistema depende fundamentalmente de la fortaleza de la contraseña del vault. Usa una contraseña larga, única y generada por un gestor de contraseñas. La arquitectura zero-knowledge no puede proteger una contraseña débil o reutilizada."
     }
+  },
+  "cli": {
+    "overview": {
+      "description": "Gestiona tus secrets directamente desde la terminal, con cifrado de extremo a extremo y conocimiento cero en el servidor.",
+      "philosophy": {
+        "title": "Filosofía",
+        "terminal": {
+          "title": "Terminal primero",
+          "description": "Todas las operaciones ocurren en tu terminal. Si puedes abrir una shell, puedes usar CriptEnv."
+        },
+        "zk": {
+          "title": "Zero-knowledge",
+          "description": "Los valores de tus secrets se cifran localmente con AES-256-GCM antes de cualquier sincronización. El servidor nunca los ve en texto claro."
+        },
+        "remote": {
+          "title": "Vault remoto",
+          "description": "La CLI trabaja sobre el vault remoto del proyecto, manteniendo todo sincronizado con el dashboard web y con el equipo."
+        }
+      },
+      "features": {
+        "title": "Funciones",
+        "secrets": {
+          "title": "Gestión de secrets",
+          "description": "Guarda, rota, importa y exporta variables de entorno con cifrado fuerte y versionado."
+        },
+        "sync": {
+          "title": "Sincronización",
+          "description": "Push importa archivos .env al vault remoto; pull exporta el vault remoto a archivos locales."
+        },
+        "environments": {
+          "title": "Varios entornos",
+          "description": "Crea y gestiona entornos aislados (dev, staging, production) dentro de un mismo proyecto."
+        },
+        "cicd": {
+          "title": "CI/CD",
+          "description": "Integra con pipelines de CI/CD. Inicia sesión sin interfaz, lista secrets y despliega sin exponer credenciales."
+        },
+        "integrations": {
+          "title": "Integraciones",
+          "description": "Conecta proveedores en la nube (Vercel, Render) y sincroniza secrets automáticamente."
+        },
+        "rotation": {
+          "title": "Rotación y caducidad",
+          "description": "Configura alertas de caducidad y rota claves con versionado automático."
+        }
+      },
+      "install": {
+        "title": "Instalación rápida",
+        "requirements": "Requiere Python 3.10 o superior. La CLI es multiplataforma y funciona en macOS, Linux y Windows.",
+        "after": "Tras la instalación, consulta la <commands>Referencia de comandos</commands> para ver todas las opciones disponibles, o la <configuration>Configuración</configuration> para entender la estructura local."
+      },
+      "next": {
+        "title": "Próximos pasos",
+        "commands": {
+          "title": "Referencia de comandos",
+          "description": "Lista completa de todos los comandos, opciones y ejemplos de uso."
+        },
+        "configuration": {
+          "title": "Configuración",
+          "description": "Estructura de ~/.criptenv/, la sesión local, la contraseña del vault y las variables de entorno."
+        }
+      }
+    },
+    "configuration": {
+      "breadcrumb": "Configuración",
+      "title": "Configuración de la CLI",
+      "description": "Entiende cómo funciona la CLI de CriptEnv como terminal remota, qué datos quedan en local y cómo usar variables de entorno en automatizaciones.",
+      "remote": {
+        "title": "Terminal remota",
+        "body": "Los comandos principales trabajan directamente sobre el vault remoto del proyecto. La CLI descarga blobs cifrados, los descifra en memoria cuando hace falta, vuelve a cifrarlos en su propio proceso y envía solo ciphertext a la API.",
+        "callout": "El backend nunca recibe los valores de los secrets en texto claro y la contraseña del vault del proyecto nunca se envía al servidor."
+      },
+      "local": {
+        "title": "Estructura local",
+        "body": "El directorio <code>~/.criptenv/</code> guarda solo metadatos ligeros y credenciales locales de sesión:",
+        "file": "Archivo",
+        "description": "Descripción",
+        "authKey": "Clave local que protege los tokens de sesión de la CLI y de CI.",
+        "vaultDb": "Base de datos SQLite con la sesión, el proyecto actual, la caché de metadatos y tablas de compatibilidad.",
+        "backupWarning": "El flujo normal de la CLI no guarda una copia local de los secrets. Aun así, protege las copias de seguridad de <code>~/.criptenv/</code>, porque contienen credenciales de sesión."
+      },
+      "vaultPassword": {
+        "title": "Contraseña del vault",
+        "body": "La contraseña del vault pertenece al proyecto. Deriva las claves de cifrado en el cliente y solo se pide cuando un comando necesita descifrar o modificar secrets.",
+        "automation": "Para automatizar, define <code>CRIPTENV_VAULT_PASSWORD</code>. La CLI la usa en lugar del prompt interactivo."
+      },
+      "envVars": {
+        "title": "Variables de entorno",
+        "variable": "Variable",
+        "type": "Tipo",
+        "apiUrl": "URL de la API. Por defecto: https://criptenv-api.77mdevseven.tech",
+        "project": "Proyecto por defecto para los comandos que aceptan <code>--project</code>.",
+        "vaultPassword": "Contraseña del vault del proyecto para uso no interactivo.",
+        "apiKey": "API key (<code>cek_...</code>) que autentica el proceso directamente, sin login y sin escribir una sesión en disco; ideal para CI, contenedores y HOME de solo lectura.",
+        "warning": "Evita exponer <code>CRIPTENV_VAULT_PASSWORD</code> en logs, shells compartidas o historiales persistentes. En CI, usa el mecanismo de secrets del proveedor."
+      },
+      "doctor": "Usa <code>criptenv doctor</code> para comprobar la sesión, el proyecto actual, los metadatos locales y la conectividad con la API."
+    },
+    "commands": {
+      "breadcrumb": "Comandos",
+      "title": "Referencia de comandos",
+      "description": "Documentación completa de todos los comandos de la CLI de CriptEnv, organizados por categoría.",
+      "options": "Opciones",
+      "configurationLink": "Para más detalles sobre la configuración de la CLI, consulta la <link>página de Configuración</link>.",
+      "sections": {
+        "core": "Comandos principales",
+        "secrets": "Secrets",
+        "sync": "Sincronización",
+        "data": "Importación y exportación",
+        "environments": "Entornos",
+        "projects": "Proyectos",
+        "cicd": "CI/CD",
+        "integrations": "Integraciones",
+        "maintenance": "Mantenimiento"
+      },
+      "items": {
+        "init": {
+          "description": "Prepara el directorio <code>~/.criptenv/</code> y la base de datos local de metadatos. Es opcional y no crea un vault local de secrets ni una contraseña maestra."
+        },
+        "login": {
+          "description": "Inicia sesión en tu cuenta de CriptEnv y guarda el token de sesión localmente.",
+          "params": {
+            "0": "Email de la cuenta (inicio de sesión con email y contraseña)",
+            "1": "Inicio de sesión con email y contraseña, pidiendo el email de forma interactiva",
+            "2": "Device flow, para SSH/sin interfaz",
+            "3": "Inicio de sesión con API key (cek_...). También se lee de CRIPTENV_API_KEY; sin valor, la pide de forma oculta"
+          }
+        },
+        "logout": {
+          "description": "Cierra la sesión actual y elimina el token guardado localmente."
+        },
+        "doctor": {
+          "description": "Comprueba la configuración local: base de datos, permisos, conectividad y versión de la CLI."
+        },
+        "set": {
+          "description": "Cifra un secret y lo guarda en el vault remoto del proyecto. Usa la sintaxis <code>KEY=value</code>.",
+          "params": {
+            "0": "Clave y valor del secret",
+            "1": "Entorno de destino",
+            "2": "Proyecto de destino"
+          }
+        },
+        "get": {
+          "description": "Descifra un secret remoto en memoria y muestra su valor.",
+          "params": {
+            "0": "Nombre del secret",
+            "1": "Entorno de origen",
+            "2": "Proyecto de origen",
+            "3": "Copia el valor al portapapeles"
+          }
+        },
+        "list": {
+          "description": "Lista todas las claves del vault remoto sin descifrar los valores.",
+          "params": {
+            "0": "Filtrar por entorno",
+            "1": "Filtrar por proyecto"
+          }
+        },
+        "delete": {
+          "description": "Elimina permanentemente un secret del vault remoto.",
+          "params": {
+            "0": "Nombre del secret que eliminar",
+            "1": "Entorno de origen",
+            "2": "Omite la confirmación"
+          }
+        },
+        "rotate": {
+          "description": "Crea una nueva versión del secret. La versión anterior se conserva como referencia.",
+          "params": {
+            "0": "Nombre del secret",
+            "1": "Entorno",
+            "2": "Nuevo valor (se genera automáticamente si se omite)",
+            "3": "Omite la confirmación"
+          }
+        },
+        "push": {
+          "description": "Importa un archivo <code>.env</code> al vault remoto. Sin archivo, el comando falla e indica usar <code>import</code>.",
+          "params": {
+            "0": "Archivo .env de origen",
+            "1": "Proyecto específico",
+            "2": "Entorno específico",
+            "3": "Sobrescribe las claves existentes"
+          }
+        },
+        "pull": {
+          "description": "Exporta secrets del vault remoto a un archivo local. Sin <code>--output</code>, el comando falla e indica usar <code>export</code>.",
+          "params": {
+            "0": "Proyecto específico",
+            "1": "Entorno específico",
+            "2": "Archivo de salida",
+            "3": "Formato: env o json"
+          }
+        },
+        "import": {
+          "description": "Importa secrets de un archivo <code>.env</code> al vault remoto.",
+          "params": {
+            "0": "Ruta al archivo .env",
+            "1": "Entorno de destino",
+            "2": "Proyecto de destino",
+            "3": "Sobrescribe las claves existentes"
+          }
+        },
+        "export": {
+          "description": "Exporta secrets del vault remoto a un archivo <code>.env</code> o JSON.",
+          "params": {
+            "0": "Formato: env (por defecto) o json",
+            "1": "Entorno de origen",
+            "2": "Proyecto de origen",
+            "3": "Archivo de salida (por defecto: stdout)"
+          }
+        },
+        "run": {
+          "description": "Ejecuta un comando con los secrets del entorno inyectados como variables de entorno, sin escribir ningún archivo en disco. Se propaga el código de salida del proceso hijo.",
+          "params": {
+            "0": "Entorno de origen",
+            "1": "Proyecto de origen"
+          }
+        },
+        "diff": {
+          "description": "Compara un archivo <code>.env</code> local con el vault remoto (detección de drift) y sale con estado 1 si hay diferencias, útil como gate de CI. <code>--show-values</code> muestra solo una vista previa enmascarada; nunca se imprimen los valores completos.",
+          "params": {
+            "0": "Entorno que comparar",
+            "1": "Proyecto que comparar",
+            "2": "Vista previa enmascarada de los valores modificados"
+          }
+        },
+        "envList": {
+          "description": "Lista todos los entornos del proyecto.",
+          "params": {
+            "0": "Filtrar por proyecto"
+          }
+        },
+        "envCreate": {
+          "description": "Crea un nuevo entorno.",
+          "params": {
+            "0": "Nombre del entorno (p. ej. staging)",
+            "1": "Proyecto al que pertenece",
+            "2": "Nombre legible"
+          }
+        },
+        "projectsCreate": {
+          "description": "Crea un nuevo proyecto con contraseña de vault.",
+          "params": {
+            "0": "Nombre del proyecto",
+            "1": "Slug opcional del proyecto",
+            "2": "Descripción del proyecto"
+          }
+        },
+        "projectsList": {
+          "description": "Lista todos los proyectos."
+        },
+        "ciLogin": {
+          "description": "Autenticación sin interfaz para entornos de CI/CD.",
+          "params": {
+            "0": "Token de CI/CD (empieza con ci_)",
+            "1": "ID del proyecto"
+          }
+        },
+        "ciLogout": {
+          "description": "Cierra la sesión de CI/CD."
+        },
+        "ciSecrets": {
+          "description": "Lista los secrets disponibles en el contexto de CI.",
+          "params": {
+            "0": "Entorno (p. ej. production)"
+          }
+        },
+        "ciDeploy": {
+          "description": "Importa un archivo de secrets al vault remoto desde un contexto de CI.",
+          "note": "Requiere CLI 0.2.2+, un token de CI con el scope <code>write:secrets</code> y <code>CRIPTENV_VAULT_PASSWORD</code>: los valores se cifran en el runner y la API solo recibe los blobs. Los tokens restringidos a un entorno solo pueden desplegar en él.",
+          "params": {
+            "0": "Archivo .env de origen",
+            "1": "Entorno de deploy",
+            "2": "Muestra lo que se enviaría, sin enviarlo"
+          }
+        },
+        "ciTokensList": {
+          "description": "Lista los tokens de CI/CD del proyecto.",
+          "params": {
+            "0": "Proyecto",
+            "1": "Incluye los tokens revocados"
+          }
+        },
+        "ciTokensCreate": {
+          "description": "Crea un nuevo token de CI/CD. El token se muestra una sola vez.",
+          "params": {
+            "0": "Nombre del token",
+            "1": "Scopes separados por comas (por defecto: read:secrets)",
+            "2": "Restringe el token a un entorno",
+            "3": "Días hasta que caduque (por defecto: no caduca)",
+            "4": "Proyecto"
+          }
+        },
+        "ciTokensRevoke": {
+          "description": "Revoca un token de CI/CD.",
+          "params": {
+            "0": "ID del token que revocar"
+          }
+        },
+        "integrationsList": {
+          "description": "Lista las integraciones conectadas con proveedores en la nube.",
+          "params": {
+            "0": "Proyecto"
+          }
+        },
+        "integrationsConnect": {
+          "description": "Conecta un nuevo proveedor en la nube.",
+          "params": {
+            "0": "Proveedor: vercel o render",
+            "1": "Token de API del proveedor",
+            "2": "Nombre de la integración",
+            "3": "ID del proyecto/servicio en el proveedor",
+            "4": "ID del proyecto en CriptEnv"
+          }
+        },
+        "integrationsDisconnect": {
+          "description": "Desconecta una integración. Obtén el ID con <code>integrations list</code>.",
+          "params": {
+            "0": "ID de la integración que desconectar",
+            "1": "ID del proyecto en CriptEnv",
+            "2": "Omite la confirmación"
+          }
+        },
+        "integrationsSync": {
+          "description": "Sincroniza los secrets de CriptEnv con el proveedor conectado.",
+          "params": {
+            "0": "Proveedor de destino: vercel o render",
+            "1": "Entorno que sincronizar (por defecto: production)",
+            "2": "Dirección: push (por defecto) o pull",
+            "3": "Proyecto"
+          }
+        },
+        "secretsExpire": {
+          "description": "Define la fecha de caducidad de un secret.",
+          "params": {
+            "0": "Nombre del secret",
+            "1": "Días hasta la caducidad",
+            "2": "Política: manual, notify (por defecto), auto",
+            "3": "Entorno",
+            "4": "Proyecto"
+          }
+        },
+        "secretsAlert": {
+          "description": "Configura alertas de caducidad para un secret.",
+          "params": {
+            "0": "Nombre del secret",
+            "1": "Días antes de la caducidad para avisar",
+            "2": "Entorno",
+            "3": "Proyecto"
+          }
+        },
+        "rotationList": {
+          "description": "Lista los secrets con rotación pendiente.",
+          "params": {
+            "0": "Filtrar por entorno",
+            "1": "Filtrar por proyecto",
+            "2": "Días hacia adelante que comprobar (por defecto: 30)"
+          }
+        },
+        "rotationHistory": {
+          "description": "Muestra el historial de rotaciones de un secret.",
+          "params": {
+            "0": "Nombre del secret",
+            "1": "Entorno",
+            "2": "Proyecto"
+          }
+        }
+      }
+    }
   }
 }
