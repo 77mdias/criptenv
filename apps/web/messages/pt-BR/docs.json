@@ -1680,6 +1680,66 @@
         "body": "Na pipeline, deixe a CLI cuidar do pull e da descriptografia: ela deriva as chaves e injeta os valores em memória.",
         "example": "Deploy com os segredos em memória"
       }
+    },
+    "rotation": {
+      "breadcrumb": "Rotação",
+      "title": "Rotação e expiração",
+      "description": "Rotacione segredos, defina datas e políticas de expiração e configure alertas de expiração do projeto.",
+      "callout": "Os endpoints por segredo ficam sob <code>/projects/'{pid}'/environments/'{eid}'/secrets/'{secret_key}'</code>. Rotacionar e definir ou remover expiração exigem o papel <code>admin</code>; consultar status e histórico exige apenas ser membro.",
+      "rotate": {
+        "title": "Rotacionar segredo",
+        "body": "Grava uma nova versão do segredo. O novo valor é cifrado no cliente como qualquer valor do vault; o servidor recebe apenas <code>new_value</code> (ciphertext), <code>iv</code> e <code>auth_tag</code>. Na prática, use <code>criptenv rotate</code>, que gera, cifra e envia o valor.",
+        "params": {
+          "newValue": "Novo valor, já cifrado (ciphertext em base64)",
+          "iv": "IV do AES-GCM (base64)",
+          "authTag": "Auth tag do AES-GCM (base64)",
+          "reason": "Motivo da rotação (máx. 500 caracteres)",
+          "expectedVersion": "Versão do ambiente para controle de concorrência otimista"
+        }
+      },
+      "expiration": {
+        "title": "Definir expiração",
+        "body": "Define quando o segredo expira e o que acontece nesse momento.",
+        "params": {
+          "secretKey": "Nome do segredo",
+          "expiresAt": "Data e hora de expiração (ISO 8601)",
+          "policy": "manual, notify (padrão) ou auto",
+          "notifyDays": "Dias antes da expiração para enviar o alerta"
+        }
+      },
+      "status": {
+        "title": "Status da rotação",
+        "body": "Retorna a versão atual, a expiração e a política do segredo."
+      },
+      "history": {
+        "title": "Histórico de rotações",
+        "body": "Lista as rotações do segredo, com quem rotacionou e o motivo."
+      },
+      "removeExpiration": {
+        "title": "Remover expiração",
+        "body": "Remove a configuração de expiração do segredo."
+      },
+      "expiring": {
+        "title": "Segredos expirando",
+        "body": "Lista os segredos do projeto que expiram dentro da janela informada.",
+        "params": {
+          "days": "Dias à frente para verificar (padrão: 30, máx: 365)"
+        }
+      },
+      "alerts": {
+        "title": "Configurações de alerta",
+        "body": "Configurações de alerta de expiração do projeto, sob <code>/projects/'{pid}'/alert-settings</code>. Exige o papel <code>admin</code>. A URL do webhook nunca é retornada inteira, só um preview.",
+        "get": "Consultar configurações",
+        "update": "Atualizar configurações",
+        "test": "Testar webhook",
+        "testBody": "Envia um alerta de teste para o webhook configurado.",
+        "params": {
+          "enabled": "Liga ou desliga os alertas de expiração",
+          "notifyDays": "Dias padrão antes da expiração para alertar (1-365)",
+          "channels": "Canais: in_app, email, webhook (booleanos)",
+          "webhookUrl": "URL HTTPS que recebe os alertas por webhook"
+        }
+      }
     }
   }
 }

@@ -1680,6 +1680,66 @@
         "body": "In a pipeline, let the CLI handle pull and decryption: it derives the keys and injects the values in memory.",
         "example": "Deploy with the secrets in memory"
       }
+    },
+    "rotation": {
+      "breadcrumb": "Rotation",
+      "title": "Rotation and expiration",
+      "description": "Rotate secrets, set expiration dates and policies, and configure expiration alerts for the project.",
+      "callout": "Per-secret endpoints live under <code>/projects/'{pid}'/environments/'{eid}'/secrets/'{secret_key}'</code>. Rotating and setting or removing an expiration require the <code>admin</code> role; reading status and history only requires membership.",
+      "rotate": {
+        "title": "Rotate secret",
+        "body": "Stores a new version of the secret. The new value is encrypted on the client like any vault value; the server only receives <code>new_value</code> (ciphertext), <code>iv</code> and <code>auth_tag</code>. In practice, use <code>criptenv rotate</code>, which generates, encrypts and pushes the value.",
+        "params": {
+          "newValue": "New value, already encrypted (base64 ciphertext)",
+          "iv": "AES-GCM IV (base64)",
+          "authTag": "AES-GCM auth tag (base64)",
+          "reason": "Reason for the rotation (max 500 characters)",
+          "expectedVersion": "Environment version for optimistic concurrency control"
+        }
+      },
+      "expiration": {
+        "title": "Set expiration",
+        "body": "Sets when the secret expires and what happens then.",
+        "params": {
+          "secretKey": "Secret name",
+          "expiresAt": "Expiration date and time (ISO 8601)",
+          "policy": "manual, notify (default) or auto",
+          "notifyDays": "Days before expiration to send the alert"
+        }
+      },
+      "status": {
+        "title": "Rotation status",
+        "body": "Returns the secret's current version, expiration and policy."
+      },
+      "history": {
+        "title": "Rotation history",
+        "body": "Lists the secret's rotations, with who rotated it and why."
+      },
+      "removeExpiration": {
+        "title": "Remove expiration",
+        "body": "Removes the secret's expiration setting."
+      },
+      "expiring": {
+        "title": "Expiring secrets",
+        "body": "Lists the project's secrets that expire within the given window.",
+        "params": {
+          "days": "Days to look ahead (default: 30, max: 365)"
+        }
+      },
+      "alerts": {
+        "title": "Alert settings",
+        "body": "Project-wide expiration alert settings, under <code>/projects/'{pid}'/alert-settings</code>. Requires the <code>admin</code> role. The webhook URL is never returned in full, only a preview.",
+        "get": "Get settings",
+        "update": "Update settings",
+        "test": "Test webhook",
+        "testBody": "Sends a test alert to the configured webhook.",
+        "params": {
+          "enabled": "Turns expiration alerts on or off",
+          "notifyDays": "Default days before expiration to alert (1-365)",
+          "channels": "Channels: in_app, email, webhook (booleans)",
+          "webhookUrl": "HTTPS URL that receives webhook alerts"
+        }
+      }
     }
   }
 }

@@ -1680,6 +1680,66 @@
         "body": "En el pipeline, deja que la CLI se encargue del pull y del descifrado: deriva las claves e inyecta los valores en memoria.",
         "example": "Deploy con los secrets en memoria"
       }
+    },
+    "rotation": {
+      "breadcrumb": "Rotación",
+      "title": "Rotación y caducidad",
+      "description": "Rota secrets, define fechas y políticas de caducidad y configura las alertas de caducidad del proyecto.",
+      "callout": "Los endpoints por secret están bajo <code>/projects/'{pid}'/environments/'{eid}'/secrets/'{secret_key}'</code>. Rotar y definir o eliminar una caducidad requieren el rol <code>admin</code>; consultar el estado y el historial solo requiere ser miembro.",
+      "rotate": {
+        "title": "Rotar secret",
+        "body": "Guarda una nueva versión del secret. El nuevo valor se cifra en el cliente como cualquier valor del vault; el servidor solo recibe <code>new_value</code> (ciphertext), <code>iv</code> y <code>auth_tag</code>. En la práctica, usa <code>criptenv rotate</code>, que genera, cifra y envía el valor.",
+        "params": {
+          "newValue": "Nuevo valor, ya cifrado (ciphertext en base64)",
+          "iv": "IV de AES-GCM (base64)",
+          "authTag": "Auth tag de AES-GCM (base64)",
+          "reason": "Motivo de la rotación (máx. 500 caracteres)",
+          "expectedVersion": "Versión del entorno para el control de concurrencia optimista"
+        }
+      },
+      "expiration": {
+        "title": "Definir caducidad",
+        "body": "Define cuándo caduca el secret y qué ocurre entonces.",
+        "params": {
+          "secretKey": "Nombre del secret",
+          "expiresAt": "Fecha y hora de caducidad (ISO 8601)",
+          "policy": "manual, notify (por defecto) o auto",
+          "notifyDays": "Días antes de la caducidad para enviar la alerta"
+        }
+      },
+      "status": {
+        "title": "Estado de la rotación",
+        "body": "Devuelve la versión actual, la caducidad y la política del secret."
+      },
+      "history": {
+        "title": "Historial de rotaciones",
+        "body": "Lista las rotaciones del secret, con quién lo rotó y por qué."
+      },
+      "removeExpiration": {
+        "title": "Eliminar caducidad",
+        "body": "Elimina la configuración de caducidad del secret."
+      },
+      "expiring": {
+        "title": "Secrets por caducar",
+        "body": "Lista los secrets del proyecto que caducan dentro del periodo indicado.",
+        "params": {
+          "days": "Días hacia adelante (por defecto: 30, máx.: 365)"
+        }
+      },
+      "alerts": {
+        "title": "Configuración de alertas",
+        "body": "Configuración de alertas de caducidad del proyecto, bajo <code>/projects/'{pid}'/alert-settings</code>. Requiere el rol <code>admin</code>. La URL del webhook nunca se devuelve completa, solo una vista previa.",
+        "get": "Consultar la configuración",
+        "update": "Actualizar la configuración",
+        "test": "Probar el webhook",
+        "testBody": "Envía una alerta de prueba al webhook configurado.",
+        "params": {
+          "enabled": "Activa o desactiva las alertas de caducidad",
+          "notifyDays": "Días por defecto antes de la caducidad para avisar (1-365)",
+          "channels": "Canales: in_app, email, webhook (booleanos)",
+          "webhookUrl": "URL HTTPS que recibe las alertas por webhook"
+        }
+      }
     }
   }
 }
