@@ -7,48 +7,48 @@ import {
   Steps,
   Step,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function CICDSetupPage() {
+  const t = useTranslations('docs.guides.cicd');
+  const tRoot = useTranslations('docs');
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Guias', href: '/docs/guides' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('guides.overview.title'), href: '/docs/guides' },
           { label: 'CI/CD', href: '/docs/guides/cicd-setup' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-6 mb-4">
-        Configuração de CI/CD
+        {t('title')}
       </h1>
       <p className="text-muted-foreground mb-8">
-        Configure o CriptEnv no seu pipeline de CI/CD para carregar secrets de
-        forma segura durante build, testes e deploy. Suporte para GitHub
-        Actions e outras plataformas via CLI.
+        {t('description')}
       </p>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
         GitHub Actions
       </h2>
       <p className="text-muted-foreground mb-4">
-        A forma mais simples de integrar. Use a Action oficial do CriptEnv:
+        {t('github.body')}
       </p>
 
       <Steps>
-        <Step title="Adicione o token como secret">
+        <Step title={t('github.step1.title')}>
           <p className="text-muted-foreground">
-            No repositório GitHub, vá em{' '}
-            <strong>Settings → Secrets and variables → Actions</strong> e
-            adicione o token do CriptEnv como um novo secret.
+            {t.rich('github.step1.body', { strong })}
           </p>
-          <CodeBlock language="text" title="Configuração do secret">
-{`Nome: CRIPTENV_TOKEN
-Valor: <seu-token-de-ci>`}
+          <CodeBlock language="text" title={t('github.step1.codeTitle')}>
+{`Name: CRIPTENV_TOKEN            Value: <your-ci-token>
+Name: CRIPTENV_VAULT_PASSWORD   Value: <project vault password>`}
           </CodeBlock>
         </Step>
 
-        <Step title="Configure o workflow">
+        <Step title={t('github.step2.title')}>
           <CodeBlock language="yaml" title=".github/workflows/ci.yml">
 {`name: CI
 
@@ -60,17 +60,18 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Carregar variáveis de ambiente
+      - name: Load environment variables
         uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
-          project: 'seu-project-id'
+          vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
+          project: 'your-project-id'
           environment: staging
 
-      - name: Instalar dependências
+      - name: Install dependencies
         run: npm ci
 
-      - name: Executar testes
+      - name: Run tests
         run: npm test`}
           </CodeBlock>
         </Step>
@@ -84,18 +85,18 @@ jobs:
   - test
   - deploy
 
-# Defina em Settings → CI/CD → Variables (masked):
-#   CRIPTENV_API_KEY        API key read:secrets (cek_...)
-#   CRIPTENV_VAULT_PASSWORD Vault password do projeto
+# Set in Settings → CI/CD → Variables (masked):
+#   CRIPTENV_API_KEY        API key with read:secrets (cek_...)
+#   CRIPTENV_VAULT_PASSWORD project vault password
 variables:
   CRIPTENV_PROJECT: <project-id>
 
 build:
   stage: build
   image: nikolaik/python-nodejs:python3.12-nodejs20
+  # CRIPTENV_API_KEY authenticates the CLI directly; no login step needed.
   before_script:
     - pip install criptenv
-    - criptenv login
   script:
     - npm ci
     - criptenv run -e production -- npm run build`}
@@ -105,7 +106,7 @@ build:
       <CodeBlock language="yaml" title=".circleci/config.yml">
 {`version: 2.1
 
-# CRIPTENV_API_KEY e CRIPTENV_VAULT_PASSWORD ficam no Context/Project Settings
+# CRIPTENV_API_KEY and CRIPTENV_VAULT_PASSWORD live in the Context/Project Settings
 jobs:
   build:
     docker:
@@ -115,15 +116,13 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Instalar CriptEnv CLI
-          command: |
-            pip install criptenv
-            criptenv login
+          name: Install CriptEnv CLI
+          command: pip install criptenv
       - run:
-          name: Instalar dependências
+          name: Install dependencies
           command: npm ci
       - run:
-          name: Executar testes com os secrets
+          name: Run tests with the secrets
           command: criptenv run -e staging -- npm test
 
 workflows:
@@ -133,31 +132,26 @@ workflows:
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Boas Práticas para CI/CD
+        {t('practices.title')}
       </h2>
 
       <ul className="list-disc list-inside text-muted-foreground space-y-3 mb-6">
         <li>
-          <strong>Use ambientes separados:</strong> configure secrets diferentes
-          para staging e production
+          {t.rich('practices.environments', { strong })}
         </li>
         <li>
-          <strong>Token com escopo mínimo:</strong> crie tokens específicos
-          para CI/CD com apenas permissão de leitura
+          {t.rich('practices.scope', { strong })}
         </li>
         <li>
-          <strong>Nunca logue secrets:</strong> evite imprimir variáveis de
-          ambiente nos logs do CI
+          {t.rich('practices.logs', { strong })}
         </li>
         <li>
-          <strong>Rotacione tokens:</strong> atualize os tokens do CriptEnv
-          periodicamente
+          {t.rich('practices.rotate', { strong })}
         </li>
       </ul>
 
       <Callout variant="warning">
-        Nunca commite tokens do CriptEnv diretamente no código. Use sempre
-        variáveis de ambiente ou secrets nativos da plataforma de CI/CD.
+        {t('commitWarning')}
       </Callout>
     </div>
   );

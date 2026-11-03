@@ -1,34 +1,35 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link } from "@/i18n/navigation"
 import { Breadcrumb, Callout } from '@/components/docs';
 
 export default function RailwayIntegrationPage() {
+  const t = useTranslations('docs.integrations.railway');
+  const tRoot = useTranslations('docs');
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Integrações', href: '/docs/integrations' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('integrations.overview.title'), href: '/docs/integrations' },
           { label: 'Railway', href: '/docs/integrations/railway' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-6 mb-4">
-        Integração com Railway
+        {t('title')}
       </h1>
 
       <Callout variant="info">
-        A integração com Railway está em desenvolvimento e será disponibilizada em breve.
-        Atualmente, o CriptEnv suporta integrações com{' '}
-        <Link href="/docs/integrations/vercel" className="underline">Vercel</Link> e{' '}
-        <Link href="/docs/integrations/render" className="underline">Render</Link>.
+        {t.rich('comingSoon', {
+          vercel: (chunks) => <Link href="/docs/integrations/vercel" className="underline">{chunks}</Link>,
+          render: (chunks) => <Link href="/docs/integrations/render" className="underline">{chunks}</Link>,
+        })}
       </Callout>
 
       <p className="text-muted-foreground mt-6">
-        Quando lançada, a integração com Railway permitirá sincronizar suas
-        variáveis de ambiente criptografadas com os serviços do Railway de forma
-        automática e segura.
+        {t('whenLaunched')}
       </p>
     </div>
   );

@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link } from "@/i18n/navigation"
 import {
   Breadcrumb,
@@ -10,124 +11,128 @@ import {
 } from '@/components/docs';
 
 export default function FirstProjectPage() {
+  const t = useTranslations('docs.guides.firstProject');
+  const tRoot = useTranslations('docs');
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Guias', href: '/docs/guides' },
-          { label: 'Primeiro Projeto', href: '/docs/guides/first-project' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('guides.overview.title'), href: '/docs/guides' },
+          { label: t('title'), href: '/docs/guides/first-project' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-6 mb-4">
-        Seu Primeiro Projeto
+        {t('title')}
       </h1>
       <p className="text-muted-foreground mb-8">
-        Aprenda a configurar o CriptEnv do zero e gerenciar seus primeiros
-        secrets de forma segura. Este guia leva menos de 5 minutos.
+        {t('description')}
       </p>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Pré-requisitos
+        {t('prerequisites.title')}
       </h2>
       <ul className="list-disc list-inside text-muted-foreground space-y-2 mb-6">
-        <li>Uma conta no CriptEnv (gratuita)</li>
-        <li>Python 3.10+ instalado</li>
-        <li>Acesso ao terminal</li>
+        <li>{t('prerequisites.account')}</li>
+        <li>{t('prerequisites.python')}</li>
+        <li>{t('prerequisites.terminal')}</li>
       </ul>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Passo a passo</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('steps.title')}</h2>
 
       <Steps>
-        <Step title="Crie sua conta">
+        <Step title={t('steps.account.title')}>
           <p className="text-muted-foreground">
-            Acesse{' '}
-            <a href="https://criptenv.77mdevseven.tech" className="underline">
-              criptenv.77mdevseven.tech
-            </a>{' '}
-            e crie sua conta gratuitamente. Você pode usar login com GitHub,
-            Google ou Discord para agilizar o processo.
+            {t.rich('steps.account.body', {
+              link: (chunks) => (
+                <a href="https://criptenv.77mdevseven.tech" className="underline">
+                  {chunks}
+                </a>
+              ),
+            })}
           </p>
         </Step>
 
-        <Step title="Instale o CLI">
-          <CodeBlock language="bash" title="Instalar CLI">
+        <Step title={t('steps.install.title')}>
+          <CodeBlock language="bash" title={t('steps.install.codeTitle')}>
 {`pip install criptenv`}
           </CodeBlock>
         </Step>
 
-        <Step title="Faça login">
-          <CodeBlock language="bash" title="Autenticar CLI">
+        <Step title={t('steps.login.title')}>
+          <CodeBlock language="bash" title={t('steps.login.codeTitle')}>
 {`criptenv login --email-address you@example.com`}
           </CodeBlock>
         </Step>
 
-        <Step title="Crie um novo projeto">
+        <Step title={t('steps.project.title')}>
           <p className="text-muted-foreground">
-            Crie um projeto via CLI (você também pode criar pelo dashboard web):
+            {t('steps.project.body')}
           </p>
-          <CodeBlock language="bash" title="Criar projeto">
-{`criptenv projects create meu-app`}
+          <CodeBlock language="bash" title={t('steps.project.codeTitle')}>
+{`criptenv projects create my-app`}
           </CodeBlock>
           <Callout variant="tip" className="mt-3">
-            Você será solicitado a definir uma senha de vault para o projeto.
-            Essa senha é usada para criptografar os secrets deste projeto.
+            {t('steps.project.tip')}
           </Callout>
         </Step>
 
-        <Step title="Adicione suas variáveis de ambiente">
+        <Step title={t('steps.secrets.title')}>
           <p className="text-muted-foreground">
-            Adicione seus secrets via CLI:
+            {t('steps.secrets.body')}
           </p>
-          <CodeBlock language="bash" title="Adicionar secrets">
+          <CodeBlock language="bash" title={t('steps.secrets.codeTitle')}>
 {`criptenv set DATABASE_URL="postgres://user:pass@host/db"
 criptenv set API_KEY="your_api_key_here"`}
           </CodeBlock>
         </Step>
 
-        <Step title="Importe um .env existente">
+        <Step title={t('steps.import.title')}>
           <p className="text-muted-foreground">
-            Se você já tem um arquivo .env, importe-o para o vault remoto:
+            {t('steps.import.body')}
           </p>
-          <CodeBlock language="bash" title="Importar para o vault remoto">
+          <CodeBlock language="bash" title={t('steps.import.codeTitle')}>
 {`criptenv push .env -p <project-id>`}
           </CodeBlock>
         </Step>
 
-        <Step title="Carregue as variáveis no seu projeto">
+        <Step title={t('steps.export.title')}>
           <p className="text-muted-foreground">
-            Exporte os secrets para um arquivo .env local:
+            {t('steps.export.body')}
           </p>
-          <CodeBlock language="bash" title="Exportar para .env">
+          <CodeBlock language="bash" title={t('steps.export.codeTitle')}>
 {`criptenv export -o .env.local`}
           </CodeBlock>
         </Step>
       </Steps>
 
       <Callout variant="tip">
-        Parabéns! Seu primeiro projeto está configurado. Agora seus secrets
-        estão criptografados e seguros no CriptEnv.
+        {t('done')}
       </Callout>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Próximos passos</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('next.title')}</h2>
       <ul className="list-disc list-inside text-muted-foreground space-y-2">
         <li>
-          <Link href="/docs/integrations/github-action" className="underline">
-            Configure o GitHub Action
-          </Link>{' '}
-          para sincronizar secrets no CI/CD
+          {t.rich('next.action', { link: (chunks: React.ReactNode) => (
+            <Link href="/docs/integrations/github-action" className="underline">
+              {chunks}
+            </Link>
+          ) })}
         </li>
         <li>
-          <Link href="/docs/guides/team-setup" className="underline">
-            Convide sua equipe
-          </Link>{' '}
-          para colaborar no gerenciamento de secrets
+          {t.rich('next.team', { link: (chunks: React.ReactNode) => (
+            <Link href="/docs/guides/team-setup" className="underline">
+              {chunks}
+            </Link>
+          ) })}
         </li>
         <li>
-          <Link href="/docs/cli/commands" className="underline">
-            Explore a referência completa de comandos
-          </Link>
+          {t.rich('next.commands', { link: (chunks: React.ReactNode) => (
+            <Link href="/docs/cli/commands" className="underline">
+              {chunks}
+            </Link>
+          ) })}
         </li>
       </ul>
     </div>

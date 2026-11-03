@@ -7,61 +7,57 @@ import {
   Steps,
   Step,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function VercelIntegrationPage() {
+  const t = useTranslations('docs.integrations.vercel');
+  const tRoot = useTranslations('docs');
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Integrações', href: '/docs/integrations' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('integrations.overview.title'), href: '/docs/integrations' },
           { label: 'Vercel', href: '/docs/integrations/vercel' },
         ]}
       />
 
-      <h1 className="text-3xl font-bold mt-6 mb-4">Integração com Vercel</h1>
+      <h1 className="text-3xl font-bold mt-6 mb-4">{t('title')}</h1>
       <p className="text-muted-foreground mb-8">
-        Configure a sincronização automática de variáveis de ambiente entre o
-        CriptEnv e o Vercel. Assim que você atualizar seus secrets no CriptEnv,
-        eles serão automaticamente propagados para seus projetos no Vercel.
+        {t('description')}
       </p>
 
       <Callout variant="info">
-        A integração com Vercel utiliza a API oficial do Vercel para criar e
-        atualizar Environment Variables de forma segura.
+        {t('infoCallout')}
       </Callout>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Configuração</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('setup.title')}</h2>
 
       <Steps>
-        <Step title="Gere um token de acesso do Vercel">
+        <Step title={t('setup.step1.title')}>
           <p className="text-muted-foreground">
-            Acesse{' '}
-            <a
-              href="https://vercel.com/account/tokens"
-              className="underline"
-              target="_blank"
-              rel="noopener noreferrer"
-            >
-              vercel.com/account/tokens
-            </a>{' '}
-            e crie um novo token com permissão de escrita.
+            {t.rich('setup.step1.body', {
+              link: (chunks) => (
+                <a href="https://vercel.com/account/tokens" className="underline" target="_blank" rel="noopener noreferrer">
+                  {chunks}
+                </a>
+              ),
+            })}
           </p>
         </Step>
 
-        <Step title="Conecte o Vercel no painel do CriptEnv">
+        <Step title={t('setup.step2.title')}>
           <p className="text-muted-foreground">
-            No painel do CriptEnv, navegue até{' '}
-            <strong>Projeto → Integrações → Vercel</strong> e cole o token
-            gerado. Selecione o projeto Vercel que deseja sincronizar.
+            {t.rich('setup.step2.body', { strong })}
           </p>
         </Step>
 
-        <Step title="Configure o mapeamento de ambientes">
+        <Step title={t('setup.step3.title')}>
           <p className="text-muted-foreground">
-            Mapeie os ambientes do CriptEnv para os ambientes do Vercel:
+            {t('setup.step3.body')}
           </p>
-          <CodeBlock language="text" title="Mapeamento de ambientes">
+          <CodeBlock language="text" title={t('setup.step3.codeTitle')}>
 {`CriptEnv         →  Vercel
 ─────────────────────────────
 production       →  Production
@@ -70,30 +66,29 @@ development      →  Development`}
           </CodeBlock>
         </Step>
 
-        <Step title="Ative a sincronização automática">
+        <Step title={t('setup.step4.title')}>
           <p className="text-muted-foreground">
-            Ative a opção de sincronização automática para que alterações no
-            CriptEnv sejam propagadas automaticamente ao Vercel.
+            {t('setup.step4.body')}
           </p>
         </Step>
       </Steps>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Sincronização Manual via CLI
+        {t('manual.title')}
       </h2>
       <p className="text-muted-foreground mb-4">
-        Você também pode sincronizar manualmente usando o CLI do CriptEnv:
+        {t('manual.body')}
       </p>
-      <CodeBlock language="bash" title="Sincronizar com Vercel">
-{`# Sincronizar todas as variáveis
-criptenv integrations sync vercel -p <project-id>
+      <CodeBlock language="bash" title={t('manual.codeTitle')}>
+{`# Sync the production environment (default)
+criptenv integrations sync --provider vercel --project <project-id>
 
-# Sincronizar apenas o ambiente de produção
-criptenv integrations sync vercel -e production -p <project-id>`}
+# Sync a specific environment
+criptenv integrations sync --provider vercel --env staging --project <project-id>`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Exemplo de Projeto Vercel
+        {t('example.title')}
       </h2>
       <CodeBlock language="json" title="vercel.json">
 {`{
@@ -106,9 +101,7 @@ criptenv integrations sync vercel -e production -p <project-id>`}
       </CodeBlock>
 
       <Callout variant="warning">
-        Ao ativar a sincronização automática, o CriptEnv sobrescreverá as
-        variáveis existentes no Vercel com o mesmo nome. Certifique-se de que
-        os nomes das variáveis estão corretos.
+        {t('overwriteWarning')}
       </Callout>
     </div>
   );

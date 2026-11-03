@@ -7,98 +7,90 @@ import {
   Steps,
   Step,
 } from '@/components/docs';
+import { useTranslations } from 'next-intl';
 
 export default function RenderIntegrationPage() {
+  const t = useTranslations('docs.integrations.render');
+  const tRoot = useTranslations('docs');
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Integrações', href: '/docs/integrations' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('integrations.overview.title'), href: '/docs/integrations' },
           { label: 'Render', href: '/docs/integrations/render' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-6 mb-4">
-        Integração com Render
+        {t('title')}
       </h1>
       <p className="text-muted-foreground mb-8">
-        Integre o CriptEnv ao Render para gerenciar seus Environment Groups de
-        forma centralizada. Mantenha seus secrets sincronizados automaticamente
-        entre o CriptEnv e os serviços do Render.
+        {t('description')}
       </p>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Configuração</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('setup.title')}</h2>
 
       <Steps>
-        <Step title="Gere uma API Key do Render">
+        <Step title={t('setup.step1.title')}>
           <p className="text-muted-foreground">
-            No Render, acesse{' '}
-            <strong>Account Settings → API Keys</strong> e crie uma nova chave
-            de API. Anote o valor, pois ele será exibido apenas uma vez.
+            {t.rich('setup.step1.body', { strong })}
           </p>
         </Step>
 
-        <Step title="Conecte o Render no CriptEnv">
+        <Step title={t('setup.step2.title')}>
           <p className="text-muted-foreground">
-            No painel do CriptEnv, navegue até{' '}
-            <strong>Projeto → Integrações → Render</strong>. Insira a API Key
-            do Render e selecione o Environment Group que deseja sincronizar.
+            {t.rich('setup.step2.body', { strong })}
           </p>
         </Step>
 
-        <Step title="Selecione as variáveis para sincronizar">
+        <Step title={t('setup.step3.title')}>
           <p className="text-muted-foreground">
-            Escolha quais variáveis do CriptEnv devem ser sincronizadas. Você
-            pode sincronizar todas as variáveis de um ambiente ou selecionar
-            individualmente.
+            {t('setup.step3.body')}
           </p>
         </Step>
 
-        <Step title="Ative a sincronização">
+        <Step title={t('setup.step4.title')}>
           <p className="text-muted-foreground">
-            Ative a sincronização automática. A partir de agora, alterações nos
-            secrets do CriptEnv serão refletidas no Render automaticamente.
+            {t('setup.step4.body')}
           </p>
         </Step>
       </Steps>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Sincronização via CLI
+        {t('cli.title')}
       </h2>
-      <CodeBlock language="bash" title="Sincronizar com Render">
-{`# Sincronizar com Render
-criptenv integrations sync render -p <project-id>
+      <CodeBlock language="bash" title={t('cli.codeTitle')}>
+{`# Sync with Render (production by default)
+criptenv integrations sync --provider render --project <project-id>
 
-# Sincronizar com ambiente específico
-criptenv integrations sync render -e production -p <project-id>`}
+# Sync a specific environment
+criptenv integrations sync --provider render --env staging --project <project-id>`}
       </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Exemplo com render.yaml
+        {t('example.title')}
       </h2>
       <CodeBlock language="yaml" title="render.yaml (Blueprint)">
 {`services:
   - type: web
-    name: meu-app
+    name: my-app
     runtime: node
     buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
-      - sync: false  # Variáveis gerenciadas pelo CriptEnv
+      - sync: false  # Variables managed by CriptEnv
     envVarGroups:
-      - name: meu-env-group`}
+      - name: my-env-group`}
       </CodeBlock>
 
       <Callout variant="tip">
-        Os Environment Groups do Render permitem compartilhar variáveis entre
-        múltiplos serviços. Use esta integração para manter todos os seus
-        serviços sincronizados com as mesmas variáveis do CriptEnv.
+        {t('groupsTip')}
       </Callout>
 
       <Callout variant="warning">
-        A API Key do Render tem acesso amplo à sua conta. Recomendamos criar
-        uma chave dedicada apenas para a integração com o CriptEnv.
+        {t('apiKeyWarning')}
       </Callout>
     </div>
   );

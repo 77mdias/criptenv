@@ -1,5 +1,6 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Link } from "@/i18n/navigation"
 import {
   Breadcrumb,
@@ -11,62 +12,58 @@ import {
 } from '@/components/docs';
 
 export default function GitHubActionPage() {
+  const t = useTranslations('docs.integrations.githubAction');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <code>{chunks}</code>;
+  const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Integrações', href: '/docs/integrations' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: tRoot('integrations.overview.title'), href: '/docs/integrations' },
           { label: 'GitHub Action', href: '/docs/integrations/github-action' },
         ]}
       />
 
       <h1 className="text-3xl font-bold mt-6 mb-4">GitHub Action</h1>
       <p className="text-muted-foreground mb-8">
-        Use a Action oficial do CriptEnv (<code>@criptenv/action</code>) para
-        descriptografar e injetar suas variáveis de ambiente diretamente nos
-        seus workflows do GitHub Actions.
+        {t.rich('description', { code })}
       </p>
 
       <Callout variant="info">
-        A GitHub Action do CriptEnv requer um token de API válido. Você pode
-        gerar um em{' '}
-        <Link href="/dashboard/tokens" className="underline">
-          Painel → Tokens
-        </Link>
-        .
+        {t.rich('tokenCallout', {
+          link: (chunks) => (
+            <Link href="/dashboard/tokens" className="underline">
+              {chunks}
+            </Link>
+          ),
+        })}
       </Callout>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Configuração</h2>
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('setup.title')}</h2>
 
       <Steps>
-        <Step title="Guarde o token de CI e a senha do cofre no GitHub">
+        <Step title={t('setup.step1.title')}>
           <p className="text-muted-foreground">
-            No painel do CriptEnv, gere um token de CI (começa com{' '}
-            <code>ci_</code>) com escopo <code>read:secrets</code>. Como o
-            CriptEnv é zero-knowledge, o token sozinho só baixa valores
-            cifrados: para receber os valores em texto claro, a Action também
-            precisa da <strong>senha do cofre</strong> do projeto. Guarde os dois
-            como <strong>Repository Secrets</strong>.
+            {t.rich('setup.step1.body', { code, strong })}
           </p>
-          <CodeBlock language="bash" title="Adicionar secrets no GitHub">
+          <CodeBlock language="bash" title={t('setup.step1.codeTitle')}>
 {`Settings → Secrets and variables → Actions → New repository secret
-Nome: CRIPTENV_TOKEN            Valor: ci_...
-Nome: CRIPTENV_VAULT_PASSWORD   Valor: <senha do cofre do projeto>`}
+Name: CRIPTENV_TOKEN            Value: ci_...
+Name: CRIPTENV_VAULT_PASSWORD   Value: <project vault password>`}
           </CodeBlock>
         </Step>
 
-        <Step title="Obtenha o ID do projeto">
+        <Step title={t('setup.step2.title')}>
           <p className="text-muted-foreground">
-            Copie o ID do seu projeto no painel do CriptEnv. Você precisará
-            dele para que a action saiba qual projeto descriptografar.
+            {t('setup.step2.body')}
           </p>
         </Step>
 
-        <Step title="Adicione a Action ao workflow">
+        <Step title={t('setup.step3.title')}>
           <p className="text-muted-foreground">
-            Configure o workflow do GitHub Actions para usar a action do
-            CriptEnv antes dos seus comandos de build ou deploy.
+            {t('setup.step3.body')}
           </p>
           <CodeBlock language="yaml" title=".github/workflows/deploy.yml">
 {`name: Deploy
@@ -82,12 +79,12 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
-      - name: Carregar variáveis de ambiente
+      - name: Load environment variables
         uses: 77mdias/criptenv/packages/github-action@github-action-v1
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
-          project: 'seu-project-id'
+          project: 'your-project-id'
 
       - name: Build
         run: npm run build
@@ -99,10 +96,10 @@ jobs:
       </Steps>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
-        Variáveis de Entrada
+        {t('inputs.title')}
       </h2>
       <p className="text-muted-foreground mb-4">
-        A Action suporta as seguintes variáveis de entrada:
+        {t('inputs.body')}
       </p>
 
       <ParamTable
@@ -111,48 +108,43 @@ jobs:
             name: 'token',
             type: 'string',
             required: true,
-            description:
-              'Token de CI do CriptEnv (começa com ci_). Recomendado usar via GitHub Secrets.',
+            description: t('inputs.token'),
           },
           {
             name: 'project',
             type: 'string',
             required: true,
-            description: 'ID do projeto no CriptEnv.',
+            description: t('inputs.project'),
           },
           {
             name: 'vault-password',
             type: 'string',
             required: false,
-            description:
-              'Senha do cofre do projeto (via GitHub Secrets). Com ela, a Action exporta os valores em texto claro; sem ela, as variáveis recebem o ciphertext.',
+            description: t('inputs.vaultPassword'),
           },
           {
             name: 'environment',
             type: 'string',
             required: false,
-            description:
-              'Ambiente alvo (ex: production, staging). Padrão: production.',
+            description: t('inputs.environment'),
           },
           {
             name: 'api-url',
             type: 'string',
             required: false,
-            description:
-              'URL da API do CriptEnv. Padrão: https://criptenv-api.77mdevseven.tech/api/v1.',
+            description: t('inputs.apiUrl'),
           },
           {
             name: 'prefix',
             type: 'string',
             required: false,
-            description:
-              'Prefixo para as variáveis de ambiente. Padrão: SECRET_.',
+            description: t('inputs.prefix'),
           },
         ]}
       />
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">Exemplo Completo</h2>
-      <CodeBlock language="yaml" title="Workflow com múltiplos ambientes">
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('fullExample.title')}</h2>
+      <CodeBlock language="yaml" title={t('fullExample.codeTitle')}>
 {`name: CI/CD
 
 on:
@@ -170,7 +162,7 @@ jobs:
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
-          project: 'seu-project-id'
+          project: 'your-project-id'
           environment: staging
 
       - run: npm run build
@@ -186,7 +178,7 @@ jobs:
         with:
           token: \${{ secrets.CRIPTENV_TOKEN }}
           vault-password: \${{ secrets.CRIPTENV_VAULT_PASSWORD }}
-          project: 'seu-project-id'
+          project: 'your-project-id'
           environment: production
 
       - run: npm run build
@@ -194,8 +186,7 @@ jobs:
       </CodeBlock>
 
       <Callout variant="warning">
-        Nunca exponha o token do CriptEnv em logs públicos. Use sempre o
-        GitHub Secrets para armazenar tokens e credenciais sensíveis.
+        {t('tokenWarning')}
       </Callout>
     </div>
   );

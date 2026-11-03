@@ -1,47 +1,48 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import { Breadcrumb, DocCard, CardGrid } from '@/components/docs';
 import { GitBranch, Server, Triangle, TrainFront } from 'lucide-react';
 
 export default function IntegrationsPage() {
+  const t = useTranslations('docs.integrations.overview');
+  const tRoot = useTranslations('docs');
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
-          { label: 'Integrações', href: '/docs/integrations' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
+          { label: t('title'), href: '/docs/integrations' },
         ]}
       />
 
-      <h1 className="text-3xl font-bold mt-6 mb-4">Integrações</h1>
+      <h1 className="text-3xl font-bold mt-6 mb-4">{t('title')}</h1>
       <p className="text-muted-foreground mb-8">
-        O CriptEnv se integra com as principais plataformas de deploy e CI/CD do mercado.
-        Configure a sincronização automática de variáveis de ambiente criptografadas
-        diretamente no seu pipeline de deploy.
+        {t('description')}
       </p>
 
       <CardGrid>
         <DocCard
           title="GitHub Action"
-          description="Execute o CriptEnv diretamente nos seus workflows do GitHub Actions para injetar secrets de forma segura durante o build e deploy."
+          description={t('cards.githubAction')}
           href="/docs/integrations/github-action"
           icon={GitBranch}
         />
         <DocCard
           title="Vercel"
-          description="Sincronize automaticamente suas variáveis de ambiente criptografadas com os Environment Variables do Vercel."
+          description={t('cards.vercel')}
           href="/docs/integrations/vercel"
           icon={Triangle}
         />
         <DocCard
           title="Railway"
-          description="Em breve. Integração com Railway para sincronização de variáveis de ambiente."
+          description={t('cards.railway')}
           href="/docs/integrations/railway"
           icon={TrainFront}
         />
         <DocCard
           title="Render"
-          description="Conecte o CriptEnv ao Render para sincronizar secrets com seus Environment Groups de forma automatizada."
+          description={t('cards.render')}
           href="/docs/integrations/render"
           icon={Server}
         />
