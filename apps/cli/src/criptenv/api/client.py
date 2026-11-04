@@ -409,7 +409,7 @@ class CriptEnvClient:
             "GET", f"/api/v1/projects/{project_id}/integrations"
         )
         data = resp.json()
-        return data.get("items", [])
+        return data.get("integrations", [])
 
     async def create_integration(
         self, project_id: str, provider: str, name: str, config: dict[str, Any]
@@ -440,13 +440,25 @@ class CriptEnvClient:
         return resp.json()
 
     async def sync_integration(
-        self, project_id: str, integration_id: str, direction: str = "push"
+        self,
+        project_id: str,
+        integration_id: str,
+        direction: str = "push",
+        environment: str = "production",
+        secrets: list[dict[str, str]] | None = None,
     ) -> dict[str, Any]:
-        """POST /api/v1/projects/{id}/integrations/{iid}/sync"""
+        """POST /api/v1/projects/{id}/integrations/{iid}/sync
+
+        Push sends decrypted ``secrets``; pull returns them in ``secrets``.
+        Check ``success`` — the API answers 200 even when the provider fails.
+        """
+        payload: dict[str, Any] = {"direction": direction, "environment": environment}
+        if secrets is not None:
+            payload["secrets"] = secrets
         resp = await self._request(
             "POST",
             f"/api/v1/projects/{project_id}/integrations/{integration_id}/sync",
-            json={"direction": direction},
+            json=payload,
         )
         return resp.json()
 

@@ -16,6 +16,7 @@ import click
 
 from criptenv.api.client import CriptEnvClient
 from criptenv.commands.import_export import _parse_env_file
+from criptenv.commands.integrations import pick_integration
 from criptenv.context import cli_context, resolve_project_id
 from criptenv.remote_vault import RemoteVault
 from criptenv.session import get_or_create_auth_key
@@ -240,9 +241,16 @@ def ci_secrets(environment: str):
 @ci.command("deploy")
 @click.option("--env", "environment", required=True, help="Environment name")
 @click.option("--file", "-f", "file_path", type=click.Path(exists=True), help="Env file to import into the remote vault")
-@click.option("--provider", help="Sync to provider after push (e.g., vercel, railway, render)")
+@click.option("--provider", type=click.Choice(["vercel", "render", "cloudflare"]), help="Sync the environment to this provider after push")
+@click.option("--target", default=None, help="Provider environment for --provider (Vercel: production, preview, development). Defaults to --env")
 @click.option("--dry-run", is_flag=True, help="Show what would be deployed without actually deploying")
-def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str], dry_run: bool):
+def ci_deploy(
+    environment: str,
+    file_path: Optional[str],
+    provider: Optional[str],
+    target: Optional[str],
+    dry_run: bool,
+):
     """Deploy an env file to CriptEnv cloud.
 
     Imports a local env file into the remote vault, then optionally syncs
@@ -321,6 +329,8 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
                     )
                 )
 
+            # Provider sync mirrors the whole environment, not only the deployed file.
+            provider_secrets = {**asyncio.run(vault.decrypt_all(state)), **dict(entries)} if provider else {}
             result = asyncio.run(vault.push_state(state, list(by_key.values())))
             version = result.get("version", "unknown")
             click.echo(f"✓ Deployment complete ({len(entries)} secret(s), version {version})")
@@ -339,28 +349,29 @@ def ci_deploy(environment: str, file_path: Optional[str], provider: Optional[str
                 )
                 raise SystemExit(1)
 
-            click.echo(f"Syncing to {provider}...")
+            click.echo(f"Syncing {len(provider_secrets)} secret(s) to {provider}...")
             try:
-                integrations = asyncio.run(client.list_integrations(session.project_id))
-                provider_integration = None
-                for integration in integrations:
-                    if integration.get("provider") == provider:
-                        provider_integration = integration
-                        break
-
-                if not provider_integration:
-                    click.echo(
-                        f"Error: No {provider} integration found. "
-                        f"Run 'criptenv integrations connect {provider}' first.",
-                        err=True,
-                    )
-                    raise SystemExit(1)
-
-                asyncio.run(client.sync_integration(session.project_id, provider_integration["id"], direction="push"))
-                click.echo(f"✓ Sync to {provider} complete")
+                provider_integration = pick_integration(
+                    asyncio.run(client.list_integrations(session.project_id)), provider, None
+                )
+                sync = asyncio.run(client.sync_integration(
+                    session.project_id,
+                    provider_integration["id"],
+                    direction="push",
+                    environment=target or environment,
+                    secrets=[{"key": key, "value": value} for key, value in provider_secrets.items()],
+                ))
+            except click.ClickException as e:
+                click.echo(f"Error: {e.message}", err=True)
+                raise SystemExit(1)
             except Exception as e:
                 click.echo(f"Error syncing to {provider}: {e}", err=True)
                 raise SystemExit(1)
+
+            if not sync.get("success"):
+                click.echo(f"Error syncing to {provider}: {sync.get('message') or 'unknown error'}", err=True)
+                raise SystemExit(1)
+            click.echo(f"✓ Sync to {provider} complete ({sync.get('synced_count', 0)} secret(s))")
 
 
 # =============================================================================

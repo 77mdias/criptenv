@@ -1,3 +1,4 @@
+import pytest
 from click.testing import CliRunner
 from unittest.mock import patch, AsyncMock, MagicMock
 
@@ -47,26 +48,131 @@ def test_railway_connect_rejected_as_invalid_choice():
 def test_integrations_validate(mock_ctx):
     runner = CliRunner()
     mock_client = AsyncMock()
-    mock_client.validate_integration = AsyncMock(return_value={"status": "valid", "message": "OK"})
+    # Shape returned by POST /integrations/{id}/validate
+    mock_client.validate_integration = AsyncMock(return_value={"valid": True, "error": None})
     mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
     mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
     result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "00000000-0000-4000-8000-000000000123"])
     assert result.exit_code == 0
-    assert "valid" in result.output
+    assert "is valid" in result.output
 
 
 @patch("criptenv.commands.integrations.async_cli_context")
 def test_integrations_validate_invalid(mock_ctx):
     runner = CliRunner()
     mock_client = AsyncMock()
-    mock_client.validate_integration = AsyncMock(return_value={"status": "invalid", "message": "Token expired"})
+    mock_client.validate_integration = AsyncMock(
+        return_value={"valid": False, "error": "Vercel API returned 403: Forbidden"}
+    )
     mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
     mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
 
     result = runner.invoke(main, ["integrations", "validate", "int_123", "--project", "00000000-0000-4000-8000-000000000123"])
-    assert result.exit_code == 0
-    assert "invalid" in result.output
+    assert result.exit_code == 1
+    assert "invalid: Vercel API returned 403: Forbidden" in result.output
+
+
+@pytest.mark.asyncio
+async def test_client_list_integrations_reads_api_envelope():
+    """GET /integrations answers {"integrations": [...]} — reading "items" hid every integration."""
+    from criptenv.api.client import CriptEnvClient
+
+    client = CriptEnvClient.__new__(CriptEnvClient)
+    response = MagicMock()
+    response.json.return_value = {"integrations": [{"id": "i1", "provider": "vercel"}], "total": 1}
+    client._request = AsyncMock(return_value=response)
+
+    assert await client.list_integrations("p1") == [{"id": "i1", "provider": "vercel"}]
+
+
+def _sync_env(monkeypatch, client, entries=None):
+    """Patch the sync command's context, project resolution and vault."""
+    from contextlib import contextmanager
+
+    from criptenv.commands import integrations as integrations_module
+
+    @contextmanager
+    def fake_cli_context(*_args, **_kwargs):
+        yield object(), None, client
+
+    vault = MagicMock()
+    vault.load_state = AsyncMock(return_value="state")
+    vault.decrypt_all = AsyncMock(return_value=entries or {})
+    monkeypatch.setattr(integrations_module, "cli_context", fake_cli_context)
+    monkeypatch.setattr(integrations_module, "resolve_project_id", lambda *a, **k: "proj-1")
+    monkeypatch.setattr(integrations_module, "RemoteVault", lambda *_a: vault)
+    imported = MagicMock(return_value=(1, 0))
+    monkeypatch.setattr(integrations_module, "import_entries_into_vault", imported)
+    return vault, imported
+
+
+def test_sync_push_sends_decrypted_environment(monkeypatch):
+    client = MagicMock()
+    client.list_integrations = AsyncMock(return_value=[{"id": "int_1", "provider": "vercel", "name": "V"}])
+    client.sync_integration = AsyncMock(return_value={"success": True, "synced_count": 2})
+    _sync_env(monkeypatch, client, entries={"A": "1", "B": "2"})
+
+    result = CliRunner().invoke(
+        main, ["integrations", "sync", "--provider", "vercel", "--env", "staging", "--target", "preview"]
+    )
+
+    assert result.exit_code == 0, result.output
+    client.sync_integration.assert_awaited_once_with(
+        "proj-1",
+        "int_1",
+        direction="push",
+        environment="preview",
+        secrets=[{"key": "A", "value": "1"}, {"key": "B", "value": "2"}],
+    )
+    assert "Pushed 2 secret(s)" in result.output
+
+
+def test_sync_reports_provider_failure_with_exit_code(monkeypatch):
+    client = MagicMock()
+    client.list_integrations = AsyncMock(return_value=[{"id": "int_1", "provider": "vercel"}])
+    client.sync_integration = AsyncMock(
+        return_value={"success": False, "message": "Vercel API returned 403: Not authorized"}
+    )
+    _sync_env(monkeypatch, client, entries={"A": "1"})
+
+    result = CliRunner().invoke(main, ["integrations", "sync", "--provider", "vercel"])
+
+    assert result.exit_code == 1
+    assert "Vercel API returned 403: Not authorized" in result.output
+
+
+def test_sync_pull_encrypts_provider_values_into_vault(monkeypatch):
+    client = MagicMock()
+    client.list_integrations = AsyncMock(return_value=[{"id": "int_1", "provider": "render"}])
+    client.sync_integration = AsyncMock(
+        return_value={"success": True, "synced_count": 1, "secrets": [{"key": "A", "value": "1"}]}
+    )
+    vault, imported = _sync_env(monkeypatch, client)
+
+    result = CliRunner().invoke(
+        main, ["integrations", "sync", "--provider", "render", "--direction", "pull", "--overwrite"]
+    )
+
+    assert result.exit_code == 0, result.output
+    client.sync_integration.assert_awaited_once_with(
+        "proj-1", "int_1", direction="pull", environment="production"
+    )
+    imported.assert_called_once_with(vault, [("A", "1")], "production", True)
+
+
+def test_pick_integration_refuses_to_guess_between_several():
+    import click
+
+    from criptenv.commands.integrations import pick_integration
+
+    items = [
+        {"id": "a", "provider": "vercel", "name": "Prod"},
+        {"id": "b", "provider": "vercel", "name": "Preview"},
+    ]
+    with pytest.raises(click.ClickException, match="--integration"):
+        pick_integration(items, "vercel", None)
+    assert pick_integration(items, "vercel", "b")["name"] == "Preview"
 
 
 def test_ci_deploy_without_session_reports_login_hint(mock_config_dir, monkeypatch):
