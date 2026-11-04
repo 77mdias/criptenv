@@ -168,7 +168,7 @@ cd apps/web
 npm run dev
 
 # CLI (terminal 3)
-criptenv login --email your@email.com
+criptenv login --email-address your@email.com
 ```
 
 ---

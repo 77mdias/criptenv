@@ -47,7 +47,7 @@ COPY --from=ghcr.io/77mdias/criptenv-cli:latest /usr/local/bin/criptenv /usr/loc
 
 ```bash
 # Log in to your CriptEnv account
-criptenv login --email user@example.com
+criptenv login --email-address user@example.com
 
 # Set a secret in the remote project vault
 criptenv set DATABASE_URL=postgres://localhost/mydb
