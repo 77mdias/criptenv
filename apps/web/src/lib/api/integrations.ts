@@ -3,6 +3,8 @@ import type {
   CreateIntegrationRequest,
   Integration,
   IntegrationListResponse,
+  IntegrationSyncRequest,
+  IntegrationSyncResponse,
 } from "./client";
 
 export const integrationsApi = {
@@ -16,6 +18,11 @@ export const integrationsApi = {
 
   validate(projectId: string, integrationId: string): Promise<{ valid: boolean; error?: string | null }> {
     return request("POST", `/api/v1/projects/${projectId}/integrations/${integrationId}/validate`);
+  },
+
+  /** Answers 200 with `success: false` when the provider rejects the sync. */
+  sync(projectId: string, integrationId: string, body: IntegrationSyncRequest): Promise<IntegrationSyncResponse> {
+    return request("POST", `/api/v1/projects/${projectId}/integrations/${integrationId}/sync`, body);
   },
 
   delete(projectId: string, integrationId: string): Promise<void> {

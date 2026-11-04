@@ -22,7 +22,8 @@
   "actions": {
     "validate": "Validar",
     "remove": "Remover integração",
-    "refresh": "Atualizar integrações"
+    "refresh": "Atualizar integrações",
+    "sync": "Sincronizar"
   },
   "removeConfirm": "Remover integração {name}?",
   "form": {

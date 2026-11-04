@@ -2,7 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { CheckCircle2, Plug, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, Plug, RefreshCw, Trash2 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -278,6 +279,16 @@ export default function IntegrationsPage() {
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Sync needs the unlocked vault, which lives on the secrets page. */}
+                      <Button variant="secondary" size="sm" asChild>
+                        <Link
+                          href={`/projects/${selectedProjectId}/secrets?sync=${integration.id}`}
+                          className="gap-1.5"
+                        >
+                          <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden />
+                          {t("actions.sync")}
+                        </Link>
+                      </Button>
                       <Button
                         variant="secondary"
                         size="sm"

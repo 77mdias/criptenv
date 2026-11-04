@@ -22,7 +22,8 @@
   "actions": {
     "validate": "Validate",
     "remove": "Remove integration",
-    "refresh": "Refresh integrations"
+    "refresh": "Refresh integrations",
+    "sync": "Sync"
   },
   "removeConfirm": "Remove integration {name}?",
   "form": {

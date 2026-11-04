@@ -11,6 +11,7 @@ import { ImportModal } from "@/components/shared/import-modal"
 import { PermissionDialog } from "@/components/shared/permission-dialog"
 import { SecretDetailSheet } from "@/components/shared/secret-detail-sheet"
 import { SecretForm } from "@/components/shared/secret-form"
+import { SyncModal } from "@/components/shared/sync-modal"
 import { ExpirationModal } from "@/components/shared/expiration-modal"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
 import type { DecryptedSecret } from "@/components/shared/secret-row"
@@ -43,6 +44,9 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
   const pathname = usePathname()
   const detailKey = searchParams.get("key")
   const envParam = searchParams.get("env")
+  // `?sync=<integration-id>` comes from the Sync button on the integrations page.
+  const syncParam = searchParams.get("sync")
+  const [syncOpen, setSyncOpen] = useState(false)
 
   // The open secret lives in the URL (`?key=NAME`) so the attention card and the key matrix can deep link to it.
   const replaceParams = (update: (params: URLSearchParams) => void) => {
@@ -68,6 +72,17 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
       return
     }
     actions.setImportOpen(true)
+  }
+  const guardedSync = () => {
+    if (!canManageSecrets) {
+      showPermission()
+      return
+    }
+    setSyncOpen(true)
+  }
+  const closeSync = () => {
+    setSyncOpen(false)
+    if (syncParam) replaceParams((params) => params.delete("sync"))
   }
 
   const selectedSecretKeys = useMemo(() => {
@@ -160,6 +175,7 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         isProjectUnlocked={state.isProjectUnlocked}
         onImport={guardedImport}
         onExport={() => actions.setExportOpen(true)}
+        onSync={guardedSync}
         onRefresh={actions.refreshVault}
         onCreate={guardedCreate}
       />
@@ -298,6 +314,15 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         open={state.importOpen}
         onOpenChange={actions.setImportOpen}
         onImport={actions.importSecrets}
+      />
+      <SyncModal
+        open={state.isProjectUnlocked && canManageSecrets && (syncOpen || Boolean(syncParam))}
+        onOpenChange={(open) => (open ? setSyncOpen(true) : closeSync())}
+        projectId={projectId}
+        environmentName={state.activeEnv?.name ?? "production"}
+        secrets={state.secrets}
+        onImport={actions.importSecrets}
+        initialIntegrationId={syncParam}
       />
       <ExportModal
         open={state.exportOpen}

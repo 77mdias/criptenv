@@ -456,6 +456,22 @@ export interface IntegrationListResponse {
 
 export type IntegrationProvider = "vercel" | "render" | "cloudflare";
 
+export interface IntegrationSyncRequest {
+  direction: "push" | "pull";
+  /** Provider environment: Vercel target (production, preview, development); ignored by Render and Cloudflare. */
+  environment: string;
+  /** Push only: plaintext secrets decrypted in the browser. */
+  secrets?: { key: string; value: string }[];
+}
+
+export interface IntegrationSyncResponse {
+  success: boolean;
+  message: string | null;
+  synced_count: number | null;
+  /** Pull only: provider values to encrypt client-side before they reach the vault. */
+  secrets: { key: string; value: string }[] | null;
+}
+
 export interface CreateIntegrationRequest {
   provider: IntegrationProvider;
   name: string;

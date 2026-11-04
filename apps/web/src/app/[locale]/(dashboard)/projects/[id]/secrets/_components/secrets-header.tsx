@@ -1,5 +1,5 @@
 import { useTranslations } from "next-intl";
-import { Download, Plus, RefreshCw, Upload } from "lucide-react";
+import { ArrowLeftRight, Download, Plus, RefreshCw, Upload } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
 interface SecretsHeaderProps {
@@ -9,6 +9,7 @@ interface SecretsHeaderProps {
   isProjectUnlocked: boolean;
   onImport: () => void;
   onExport: () => void;
+  onSync: () => void;
   onRefresh: () => void;
   onCreate: () => void;
 }
@@ -20,6 +21,7 @@ export function SecretsHeader({
   isProjectUnlocked,
   onImport,
   onExport,
+  onSync,
   onRefresh,
   onCreate,
 }: SecretsHeaderProps) {
@@ -51,6 +53,14 @@ export function SecretsHeader({
               onClick={onExport}
             >
               {t("export")}
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              icon={ArrowLeftRight}
+              onClick={onSync}
+            >
+              {t("sync")}
             </Button>
             <Button
               variant="secondary"
