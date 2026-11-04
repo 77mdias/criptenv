@@ -1,198 +1,144 @@
 """Vercel Integration Provider
 
-Integration with Vercel environment variables API.
-https://vercel.com/docs/rest-api#endpoints/projects-environment-variables
+Syncs secrets with Vercel project environment variables.
+Contract: https://openapi.vercel.sh/ (createProjectEnv, filterProjectEnvs,
+getProjectEnv, getProject).
 """
 
 import httpx
 
-from app.strategies.integrations.base import IntegrationProvider, register_provider
+from app.strategies.integrations.base import (
+    IntegrationProvider,
+    ProviderError,
+    ensure_ok,
+    register_provider,
+)
+
+VERCEL_TARGETS = ("production", "preview", "development")
 
 
 @register_provider
 class VercelProvider(IntegrationProvider):
     """Vercel integration for environment variable sync.
-    
-    Uses Vercel REST API v10 to push/pull environment variables.
-    Authentication via Vercel API token.
+
+    Config: ``api_token`` and ``project_id`` (id or name); ``team_id`` is
+    required when the project belongs to a team.
     """
-    
+
     provider_name = "vercel"
-    api_base_url = "https://api.vercel.com/v10"
-    
-    @property
-    def headers(self) -> dict:
-        """Default headers for Vercel API requests."""
-        return {
-            "Content-Type": "application/json"
-        }
-    
+    api_base_url = "https://api.vercel.com"
+    required_config = ("api_token", "project_id")
+
+    def _client(self, config: dict, timeout: float = 30.0) -> httpx.AsyncClient:
+        params = {"teamId": config["team_id"]} if config.get("team_id") else None
+        return httpx.AsyncClient(
+            base_url=self.api_base_url,
+            headers={"Authorization": f"Bearer {config['api_token']}"},
+            params=params,
+            timeout=timeout,
+        )
+
+    @staticmethod
+    def _require(config: dict) -> str:
+        if not config.get("api_token") or not config.get("project_id"):
+            raise ValueError("Vercel config requires 'api_token' and 'project_id'")
+        return config["project_id"]
+
+    @staticmethod
+    def _check_target(environment: str) -> None:
+        if environment not in VERCEL_TARGETS:
+            raise ProviderError(
+                f"Vercel environment must be one of {', '.join(VERCEL_TARGETS)}, got '{environment}'"
+            )
+
     async def push_secrets(
         self,
         secrets: list[dict],
         config: dict,
         environment: str
     ) -> bool:
-        """Push secrets to Vercel environment variables.
-        
-        Args:
-            secrets: List of {key, value, encrypted?} dicts
-            config: Must contain 'api_token' and 'project_id'
-            environment: Vercel environment (production, preview, development)
-            
-        Returns:
-            True if all secrets pushed successfully
-        """
-        api_token = config.get("api_token")
-        project_id = config.get("project_id")
-        
-        if not api_token or not project_id:
-            raise ValueError("Vercel config requires 'api_token' and 'project_id'")
-        
-        headers = {
-            "Authorization": f"Bearer {api_token}",
-            "Content-Type": "application/json"
-        }
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            for secret in secrets:
-                payload = {
-                    "key": secret["key"],
-                    "value": secret["value"],
-                    "type": "encrypted" if secret.get("encrypted") else "plain",
-                    "environment": environment
-                }
-                
-                try:
-                    response = await client.post(
-                        f"{self.api_base_url}/projects/{project_id}/env",
-                        headers=headers,
-                        json=payload
-                    )
-                    
-                    # 200 = updated, 201 = created, 409 = already exists (ok)
-                    if response.status_code not in (200, 201, 409):
-                        return False
-                        
-                except httpx.HTTPError:
-                    return False
-        
+        """Create or overwrite the secrets for one Vercel target in a single request."""
+        project_id = self._require(config)
+        self._check_target(environment)
+
+        payload = [
+            {
+                "key": secret["key"],
+                "value": secret["value"],
+                "type": "encrypted",
+                "target": [environment],
+            }
+            for secret in secrets
+        ]
+
+        async with self._client(config) as client:
+            # upsert=true overwrites existing values instead of answering 409 (same as `vercel env add --force`).
+            response = await client.post(
+                f"/v10/projects/{project_id}/env",
+                params={"upsert": "true"},
+                json=payload,
+            )
+            ensure_ok(response, "Vercel")
+
+        failed = response.json().get("failed") or []
+        if failed:
+            details = ", ".join(
+                f"{item.get('error', {}).get('envVarKey') or item.get('error', {}).get('key', '?')}: "
+                f"{item.get('error', {}).get('message', 'failed')}"
+                for item in failed
+            )
+            raise ProviderError(f"Vercel rejected {len(failed)} variable(s): {details}")
         return True
-    
+
     async def pull_secrets(
         self,
         config: dict,
         environment: str
     ) -> list[dict]:
-        """Pull secrets from Vercel environment variables.
-        
-        Args:
-            config: Must contain 'api_token' and 'project_id'
-            environment: Vercel environment
-            
-        Returns:
-            List of {key, value} dicts
+        """Read the variables that apply to one Vercel target.
+
+        Branch-specific and ``sensitive`` variables are skipped: the first do
+        not belong to the whole target, the second can never be read back.
         """
-        api_token = config.get("api_token")
-        project_id = config.get("project_id")
-        
-        if not api_token or not project_id:
-            raise ValueError("Vercel config requires 'api_token' and 'project_id'")
-        
-        headers = {
-            "Authorization": f"Bearer {api_token}"
-        }
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            try:
-                response = await client.get(
-                    f"{self.api_base_url}/projects/{project_id}/env",
-                    headers=headers,
-                    params={"environment": environment}
-                )
-                
-                if response.status_code != 200:
-                    return []
-                
-                data = response.json()
-                envs = data.get("envs", [])
-                
-                return [
-                    {"key": env["key"], "value": env["value"]}
-                    for env in envs if env.get("key")
-                ]
-                
-            except httpx.HTTPError:
-                return []
-    
+        project_id = self._require(config)
+        self._check_target(environment)
+
+        async with self._client(config) as client:
+            response = ensure_ok(
+                await client.get(f"/v10/projects/{project_id}/env"), "Vercel"
+            )
+
+            secrets = []
+            for env in response.json().get("envs", []):
+                target = env.get("target") or []
+                targets = [target] if isinstance(target, str) else target
+                if (
+                    not env.get("key")
+                    or environment not in targets
+                    or env.get("gitBranch")
+                    or env.get("type") == "sensitive"
+                ):
+                    continue
+
+                value = env.get("value")
+                if env.get("type") != "plain" and not env.get("decrypted"):
+                    # The list returns encrypted values; the single-variable route decrypts them.
+                    detail = ensure_ok(
+                        await client.get(f"/v1/projects/{project_id}/env/{env['id']}"),
+                        "Vercel",
+                    )
+                    value = detail.json().get("value")
+                if value is not None:
+                    secrets.append({"key": env["key"], "value": value})
+            return secrets
+
     async def validate_connection(self, config: dict) -> bool:
-        """Validate Vercel API token by fetching user info.
-        
-        Args:
-            config: Must contain 'api_token'
-            
-        Returns:
-            True if token is valid
-        """
-        api_token = config.get("api_token")
-        
-        if not api_token:
-            return False
-        
-        headers = {
-            "Authorization": f"Bearer {api_token}"
-        }
-        
-        async with httpx.AsyncClient(timeout=10.0) as client:
-            try:
-                response = await client.get(
-                    f"{self.api_base_url}/users/me",
-                    headers=headers
-                )
-                return response.status_code == 200
-            except httpx.HTTPError:
-                return False
-    
+        """Fetch the configured project, proving token, team and project id together."""
+        project_id = self._require(config)
+        async with self._client(config, timeout=10.0) as client:
+            ensure_ok(await client.get(f"/v9/projects/{project_id}"), "Vercel")
+        return True
+
     def get_environments(self, config: dict) -> list[str]:
-        """Return Vercel's standard environments.
-        
-        Returns:
-            ['production', 'preview', 'development']
-        """
-        return ["production", "preview", "development"]
-    
-    async def get_projects(self, config: dict) -> list[dict]:
-        """List Vercel projects for the authenticated user.
-        
-        Args:
-            config: Must contain 'api_token'
-            
-        Returns:
-            List of {id, name} dicts
-        """
-        api_token = config.get("api_token")
-        
-        if not api_token:
-            return []
-        
-        headers = {
-            "Authorization": f"Bearer {api_token}"
-        }
-        
-        async with httpx.AsyncClient(timeout=30.0) as client:
-            try:
-                response = await client.get(
-                    f"{self.api_base_url}/projects",
-                    headers=headers
-                )
-                
-                if response.status_code != 200:
-                    return []
-                
-                data = response.json()
-                return [
-                    {"id": p["id"], "name": p.get("name", "Unknown")}
-                    for p in data.get("projects", [])
-                ]
-            except httpx.HTTPError:
-                return []
+        """Return Vercel's standard environments."""
+        return list(VERCEL_TARGETS)

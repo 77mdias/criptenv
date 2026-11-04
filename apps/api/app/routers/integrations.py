@@ -17,7 +17,7 @@ from app.middleware.ci_auth import (
 )
 from app.models.user import User
 from app.crypto.integration_config import IntegrationConfigEncryptionError
-from app.services.integration_service import IntegrationService
+from app.services.integration_service import IntegrationConfigError, IntegrationService
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 
@@ -27,9 +27,16 @@ router = APIRouter(prefix="/api/v1/projects/{project_id}/integrations", tags=["I
 
 # Schemas
 class IntegrationCreate(BaseModel):
-    provider: str = Field(..., pattern=r'^(vercel|railway|render)$')
+    # Checked against the provider registry (and its required config keys) by the service.
+    provider: str = Field(..., min_length=1, max_length=50)
     name: str = Field(..., min_length=1, max_length=255)
-    config: dict = Field(..., description="Provider-specific configuration")
+    config: dict = Field(
+        ...,
+        description=(
+            "Provider-specific configuration. vercel: api_token, project_id, optional team_id. "
+            "render: api_token, service_id. cloudflare: api_token, account_id, script_name."
+        ),
+    )
     
     class Config:
         json_schema_extra = {
@@ -64,16 +71,23 @@ class IntegrationListResponse(BaseModel):
     available_providers: list[str]
 
 
+class SyncSecret(BaseModel):
+    key: str = Field(..., min_length=1, max_length=256)
+    value: str = Field(..., max_length=65536)
+
+
 class SyncRequest(BaseModel):
     direction: str = Field(..., pattern=r'^(push|pull)$')
-    environment: str = Field(default="production")
-    secrets: Optional[list[dict]] = None
+    environment: str = Field(default="production", min_length=1, max_length=64)
+    secrets: Optional[list[SyncSecret]] = Field(default=None, max_length=1000)
 
 
 class SyncResponse(BaseModel):
     success: bool
     message: Optional[str] = None
     synced_count: Optional[int] = None
+    # Pull only: plaintext values read from the provider, for the client to encrypt into the vault.
+    secrets: Optional[list[SyncSecret]] = None
 
 
 def _force_load_integration(i):
@@ -152,7 +166,7 @@ async def create_integration(
     """Create a new integration for a project.
     
     Args:
-        provider: One of 'vercel', 'railway', 'render'
+        provider: A registered provider (see available_providers in the list response)
         name: Human-readable name for this integration
         config: Provider-specific configuration (API token, project ID, etc.)
         
@@ -186,6 +200,11 @@ async def create_integration(
             provider=payload.provider,
             name=payload.name,
             config=payload.config
+        )
+    except IntegrationConfigError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
         )
     except IntegrationConfigEncryptionError as e:
         raise HTTPException(
@@ -379,14 +398,16 @@ async def sync_integration(
         project_uuid,
     )
     
-    success, error = await integration_service.sync_integration(
+    pushed = [secret.model_dump() for secret in payload.secrets or []]
+    success, error, pulled = await integration_service.sync_integration(
         integration_id=integration_uuid,
         project_id=project_uuid,
         direction=payload.direction,
-        secrets=payload.secrets,
+        secrets=pushed,
         environment=payload.environment
     )
-    
+    synced_count = len(pulled) if payload.direction == "pull" else len(pushed)
+
     if success:
         await audit_service.log(
             action=f"integration.synced.{payload.direction}",
@@ -397,6 +418,7 @@ async def sync_integration(
             metadata={
                 "direction": payload.direction,
                 "environment": payload.environment,
+                "synced_count": synced_count,
                 "auth_type": "ci_session" if ci_session else "session",
                 "ci_session_id": ci_session.get("session_id") if ci_session else None,
                 "ci_token_id": ci_session.get("ci_token_id") if ci_session else None,
@@ -407,8 +429,9 @@ async def sync_integration(
         
         return SyncResponse(
             success=True,
-            message=f"Successfully synced to {payload.environment}",
-            synced_count=len(payload.secrets) if payload.secrets else 0
+            message=f"Successfully synced {payload.direction} ({payload.environment})",
+            synced_count=synced_count,
+            secrets=pulled if payload.direction == "pull" else None,
         )
     else:
         return SyncResponse(

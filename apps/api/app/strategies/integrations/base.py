@@ -1,36 +1,75 @@
 """Integration Provider Base Interface
 
-Strategy pattern for external CI/CD providers (Vercel, Railway, Render).
+Strategy pattern for external deploy providers (Vercel, Render, Cloudflare Workers).
 Each provider implements this interface to enable secret sync.
 """
 
 from abc import ABC, abstractmethod
 from typing import Optional
 
+import httpx
+
+
+class ProviderError(Exception):
+    """A provider call failed.
+
+    The message is shown to the user and persisted as ``last_error``; the
+    integration service redacts config values (tokens) before storing it.
+    """
+
+
+def ensure_ok(response: httpx.Response, provider_label: str) -> httpx.Response:
+    """Return the response if it is 2xx, otherwise raise ProviderError with the provider's own message."""
+    if response.is_success:
+        return response
+    try:
+        body = response.json()
+    except ValueError:
+        body = None
+
+    detail = None
+    if isinstance(body, dict):
+        error = body.get("error")
+        errors = body.get("errors")
+        detail = (
+            (error.get("message") if isinstance(error, dict) else None)
+            or body.get("message")
+            or (errors[0].get("message") if isinstance(errors, list) and errors and isinstance(errors[0], dict) else None)
+        )
+    suffix = f": {detail}" if detail else ""
+    raise ProviderError(f"{provider_label} API returned {response.status_code}{suffix}")
+
 
 class IntegrationProvider(ABC):
     """Abstract base class for external service integrations.
-    
-    Each provider (Vercel, Railway, Render) implements this interface
-    to enable consistent secret push/pull operations.
-    
+
+    Each provider implements this interface so the service can push/pull
+    secrets the same way. Failures raise ``ProviderError`` (or
+    ``httpx.HTTPError`` for network problems) instead of returning False, so
+    the caller can tell the user *why* a sync failed.
+
     Usage:
         provider = get_provider("vercel")
-        provider.push_secrets(secrets, config, environment)
+        await provider.push_secrets(secrets, config, environment)
     """
-    
+
+    # Config keys that must be present (non-empty strings) when an integration is created.
+    required_config: tuple[str, ...] = ()
+    # False when the provider never exposes secret values (e.g. Cloudflare Workers).
+    supports_pull: bool = True
+
     @property
     @abstractmethod
     def provider_name(self) -> str:
-        """Return provider identifier (e.g., 'vercel', 'railway')."""
+        """Return provider identifier (e.g., 'vercel', 'render')."""
         ...
-    
+
     @property
     @abstractmethod
     def api_base_url(self) -> str:
         """Return provider API base URL."""
         ...
-    
+
     @abstractmethod
     async def push_secrets(
         self,
@@ -38,57 +77,43 @@ class IntegrationProvider(ABC):
         config: dict,
         environment: str
     ) -> bool:
-        """Push secrets to external provider.
-        
+        """Create or update secrets in the provider.
+
         Args:
-            secrets: List of dicts with 'key' and 'value' (and optionally 'encrypted')
+            secrets: List of dicts with 'key' and 'value'
             config: Provider-specific config (API token, project ID, etc.)
             environment: Target environment (production, preview, development)
-            
+
         Returns:
-            True if push succeeded, False otherwise
+            True when every secret was written; raises ProviderError otherwise.
         """
         ...
-    
+
     @abstractmethod
     async def pull_secrets(
         self,
         config: dict,
         environment: str
     ) -> list[dict]:
-        """Pull secrets from external provider.
-        
-        Args:
-            config: Provider-specific config (API token, project ID, etc.)
-            environment: Source environment
-            
+        """Read secrets from the provider.
+
         Returns:
-            List of dicts with 'key' and 'value'
+            List of dicts with 'key' and 'value'; raises ProviderError on failure.
         """
         ...
-    
+
     @abstractmethod
     async def validate_connection(self, config: dict) -> bool:
-        """Validate that the connection is still active.
-        
-        Args:
-            config: Provider-specific config
-            
+        """Check that the token can reach the configured project/service.
+
         Returns:
-            True if connection is valid, False otherwise
+            True if the connection works; raises ProviderError with the reason otherwise.
         """
         ...
-    
+
     @abstractmethod
     def get_environments(self, config: dict) -> list[str]:
-        """List available environments in provider.
-        
-        Args:
-            config: Provider-specific config
-            
-        Returns:
-            List of environment names
-        """
+        """List the environments the provider accepts as sync targets."""
         ...
 
 
@@ -98,7 +123,7 @@ _PROVIDERS: dict[str, type[IntegrationProvider]] = {}
 
 def register_provider(provider_class: type[IntegrationProvider]) -> type[IntegrationProvider]:
     """Decorator to register a provider implementation.
-    
+
     Usage:
         @register_provider
         class VercelProvider(IntegrationProvider):
@@ -110,14 +135,7 @@ def register_provider(provider_class: type[IntegrationProvider]) -> type[Integra
 
 
 def get_provider(name: str) -> Optional[IntegrationProvider]:
-    """Get provider instance by name.
-    
-    Args:
-        name: Provider name (vercel, railway, render)
-        
-    Returns:
-        Provider instance or None if not found
-    """
+    """Get provider instance by name, or None if it is not registered."""
     provider_class = _PROVIDERS.get(name.lower())
     if provider_class:
         return provider_class()

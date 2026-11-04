@@ -7,6 +7,7 @@ from typing import Optional
 from uuid import UUID
 from datetime import datetime, timezone
 
+import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 
@@ -16,16 +17,20 @@ from app.crypto.integration_config import (
     IntegrationConfigEncryptionError,
 )
 from app.models.integration import Integration
-from app.strategies.integrations.base import get_provider, list_providers
+from app.strategies.integrations.base import ProviderError, get_provider, list_providers
+
+
+class IntegrationConfigError(ValueError):
+    """The requested provider or its config is invalid (maps to HTTP 422)."""
 
 
 class IntegrationService:
     """Service for managing external integrations.
-    
+
     Handles CRUD operations for integrations and coordinates
     sync operations with external providers.
     """
-    
+
     def __init__(self, db: AsyncSession):
         self.db = db
 
@@ -39,7 +44,7 @@ class IntegrationService:
         for value in (config or {}).values():
             if isinstance(value, str) and len(value) >= 8:
                 sanitized = sanitized.replace(value, "[redacted]")
-        return sanitized
+        return sanitized[:1000]
 
     def _encrypt_config(self, config: dict) -> dict:
         """Encrypt provider config before persistence."""
@@ -59,7 +64,26 @@ class IntegrationService:
 
         integration.config = self._encrypt_config(config)
         return config, True
-    
+
+    def _clean_config(self, provider: str, config: dict) -> dict:
+        """Reject unknown providers and missing config keys before anything is stored."""
+        provider_impl = self._get_provider(provider)
+        if not provider_impl:
+            raise IntegrationConfigError(
+                f"Unsupported provider '{provider}'. Available: {', '.join(list_providers())}"
+            )
+
+        cleaned = {key: value for key, value in config.items() if value not in (None, "")}
+        missing = [
+            key for key in provider_impl.required_config
+            if not isinstance(cleaned.get(key), str) or not cleaned[key].strip()
+        ]
+        if missing:
+            raise IntegrationConfigError(
+                f"{provider} config requires: {', '.join(missing)}"
+            )
+        return cleaned
+
     async def create_integration(
         self,
         project_id: UUID,
@@ -68,30 +92,24 @@ class IntegrationService:
         config: dict
     ) -> Integration:
         """Create a new integration.
-        
-        Args:
-            project_id: Project UUID
-            provider: Provider name (vercel, railway, render)
-            name: Human-readable name
-            config: Provider-specific configuration
-            
-        Returns:
-            Created integration
+
+        Raises:
+            IntegrationConfigError: unknown provider or missing required config.
         """
         integration = Integration(
             project_id=project_id,
             provider=provider,
             name=name,
-            config=self._encrypt_config(config),
+            config=self._encrypt_config(self._clean_config(provider, config)),
             status="active"
         )
-        
+
         self.db.add(integration)
         await self.db.flush()
         await self.db.refresh(integration)
-        
+
         return integration
-    
+
     async def get_integration(
         self, integration_id: UUID, *, project_id: UUID
     ) -> Optional[Integration]:
@@ -108,7 +126,7 @@ class IntegrationService:
             )
         )
         return result.scalar_one_or_none()
-    
+
     async def list_integrations(self, project_id: UUID) -> list[Integration]:
         """List all integrations for a project."""
         result = await self.db.execute(
@@ -117,12 +135,12 @@ class IntegrationService:
             .order_by(Integration.created_at.desc())
         )
         return list(result.scalars().all())
-    
+
     async def delete_integration(
         self, integration_id: UUID, *, project_id: UUID
     ) -> bool:
         """Delete an integration scoped to ``project_id``.
-        
+
         Returns:
             True if deleted, False if not found
         """
@@ -131,15 +149,33 @@ class IntegrationService:
         )
         if not integration:
             return False
-        
+
         await self.db.delete(integration)
         return True
-    
+
+    async def _record_failure(self, integration: Integration, error: Exception) -> str:
+        """Persist a redacted error on the integration and return it."""
+        if isinstance(error, IntegrationConfigEncryptionError):
+            message = str(error)
+        else:
+            try:
+                config = IntegrationConfigEncryption.decrypt_legacy_or_encrypted(
+                    integration.config,
+                    settings.INTEGRATION_CONFIG_SECRET,
+                )
+            except IntegrationConfigEncryptionError:
+                config = None
+            message = self._sanitize_error(str(error) or type(error).__name__, config)
+        integration.status = "error"
+        integration.last_error = message
+        await self.db.flush()
+        return message
+
     async def validate_integration(
         self, integration_id: UUID, *, project_id: UUID
     ) -> tuple[bool, Optional[str]]:
         """Validate an integration by testing provider connection.
-        
+
         Returns:
             (is_valid, error_message)
         """
@@ -148,32 +184,27 @@ class IntegrationService:
         )
         if not integration:
             return False, "Integration not found"
-        
+
         provider = self._get_provider(integration.provider)
         if not provider:
             return False, f"Unknown provider: {integration.provider}"
-        
+
         try:
             config, _ = self._decrypt_config_for_use(integration)
-        except IntegrationConfigEncryptionError as e:
-            error_message = str(e)
-            integration.status = "error"
-            integration.last_error = error_message
-            await self.db.flush()
-            return False, error_message
+            is_valid = await provider.validate_connection(config)
+        except (IntegrationConfigEncryptionError, ProviderError, ValueError, httpx.HTTPError) as e:
+            return False, await self._record_failure(integration, e)
 
-        is_valid = await provider.validate_connection(config)
-        
         if is_valid:
             integration.status = "active"
             integration.last_error = None
         else:
             integration.status = "error"
             integration.last_error = "Connection validation failed"
-        
+
         await self.db.flush()
         return is_valid, None if is_valid else "Connection validation failed"
-    
+
     async def sync_integration(
         self,
         integration_id: UUID,
@@ -182,75 +213,55 @@ class IntegrationService:
         direction: str,  # "push" or "pull"
         secrets: Optional[list[dict]] = None,
         environment: str = "production"
-    ) -> tuple[bool, Optional[str]]:
+    ) -> tuple[bool, Optional[str], list[dict]]:
         """Sync secrets with an integration owned by ``project_id``.
-        
+
         Args:
             integration_id: Integration UUID
             project_id: Owning project UUID (mandatory tenant scope)
             direction: "push" (criptenv -> provider) or "pull" (provider -> criptenv)
             secrets: For push, list of {key, value} dicts. For pull, ignored.
-            environment: Target/source environment
-            
+            environment: Target/source environment in the provider
+
         Returns:
-            (success, error_message)
+            (success, error_message, secrets) where ``secrets`` holds the
+            plaintext values read from the provider on pull (empty on push).
+            The caller encrypts them client-side before they reach the vault.
         """
         integration = await self.get_integration(
             integration_id, project_id=project_id
         )
         if not integration:
-            return False, "Integration not found"
-        
+            return False, "Integration not found", []
+
         provider = self._get_provider(integration.provider)
         if not provider:
-            return False, f"Unknown provider: {integration.provider}"
-        
+            return False, f"Unknown provider: {integration.provider}", []
+
+        if direction == "push" and not secrets:
+            return False, "No secrets provided for push", []
+        if direction == "pull" and not provider.supports_pull:
+            return False, f"{integration.provider} does not support pull", []
+        if direction not in ("push", "pull"):
+            return False, f"Invalid direction: {direction}", []
+
         try:
             config, _ = self._decrypt_config_for_use(integration)
-
             if direction == "push":
-                if not secrets:
-                    return False, "No secrets provided for push"
-                
-                success = await provider.push_secrets(
-                    secrets, config, environment
-                )
-            elif direction == "pull":
-                secrets = await provider.pull_secrets(
-                    config, environment
-                )
-                success = True
+                if await provider.push_secrets(secrets, config, environment) is False:
+                    raise ProviderError("Sync failed: push")
+                pulled: list[dict] = []
             else:
-                return False, f"Invalid direction: {direction}"
-            
-            if success:
-                integration.last_sync_at = datetime.now(timezone.utc)
-                integration.last_error = None
-                integration.status = "active"
-            else:
-                integration.status = "error"
-                integration.last_error = f"Sync failed: {direction}"
-            
-            await self.db.flush()
-            return success, None if success else f"Sync failed: {direction}"
-            
+                pulled = await provider.pull_secrets(config, environment)
         except Exception as e:
-            if isinstance(e, IntegrationConfigEncryptionError):
-                error_message = str(e)
-            else:
-                try:
-                    config = IntegrationConfigEncryption.decrypt_legacy_or_encrypted(
-                        integration.config,
-                        settings.INTEGRATION_CONFIG_SECRET,
-                    )
-                except IntegrationConfigEncryptionError:
-                    config = None
-                error_message = self._sanitize_error(str(e), config)
-            integration.status = "error"
-            integration.last_error = error_message
-            await self.db.flush()
-            return False, error_message
-    
+            return False, await self._record_failure(integration, e), []
+
+        integration.last_sync_at = datetime.now(timezone.utc)
+        integration.last_error = None
+        integration.status = "active"
+        await self.db.flush()
+        return True, None, pulled
+
     def get_available_providers(self) -> list[str]:
         """Get list of registered provider names."""
         return list_providers()
