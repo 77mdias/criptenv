@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CLI 0.2.4 (PyPI) — 2026-11-04
+
+- **Erros de API sem traceback:** `CriptEnvAPIError` passou a ser `ClickException`. Antes, qualquer erro de API não tratado (401/404/5xx/rede) imprimia o traceback do Python na maioria dos comandos; agora sai `Error: ...` com status 1.
+- **401 com API key:** a mensagem diz que a key foi rejeitada (inválida, expirada ou revogada) e aponta para `CRIPTENV_API_KEY`, em vez de sugerir `criptenv login`.
+- **Key restrita a um ambiente:** `run`/`export` explicam que a key é restrita ao ambiente X e não acessa Y, em vez de "Environment not found". `api-keys create --env` valida o ambiente antes de chamar a API e `api-keys list` mostra a coluna ENV.
+- **`CRIPTENV_API_KEY` sem estado local:** comandos autenticados usam um banco em memória e não criam `~/.criptenv/vault.db`; funciona com HOME somente leitura. `criptenv use` recusa nesse modo.
+- **`projects create` automatizável:** lê `CRIPTENV_VAULT_PASSWORD` (sem confirmação) e, sem a variável e sem terminal, falha na hora em vez de esperar input.
+- **Integrações contra a API real:** `integrations list` mostrava sempre vazio (lia `items`, a API responde `integrations`), `validate` lia campos errados, e `sync`/`ci deploy --provider` não enviavam secrets e reportavam sucesso sem checar a resposta. Agora `sync` faz push e pull de verdade e falhas saem com status 1. `connect` aceita Cloudflare (`--account-id`) e times da Vercel (`--team-id`).
+- **Docs:** `criptenv login --email-address you@example.com` (`--email` é flag).
+
 ### UX.4 — Detalhe do secret (Phase 3.5) — 2026-10-28
 
 **API:**
