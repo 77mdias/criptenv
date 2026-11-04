@@ -359,6 +359,24 @@ class TestIntegrationServiceProviders:
         assert integration.last_error == error
 
 
+    @pytest.mark.asyncio
+    async def test_network_error_is_named_not_blank(self, http):
+        _, routes = http
+
+        def timeout(request):
+            raise httpx.ConnectTimeout("")
+
+        routes[("GET", "/v1/services/srv_1")] = timeout
+        service = _service()
+        integration = _integration("render", RENDER)
+
+        with patch.object(service, "get_integration", new=AsyncMock(return_value=integration)):
+            valid, error = await service.validate_integration(integration.id, project_id=uuid4())
+
+        assert valid is False
+        assert error == "Could not reach render: ConnectTimeout"
+
+
 class TestSyncSchemas:
     def test_sync_request_requires_key_and_value(self):
         from pydantic import ValidationError

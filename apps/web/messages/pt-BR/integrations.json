@@ -15,7 +15,7 @@
   },
   "emptyIntegrations": {
     "title": "Nenhuma integração conectada",
-    "description": "Conecte a Vercel para sincronizar secrets deste projeto."
+    "description": "Conecte Vercel, Render ou Cloudflare Workers para sincronizar os secrets deste projeto."
   },
   "lastSync": "Último sync: {date}",
   "noSync": "Sem sync registrado",
@@ -26,9 +26,22 @@
   },
   "removeConfirm": "Remover integração {name}?",
   "form": {
+    "title": "Nova integração",
+    "provider": "Provedor",
     "name": "Nome",
-    "apiToken": "Vercel API Token",
-    "projectId": "Vercel Project ID",
-    "submit": "Conectar Vercel"
+    "apiToken": "Token de API",
+    "submit": "Conectar {provider}",
+    "fields": {
+      "project_id": "ID ou nome do projeto na Vercel",
+      "team_id": "ID do time na Vercel (só projetos de time)",
+      "service_id": "ID do serviço no Render",
+      "account_id": "ID da conta Cloudflare",
+      "script_name": "Nome do script do Worker"
+    },
+    "hints": {
+      "vercel": "Crie o token em Vercel → Account Settings → Tokens, com escopo no time do projeto.",
+      "render": "Crie a chave em Render → Account Settings → API Keys. As variáveis são gravadas no serviço.",
+      "cloudflare": "Use um token de API com a permissão Workers Scripts: Edit. Só push: a Cloudflare nunca devolve o valor dos secrets."
+    }
   }
 }

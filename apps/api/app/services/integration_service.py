@@ -157,6 +157,9 @@ class IntegrationService:
         """Persist a redacted error on the integration and return it."""
         if isinstance(error, IntegrationConfigEncryptionError):
             message = str(error)
+        elif isinstance(error, httpx.HTTPError):
+            # httpx network errors often have an empty str(); name the failure instead.
+            message = f"Could not reach {integration.provider}: {type(error).__name__}"
         else:
             try:
                 config = IntegrationConfigEncryption.decrypt_legacy_or_encrypted(

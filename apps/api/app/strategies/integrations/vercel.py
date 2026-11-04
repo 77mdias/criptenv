@@ -29,13 +29,13 @@ class VercelProvider(IntegrationProvider):
     api_base_url = "https://api.vercel.com"
     required_config = ("api_token", "project_id")
 
-    def _client(self, config: dict, timeout: float = 30.0) -> httpx.AsyncClient:
+    def _client(self, config: dict) -> httpx.AsyncClient:
         params = {"teamId": config["team_id"]} if config.get("team_id") else None
         return httpx.AsyncClient(
             base_url=self.api_base_url,
             headers={"Authorization": f"Bearer {config['api_token']}"},
             params=params,
-            timeout=timeout,
+            timeout=30.0,
         )
 
     @staticmethod
@@ -135,7 +135,7 @@ class VercelProvider(IntegrationProvider):
     async def validate_connection(self, config: dict) -> bool:
         """Fetch the configured project, proving token, team and project id together."""
         project_id = self._require(config)
-        async with self._client(config, timeout=10.0) as client:
+        async with self._client(config) as client:
             ensure_ok(await client.get(f"/v9/projects/{project_id}"), "Vercel")
         return True
 

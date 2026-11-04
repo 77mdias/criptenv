@@ -454,13 +454,13 @@ export interface IntegrationListResponse {
   available_providers: string[];
 }
 
+export type IntegrationProvider = "vercel" | "render" | "cloudflare";
+
 export interface CreateIntegrationRequest {
-  provider: "vercel";
+  provider: IntegrationProvider;
   name: string;
-  config: {
-    api_token: string;
-    project_id: string;
-  };
+  /** vercel: project_id (+ team_id); render: service_id; cloudflare: account_id + script_name. */
+  config: { api_token: string } & Record<string, string>;
 }
 
 // ─── Base Fetch Wrapper ────────────────────────────────────────────────────────

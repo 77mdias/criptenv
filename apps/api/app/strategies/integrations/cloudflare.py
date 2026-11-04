@@ -30,11 +30,11 @@ class CloudflareWorkersProvider(IntegrationProvider):
     # Cloudflare never returns secret values once written.
     supports_pull = False
 
-    def _client(self, config: dict, timeout: float = 30.0) -> httpx.AsyncClient:
+    def _client(self, config: dict) -> httpx.AsyncClient:
         return httpx.AsyncClient(
             base_url=self.api_base_url,
             headers={"Authorization": f"Bearer {config['api_token']}"},
-            timeout=timeout,
+            timeout=30.0,
         )
 
     @staticmethod
@@ -77,7 +77,7 @@ class CloudflareWorkersProvider(IntegrationProvider):
     async def validate_connection(self, config: dict) -> bool:
         """List the script's secrets, proving token, account and script name together."""
         path = self._secrets_path(config)
-        async with self._client(config, timeout=10.0) as client:
+        async with self._client(config) as client:
             ensure_ok(await client.get(path), "Cloudflare")
         return True
 

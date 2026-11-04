@@ -26,11 +26,11 @@ class RenderProvider(IntegrationProvider):
     api_base_url = "https://api.render.com/v1"
     required_config = ("api_token", "service_id")
 
-    def _client(self, config: dict, timeout: float = 30.0) -> httpx.AsyncClient:
+    def _client(self, config: dict) -> httpx.AsyncClient:
         return httpx.AsyncClient(
             base_url=self.api_base_url,
             headers={"Authorization": f"Bearer {config['api_token']}"},
-            timeout=timeout,
+            timeout=30.0,
         )
 
     @staticmethod
@@ -92,7 +92,7 @@ class RenderProvider(IntegrationProvider):
     async def validate_connection(self, config: dict) -> bool:
         """Fetch the configured service, proving the token can reach it."""
         service_id = self._require(config)
-        async with self._client(config, timeout=10.0) as client:
+        async with self._client(config) as client:
             ensure_ok(await client.get(f"/services/{service_id}"), "Render")
         return True
 
