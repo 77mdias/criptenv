@@ -214,7 +214,8 @@
     "whatIs": {
       "title": "¿Qué es CriptEnv?",
       "paragraph1": "CriptEnv es una plataforma open-source de gestión de secrets con arquitectura <strong>Zero-Knowledge</strong>. Alternativa a Doppler e Infisical, permite que desarrolladores y equipos gestionen variables de entorno, API keys y credenciales sensibles con cifrado de extremo a extremo.",
-      "paragraph2": "Todos los secrets se cifran <strong>100% en el cliente</strong> con AES-256-GCM. El servidor nunca recibe datos en plaintext — incluso con acceso total a la base de datos, es imposible descifrar tus credenciales."
+      "paragraph2": "Todos los secrets se cifran <strong>100% en el cliente</strong> con AES-256-GCM. El servidor nunca recibe datos en plaintext — incluso con acceso total a la base de datos, es imposible descifrar tus credenciales.",
+      "exampleTitle": "Ejemplo rápido"
     },
     "principles": {
       "title": "Principios de la API",
@@ -1635,6 +1636,429 @@
         "callout": "Los entornos archivados dejan de ser accesibles desde la API y la CLI. Para seguir usando sus secrets, expórtalos antes de archivarlos.",
         "response": "Respuesta vacía: el entorno se archivó.",
         "example": "Ejemplo — archivar entorno"
+      }
+    },
+    "vault": {
+      "description": "El vault almacena y sincroniza los secrets cifrados de cada entorno. Los datos siempre viajan cifrados; el servidor nunca ve los valores en texto claro (zero-knowledge).",
+      "flow": {
+        "title": "Flujo zero-knowledge",
+        "body": "Antes de usar estos endpoints, conviene entender el flujo de cifrado. Todo el cifrado y descifrado ocurre en el cliente:"
+      },
+      "permissions": "Las lecturas aceptan una sesión de miembro, una API key con <code>read:secrets</code> (restringida a su entorno, si tiene scope) o una sesión de CI. Las escrituras requieren el rol <code>admin</code> para personas, o una sesión de CI con el scope <code>write:secrets</code>; aquí las API keys son de solo lectura.",
+      "push": {
+        "title": "Push de secrets",
+        "body": "Envía los blobs cifrados del entorno. El push <strong>sustituye todo el conjunto</strong> guardado en el entorno, así que envía todos los secrets, no solo los modificados. Pasa <code>expected_version</code> para el control de concurrencia optimista.",
+        "params": {
+          "blobs": "Lista completa de los secrets cifrados del entorno",
+          "keyId": "Nombre del secret (p. ej. DATABASE_URL), guardado en texto claro",
+          "iv": "IV de AES-GCM (12 bytes, base64)",
+          "ciphertext": "Valor cifrado (base64)",
+          "authTag": "Auth tag de AES-GCM (16 bytes, base64)",
+          "checksum": "Checksum de integridad calculado por el cliente",
+          "version": "Versión del secret (≥ 1)",
+          "vaultProof": "Prueba de la contraseña del vault; obligatoria si el proyecto tiene vault configurado",
+          "expectedVersion": "Versión del entorno en la que se basa tu cambio; omítela para saltar la comprobación de conflictos"
+        },
+        "example": "Ejemplo — push de secrets"
+      },
+      "conflict": {
+        "title": "Detección de conflictos",
+        "body": "Si el entorno cambió desde <code>expected_version</code>, la API rechaza el push con un conflicto. Una prueba de vault incorrecta devuelve 403.",
+        "callout": "Si hay un conflicto, haz <code>pull</code> de la versión más reciente, vuelve a aplicar tu cambio y haz <code>push</code> de nuevo."
+      },
+      "pull": {
+        "title": "Pull de secrets",
+        "body": "Devuelve todos los blobs cifrados del entorno y su versión actual. Descífralos en el cliente con la clave derivada de la contraseña del vault.",
+        "example": "Ejemplo — pull de secrets"
+      },
+      "version": {
+        "title": "Versión del vault",
+        "body": "Devuelve la versión actual del vault del entorno y el número de blobs: una forma barata de comprobar cambios sin descargar los blobs.",
+        "example": "Ejemplo — comprobar la versión"
+      },
+      "deploy": {
+        "title": "Ejemplo completo — deploy",
+        "body": "En el pipeline, deja que la CLI se encargue del pull y del descifrado: deriva las claves e inyecta los valores en memoria.",
+        "example": "Deploy con los secrets en memoria"
+      }
+    },
+    "rotation": {
+      "breadcrumb": "Rotación",
+      "title": "Rotación y caducidad",
+      "description": "Rota secrets, define fechas y políticas de caducidad y configura las alertas de caducidad del proyecto.",
+      "callout": "Los endpoints por secret están bajo <code>/projects/'{pid}'/environments/'{eid}'/secrets/'{secret_key}'</code>. Rotar y definir o eliminar una caducidad requieren el rol <code>admin</code>; consultar el estado y el historial solo requiere ser miembro.",
+      "rotate": {
+        "title": "Rotar secret",
+        "body": "Guarda una nueva versión del secret. El nuevo valor se cifra en el cliente como cualquier valor del vault; el servidor solo recibe <code>new_value</code> (ciphertext), <code>iv</code> y <code>auth_tag</code>. En la práctica, usa <code>criptenv rotate</code>, que genera, cifra y envía el valor.",
+        "params": {
+          "newValue": "Nuevo valor, ya cifrado (ciphertext en base64)",
+          "iv": "IV de AES-GCM (base64)",
+          "authTag": "Auth tag de AES-GCM (base64)",
+          "reason": "Motivo de la rotación (máx. 500 caracteres)",
+          "expectedVersion": "Versión del entorno para el control de concurrencia optimista"
+        }
+      },
+      "expiration": {
+        "title": "Definir caducidad",
+        "body": "Define cuándo caduca el secret y qué ocurre entonces.",
+        "params": {
+          "secretKey": "Nombre del secret",
+          "expiresAt": "Fecha y hora de caducidad (ISO 8601)",
+          "policy": "manual, notify (por defecto) o auto",
+          "notifyDays": "Días antes de la caducidad para enviar la alerta"
+        }
+      },
+      "status": {
+        "title": "Estado de la rotación",
+        "body": "Devuelve la versión actual, la caducidad y la política del secret."
+      },
+      "history": {
+        "title": "Historial de rotaciones",
+        "body": "Lista las rotaciones del secret, con quién lo rotó y por qué."
+      },
+      "removeExpiration": {
+        "title": "Eliminar caducidad",
+        "body": "Elimina la configuración de caducidad del secret."
+      },
+      "expiring": {
+        "title": "Secrets por caducar",
+        "body": "Lista los secrets del proyecto que caducan dentro del periodo indicado.",
+        "params": {
+          "days": "Días hacia adelante (por defecto: 30, máx.: 365)"
+        }
+      },
+      "alerts": {
+        "title": "Configuración de alertas",
+        "body": "Configuración de alertas de caducidad del proyecto, bajo <code>/projects/'{pid}'/alert-settings</code>. Requiere el rol <code>admin</code>. La URL del webhook nunca se devuelve completa, solo una vista previa.",
+        "get": "Consultar la configuración",
+        "update": "Actualizar la configuración",
+        "test": "Probar el webhook",
+        "testBody": "Envía una alerta de prueba al webhook configurado.",
+        "params": {
+          "enabled": "Activa o desactiva las alertas de caducidad",
+          "notifyDays": "Días por defecto antes de la caducidad para avisar (1-365)",
+          "channels": "Canales: in_app, email, webhook (booleanos)",
+          "webhookUrl": "URL HTTPS que recibe las alertas por webhook"
+        }
+      }
+    },
+    "members": {
+      "title": "Miembros",
+      "description": "Los miembros controlan quién accede a cada proyecto y con qué nivel de permiso. Cada miembro pertenece a un proyecto con un rol.",
+      "roles": {
+        "title": "Roles",
+        "role": "Rol",
+        "permissions": "Permisos",
+        "owner": "Creador del proyecto. Todo lo que puede hacer un admin; no se puede conceder por invitación.",
+        "admin": "Acceso total: configuración, entornos, miembros, invitaciones, escritura en el vault, rotación, caducidad y re-key del vault.",
+        "developer": "Lee y usa secrets; puede revocar las invitaciones que creó. Sin configuración, gestión de miembros ni escritura en el vault.",
+        "viewer": "Lectura del proyecto sin acciones administrativas."
+      },
+      "rekeyCallout": "Eliminar a un miembro no cambia la contraseña del vault que conocía. Para impedir que un exmiembro acceda a los datos cifrados, un admin debe hacer re-key del vault (<code>POST /api/v1/projects/'{id}'/vault/rekey</code>) tras la eliminación.",
+      "params": {
+        "projectId": "ID del proyecto (parámetro de ruta)",
+        "memberId": "ID del miembro (parámetro de ruta)",
+        "role": "Rol: admin, developer o viewer"
+      },
+      "add": {
+        "title": "Añadir miembro",
+        "body": "Añade al proyecto un usuario existente de CriptEnv por su <code>user_id</code>. Requiere el rol <code>admin</code>. Para invitar a alguien por email, usa la <invites>API de Invitaciones</invites>.",
+        "params": {
+          "userId": "ID del usuario que añadir"
+        },
+        "example": "Ejemplo — añadir miembro"
+      },
+      "list": {
+        "title": "Listar miembros",
+        "body": "Devuelve todos los miembros del proyecto. Cualquier miembro puede llamarlo.",
+        "example": "Ejemplo — listar miembros"
+      },
+      "get": {
+        "title": "Obtener miembro",
+        "body": "Devuelve un miembro del proyecto."
+      },
+      "update": {
+        "title": "Actualizar el rol del miembro",
+        "body": "Cambia el rol de un miembro. Requiere el rol <code>admin</code>.",
+        "example": "Ejemplo — cambiar el rol"
+      },
+      "remove": {
+        "title": "Eliminar miembro",
+        "body": "Elimina a un miembro del proyecto. Requiere el rol <code>admin</code>.",
+        "response": "Respuesta vacía: el miembro se eliminó.",
+        "example": "Ejemplo — eliminar miembro"
+      }
+    },
+    "projects": {
+      "title": "Proyectos",
+      "description": "Los proyectos son la unidad organizativa principal de CriptEnv. Cada proyecto tiene sus entornos, miembros y su propio vault, protegido por la contraseña del vault del proyecto.",
+      "vaultCallout": "La contraseña del vault nunca llega al servidor. Al crearlo, el cliente deriva las claves y solo envía <code>vault_config</code> (salts, parámetros del KDF y un verificador cifrado) y <code>vault_proof</code>. Usa el dashboard web o <code>criptenv projects create</code>, que lo hacen por ti.",
+      "params": {
+        "projectId": "ID del proyecto (parámetro de ruta)"
+      },
+      "create": {
+        "title": "Crear proyecto",
+        "body": "Crea un proyecto. El usuario autenticado pasa a ser su owner.",
+        "params": {
+          "name": "Nombre del proyecto",
+          "slug": "Slug opcional (minúsculas, números y guiones); se genera a partir del nombre si se omite",
+          "description": "Descripción opcional",
+          "settings": "Configuración libre del proyecto",
+          "vaultConfig": "Parámetros del vault generados por el cliente (salts, iteraciones, verificador cifrado)",
+          "vaultProof": "Prueba derivada de la contraseña del vault"
+        },
+        "example": "Ejemplo — crear proyecto"
+      },
+      "list": {
+        "title": "Listar proyectos",
+        "body": "Devuelve los proyectos de los que el usuario es miembro, con su rol en cada uno.",
+        "params": {
+          "includeArchived": "Incluye los proyectos archivados"
+        },
+        "example": "Ejemplo — listar proyectos"
+      },
+      "get": {
+        "title": "Obtener proyecto por ID",
+        "body": "Devuelve un proyecto del que el usuario es miembro."
+      },
+      "update": {
+        "title": "Actualizar proyecto",
+        "body": "Actualiza el nombre, la descripción, la configuración o el indicador de archivado del proyecto. Requiere el rol <code>admin</code>.",
+        "params": {
+          "name": "Nuevo nombre",
+          "description": "Nueva descripción",
+          "settings": "Nueva configuración",
+          "archived": "Archiva o desarchiva el proyecto"
+        },
+        "example": "Ejemplo — actualizar proyecto"
+      },
+      "delete": {
+        "title": "Eliminar proyecto",
+        "body": "Elimina permanentemente el proyecto. Requiere el rol <code>owner</code>.",
+        "callout": "Esto elimina el proyecto con todos sus entornos, secrets cifrados, miembros e invitaciones. No se puede deshacer. Para ocultar un proyecto sin perder datos, archívalo.",
+        "response": "Respuesta vacía: el proyecto se eliminó.",
+        "example": "Ejemplo — eliminar proyecto"
+      },
+      "rekey": {
+        "title": "Re-key del vault",
+        "body": "Cambia la contraseña del vault del proyecto. El cliente descifra todos los entornos con la contraseña actual, los vuelve a cifrar con la nueva y lo envía todo en una petición; el servidor comprueba <code>current_vault_proof</code> y sustituye la configuración y los blobs. Requiere el rol <code>admin</code>.",
+        "params": {
+          "currentProof": "Prueba de la contraseña actual del vault",
+          "newConfig": "Parámetros del vault para la nueva contraseña",
+          "newProof": "Prueba de la nueva contraseña del vault",
+          "environments": "Todos los entornos con sus blobs cifrados de nuevo con la nueva contraseña"
+        },
+        "response": "Devuelve el proyecto actualizado.",
+        "example": "Ejemplo — re-key"
+      }
+    },
+    "authentication": {
+      "title": "Autenticación",
+      "description": "La API de CriptEnv admite varios métodos de autenticación para distintos escenarios: el dashboard web, integraciones de terceros y pipelines de CI/CD.",
+      "overview": {
+        "title": "Visión general",
+        "body": "Todas las peticiones autenticadas deben incluir una credencial válida. La API distingue el tipo por su formato:",
+        "type": "Tipo",
+        "prefix": "Prefijo",
+        "ttl": "Duración",
+        "use": "Uso",
+        "rows": {
+          "session": {
+            "name": "Sesión",
+            "prefix": "cookie",
+            "ttl": "30 días, o 7 días sin uso",
+            "use": "Dashboard web"
+          },
+          "apiKey": {
+            "name": "API key",
+            "prefix": "cek_",
+            "ttl": "Hasta que se revoque o su caducidad opcional",
+            "use": "Integraciones, scripts"
+          },
+          "ciToken": {
+            "name": "Token de CI",
+            "prefix": "ci_ → ci_s_",
+            "ttl": "Token hasta que se revoque; cada sesión ci_s_ dura 1 hora",
+            "use": "Pipelines de CI/CD"
+          }
+        }
+      },
+      "session": {
+        "title": "Sesión (cookies)",
+        "body": "Cuando inicias sesión en el dashboard web, el servidor crea una cookie HTTP-only segura que el navegador envía automáticamente en cada petición siguiente.",
+        "cookie": "La cookie de sesión es <code>HttpOnly</code>, <code>Secure</code> y usa <code>SameSite=Lax</code>. JavaScript no puede leerla, lo que la protege frente a XSS.",
+        "loginTitle": "Flujo de inicio de sesión",
+        "twoFactor": "Si la cuenta tiene 2FA y el navegador no está recordado, el inicio de sesión devuelve un desafío temporal y no crea la cookie de sesión hasta validar el segundo factor.",
+        "expiryTitle": "Caducidad de la sesión",
+        "expiry": "La sesión caduca 30 días después de iniciar sesión, o antes, tras 7 días sin ninguna petición. No se amplía más allá de 30 días; después hay que volver a iniciar sesión."
+      },
+      "apiKeys": {
+        "title": "API keys",
+        "body": "Las API keys empiezan con <code>cek_</code> y valen hasta que se revocan (o hasta su caducidad opcional). Son ideales para integraciones server-to-server que leen proyectos, entornos y vault blobs cifrados mediante la API pública.",
+        "scopesTitle": "Scopes",
+        "scopesBody": "Hoy la API pública aplica <code>read:secrets</code> para la lectura del vault y respeta <code>environment_scope</code>, que debe ser un entorno existente. Los scopes de escritura quedan reservados para futuros endpoints públicos.",
+        "scope": "Scope",
+        "permission": "Permiso",
+        "scopes": {
+          "readSecrets": "Lectura de proyectos, entornos y vault blobs cifrados",
+          "writeSecrets": "Reservado para futuras escrituras mediante la API pública",
+          "adminProject": "Reservado para futura administración mediante la API pública",
+          "envScope": "Restringe la key a ese entorno",
+          "envNull": "Permite la lectura en todos los entornos del proyecto"
+        },
+        "createTitle": "Crear una API key",
+        "keyOnce": "El campo <code>key</code> solo se devuelve al crearla. Guárdalo en un lugar seguro; si lo pierdes, revoca la clave y crea una nueva.",
+        "useTitle": "Usar la API key en las peticiones"
+      },
+      "ci": {
+        "title": "Tokens de CI",
+        "body": "Los tokens de CI empiezan con <code>ci_</code> y están pensados para pipelines de CI/CD. El pipeline intercambia el token por una sesión temporal <code>ci_s_</code> de 1 hora, con scopes como <code>read:secrets</code>, <code>write:secrets</code> y <code>write:integrations</code>.",
+        "createTitle": "Crear un token de CI",
+        "actionTitle": "Usar un token de CI en GitHub Actions",
+        "actionBody": "Guarda el token (<code>ci_...</code>) y la contraseña del vault como GitHub Secrets. La Action intercambia el token por una sesión <code>ci_s_</code> (<code>POST /api/v1/auth/ci-login</code>), descarga los blobs (<code>GET /api/v1/ci/secrets</code>) y los descifra localmente con la contraseña del vault."
+      },
+      "oauth": {
+        "body": "CriptEnv admite el inicio de sesión social mediante OAuth 2.0 con estos proveedores:",
+        "providers": {
+          "github": "<strong>GitHub</strong> — ideal para desarrolladores que ya usan GitHub a diario.",
+          "google": "<strong>Google</strong> — inicio de sesión rápido con tu cuenta de Google personal o de empresa.",
+          "discord": "<strong>Discord</strong> — para miembros de la comunidad de CriptEnv en Discord."
+        },
+        "flow": "El proveedor devuelve al usuario a <code>/api/auth/oauth/github/callback?code=…&state=…</code>. La API valida el <code>state</code>, intercambia el código, crea o vincula la cuenta, crea la cookie de sesión y redirige a la app."
+      },
+      "errors": {
+        "title": "Errores de autenticación",
+        "body": "Los errores siguen el formato de FastAPI: un campo <code>detail</code> con el mensaje, o un objeto con <code>code</code> y <code>message</code> para los errores de scope y de entorno."
+      },
+      "practices": {
+        "title": "Buenas prácticas",
+        "items": {
+          "apiKeys": "Usa <strong>API keys</strong> para integraciones server-to-server con los scopes mínimos necesarios.",
+          "ciTokens": "Usa <strong>tokens de CI</strong> en los pipelines: cada sesión dura solo 1 hora.",
+          "noFrontend": "Nunca expongas API keys en el frontend ni en los logs de CI.",
+          "rotate": "Rota las API keys periódicamente y revoca las que no uses.",
+          "envScope": "Define <code>environment_scope</code> para limitar el impacto de una clave comprometida."
+        }
+      }
+    },
+    "overview": {
+      "description": "La API REST de CriptEnv permite integrar la gestión de secrets en cualquier pipeline, herramienta o aplicación. Esta referencia cubre los endpoints disponibles, la autenticación, el formato de respuesta y el manejo de errores.",
+      "baseUrl": {
+        "title": "URL base",
+        "body": "Todos los endpoints de la API están bajo esta URL base:",
+        "authNote": "Los endpoints de autenticación (inicio de sesión, sesiones, 2FA, OAuth) están bajo <code>/api/auth</code>. Todas las peticiones deben usar HTTPS."
+      },
+      "auth": {
+        "title": "Autenticación",
+        "body": "La API acepta tres tipos de credenciales, cada uno adecuado para un escenario distinto:",
+        "cards": {
+          "session": {
+            "title": "Sesión",
+            "body": "Cookie HTTP-only creada al iniciar sesión, para el dashboard web. Dura 30 días, o 7 días sin uso."
+          },
+          "apiKey": {
+            "title": "API key",
+            "body": "Token con prefijo <code>cek_</code> para integraciones y scripts. Puede restringirse a un entorno."
+          },
+          "ciToken": {
+            "title": "Token de CI",
+            "body": "Token con prefijo <code>ci_</code> para pipelines de CI/CD, que se intercambia por sesiones <code>ci_s_</code> de 1 hora."
+          }
+        },
+        "more": "Para más detalles sobre cada método, consulta la <link>documentación de autenticación</link>."
+      },
+      "format": {
+        "title": "Formato de respuesta",
+        "body": "Todas las respuestas son JSON, con Content-Type <code>application/json</code>.",
+        "success": "Respuesta correcta",
+        "list": "Respuesta de lista",
+        "listBody": "Las listas vienen dentro de un objeto, con los elementos y un total.",
+        "error": "Respuesta de error"
+      },
+      "status": {
+        "title": "Códigos de estado HTTP",
+        "codes": {
+          "200": "Éxito: operación completada",
+          "201": "Creado: recurso creado",
+          "204": "Sin contenido: operación sin cuerpo (p. ej. DELETE)",
+          "400": "Petición incorrecta: datos u operación no válidos",
+          "401": "No autenticado: credencial ausente o no válida",
+          "403": "Prohibido: sin permiso para esta operación",
+          "404": "No encontrado: el recurso no existe o no tienes acceso",
+          "409": "Conflicto: el recurso ya existe o la versión está desactualizada",
+          "422": "No procesable: la petición no superó la validación",
+          "429": "Demasiadas peticiones: límite superado",
+          "500": "Error interno: error inesperado del servidor"
+        }
+      },
+      "rateLimit": {
+        "title": "Rate limiting",
+        "body": "La API aplica límites de tasa para proteger el servicio frente a abusos. Los límites dependen del tipo de autenticación:",
+        "type": "Credencial",
+        "limit": "Límite",
+        "window": "Ventana",
+        "perMinute": "por minuto",
+        "rows": {
+          "public": "Endpoints públicos (por IP)",
+          "apiKey": "API key (por clave)",
+          "ciToken": "Token de CI (por token)",
+          "auth": "Endpoints de auth (por IP)"
+        },
+        "headers": "Las cabeceras de rate limit se incluyen en las respuestas:",
+        "exceeded": "Cuando se supera el límite, la API devuelve <code>429 Too Many Requests</code> con un campo <code>retry_after</code> (en segundos) en el cuerpo de la respuesta."
+      },
+      "pagination": {
+        "title": "Paginación",
+        "body": "La mayoría de las listas devuelven todos los elementos de una vez. Los endpoints paginados documentan sus propios parámetros; por ejemplo, el audit log usa <code>page</code> y <code>per_page</code> (por defecto 50, máx. 100)."
+      },
+      "domains": {
+        "title": "Referencia por dominio",
+        "items": {
+          "authentication": {
+            "title": "Autenticación",
+            "description": "Sesiones, API keys, tokens de CI y OAuth."
+          },
+          "projects": {
+            "title": "Proyectos",
+            "description": "CRUD de proyectos y re-key del vault."
+          },
+          "environments": {
+            "title": "Entornos",
+            "description": "Entornos dentro de un proyecto."
+          },
+          "vault": {
+            "title": "Vault",
+            "description": "Push, pull y versionado de secrets cifrados."
+          },
+          "members": {
+            "title": "Miembros",
+            "description": "Roles y acceso a los proyectos."
+          },
+          "invites": {
+            "title": "Invitaciones",
+            "description": "Invitaciones por email para unirse a un proyecto."
+          },
+          "ciTokens": {
+            "title": "Tokens de CI",
+            "description": "Tokens para pipelines de CI/CD."
+          },
+          "rotation": {
+            "title": "Rotación",
+            "description": "Rotación, caducidad y alertas."
+          },
+          "integrations": {
+            "title": "Integraciones",
+            "description": "Sincronización con Vercel y Render."
+          },
+          "audit": {
+            "title": "Auditoría",
+            "description": "Registro de auditoría del proyecto."
+          },
+          "health": {
+            "title": "Health",
+            "description": "Comprobaciones de disponibilidad."
+          }
+        }
       }
     }
   }

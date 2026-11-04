@@ -1,319 +1,230 @@
 'use client';
 
+import { useTranslations } from 'next-intl';
 import {
   Breadcrumb,
+  Callout,
   CodeBlock,
   EndpointBadge,
   ParamTable,
   ResponseBlock,
-  Callout,
 } from '@/components/docs';
 
+const API = 'https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}';
+const SECRET = `${API}/environments/{eid}/secrets/{secret_key}`;
+const codeClass = 'bg-muted px-1 rounded text-sm';
+
 export default function RotationPage() {
+  const t = useTranslations('docs.api.rotation');
+  const tRoot = useTranslations('docs');
+  const code = (chunks: React.ReactNode) => <code className={codeClass}>{chunks}</code>;
+
   return (
     <div className="max-w-3xl mx-auto py-10 px-4">
       <Breadcrumb
         items={[
-          { label: 'Docs', href: '/docs' },
+          { label: tRoot('breadcrumb.docs'), href: '/docs' },
           { label: 'API Reference', href: '/docs/api' },
-          { label: 'Secret Rotation' },
+          { label: t('breadcrumb') },
         ]}
       />
 
-      <h1 className="text-4xl font-bold mt-6 mb-2">Secret Rotation</h1>
-      <p className="text-lg text-muted-foreground mb-8">
-        Gerencie políticas de rotação de segredos para manter suas credenciais
-         sempre atualizadas. O CriptEnv suporta manual e notify; a rotação automática
-         está planejada, mas ainda não foi implementada.
-      </p>
+      <h1 className="text-4xl font-bold mt-6 mb-2">{t('title')}</h1>
+      <p className="text-lg text-muted-foreground mb-8">{t('description')}</p>
 
-      <Callout variant="info">
-        <strong>Políticas disponíveis:</strong>
-        <br />• <strong>manual</strong> — você rotaciona quando quiser
-         <br />• <strong>notify</strong> — alerta quando o segredo expira
-         <br />• <strong>auto</strong> — planejada; ainda não implementada
-        <br />Mutações de rotação/expiração exigem admin ou owner; consultas
-        continuam disponíveis para membros do projeto.
-      </Callout>
+      <Callout variant="info">{t.rich('callout', { code })}</Callout>
 
-      {/* POST /secrets/:id/rotate */}
+      {/* POST rotate */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Rotacionar segredo
+          <EndpointBadge method="POST" /> {t('rotate.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Rotaciona o valor de um segredo imediatamente. O valor anterior é
-          mantido no histórico. Requer admin/owner.
-        </p>
-
+        <p className="text-muted-foreground mb-4">{t.rich('rotate.body', { code })}</p>
         <ParamTable
           params={[
-            {
-              name: 'value',
-              type: 'string',
-              required: true,
-              description: 'Novo valor do segredo',
-            },
+            { name: 'new_value', type: 'string', required: true, description: t('rotate.params.newValue') },
+            { name: 'iv', type: 'string', required: true, description: t('rotate.params.iv') },
+            { name: 'auth_tag', type: 'string', required: true, description: t('rotate.params.authTag') },
+            { name: 'reason', type: 'string', required: false, description: t('rotate.params.reason') },
+            { name: 'expected_version', type: 'integer', required: false, description: t('rotate.params.expectedVersion') },
           ]}
         />
-
         <CodeBlock
           language="bash"
-          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/rotate \\
-  -H "Authorization: Bearer {token}" \\
-  -H "Content-Type: application/json" \\
-  -d '{"value": "new-secret-value-here"}'`}
-        />
-
-        <ResponseBlock status={200}>{`{
-  "id": "sec_abc123",
-  "name": "API_KEY",
-  "rotated_at": "2025-02-01T10:00:00Z",
-  "version": 3
-}`}</ResponseBlock>
-      </section>
-
-      {/* POST /secrets/:id/expiration */}
-      <section className="mt-10">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="POST" /> Definir expiração
-        </h2>
-        <p className="text-muted-foreground mb-4">
-          Configura a data de expiração e a política de rotação para um segredo.
-          Requer admin/owner.
-        </p>
-
-        <ParamTable
-          params={[
-            {
-              name: 'expires_at',
-              type: 'string',
-              required: true,
-              description: 'Data de expiração (ISO 8601)',
-            },
-            {
-              name: 'policy',
-              type: 'string',
-              required: true,
-               description: 'Política: manual ou notify; auto está planejada e não implementada',
-            },
-          ]}
-        />
-
-        <CodeBlock
-          language="bash"
-          code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/expiration \\
+          code={`curl -X POST ${SECRET}/rotate \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{
-    "expires_at": "2025-03-01T00:00:00Z",
-    "policy": "notify"
+    "new_value": "<ciphertext-base64>",
+    "iv": "<iv-base64>",
+    "auth_tag": "<auth-tag-base64>",
+    "reason": "Scheduled rotation"
   }'`}
         />
-
         <ResponseBlock status={200}>{`{
-  "id": "sec_abc123",
-  "expires_at": "2025-03-01T00:00:00Z",
-  "rotation_policy": "notify"
+  "rotation_id": "0a1b2c3d-4e5f-4a6b-7c8d-9e0f1a2b3c4d",
+  "secret_key": "API_KEY",
+  "rotated_at": "2026-02-01T10:00:00Z",
+  "new_version": 4,
+  "previous_version": 3
 }`}</ResponseBlock>
       </section>
 
-      {/* GET /secrets/:id/rotation/status */}
+      {/* POST expiration */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Status da rotação
+          <EndpointBadge method="POST" /> {t('expiration.title')}
         </h2>
-        <p className="text-muted-foreground mb-4">
-          Consulta o status atual da rotação de um segredo, incluindo política,
-          expiração e dias restantes.
-        </p>
-
-        <CodeBlock
-          language="bash"
-          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/rotation/status \\
-  -H "Authorization: Bearer {token}"`}
-        />
-
-        <ResponseBlock status={200}>{`{
-  "secret_id": "sec_abc123",
-  "rotation_policy": "notify",
-  "expires_at": "2025-03-01T00:00:00Z",
-  "days_remaining": 28,
-  "last_rotated_at": "2025-01-31T12:00:00Z",
-  "version": 3
-}`}</ResponseBlock>
-      </section>
-
-      {/* GET /secrets/:id/rotation/history */}
-      <section className="mt-10">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Histórico de rotações
-        </h2>
-        <p className="text-muted-foreground mb-4">
-          Retorna o histórico completo de rotações do segredo.
-        </p>
-
-        <CodeBlock
-          language="bash"
-          code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/rotation/history \\
-  -H "Authorization: Bearer {token}"`}
-        />
-
-        <ResponseBlock status={200}>{`{
-  "history": [
-    {
-      "version": 3,
-      "rotated_at": "2025-02-01T10:00:00Z",
-      "rotated_by": "usr_123",
-      "reason": "manual"
-    },
-    {
-      "version": 2,
-      "rotated_at": "2025-01-15T08:00:00Z",
-      "rotated_by": "system",
-       "reason": "notify"
-    }
-  ]
-}`}</ResponseBlock>
-      </section>
-
-      {/* DELETE /secrets/:id/expiration */}
-      <section className="mt-10">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="DELETE" /> Remover expiração
-        </h2>
-        <p className="text-muted-foreground mb-4">
-          Remove a política de expiração e rotação de um segredo. Requer admin/owner.
-        </p>
-
-        <CodeBlock
-          language="bash"
-          code={`curl -X DELETE https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/sec_abc123/expiration \\
-  -H "Authorization: Bearer {token}"`}
-        />
-
-        <ResponseBlock status={200}>{`{ "deleted": true }`}</ResponseBlock>
-      </section>
-
-      {/* GET /secrets/expiring */}
-      <section className="mt-10">
-        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-          <EndpointBadge method="GET" /> Segredos expirando
-        </h2>
-        <p className="text-muted-foreground mb-4">
-          Lista todos os segredos do projeto que estão próximos da expiração.
-        </p>
-
+        <p className="text-muted-foreground mb-4">{t('expiration.body')}</p>
         <ParamTable
           params={[
-            {
-              name: 'days',
-              type: 'integer',
-              required: false,
-              description: 'Dias até a expiração (padrão: 30)',
-            },
+            { name: 'secret_key', type: 'string', required: true, description: t('expiration.params.secretKey') },
+            { name: 'expires_at', type: 'datetime', required: true, description: t('expiration.params.expiresAt') },
+            { name: 'rotation_policy', type: 'string', required: false, description: t('expiration.params.policy') },
+            { name: 'notify_days_before', type: 'integer', required: false, description: t('expiration.params.notifyDays') },
           ]}
         />
-
         <CodeBlock
           language="bash"
-          code={`curl "https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/secrets/expiring?days=30" \\
-  -H "Authorization: Bearer {token}"`}
+          code={`curl -X POST ${SECRET}/expiration \\
+  -H "Authorization: Bearer {token}" \\
+  -H "Content-Type: application/json" \\
+  -d '{
+    "secret_key": "API_KEY",
+    "expires_at": "2026-05-01T00:00:00Z",
+    "rotation_policy": "notify",
+    "notify_days_before": 14
+  }'`}
         />
-
-        <ResponseBlock status={200}>{`{
-  "expiring": [
-    {
-      "id": "sec_abc123",
-      "name": "API_KEY",
-      "expires_at": "2025-02-15T00:00:00Z",
-      "days_remaining": 14,
-      "rotation_policy": "notify"
-    }
-  ]
+        <ResponseBlock status={201}>{`{
+  "id": "1b2c3d4e-5f6a-4b7c-8d9e-0f1a2b3c4d5e",
+  "secret_key": "API_KEY",
+  "expires_at": "2026-05-01T00:00:00Z",
+  "rotation_policy": "notify",
+  "notify_days_before": 14,
+  "last_notified_at": null,
+  "is_expired": false,
+  "days_until_expiration": 89,
+  "needs_rotation": false
 }`}</ResponseBlock>
       </section>
 
+      {/* GET rotation status */}
       <section className="mt-10">
-        <h2 className="text-2xl font-bold mb-4">Configurações de alertas do projeto</h2>
-        <p className="text-muted-foreground mb-4">
-          Owners e admins podem configurar alertas de expiração nos canais in-app,
-          email e webhook. Developers e viewers não recebem esses alertas nem podem
-          alterar as configurações.
-        </p>
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <EndpointBadge method="GET" /> {t('status.title')}
+        </h2>
+        <p className="text-muted-foreground mb-4">{t('status.body')}</p>
+        <CodeBlock language="bash" code={`curl ${SECRET}/rotation \\
+  -H "Authorization: Bearer {token}"`} />
+        <ResponseBlock status={200}>{`{
+  "secret_key": "API_KEY",
+  "current_version": 4,
+  "expires_at": "2026-05-01T00:00:00Z",
+  "rotation_policy": "notify",
+  "rotated_at": "2026-02-01T10:00:00Z",
+  "last_notified_at": null
+}`}</ResponseBlock>
+      </section>
 
-        <div className="space-y-6">
-          <div>
-            <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-              <EndpointBadge method="GET" /> Consultar configurações
-            </h3>
-            <CodeBlock
-              language="bash"
-              code={`curl https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/alert-settings \\
-  -H "Authorization: Bearer {token}"`}
-            />
-            <ResponseBlock status={200}>{`{
+      {/* GET rotation history */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <EndpointBadge method="GET" /> {t('history.title')}
+        </h2>
+        <p className="text-muted-foreground mb-4">{t('history.body')}</p>
+        <CodeBlock language="bash" code={`curl ${SECRET}/rotation/history \\
+  -H "Authorization: Bearer {token}"`} />
+        <ResponseBlock status={200}>{`{
+  "items": [
+    {
+      "id": "0a1b2c3d-4e5f-4a6b-7c8d-9e0f1a2b3c4d",
+      "secret_key": "API_KEY",
+      "previous_version": 3,
+      "new_version": 4,
+      "rotated_by": "1a2b3c4d-5e6f-4a7b-8c9d-0e1f2a3b4c5d",
+      "rotated_at": "2026-02-01T10:00:00Z",
+      "reason": "Scheduled rotation"
+    }
+  ],
+  "total": 1
+}`}</ResponseBlock>
+      </section>
+
+      {/* DELETE expiration */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <EndpointBadge method="DELETE" /> {t('removeExpiration.title')}
+        </h2>
+        <p className="text-muted-foreground mb-4">{t('removeExpiration.body')}</p>
+        <CodeBlock language="bash" code={`curl -X DELETE ${SECRET}/expiration \\
+  -H "Authorization: Bearer {token}"`} />
+      </section>
+
+      {/* GET expiring */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <EndpointBadge method="GET" /> {t('expiring.title')}
+        </h2>
+        <p className="text-muted-foreground mb-4">{t('expiring.body')}</p>
+        <ParamTable
+          params={[{ name: 'days', type: 'integer', required: false, description: t('expiring.params.days') }]}
+        />
+        <CodeBlock language="bash" code={`curl "${API}/secrets/expiring?days=30" \\
+  -H "Authorization: Bearer {token}"`} />
+        <ResponseBlock status={200}>{`{
+  "items": [ ... ],
+  "total": 1,
+  "page": 1,
+  "page_size": 50
+}`}</ResponseBlock>
+      </section>
+
+      {/* Alert settings */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-4">{t('alerts.title')}</h2>
+        <p className="text-muted-foreground mb-4">{t.rich('alerts.body', { code })}</p>
+
+        <h3 className="text-xl font-semibold mt-6 mb-3 flex items-center gap-2">
+          <EndpointBadge method="GET" /> {t('alerts.get')}
+        </h3>
+        <CodeBlock language="bash" code={`curl ${API}/alert-settings \\
+  -H "Authorization: Bearer {token}"`} />
+        <ResponseBlock status={200}>{`{
   "enabled": true,
   "default_notify_days_before": 7,
-  "channels": { "in_app": true, "email": false, "webhook": false },
-  "webhook_configured": false,
-  "webhook_url_preview": null
+  "channels": { "in_app": true, "email": true, "webhook": false },
+  "webhook_url_preview": null,
+  "webhook_configured": false
 }`}</ResponseBlock>
-          </div>
 
-          <div>
-            <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-              <EndpointBadge method="PATCH" /> Atualizar configurações
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Omitir um campo preserva seu valor. Envie <code>webhook_url: null</code>
-              explicitamente para remover o webhook. O URL completo nunca retorna ao
-              cliente e é cifrado em repouso.
-            </p>
-            <CodeBlock
-              language="bash"
-              code={`curl -X PATCH https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/alert-settings \\
+        <h3 className="text-xl font-semibold mt-6 mb-3 flex items-center gap-2">
+          <EndpointBadge method="PATCH" /> {t('alerts.update')}
+        </h3>
+        <ParamTable
+          params={[
+            { name: 'enabled', type: 'boolean', required: false, description: t('alerts.params.enabled') },
+            { name: 'default_notify_days_before', type: 'integer', required: false, description: t('alerts.params.notifyDays') },
+            { name: 'channels', type: 'object', required: false, description: t('alerts.params.channels') },
+            { name: 'webhook_url', type: 'string', required: false, description: t('alerts.params.webhookUrl') },
+          ]}
+        />
+        <CodeBlock language="bash" code={`curl -X PATCH ${API}/alert-settings \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
   -d '{
     "enabled": true,
-    "default_notify_days_before": 7,
-    "channels": { "in_app": true, "email": true, "webhook": false }
-  }'`}
-            />
-          </div>
+    "default_notify_days_before": 14,
+    "channels": { "in_app": true, "email": true, "webhook": true },
+    "webhook_url": "https://hooks.example.com/criptenv"
+  }'`} />
 
-          <div>
-            <h3 className="text-xl font-semibold mb-2 flex items-center gap-2">
-              <EndpointBadge method="POST" /> Testar webhook
-            </h3>
-            <p className="text-muted-foreground mb-4">
-              Usa somente o webhook salvo e envia um evento sintético com
-              <code>payload_version: 1</code> e <code>test: true</code>. O teste não
-              altera a expiração nem <code>last_notified_at</code>.
-            </p>
-            <CodeBlock
-              language="bash"
-              code={`curl -X POST https://criptenv-api.77mdevseven.tech/api/v1/projects/{pid}/alert-settings/test-webhook \\
-  -H "Authorization: Bearer {token}"`}
-            />
-          </div>
-        </div>
-
-        <Callout variant="info">
-          <strong>Entrega e segurança:</strong> o owner e membros owner/admin
-          aceitos são destinatários; email exige <code>email_verified=true</code>.
-          Cada entrega tem identidade única, fencing token e até três tentativas
-          compartilhadas. Falhas ficam elegíveis para retry; email e webhook são
-          at-least-once após crashes e webhooks usam uma chave de idempotência estável.
-          O payload contém apenas identificadores, nomes, expiração, dias restantes e
-          link de ação: nunca plaintext, ciphertext, IV, tag, senha ou credenciais.
-          <br /><br />
-          <strong>Por secret:</strong> <code>notify_days_before</code> explícito no
-          secret vence o default do projeto. O default (7 dias) só é aplicado ao criar
-          uma expiração sem esse campo; alterar o default não reescreve expirações
-          existentes.
-        </Callout>
+        <h3 className="text-xl font-semibold mt-6 mb-3 flex items-center gap-2">
+          <EndpointBadge method="POST" /> {t('alerts.test')}
+        </h3>
+        <p className="text-muted-foreground mb-4">{t('alerts.testBody')}</p>
+        <CodeBlock language="bash" code={`curl -X POST ${API}/alert-settings/test-webhook \\
+  -H "Authorization: Bearer {token}"`} />
       </section>
     </div>
   );
