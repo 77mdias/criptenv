@@ -104,12 +104,23 @@ class VercelProvider(IntegrationProvider):
         self._check_target(environment)
 
         async with self._client(config) as client:
-            response = ensure_ok(
-                await client.get(f"/v10/projects/{project_id}/env"), "Vercel"
-            )
+            envs: list[dict] = []
+            params: dict = {}
+            while True:
+                page = ensure_ok(
+                    await client.get(f"/v10/projects/{project_id}/env", params=params), "Vercel"
+                ).json()
+                envs.extend(page.get("envs", []))
+                # Vercel lists page by timestamp: pagination.next is passed back as `until`.
+                next_cursor = (page.get("pagination") or {}).get("next")
+                if not next_cursor:
+                    break
+                if next_cursor == params.get("until"):
+                    raise ProviderError("Vercel repeated a page; pull aborted to avoid a partial result")
+                params = {"until": next_cursor}
 
             secrets = []
-            for env in response.json().get("envs", []):
+            for env in envs:
                 target = env.get("target") or []
                 targets = [target] if isinstance(target, str) else target
                 if (

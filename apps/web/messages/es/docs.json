@@ -578,7 +578,7 @@
         "title": "Sync con la CLI",
         "codeTitle": "Push a Cloudflare Workers"
       },
-      "versionWarning": "Cada push envía todos los secrets en una sola solicitud, lo que crea una nueva versión del Worker. Los secrets con el mismo nombre se sobrescriben; los que solo existen en Cloudflare no se modifican."
+      "versionWarning": "Cada push envía los secrets en solicitudes de hasta 100, y cada solicitud crea una nueva versión del Worker. Si una falla, los lotes anteriores siguen aplicados. Los secrets con el mismo nombre se sobrescriben; los que solo existen en Cloudflare no se modifican."
     },
     "githubAction": {
       "description": "Usa la Action oficial de CriptEnv (<code>@criptenv/action</code>) para descifrar e inyectar tus variables de entorno directamente en tus workflows de GitHub Actions.",

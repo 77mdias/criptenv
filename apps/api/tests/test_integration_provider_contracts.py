@@ -131,6 +131,35 @@ class TestVercelContract:
         assert [call.url.path for call in calls] == ["/v10/projects/prj_1/env", "/v1/projects/prj_1/env/e2"]
 
     @pytest.mark.asyncio
+    async def test_pull_follows_pagination_until_next_is_null(self, http):
+        calls, routes = http
+        pages = {
+            None: {"envs": [{"id": "e1", "key": "A", "value": "1", "type": "plain", "target": ["production"]}],
+                   "pagination": {"count": 1, "next": 1700000000000, "prev": None}},
+            "1700000000000": {"envs": [{"id": "e2", "key": "B", "value": "2", "type": "plain", "target": ["production"]}],
+                              "pagination": {"count": 1, "next": None, "prev": 1700000000001}},
+        }
+        routes[("GET", "/v10/projects/prj_1/env")] = lambda request: httpx.Response(
+            200, json=pages[request.url.params.get("until")]
+        )
+
+        secrets = await VercelProvider().pull_secrets(VERCEL, "production")
+
+        assert secrets == [{"key": "A", "value": "1"}, {"key": "B", "value": "2"}]
+        assert calls[1].url.params["until"] == "1700000000000"
+        assert calls[1].url.params["teamId"] == "team_1"
+
+    @pytest.mark.asyncio
+    async def test_pull_aborts_when_vercel_repeats_a_page(self, http):
+        _, routes = http
+        routes[("GET", "/v10/projects/prj_1/env")] = httpx.Response(200, json={
+            "envs": [], "pagination": {"count": 0, "next": 1700000000000, "prev": None},
+        })
+
+        with pytest.raises(ProviderError, match="partial result"):
+            await VercelProvider().pull_secrets(VERCEL, "production")
+
+    @pytest.mark.asyncio
     async def test_validate_fetches_the_configured_project(self, http):
         calls, routes = http
         routes[("GET", "/v9/projects/prj_1")] = httpx.Response(200, json={"id": "prj_1"})
@@ -216,6 +245,16 @@ class TestCloudflareContract:
             "DATABASE_URL": {"name": "DATABASE_URL", "type": "secret_text", "text": "postgres://x"},
             "API_KEY": {"name": "API_KEY", "type": "secret_text", "text": "sk_1"},
         }}
+
+    @pytest.mark.asyncio
+    async def test_push_splits_into_batches_of_100(self, http):
+        calls, routes = http
+        routes[("PATCH", f"{self.PATH}-bulk")] = httpx.Response(200, json={"success": True, "result": {}})
+        secrets = [{"key": f"K{i}", "value": str(i)} for i in range(250)]
+
+        assert await CloudflareWorkersProvider().push_secrets(secrets, CLOUDFLARE, "production") is True
+
+        assert [len(json.loads(call.content)["secrets"]) for call in calls] == [100, 100, 50]
 
     @pytest.mark.asyncio
     async def test_push_surfaces_cloudflare_error_message(self, http):
