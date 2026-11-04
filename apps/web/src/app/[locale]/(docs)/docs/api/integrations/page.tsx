@@ -151,13 +151,30 @@ export default function IntegrationsPage() {
           code={`curl -X POST ${API}/{integration_id}/sync \\
   -H "Authorization: Bearer {token}" \\
   -H "Content-Type: application/json" \\
-  -d '{"direction": "push", "environment": "production"}'`}
+  -d '{"direction": "push", "environment": "production",
+       "secrets": [{"key": "DATABASE_URL", "value": "postgres://..."}]}'`}
         />
 
         <ResponseBlock status={200}>{`{
   "success": true,
-  "message": "Synced 5 secrets",
-  "synced_count": 5
+  "message": "Successfully synced push (production)",
+  "synced_count": 1,
+  "secrets": null
+}`}</ResponseBlock>
+
+        <CodeBlock
+          language="bash"
+          code={`curl -X POST ${API}/{integration_id}/sync \\
+  -H "Authorization: Bearer {token}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"direction": "pull", "environment": "production"}'`}
+        />
+
+        <ResponseBlock status={200}>{`{
+  "success": true,
+  "message": "Successfully synced pull (production)",
+  "synced_count": 1,
+  "secrets": [{"key": "DATABASE_URL", "value": "postgres://..."}]
 }`}</ResponseBlock>
       </section>
 

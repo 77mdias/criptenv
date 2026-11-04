@@ -2,7 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Breadcrumb, DocCard, CardGrid } from '@/components/docs';
-import { GitBranch, Server, Triangle, TrainFront } from 'lucide-react';
+import { Cloud, GitBranch, Server, Triangle, TrainFront } from 'lucide-react';
 
 export default function IntegrationsPage() {
   const t = useTranslations('docs.integrations.overview');
@@ -33,6 +33,12 @@ export default function IntegrationsPage() {
           description={t('cards.vercel')}
           href="/docs/integrations/vercel"
           icon={Triangle}
+        />
+        <DocCard
+          title="Cloudflare Workers"
+          description={t('cards.cloudflare')}
+          href="/docs/integrations/cloudflare"
+          icon={Cloud}
         />
         <DocCard
           title="Railway"

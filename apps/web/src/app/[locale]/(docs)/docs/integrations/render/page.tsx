@@ -13,6 +13,7 @@ export default function RenderIntegrationPage() {
   const t = useTranslations('docs.integrations.render');
   const tRoot = useTranslations('docs');
   const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
+  const code = (chunks: React.ReactNode) => <code>{chunks}</code>;
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
@@ -41,20 +42,22 @@ export default function RenderIntegrationPage() {
 
         <Step title={t('setup.step2.title')}>
           <p className="text-muted-foreground">
-            {t.rich('setup.step2.body', { strong })}
+            {t.rich('setup.step2.body', { strong, code })}
           </p>
+          <CodeBlock language="bash">
+{`criptenv integrations connect render \\
+  --token <render-api-key> \\
+  --project-id <srv-service-id>`}
+          </CodeBlock>
         </Step>
 
         <Step title={t('setup.step3.title')}>
           <p className="text-muted-foreground">
             {t('setup.step3.body')}
           </p>
-        </Step>
-
-        <Step title={t('setup.step4.title')}>
-          <p className="text-muted-foreground">
-            {t('setup.step4.body')}
-          </p>
+          <CodeBlock language="bash">
+{`criptenv integrations validate <integration-id>`}
+          </CodeBlock>
         </Step>
       </Steps>
 
@@ -62,31 +65,15 @@ export default function RenderIntegrationPage() {
         {t('cli.title')}
       </h2>
       <CodeBlock language="bash" title={t('cli.codeTitle')}>
-{`# Sync with Render (production by default)
-criptenv integrations sync --provider render --project <project-id>
+{`# Push a CriptEnv environment to the Render service
+criptenv integrations sync --provider render --env production
 
-# Sync a specific environment
-criptenv integrations sync --provider render --env staging --project <project-id>`}
-      </CodeBlock>
-
-      <h2 className="text-2xl font-semibold mt-10 mb-4">
-        {t('example.title')}
-      </h2>
-      <CodeBlock language="yaml" title="render.yaml (Blueprint)">
-{`services:
-  - type: web
-    name: my-app
-    runtime: node
-    buildCommand: npm install && npm run build
-    startCommand: npm start
-    envVars:
-      - sync: false  # Variables managed by CriptEnv
-    envVarGroups:
-      - name: my-env-group`}
+# Import the service's variables into CriptEnv (encrypted locally)
+criptenv integrations sync --provider render --env production --direction pull`}
       </CodeBlock>
 
       <Callout variant="tip">
-        {t('groupsTip')}
+        {t('scopeTip')}
       </Callout>
 
       <Callout variant="warning">

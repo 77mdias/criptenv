@@ -40,6 +40,7 @@
       "overview": "Overview",
       "githubAction": "GitHub Action",
       "vercel": "Vercel",
+      "cloudflare": "Cloudflare Workers",
       "railway": "Railway",
       "render": "Render"
     },
@@ -139,6 +140,10 @@
     "vercel": {
       "title": "Vercel",
       "description": "Sync with Vercel"
+    },
+    "cloudflare": {
+      "title": "Cloudflare Workers",
+      "description": "Push secrets to Cloudflare Workers"
     },
     "railway": {
       "title": "Railway",
@@ -473,9 +478,10 @@
       "description": "CriptEnv integrates with the main deploy and CI/CD platforms. Set up automatic sync of encrypted environment variables straight into your deploy pipeline.",
       "cards": {
         "githubAction": "Run CriptEnv directly in your GitHub Actions workflows to inject secrets securely during build and deploy.",
-        "vercel": "Automatically sync your encrypted environment variables with Vercel Environment Variables.",
+        "vercel": "Push CriptEnv secrets to a Vercel project's environment variables, or import them from Vercel.",
         "railway": "Coming soon. Railway integration for environment variable sync.",
-        "render": "Connect CriptEnv to Render to sync secrets with your Environment Groups automatically."
+        "render": "Push CriptEnv secrets to a Render service's environment variables, or import them from Render.",
+        "cloudflare": "Push CriptEnv secrets to a Cloudflare Worker as encrypted secret bindings."
       }
     },
     "railway": {
@@ -485,41 +491,44 @@
     },
     "vercel": {
       "title": "Vercel integration",
-      "description": "Set up automatic environment variable sync between CriptEnv and Vercel. As soon as you update your secrets in CriptEnv, they are propagated to your Vercel projects.",
-      "infoCallout": "The Vercel integration uses the official Vercel API to create and update Environment Variables securely.",
+      "description": "Send the secrets of a CriptEnv environment to a Vercel project's environment variables, or import Vercel's variables into CriptEnv. Secrets are decrypted and encrypted on your machine; the API only relays them to Vercel.",
+      "infoCallout": "Sync runs when you ask for it, from the CLI or a CI pipeline. There is no background sync: run it after changing secrets, or add it to your deploy workflow.",
       "setup": {
         "title": "Setup",
         "step1": {
           "title": "Create a Vercel access token",
-          "body": "Go to <link>vercel.com/account/tokens</link> and create a new token with write permission."
+          "body": "Go to <link>vercel.com/account/tokens</link> and create a token. If the project belongs to a team, scope the token to that team."
         },
         "step2": {
-          "title": "Connect Vercel in the CriptEnv dashboard",
-          "body": "In the CriptEnv dashboard, go to <strong>Project → Integrations → Vercel</strong> and paste the token. Select the Vercel project you want to sync."
+          "title": "Connect the project",
+          "body": "In the CriptEnv dashboard, open <strong>Integrations</strong>, choose <strong>Vercel</strong> and paste the token and the project ID or name. Team projects also need the team ID (<code>team_...</code>, under Team Settings). Or use the CLI:",
+          "codeTitle": "Connect with the CLI"
         },
         "step3": {
-          "title": "Map environments",
-          "body": "Map CriptEnv environments to Vercel environments:",
-          "codeTitle": "Environment mapping"
-        },
-        "step4": {
-          "title": "Turn on automatic sync",
-          "body": "Turn on automatic sync so that changes in CriptEnv are propagated to Vercel automatically."
+          "title": "Validate the connection",
+          "body": "Validation fetches the Vercel project with the stored token, so it catches a wrong token, project or team before the first sync."
         }
       },
+      "targets": {
+        "title": "Vercel environments",
+        "body": "Every sync writes to one Vercel environment: production, preview or development. It defaults to the name of the CriptEnv environment; use <code>--target</code> when the names differ.",
+        "codeTitle": "Environment mapping"
+      },
       "manual": {
-        "title": "Manual sync via CLI",
-        "body": "You can also sync manually with the CriptEnv CLI:",
+        "title": "Sync with the CLI",
+        "body": "Push sends every secret of the CriptEnv environment to Vercel. Pull imports Vercel's variables and encrypts them into the CriptEnv vault; existing secrets are kept unless you pass --overwrite.",
         "codeTitle": "Sync with Vercel"
       },
-      "example": {
-        "title": "Example Vercel project"
+      "ci": {
+        "title": "Sync from CI",
+        "body": "With a CI token that has the write:integrations scope, ci deploy imports the env file into the vault and then pushes the whole environment to Vercel."
       },
-      "overwriteWarning": "With automatic sync on, CriptEnv overwrites existing Vercel variables that have the same name. Make sure the variable names are correct."
+      "overwriteWarning": "Push overwrites Vercel variables with the same name in the target environment. Variables that exist only in Vercel are left untouched. CriptEnv writes them as Encrypted variables.",
+      "pullNote": "Pull skips Sensitive variables (Vercel never returns their values) and branch-specific Preview variables."
     },
     "render": {
       "title": "Render integration",
-      "description": "Connect CriptEnv to Render to manage your Environment Groups in one place. Keep your secrets synced automatically between CriptEnv and your Render services.",
+      "description": "Send the secrets of a CriptEnv environment to a Render service's environment variables, or import them from the service. Secrets are decrypted and encrypted on your machine; the API only relays them to Render.",
       "setup": {
         "title": "Setup",
         "step1": {
@@ -527,27 +536,49 @@
           "body": "In Render, go to <strong>Account Settings → API Keys</strong> and create a new API key. Write the value down: it is shown only once."
         },
         "step2": {
-          "title": "Connect Render in CriptEnv",
-          "body": "In the CriptEnv dashboard, go to <strong>Project → Integrations → Render</strong>. Enter the Render API key and select the Environment Group you want to sync."
+          "title": "Connect the service",
+          "body": "In the CriptEnv dashboard, open <strong>Integrations</strong>, choose <strong>Render</strong> and paste the API key and the service ID (<code>srv-...</code>, in the service URL). Or use the CLI:"
         },
         "step3": {
-          "title": "Choose the variables to sync",
-          "body": "Choose which CriptEnv variables are synced. You can sync every variable in an environment or pick them one by one."
-        },
-        "step4": {
-          "title": "Turn on sync",
-          "body": "Turn on automatic sync. From then on, changes to CriptEnv secrets are reflected in Render automatically."
+          "title": "Validate the connection",
+          "body": "Validation fetches the service with the stored key, so it catches a wrong key or service ID before the first sync."
         }
       },
       "cli": {
-        "title": "Sync via CLI",
+        "title": "Sync with the CLI",
         "codeTitle": "Sync with Render"
       },
-      "example": {
-        "title": "Example with render.yaml"
-      },
-      "groupsTip": "Render Environment Groups let you share variables across multiple services. Use this integration to keep all your services in sync with the same CriptEnv variables.",
+      "scopeTip": "Render variables belong to a service, so one integration maps to one service and the --target option is not used. Push adds or updates each variable and never deletes the service's other variables. Environment Groups are not supported yet.",
       "apiKeyWarning": "A Render API key has broad access to your account. We recommend creating a key dedicated to the CriptEnv integration."
+    },
+    "cloudflare": {
+      "title": "Cloudflare Workers integration",
+      "description": "Send the secrets of a CriptEnv environment to a Cloudflare Worker as encrypted secret bindings, available at runtime through env. Secrets are decrypted on your machine; the API only relays them to Cloudflare.",
+      "pushOnly": "Push only: Cloudflare never returns the value of a Worker secret, so this integration cannot import secrets into CriptEnv.",
+      "setup": {
+        "title": "Setup",
+        "step1": {
+          "title": "Create a Cloudflare API token",
+          "body": "Go to <link>dash.cloudflare.com/profile/api-tokens</link> and create a token with the <strong>Account → Workers Scripts → Edit</strong> permission for your account."
+        },
+        "step2": {
+          "title": "Connect the Worker",
+          "body": "In the CriptEnv dashboard, open <strong>Integrations</strong>, choose <strong>Cloudflare Workers</strong> and enter the token, the account ID (in the dashboard sidebar or <code>wrangler whoami</code>) and the Worker script name. Or use the CLI:"
+        },
+        "step3": {
+          "title": "Validate the connection",
+          "body": "Validation lists the Worker's secrets with the stored token, so it catches a wrong token, account or script name before the first sync."
+        }
+      },
+      "environments": {
+        "title": "Wrangler environments",
+        "body": "Each Wrangler environment deploys its own script, named <code>name-environment</code> (for example <code>my-app-staging</code>). Connect one integration per script and sync the matching CriptEnv environment to it."
+      },
+      "cli": {
+        "title": "Sync with the CLI",
+        "codeTitle": "Push to Cloudflare Workers"
+      },
+      "versionWarning": "Each push sends all secrets in one request, which creates a new version of the Worker. Secrets with the same name are overwritten; secrets that exist only in Cloudflare are left untouched."
     },
     "githubAction": {
       "description": "Use CriptEnv's official Action (<code>@criptenv/action</code>) to decrypt and inject your environment variables straight into your GitHub Actions workflows.",
@@ -1137,7 +1168,7 @@
         },
         "integrations": {
           "title": "Integrations",
-          "description": "Connect cloud providers (Vercel, Render) and sync secrets automatically."
+          "description": "Connect cloud providers (Vercel, Render, Cloudflare Workers) and push or pull secrets."
         },
         "rotation": {
           "title": "Rotation and expiration",
@@ -1371,7 +1402,9 @@
           "params": {
             "0": "Source .env file",
             "1": "Deploy environment",
-            "2": "Show what would be sent, without sending"
+            "2": "Show what would be sent, without sending",
+            "3": "Connected provider to push the whole environment to after the import",
+            "4": "Provider environment for --provider (default: --env)"
           }
         },
         "ciTokensList": {
@@ -1406,11 +1439,13 @@
         "integrationsConnect": {
           "description": "Connects a new cloud provider.",
           "params": {
-            "0": "Provider: vercel or render",
+            "0": "Provider: vercel, render or cloudflare",
             "1": "Provider API token",
             "2": "Integration name",
-            "3": "Project/service ID at the provider",
-            "4": "CriptEnv project ID"
+            "3": "Vercel project, Render service ID or Worker script name",
+            "4": "CriptEnv project ID",
+            "5": "Vercel team ID (team projects)",
+            "6": "Cloudflare account ID"
           }
         },
         "integrationsDisconnect": {
@@ -1421,13 +1456,23 @@
             "2": "Skip confirmation"
           }
         },
-        "integrationsSync": {
-          "description": "Syncs CriptEnv secrets with the connected provider.",
+        "integrationsValidate": {
+          "description": "Checks that an integration can still reach its provider with the stored token. Exits with code 1 when it cannot.",
           "params": {
-            "0": "Target provider: vercel or render",
-            "1": "Environment to sync (default: production)",
+            "0": "ID of the integration to validate",
+            "1": "CriptEnv project ID"
+          }
+        },
+        "integrationsSync": {
+          "description": "Pushes a CriptEnv environment to the provider, or pulls the provider's values into the vault. Exits with code 1 when the provider rejects the sync.",
+          "params": {
+            "0": "Provider: vercel, render or cloudflare",
+            "1": "CriptEnv environment (default: production)",
             "2": "Direction: push (default) or pull",
-            "3": "Project"
+            "3": "Project",
+            "4": "Provider environment (Vercel: production, preview, development; default: --env)",
+            "5": "Integration ID, when the provider has several",
+            "6": "On pull, overwrite secrets that already exist"
           }
         },
         "secretsExpire": {
@@ -1556,15 +1601,15 @@
       }
     },
     "integrations": {
-      "description": "Connect CriptEnv to hosting providers to sync secrets. Available today: Vercel and Render (Railway coming soon).",
-      "callout": "Sync works both ways: <code>push</code> sends CriptEnv secrets to the provider and <code>pull</code> imports them from the provider.",
+      "description": "Connect CriptEnv to hosting providers to sync secrets. Available today: Vercel, Render and Cloudflare Workers (Railway coming soon).",
+      "callout": "<code>push</code> sends CriptEnv secrets to the provider and <code>pull</code> reads them from the provider (Vercel and Render only). The client decrypts before a push and encrypts after a pull: the server never sees the vault keys.",
       "create": {
         "title": "Create integration",
         "body": "Connects a new hosting provider integration. The provider token is stored encrypted on the server.",
         "params": {
-          "provider": "Provider: vercel or render",
+          "provider": "Provider: vercel, render or cloudflare. Unknown providers return 422.",
           "name": "Integration name",
-          "config": "Provider settings. Vercel: api_token and project_id. Render: api_token and service_id."
+          "config": "Provider settings; missing keys return 422. Vercel: api_token, project_id and team_id for team projects. Render: api_token and service_id. Cloudflare: api_token, account_id and script_name."
         }
       },
       "list": {
@@ -1581,10 +1626,10 @@
       },
       "sync": {
         "title": "Sync",
-        "body": "Runs a sync between CriptEnv and the provider. Use <code>push</code> to send secrets to the provider or <code>pull</code> to import them.",
+        "body": "Runs a sync between CriptEnv and the provider. Use <code>push</code> to send secrets or <code>pull</code> to read them; a pull returns the values in <code>secrets</code> for the client to encrypt into the vault. Provider failures answer 200 with <code>success: false</code> and the provider's message.",
         "params": {
           "direction": "Direction: push or pull",
-          "environment": "CriptEnv environment to sync (default: production)",
+          "environment": "Provider environment. Vercel: production, preview or development (default: production). Render and Cloudflare ignore it.",
           "secrets": "Decrypted secrets to send to the provider. The server never decrypts the vault, so a push without this field sends nothing."
         }
       },
