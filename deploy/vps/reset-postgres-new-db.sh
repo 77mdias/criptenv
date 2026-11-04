@@ -105,46 +105,8 @@ status="$(docker inspect -f '{{.State.Health.Status}}' "$container_name" 2>/dev/
 
 docker exec "$container_name" psql -U "$DB_USER" -d "$DB_NAME" -c "select current_user, current_database();"
 
-echo "Bootstrapping blank database schema from API models..."
-docker compose run --rm --no-deps --entrypoint python api - <<'PY'
-import asyncio
-
-from sqlalchemy import text
-
-from app.database import Base, engine
-from app.models import (
-    APIKey,
-    AuditLog,
-    CIToken,
-    CISession,
-    Environment,
-    Project,
-    ProjectInvite,
-    ProjectMember,
-    Session,
-    User,
-    VaultBlob,
-)
-from app.models.integration import Integration
-from app.models.notification import Notification
-from app.models.oauth_account import OAuthAccount
-from app.models.secret_expiration import SecretExpiration, SecretRotation
-
-
-async def main() -> None:
-    async with engine.begin() as conn:
-        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "uuid-ossp"'))
-        await conn.execute(text('CREATE EXTENSION IF NOT EXISTS "citext"'))
-        await conn.run_sync(Base.metadata.create_all)
-    await engine.dispose()
-
-
-asyncio.run(main())
-print("Blank database schema created.")
-PY
-
-echo "Marking Alembic migrations as applied for the bootstrapped blank database..."
-docker compose run --rm --no-deps --entrypoint alembic api stamp head
+echo "Bootstrapping blank database (schema from API models + alembic stamp head)..."
+docker compose run --rm --no-deps --entrypoint python api scripts/migrate.py
 
 docker compose up -d api scheduler redis cloudflare-tunnel watchtower
 
