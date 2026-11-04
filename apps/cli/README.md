@@ -12,7 +12,7 @@ CriptEnv CLI is the command-line interface for the [CriptEnv](https://github.com
 - **Team Sync** — Everyone reads and writes the same remote encrypted vault.
 - **Secret Rotation** — Built-in commands to rotate and expire secrets.
 - **CI/CD Friendly** — Native support for CI tokens, GitHub Actions, and cloud integrations.
-- **Cloud Integrations** — Sync secrets with Vercel and Render.
+- **Cloud Integrations** — Push or pull secrets with Vercel and Render, push to Cloudflare Workers.
 
 ## Installation
 
@@ -122,9 +122,10 @@ criptenv push .env.production -p <project-id>
 | Command | Description |
 |---------|-------------|
 | `integrations list` | List cloud integrations |
-| `integrations connect` | Connect a provider (vercel, render) |
+| `integrations connect` | Connect a provider (vercel, render, cloudflare) |
 | `integrations disconnect` | Disconnect a provider |
-| `integrations sync` | Sync secrets with provider |
+| `integrations validate` | Check an integration can reach its provider |
+| `integrations sync` | Push (or `--direction pull`) an environment; `--target` picks the Vercel environment |
 
 ### Utilities
 
