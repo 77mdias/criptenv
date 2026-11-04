@@ -1,5 +1,6 @@
 """HTTP client for CriptEnv API."""
 
+import click
 import httpx
 from typing import Optional, Any
 
@@ -8,8 +9,8 @@ from criptenv.config import API_BASE_URL
 REQUEST_TIMEOUT = httpx.Timeout(timeout=30.0, connect=15.0)
 
 
-class CriptEnvAPIError(Exception):
-    """API request error."""
+class CriptEnvAPIError(click.ClickException):
+    """API request error. A ClickException so an unhandled one prints a clean error, not a traceback."""
 
     def __init__(self, status_code: int, detail: str):
         self.status_code = status_code
@@ -80,6 +81,13 @@ class CriptEnvClient:
             ):
                 # Actionable message: a revoked/expired session used to surface
                 # as a generic "API error 401" (audit P2, 2026-10).
+                if (self.session_token or "").startswith("cek_"):
+                    raise CriptEnvAPIError(
+                        401,
+                        "The API key was rejected: it is invalid, expired or revoked. "
+                        "Check CRIPTENV_API_KEY, or create a new key in the dashboard "
+                        "or with `criptenv api-keys create`.",
+                    )
                 raise CriptEnvAPIError(
                     401,
                     "Your session has expired or been revoked. "
