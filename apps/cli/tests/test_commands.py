@@ -175,3 +175,63 @@ class TestLoginApiKey:
         result = runner.invoke(main, ["login", "--api-key"], input="cek_live_prompt\n")
         assert result.exit_code == 0, result.output
         assert seen_keys == ["cek_live_prompt"]
+
+
+class TestCleanErrors:
+    def test_unhandled_api_error_prints_message_not_traceback(self, runner, mock_config_dir):
+        from unittest.mock import patch
+
+        from criptenv.api.client import CriptEnvAPIError
+
+        error = CriptEnvAPIError(401, "The API key was rejected")
+        with patch("criptenv.commands.run_diff.export_entries_remote", side_effect=error):
+            result = runner.invoke(main, ["run", "--", "true"])
+
+        assert result.exit_code == 1
+        assert "Error: API error 401: The API key was rejected" in result.output
+        assert "Traceback" not in result.output
+        assert isinstance(result.exception, SystemExit)
+
+
+class TestProjectsCreate:
+    @pytest.fixture
+    def created(self, monkeypatch):
+        from tests.conftest import remote_cli_context_for
+
+        captured = {}
+
+        class Client:
+            async def create_project(self, **kwargs):
+                captured.update(kwargs)
+                return {"id": "proj_1", "name": kwargs["name"]}
+
+        monkeypatch.setattr(
+            "criptenv.commands.projects.cli_context", remote_cli_context_for(Client())
+        )
+        return captured
+
+    def test_uses_vault_password_env_without_prompting(self, runner, created, monkeypatch):
+        from criptenv.crypto import verify_project_vault_password
+
+        monkeypatch.setenv("CRIPTENV_VAULT_PASSWORD", "vault-password-123")
+        result = runner.invoke(main, ["projects", "create", "demo"])
+
+        assert result.exit_code == 0, result.output
+        assert "Created project demo (proj_1)" in result.output
+        assert verify_project_vault_password("vault-password-123", created["vault_config"])
+
+    def test_rejects_short_env_password(self, runner, created, monkeypatch):
+        monkeypatch.setenv("CRIPTENV_VAULT_PASSWORD", "short")
+        result = runner.invoke(main, ["projects", "create", "demo"])
+
+        assert result.exit_code == 1
+        assert "at least 8 characters" in result.output
+        assert created == {}
+
+    def test_fails_fast_without_env_or_terminal(self, runner, created, monkeypatch):
+        monkeypatch.delenv("CRIPTENV_VAULT_PASSWORD", raising=False)
+        result = runner.invoke(main, ["projects", "create", "demo"])
+
+        assert result.exit_code == 1
+        assert "CRIPTENV_VAULT_PASSWORD is not set" in result.output
+        assert created == {}

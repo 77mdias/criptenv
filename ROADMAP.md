@@ -44,7 +44,7 @@
 
 ```bash
 criptenv init                           # Inicializar vault local
-criptenv login --email user@example.com # Login via API
+criptenv login --email-address user@example.com # Login via API
 criptenv logout                         # Limpar sessão
 criptenv set KEY=value                  # Adicionar secret (encriptado)
 criptenv get KEY                        # Obter secret (decriptado)

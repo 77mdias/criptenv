@@ -31,11 +31,25 @@ jobs:
     env:
       # Settings() is instantiated when a migration imports app.config, and
       # DATABASE_URL/SECRET_KEY are required fields with no defaults. `alembic
-      # heads` only parses the revision scripts and never connects, so these
-      # values exist purely to satisfy configuration validation in a job with
-      # no .env file.
+      # heads` never connects; the blank-database check connects to the
+      # postgres service below through DATABASE_URL.
       DATABASE_URL: postgresql+asyncpg://ci:ci@localhost:5432/ci_placeholder
       SECRET_KEY: ci-migration-head-check-secret-key-32-chars
+    services:
+      # Blank database for the bootstrap check below (same major as deploy/vps).
+      postgres:
+        image: postgres:15-alpine
+        env:
+          POSTGRES_USER: ci
+          POSTGRES_PASSWORD: ci
+          POSTGRES_DB: ci_placeholder
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U ci"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
@@ -56,6 +70,16 @@ jobs:
             echo "::error::Expected exactly one Alembic head, found $heads (multiple heads break 'upgrade head')"
             exit 1
           fi
+      - name: Migrate a blank database like the container entrypoint
+        # A fresh self-host runs scripts/migrate.py on an empty database; the
+        # second run takes the normal `upgrade head` path, and `alembic check`
+        # proves the bootstrapped schema matches the models.
+        working-directory: apps/api
+        run: |
+          set -eu
+          python scripts/migrate.py
+          python scripts/migrate.py
+          alembic check
 
   api:
     name: API tests

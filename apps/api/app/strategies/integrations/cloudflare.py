@@ -14,6 +14,9 @@ from app.strategies.integrations.base import (
     register_provider,
 )
 
+# Cloudflare accepts at most 100 operations per secrets-bulk request.
+BULK_LIMIT = 100
+
 
 @register_provider
 class CloudflareWorkersProvider(IntegrationProvider):
@@ -51,20 +54,25 @@ class CloudflareWorkersProvider(IntegrationProvider):
         config: dict,
         environment: str
     ) -> bool:
-        """Create or update all secrets at once; Cloudflare deploys them as a single new version."""
+        """Create or update secrets in bulk requests of up to 100.
+
+        Each request deploys a new Worker version; if one fails, the batches
+        before it stay applied and the error is raised.
+        """
         path = self._secrets_path(config)
-        body = {
-            "secrets": {
-                secret["key"]: {
-                    "name": secret["key"],
-                    "type": "secret_text",
-                    "text": secret["value"],
-                }
-                for secret in secrets
-            }
-        }
         async with self._client(config) as client:
-            ensure_ok(await client.patch(f"{path}-bulk", json=body), "Cloudflare")
+            for start in range(0, len(secrets), BULK_LIMIT):
+                body = {
+                    "secrets": {
+                        secret["key"]: {
+                            "name": secret["key"],
+                            "type": "secret_text",
+                            "text": secret["value"],
+                        }
+                        for secret in secrets[start:start + BULK_LIMIT]
+                    }
+                }
+                ensure_ok(await client.patch(f"{path}-bulk", json=body), "Cloudflare")
         return True
 
     async def pull_secrets(

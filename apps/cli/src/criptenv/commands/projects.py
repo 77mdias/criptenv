@@ -1,9 +1,11 @@
 """Project management commands."""
 
+import os
+
 import click
 import getpass
 
-from criptenv.context import cli_context, run_async
+from criptenv.context import cli_context, prompt_secret, run_async
 from criptenv.crypto import build_project_vault_config, derive_project_env_key
 from criptenv.crypto.core import encrypt as crypto_encrypt, decrypt as crypto_decrypt
 from criptenv.crypto.utils import to_base64, from_base64
@@ -24,16 +26,21 @@ def projects_group():
 @click.option("--slug", default=None, help="Optional project slug")
 @click.option("--description", default=None, help="Optional project description")
 def projects_create(name: str, slug: str | None, description: str | None):
-    """Create a project with a project-specific vault password."""
-    password = getpass.getpass("Vault password: ")
+    """Create a project with a project-specific vault password.
+
+    Reads the password from CRIPTENV_VAULT_PASSWORD when set (no prompt).
+    """
+    env_password = os.getenv("CRIPTENV_VAULT_PASSWORD")
+    password = env_password or prompt_secret("Vault password: ", "CRIPTENV_VAULT_PASSWORD")
     if len(password) < 8:
         click.echo("Error: Vault password must be at least 8 characters", err=True)
         raise SystemExit(1)
 
-    confirm = getpass.getpass("Confirm vault password: ")
-    if password != confirm:
-        click.echo("Error: Vault passwords do not match", err=True)
-        raise SystemExit(1)
+    if not env_password:
+        confirm = prompt_secret("Confirm vault password: ", "CRIPTENV_VAULT_PASSWORD")
+        if password != confirm:
+            click.echo("Error: Vault passwords do not match", err=True)
+            raise SystemExit(1)
 
     vault_config, vault_proof = build_project_vault_config(password)
 

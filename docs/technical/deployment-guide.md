@@ -85,8 +85,10 @@ Apply migrations from a trusted machine or from the VPS:
 ```bash
 cd apps/api
 export DATABASE_URL="postgresql+asyncpg://criptenv:password@postgres:5432/criptenv"
-alembic upgrade head
+python scripts/migrate.py  # blank DB: schema from models + stamp head; otherwise upgrade head
 ```
+
+Plain `alembic upgrade head` only works on a database that already has the schema: the first revision expects the base tables to exist.
 
 The API strips pooler-only query params and disables asyncpg prepared statement caches for pgbouncer compatibility.
 

@@ -41,7 +41,7 @@ The normal CLI workflow does not store a local copy of encrypted secrets.
 
 ```bash
 pip install criptenv
-criptenv login --email you@example.com
+criptenv login --email-address you@example.com
 ```
 
 `criptenv init` is optional. It prepares the local metadata directory and database but does not create a local secrets vault or ask for a master password.

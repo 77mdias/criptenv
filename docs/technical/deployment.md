@@ -77,11 +77,11 @@ DB_MAX_OVERFLOW=2
 DB_POOL_TIMEOUT=10
 ```
 
-Apply migrations with:
+Apply migrations with (the API container entrypoint runs the same script):
 
 ```bash
 cd apps/api
-alembic upgrade head
+python scripts/migrate.py  # blank DB: schema from models + stamp head; otherwise upgrade head
 ```
 
 ---

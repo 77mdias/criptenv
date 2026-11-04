@@ -80,6 +80,37 @@ async def test_request_timeout_raises_clear_api_error(monkeypatch):
     assert "Timed out connecting to https://api.example.test" in str(exc_info.value)
 
 
+@pytest.mark.asyncio
+@pytest.mark.parametrize(
+    ("token", "expected", "unexpected"),
+    [
+        ("cek_live_revoked", "CRIPTENV_API_KEY", "criptenv login"),
+        ("session-token", "criptenv login", "API key"),
+    ],
+)
+async def test_401_message_matches_the_credential_type(monkeypatch, token, expected, unexpected):
+    client = CriptEnvClient(base_url="https://api.example.test", session_token=token)
+
+    class FakeAsyncClient:
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, exc_type, exc, tb):
+            return None
+
+        async def request(self, method, url, **kwargs):
+            return httpx.Response(401, json={"detail": "Invalid credentials"})
+
+    monkeypatch.setattr(httpx, "AsyncClient", FakeAsyncClient)
+
+    with pytest.raises(CriptEnvAPIError) as exc_info:
+        await client._request("GET", "/api/v1/projects")
+
+    assert exc_info.value.status_code == 401
+    assert expected in str(exc_info.value)
+    assert unexpected not in str(exc_info.value)
+
+
 # ─── PKCE (CLI browser login hardening) ──────────────────────────────────────
 
 

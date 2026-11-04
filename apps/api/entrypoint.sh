@@ -2,7 +2,7 @@
 set -euo pipefail
 
 echo "[entrypoint] Running database migrations..."
-alembic upgrade head
+python scripts/migrate.py
 
 echo "[entrypoint] Starting application..."
 exec "$@"

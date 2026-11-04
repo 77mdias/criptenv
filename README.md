@@ -88,7 +88,7 @@ Requires **Python 3.10+**.
 
 ```bash
 # Authenticate with your account
-criptenv login --email you@example.com
+criptenv login --email-address you@example.com
 ```
 
 `criptenv init` is optional and only prepares local CLI metadata under `~/.criptenv/`.
