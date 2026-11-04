@@ -589,6 +589,27 @@
     <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/integrations"/>
   </url>
   <url>
+    <loc>https://criptenv.77mdevseven.tech/docs/integrations/cloudflare</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/integrations/cloudflare"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/en/docs/integrations/cloudflare</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/integrations/cloudflare"/>
+  </url>
+  <url>
+    <loc>https://criptenv.77mdevseven.tech/es/docs/integrations/cloudflare</loc>
+    <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="es" href="https://criptenv.77mdevseven.tech/es/docs/integrations/cloudflare"/>
+    <xhtml:link rel="alternate" hreflang="x-default" href="https://criptenv.77mdevseven.tech/docs/integrations/cloudflare"/>
+  </url>
+  <url>
     <loc>https://criptenv.77mdevseven.tech/docs/integrations/github-action</loc>
     <xhtml:link rel="alternate" hreflang="pt-BR" href="https://criptenv.77mdevseven.tech/docs/integrations/github-action"/>
     <xhtml:link rel="alternate" hreflang="en" href="https://criptenv.77mdevseven.tech/en/docs/integrations/github-action"/>

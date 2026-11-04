@@ -454,13 +454,29 @@ export interface IntegrationListResponse {
   available_providers: string[];
 }
 
+export type IntegrationProvider = "vercel" | "render" | "cloudflare";
+
+export interface IntegrationSyncRequest {
+  direction: "push" | "pull";
+  /** Provider environment: Vercel target (production, preview, development); ignored by Render and Cloudflare. */
+  environment: string;
+  /** Push only: plaintext secrets decrypted in the browser. */
+  secrets?: { key: string; value: string }[];
+}
+
+export interface IntegrationSyncResponse {
+  success: boolean;
+  message: string | null;
+  synced_count: number | null;
+  /** Pull only: provider values to encrypt client-side before they reach the vault. */
+  secrets: { key: string; value: string }[] | null;
+}
+
 export interface CreateIntegrationRequest {
-  provider: "vercel";
+  provider: IntegrationProvider;
   name: string;
-  config: {
-    api_token: string;
-    project_id: string;
-  };
+  /** vercel: project_id (+ team_id); render: service_id; cloudflare: account_id + script_name. */
+  config: { api_token: string } & Record<string, string>;
 }
 
 // ─── Base Fetch Wrapper ────────────────────────────────────────────────────────

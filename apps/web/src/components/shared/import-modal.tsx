@@ -21,7 +21,7 @@ const secretSchema = createSecretSchema((key) => key)
 interface ImportModalProps {
   open: boolean
   onOpenChange: (open: boolean) => void
-  onImport: (secrets: DecryptedSecret[]) => Promise<void> | void
+  onImport: (secrets: DecryptedSecret[]) => Promise<unknown> | void
 }
 
 function parseEnv(text: string): DecryptedSecret[] {

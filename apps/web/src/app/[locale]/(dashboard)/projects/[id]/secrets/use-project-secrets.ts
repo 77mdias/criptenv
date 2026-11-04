@@ -61,7 +61,8 @@ interface UseProjectSecretsResult {
     saveSecret: (secret: SecretFormValue) => Promise<void>
     deleteSecret: (secret: DecryptedSecret) => Promise<void>
     deleteSecrets: (keys: string[]) => Promise<void>
-    importSecrets: (importedSecrets: DecryptedSecret[]) => Promise<void>
+    /** Resolves false when the vault write failed (the error is in `state.error`). */
+    importSecrets: (importedSecrets: DecryptedSecret[]) => Promise<boolean>
     copySecret: (secret: DecryptedSecret) => Promise<void>
     rotateSecret: (secret: DecryptedSecret) => Promise<void>
     openExpirationModal: (secret: DecryptedSecret) => void
@@ -308,8 +309,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     : secrets.length
 
   const pushSecrets = useCallback(
-    async (nextSecrets: DecryptedSecret[]) => {
-      if (!activeEnv || !keyMaterial || !vaultProof) return
+    async (nextSecrets: DecryptedSecret[]): Promise<boolean> => {
+      if (!activeEnv || !keyMaterial || !vaultProof) return false
 
       setSaving(true)
       setError(null)
@@ -322,8 +323,10 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
           expected_version: vaultVersion,
         })
         await applyVaultPull(activeEnv, data.blobs, data.version)
+        return true
       } catch (err) {
         setError(getErrorMessage(err, t("saveSecrets")))
+        return false
       } finally {
         setSaving(false)
       }
@@ -382,7 +385,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       for (const secret of importedSecrets) {
         merged.set(secret.key, secret)
       }
-      await pushSecrets(Array.from(merged.values()))
+      return pushSecrets(Array.from(merged.values()))
     },
     [pushSecrets, secrets]
   )

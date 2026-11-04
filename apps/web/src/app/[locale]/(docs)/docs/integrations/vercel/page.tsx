@@ -13,6 +13,7 @@ export default function VercelIntegrationPage() {
   const t = useTranslations('docs.integrations.vercel');
   const tRoot = useTranslations('docs');
   const strong = (chunks: React.ReactNode) => <strong>{chunks}</strong>;
+  const code = (chunks: React.ReactNode) => <code>{chunks}</code>;
   return (
     <div className="max-w-4xl mx-auto py-8 px-4">
       <Breadcrumb
@@ -49,29 +50,38 @@ export default function VercelIntegrationPage() {
 
         <Step title={t('setup.step2.title')}>
           <p className="text-muted-foreground">
-            {t.rich('setup.step2.body', { strong })}
+            {t.rich('setup.step2.body', { strong, code })}
           </p>
+          <CodeBlock language="bash" title={t('setup.step2.codeTitle')}>
+{`criptenv integrations connect vercel \\
+  --token <vercel-token> \\
+  --project-id <project-id-or-name> \\
+  --team-id <team-id>   # only for team projects`}
+          </CodeBlock>
         </Step>
 
         <Step title={t('setup.step3.title')}>
           <p className="text-muted-foreground">
             {t('setup.step3.body')}
           </p>
-          <CodeBlock language="text" title={t('setup.step3.codeTitle')}>
-{`CriptEnv         →  Vercel
-─────────────────────────────
-production       →  Production
-staging          →  Preview
-development      →  Development`}
+          <CodeBlock language="bash">
+{`criptenv integrations list          # shows the integration ID
+criptenv integrations validate <integration-id>`}
           </CodeBlock>
         </Step>
-
-        <Step title={t('setup.step4.title')}>
-          <p className="text-muted-foreground">
-            {t('setup.step4.body')}
-          </p>
-        </Step>
       </Steps>
+
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('targets.title')}</h2>
+      <p className="text-muted-foreground mb-4">
+        {t.rich('targets.body', { code })}
+      </p>
+      <CodeBlock language="text" title={t('targets.codeTitle')}>
+{`CriptEnv --env   --target       Vercel
+──────────────────────────────────────────
+production       (default)      Production
+staging          preview        Preview
+development      (default)      Development`}
+      </CodeBlock>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
         {t('manual.title')}
@@ -80,28 +90,31 @@ development      →  Development`}
         {t('manual.body')}
       </p>
       <CodeBlock language="bash" title={t('manual.codeTitle')}>
-{`# Sync the production environment (default)
-criptenv integrations sync --provider vercel --project <project-id>
+{`# Push the production environment to Vercel Production
+criptenv integrations sync --provider vercel --env production
 
-# Sync a specific environment
-criptenv integrations sync --provider vercel --env staging --project <project-id>`}
+# Push CriptEnv "staging" to Vercel Preview
+criptenv integrations sync --provider vercel --env staging --target preview
+
+# Import Vercel Production into CriptEnv (encrypted locally)
+criptenv integrations sync --provider vercel --env production --direction pull`}
       </CodeBlock>
 
-      <h2 className="text-2xl font-semibold mt-10 mb-4">
-        {t('example.title')}
-      </h2>
-      <CodeBlock language="json" title="vercel.json">
-{`{
-  "framework": "nextjs",
-  "env": {
-    "DATABASE_URL": "@criptenv/database-url",
-    "API_SECRET": "@criptenv/api-secret"
-  }
-}`}
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('ci.title')}</h2>
+      <p className="text-muted-foreground mb-4">
+        {t('ci.body')}
+      </p>
+      <CodeBlock language="bash">
+{`CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" \\
+  criptenv ci deploy --env production --file .env.production --provider vercel`}
       </CodeBlock>
 
       <Callout variant="warning">
         {t('overwriteWarning')}
+      </Callout>
+
+      <Callout variant="info">
+        {t('pullNote')}
       </Callout>
     </div>
   );

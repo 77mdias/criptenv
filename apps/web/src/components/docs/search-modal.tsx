@@ -31,6 +31,7 @@ const searchExtras: { key: string; href: string; sectionKey: string }[] = [
   { key: "zeroKnowledge", href: "/docs/security/zero-knowledge", sectionKey: "security" },
   { key: "githubAction", href: "/docs/integrations/github-action", sectionKey: "integrations" },
   { key: "vercel", href: "/docs/integrations/vercel", sectionKey: "integrations" },
+  { key: "cloudflare", href: "/docs/integrations/cloudflare", sectionKey: "integrations" },
   { key: "railway", href: "/docs/integrations/railway", sectionKey: "integrations" },
   { key: "render", href: "/docs/integrations/render", sectionKey: "integrations" },
   { key: "apiKey", href: "/docs/api/authentication", sectionKey: "api" },

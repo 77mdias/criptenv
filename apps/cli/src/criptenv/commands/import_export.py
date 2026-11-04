@@ -31,32 +31,43 @@ def import_entries_remote(
     """Import parsed key/value entries into the remote project vault."""
     with cli_context(require_auth=True) as (db, _master_key, client):
         resolved_project_id = resolve_project_id(db, project, client)
-        vault = RemoteVault(client, resolved_project_id)
-        state = run_async(vault.load_state(env_name))
-        by_key = {blob["key_id"]: blob for blob in state.blobs}
-        imported = 0
-        skipped = 0
+        return import_entries_into_vault(
+            RemoteVault(client, resolved_project_id), entries, env_name, overwrite
+        )
 
-        for key, value in entries:
-            existing = by_key.get(key)
-            if existing and not overwrite:
-                click.echo(f"  Skipped {key} (already exists, use --overwrite)")
-                skipped += 1
-                continue
 
-            version = int(existing.get("version", state.version)) + 1 if existing else state.version + 1
-            by_key[key] = run_async(
-                vault.encrypt_blob(
-                    key,
-                    value.encode("utf-8"),
-                    state.environment.id,
-                    version,
-                )
+def import_entries_into_vault(
+    vault: RemoteVault,
+    entries: list[tuple[str, str]],
+    env_name: str | None,
+    overwrite: bool,
+) -> tuple[int, int]:
+    """Encrypt entries client-side and push them to an already-open remote vault."""
+    state = run_async(vault.load_state(env_name))
+    by_key = {blob["key_id"]: blob for blob in state.blobs}
+    imported = 0
+    skipped = 0
+
+    for key, value in entries:
+        existing = by_key.get(key)
+        if existing and not overwrite:
+            click.echo(f"  Skipped {key} (already exists, use --overwrite)")
+            skipped += 1
+            continue
+
+        version = int(existing.get("version", state.version)) + 1 if existing else state.version + 1
+        by_key[key] = run_async(
+            vault.encrypt_blob(
+                key,
+                value.encode("utf-8"),
+                state.environment.id,
+                version,
             )
-            imported += 1
+        )
+        imported += 1
 
-        if imported:
-            run_async(vault.push_state(state, list(by_key.values())))
+    if imported:
+        run_async(vault.push_state(state, list(by_key.values())))
 
     return imported, skipped
 

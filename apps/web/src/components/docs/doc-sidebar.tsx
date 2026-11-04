@@ -87,6 +87,7 @@ const sidebarNav: SidebarItem[] = [
       { titleKey: "integrations.overview", href: "/docs/integrations" },
       { titleKey: "integrations.githubAction", href: "/docs/integrations/github-action" },
       { titleKey: "integrations.vercel", href: "/docs/integrations/vercel" },
+      { titleKey: "integrations.cloudflare", href: "/docs/integrations/cloudflare" },
       { titleKey: "integrations.railway", href: "/docs/integrations/railway" },
       { titleKey: "integrations.render", href: "/docs/integrations/render" },
     ],

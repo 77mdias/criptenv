@@ -192,8 +192,10 @@ criptenv projects create my-site --description "My Site backend"`,
         key: 'ciDeploy',
         name: 'criptenv ci deploy',
         note: true,
-        params: [['--file, -f', 'string', true], ['--env', 'string', true], ['--dry-run', 'boolean', false]],
-        code: 'CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production --env production',
+        params: [['--file, -f', 'string', true], ['--env', 'string', true], ['--dry-run', 'boolean', false], ['--provider', 'string', false], ['--target', 'string', false]],
+        code: `CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production --env production
+# Then push the whole environment to a connected provider
+CRIPTENV_VAULT_PASSWORD="$VAULT_PASSWORD" criptenv ci deploy --file .env.production --env production --provider vercel`,
       },
       {
         key: 'ciTokensList',
@@ -229,9 +231,10 @@ criptenv ci tokens create --name "Deploy" --scopes read:secrets,write:secrets --
       {
         key: 'integrationsConnect',
         name: 'criptenv integrations connect',
-        params: [['PROVIDER', 'string', true], ['--token', 'string', false], ['--name', 'string', false], ['--project-id', 'string', false], ['--project', 'string', false]],
-        code: `criptenv integrations connect vercel
-criptenv integrations connect render --token <render-api-key>`,
+        params: [['PROVIDER', 'string', true], ['--token', 'string', false], ['--name', 'string', false], ['--project-id', 'string', false], ['--project', 'string', false], ['--team-id', 'string', false], ['--account-id', 'string', false]],
+        code: `criptenv integrations connect vercel --project-id <project> --team-id <team-id>
+criptenv integrations connect render --token <render-api-key> --project-id <srv-id>
+criptenv integrations connect cloudflare --account-id <account-id> --project-id <worker-name>`,
       },
       {
         key: 'integrationsDisconnect',
@@ -240,11 +243,18 @@ criptenv integrations connect render --token <render-api-key>`,
         code: 'criptenv integrations disconnect <integration-id>',
       },
       {
+        key: 'integrationsValidate',
+        name: 'criptenv integrations validate',
+        params: [['INTEGRATION_ID', 'string', true], ['--project', 'string', false]],
+        code: 'criptenv integrations validate <integration-id>',
+      },
+      {
         key: 'integrationsSync',
         name: 'criptenv integrations sync',
-        params: [['--provider', 'string', true], ['--env', 'string', false], ['--direction', 'string', false], ['--project', 'string', false]],
+        params: [['--provider', 'string', true], ['--env', 'string', false], ['--direction', 'string', false], ['--project', 'string', false], ['--target', 'string', false], ['--integration', 'string', false], ['--overwrite', 'boolean', false]],
         code: `criptenv integrations sync --provider vercel --env production
-criptenv integrations sync --provider render --env staging --project <project-id>`,
+criptenv integrations sync --provider vercel --env staging --target preview
+criptenv integrations sync --provider render --env production --direction pull`,
       },
     ],
   },

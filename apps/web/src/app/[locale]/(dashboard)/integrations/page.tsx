@@ -2,7 +2,8 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
-import { CheckCircle2, Plug, RefreshCw, Trash2 } from "lucide-react";
+import { ArrowLeftRight, CheckCircle2, Plug, RefreshCw, Trash2 } from "lucide-react";
+import { Link } from "@/i18n/navigation";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -10,13 +11,38 @@ import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { integrationsApi, projectsApi } from "@/lib/api";
-import type { Integration, Project } from "@/lib/api";
+import type { Integration, IntegrationProvider, Project } from "@/lib/api";
+
+const PROVIDERS = ["vercel", "render", "cloudflare"] as const;
+const CONFIG_FIELDS = ["project_id", "team_id", "service_id", "account_id", "script_name"] as const;
+type ConfigField = (typeof CONFIG_FIELDS)[number];
+
+// Brand names are not translated.
+const PROVIDER_LABELS: Record<IntegrationProvider, string> = {
+  vercel: "Vercel",
+  render: "Render",
+  cloudflare: "Cloudflare Workers",
+};
+
+// Provider-side config each integration needs; optional fields may stay empty.
+const PROVIDER_FIELDS: Record<IntegrationProvider, { key: ConfigField; optional?: boolean }[]> = {
+  vercel: [{ key: "project_id" }, { key: "team_id", optional: true }],
+  render: [{ key: "service_id" }],
+  cloudflare: [{ key: "account_id" }, { key: "script_name" }],
+};
 
 function statusVariant(status: string) {
   if (status === "active") return "success";
   if (status === "error") return "danger";
   return "default";
 }
+
+const emptyForm = (provider: IntegrationProvider) => ({
+  provider,
+  name: `${PROVIDER_LABELS[provider]} Production`,
+  apiToken: "",
+  fields: {} as Partial<Record<ConfigField, string>>,
+});
 
 export default function IntegrationsPage() {
   const t = useTranslations("integrations");
@@ -29,11 +55,7 @@ export default function IntegrationsPage() {
   const [validatingId, setValidatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [form, setForm] = useState({
-    name: "Vercel Production",
-    apiToken: "",
-    vercelProjectId: "",
-  });
+  const [form, setForm] = useState(() => emptyForm("vercel"));
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -109,15 +131,19 @@ export default function IntegrationsPage() {
     setSaving(true);
     setError(null);
     try {
+      const config: { api_token: string } & Record<string, string> = {
+        api_token: form.apiToken,
+      };
+      for (const { key } of PROVIDER_FIELDS[form.provider]) {
+        const value = form.fields[key]?.trim();
+        if (value) config[key] = value;
+      }
       await integrationsApi.create(selectedProjectId, {
-        provider: "vercel",
+        provider: form.provider,
         name: form.name,
-        config: {
-          api_token: form.apiToken,
-          project_id: form.vercelProjectId,
-        },
+        config,
       });
-      setForm((current) => ({ ...current, apiToken: "", vercelProjectId: "" }));
+      setForm(emptyForm(form.provider));
       await refreshIntegrations();
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.create"));
@@ -182,6 +208,7 @@ export default function IntegrationsPage() {
           <select
             value={selectedProjectId}
             onChange={(event) => setSelectedProjectId(event.target.value)}
+            aria-label={t("selectProject")}
             className="h-10 rounded-lg border border-(--border) bg-(--surface) px-3 font-mono text-sm text-(--text-primary)"
           >
             {projects.map((project) => (
@@ -229,7 +256,9 @@ export default function IntegrationsPage() {
                         <h2 className="font-mono text-sm font-semibold text-(--text-primary)">
                           {integration.name}
                         </h2>
-                        <Badge variant="outline">{integration.provider}</Badge>
+                        <Badge variant="outline">
+                          {PROVIDER_LABELS[integration.provider as IntegrationProvider] ?? integration.provider}
+                        </Badge>
                         <Badge variant={statusVariant(integration.status)}>
                           {integration.status}
                         </Badge>
@@ -244,12 +273,22 @@ export default function IntegrationsPage() {
                           : t("noSync")}
                       </p>
                       {integration.last_error && (
-                        <p className="mt-2 font-mono text-xs text-red-600">
+                        <p className="mt-2 break-words font-mono text-xs text-red-600">
                           {integration.last_error}
                         </p>
                       )}
                     </div>
                     <div className="flex items-center gap-2">
+                      {/* Sync needs the unlocked vault, which lives on the secrets page. */}
+                      <Button variant="secondary" size="sm" asChild>
+                        <Link
+                          href={`/projects/${selectedProjectId}/secrets?sync=${integration.id}`}
+                          className="gap-1.5"
+                        >
+                          <ArrowLeftRight className="h-3.5 w-3.5" aria-hidden />
+                          {t("actions.sync")}
+                        </Link>
+                      </Button>
                       <Button
                         variant="secondary"
                         size="sm"
@@ -280,7 +319,7 @@ export default function IntegrationsPage() {
             <form className="space-y-4" onSubmit={handleSubmit}>
               <div className="flex items-center justify-between">
                 <h2 className="font-mono text-sm font-semibold text-(--text-primary)">
-                  Vercel
+                  {t("form.title")}
                 </h2>
                 <Button
                   type="button"
@@ -293,6 +332,27 @@ export default function IntegrationsPage() {
                   <RefreshCw className="h-3.5 w-3.5" />
                 </Button>
               </div>
+              <label className="block space-y-1.5">
+                <span className="text-sm font-medium text-(--text-secondary)">
+                  {t("form.provider")}
+                </span>
+                <select
+                  value={form.provider}
+                  onChange={(event) =>
+                    setForm(emptyForm(event.target.value as IntegrationProvider))
+                  }
+                  className="h-10 w-full rounded-lg border border-(--border) bg-(--surface) px-3 font-mono text-sm text-(--text-primary)"
+                >
+                  {PROVIDERS.map((provider) => (
+                    <option key={provider} value={provider}>
+                      {PROVIDER_LABELS[provider]}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <p className="font-mono text-xs text-(--text-muted)">
+                {t(`form.hints.${form.provider}`)}
+              </p>
               <Input
                 label={t("form.name")}
                 value={form.name}
@@ -307,6 +367,7 @@ export default function IntegrationsPage() {
               <Input
                 label={t("form.apiToken")}
                 type="password"
+                autoComplete="off"
                 value={form.apiToken}
                 onChange={(event) =>
                   setForm((current) => ({
@@ -316,24 +377,27 @@ export default function IntegrationsPage() {
                 }
                 required
               />
-              <Input
-                label={t("form.projectId")}
-                value={form.vercelProjectId}
-                onChange={(event) =>
-                  setForm((current) => ({
-                    ...current,
-                    vercelProjectId: event.target.value,
-                  }))
-                }
-                required
-              />
+              {PROVIDER_FIELDS[form.provider].map(({ key, optional }) => (
+                <Input
+                  key={`${form.provider}-${key}`}
+                  label={t(`form.fields.${key}`)}
+                  value={form.fields[key] ?? ""}
+                  onChange={(event) =>
+                    setForm((current) => ({
+                      ...current,
+                      fields: { ...current.fields, [key]: event.target.value },
+                    }))
+                  }
+                  required={!optional}
+                />
+              ))}
               <Button
                 type="submit"
                 fullWidth
                 loading={saving}
                 disabled={!selectedProjectId}
               >
-                {t("form.submit")}
+                {t("form.submit", { provider: PROVIDER_LABELS[form.provider] })}
               </Button>
             </form>
           </Card>

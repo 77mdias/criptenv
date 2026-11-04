@@ -43,6 +43,9 @@ export type {
   Integration,
   IntegrationListResponse,
   CreateIntegrationRequest,
+  IntegrationProvider,
+  IntegrationSyncRequest,
+  IntegrationSyncResponse,
 } from "./client";
 
 export { authApi } from "./auth";
