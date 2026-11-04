@@ -492,7 +492,7 @@
     "vercel": {
       "title": "Integração com a Vercel",
       "description": "Envie os secrets de um ambiente do CriptEnv para as variáveis de ambiente de um projeto na Vercel, ou importe as variáveis da Vercel para o CriptEnv. Os secrets são decifrados e cifrados na sua máquina; a API só os repassa para a Vercel.",
-      "infoCallout": "O sync roda quando você pede, pela CLI ou por um pipeline de CI. Não há sync em segundo plano: rode-o depois de alterar secrets ou adicione-o ao seu workflow de deploy.",
+      "infoCallout": "O sync roda quando você pede: pelo dashboard (Secrets → Sincronizar, ou Sincronizar no card da integração), pela CLI ou por um pipeline de CI. Não há sync em segundo plano: rode-o depois de alterar secrets ou adicione-o ao seu workflow de deploy.",
       "setup": {
         "title": "Configuração",
         "step1": {
