@@ -57,6 +57,8 @@ class IntegrationProvider(ABC):
     required_config: tuple[str, ...] = ()
     # False when the provider never exposes secret values (e.g. Cloudflare Workers).
     supports_pull: bool = True
+    # Keys a push removed from an existing record and created again with another kind.
+    recreated_keys: tuple[str, ...] = ()
 
     @property
     @abstractmethod
