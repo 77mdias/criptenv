@@ -15,6 +15,9 @@ class FakeResult:
     def scalar_one_or_none(self):
         return self.value
 
+    def all(self):
+        return self.value or []
+
 
 class FakeUpdateResult:
     def __init__(self, rowcount=1):
@@ -74,7 +77,8 @@ def test_replace_all_vault_blobs_strategy_deletes_and_creates_blobs():
         )
     )
 
-    assert len(db.executed) == 1
+    # SELECT of the previous kinds, then the DELETE
+    assert len(db.executed) == 2
     assert len(db.added) == 2
     assert blobs == db.added
     assert {blob.version for blob in blobs} == {7}

@@ -1,6 +1,7 @@
 from typing import Protocol
 from uuid import UUID, uuid4
 
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.vault import VaultBlob
@@ -27,6 +28,15 @@ class ReplaceAllVaultBlobsStrategy:
         blobs: list[dict],
         version: int,
     ) -> list[VaultBlob]:
+        previous_kinds = dict(
+            (
+                await db.execute(
+                    select(VaultBlob.key_id, VaultBlob.kind).where(
+                        VaultBlob.environment_id == environment_id
+                    )
+                )
+            ).all()
+        )
         await db.execute(
             VaultBlob.__table__.delete().where(
                 VaultBlob.environment_id == environment_id
@@ -45,6 +55,7 @@ class ReplaceAllVaultBlobsStrategy:
                 auth_tag=blob_data["auth_tag"],
                 version=version,
                 checksum=blob_data["checksum"],
+                kind=blob_data.get("kind") or previous_kinds.get(blob_data["key_id"], "config"),
             )
             db.add(blob)
             created_blobs.append(blob)

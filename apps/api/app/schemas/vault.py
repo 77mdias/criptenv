@@ -1,7 +1,9 @@
 from pydantic import BaseModel, Field
-from typing import Optional, Any
+from typing import Any, Literal, Optional
 from datetime import datetime
 from uuid import UUID
+
+SecretKind = Literal["config", "secret"]
 
 
 class VaultBlobPush(BaseModel):
@@ -11,6 +13,8 @@ class VaultBlobPush(BaseModel):
     auth_tag: Any  # base64-encoded bytes
     checksum: str = Field(..., min_length=1)
     version: int = Field(..., ge=1)
+    # None keeps the kind this key_id already had in the environment (config when new).
+    kind: Optional[SecretKind] = None
 
 
 class VaultBlobPull(BaseModel):
@@ -23,6 +27,7 @@ class VaultBlobPull(BaseModel):
     auth_tag: Any
     version: int
     checksum: str
+    kind: SecretKind
     created_at: datetime
     updated_at: Optional[datetime] = None
 
