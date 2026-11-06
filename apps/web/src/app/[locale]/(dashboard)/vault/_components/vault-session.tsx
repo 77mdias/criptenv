@@ -31,10 +31,13 @@ export function PersonalVaultSessionProvider({ children }: { children: ReactNode
     }
     window.addEventListener("pointerdown", reset)
     window.addEventListener("keydown", reset)
+    // Leaving the page may park it in the back-forward cache with its JS heap; lock first.
+    window.addEventListener("pagehide", lock)
     return () => {
       clearTimeout(timer)
       window.removeEventListener("pointerdown", reset)
       window.removeEventListener("keydown", reset)
+      window.removeEventListener("pagehide", lock)
     }
   }, [vaultKey, lock])
 

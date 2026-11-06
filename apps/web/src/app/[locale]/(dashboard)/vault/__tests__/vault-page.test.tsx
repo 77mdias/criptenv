@@ -160,6 +160,15 @@ describe("personal vault page", () => {
     expect(screen.queryByText("Instagram")).not.toBeInTheDocument()
   })
 
+  it("locks when the page is hidden, so the back-forward cache never restores it open", async () => {
+    await openVault()
+    act(() => {
+      window.dispatchEvent(new Event("pagehide"))
+    })
+    expect(screen.getByRole("heading", { name: "Cofre trancado" })).toBeInTheDocument()
+    expect(screen.queryByText("Instagram")).not.toBeInTheDocument()
+  })
+
   it("lock button closes the vault", async () => {
     await openVault()
     fireEvent.click(screen.getByRole("button", { name: "Trancar" }))
