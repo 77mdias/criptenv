@@ -636,7 +636,13 @@ export async function request<T>(
     }
   }
 
-  const result = await performFetch();
-  invalidateCache();
-  return result;
+  try {
+    const result = await performFetch();
+    invalidateCache();
+    return result;
+  } catch (error) {
+    // 409 = the server moved on (optimistic concurrency); cached reads are stale.
+    if (error instanceof ApiError && error.status === 409) invalidateCache();
+    throw error;
+  }
 }
