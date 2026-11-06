@@ -55,9 +55,12 @@ function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, 
   const [hasProtectedKey, setHasProtectedKey] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [busy, setBusy] = useState(false)
+  // An edit must not save until the current item is decrypted, or blank fields would overwrite it.
+  const [loaded, setLoaded] = useState(!entry)
 
   function fill(plain: PersonalVaultItemPlain) {
     setForm({ ...emptyForm, ...plain })
+    setLoaded(true)
   }
 
   useEffect(() => {
@@ -104,6 +107,7 @@ function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, 
 
   async function handleSave(event: FormEvent) {
     event.preventDefault()
+    if (!loaded) return
     if (!form.title.trim()) {
       setError(t("itemDialog.titleRequired"))
       return
@@ -197,7 +201,7 @@ function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, 
           </div>
           {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
           <DialogFooter>
-            <Button type="submit" loading={busy} disabled={isProtected && !hasProtectedKey && !extra}>
+            <Button type="submit" loading={busy} disabled={!loaded || (isProtected && !hasProtectedKey && !extra)}>
               {t("itemDialog.save")}
             </Button>
           </DialogFooter>

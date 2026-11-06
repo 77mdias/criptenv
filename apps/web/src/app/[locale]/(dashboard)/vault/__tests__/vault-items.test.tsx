@@ -245,4 +245,18 @@ describe("vault items", () => {
     ).toBeInTheDocument()
     expect(onConfigChange).toHaveBeenCalledWith(fresh)
   })
+
+  it("editing cannot save before the item is decrypted, so nothing gets blanked", async () => {
+    mocked(vaultCrypto.decryptItem).mockRejectedValue(new CryptoError("bad", "DECRYPTION_FAILED"))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar GitHub" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(await within(dialog).findByRole("alert")).toBeInTheDocument()
+    type("Título", "GitHub", dialog)
+    expect(within(dialog).getByRole("button", { name: "Salvar" })).toBeDisabled()
+    fireEvent.submit(within(dialog).getByLabelText("Título").closest("form")!)
+    expect(vaultCrypto.encryptItem).not.toHaveBeenCalled()
+    expect(api.updatePersonalVaultItem).not.toHaveBeenCalled()
+  })
 })
