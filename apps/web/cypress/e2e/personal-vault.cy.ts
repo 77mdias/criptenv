@@ -14,7 +14,7 @@ describe("personal vault", () => {
     cy.signup()
   })
 
-  it("creates the vault, stores a protected login and reopens it", () => {
+  function createVault() {
     cy.visitHydrated("/vault")
     cy.contains("Crie seu cofre pessoal", { timeout: 15000 }).should("be.visible")
     inputByLabel("Senha mestra").type(master)
@@ -25,6 +25,19 @@ describe("personal vault", () => {
 
     cy.contains("Guardei a chave de recuperação", { timeout: CRYPTO_TIMEOUT }).click()
     cy.contains("button", "Concluir").click()
+  }
+
+  function addNote(title: string, content: string) {
+    cy.contains("button", "Novo item", { timeout: 15000 }).click()
+    cy.get("#vault-item-type").select("note")
+    inputByLabel("Título").type(title)
+    inputByLabel("Conteúdo").type(content)
+    cy.contains("button", "Salvar").click()
+    cy.contains(title, { timeout: 15000 }).should("be.visible")
+  }
+
+  it("creates the vault, stores a protected login and reopens it", () => {
+    createVault()
 
     cy.contains("button", "Novo item", { timeout: 15000 }).click()
     inputByLabel("Título").type("Instagram")
@@ -35,12 +48,7 @@ describe("personal vault", () => {
     cy.contains("button", "Salvar").click()
     cy.contains("Instagram", { timeout: CRYPTO_TIMEOUT }).should("be.visible")
 
-    cy.contains("button", "Novo item").click()
-    cy.get("#vault-item-type").select("note")
-    inputByLabel("Título").type("Wi-Fi")
-    inputByLabel("Conteúdo").type("senha-do-wifi")
-    cy.contains("button", "Salvar").click()
-    cy.contains("Wi-Fi", { timeout: 15000 }).should("be.visible")
+    addNote("Wi-Fi", "senha-do-wifi")
 
     // The server only ever sees envelopes, never the titles or secrets.
     cy.request("/api/v1/personal-vault/items").then(({ body }) => {
@@ -60,6 +68,35 @@ describe("personal vault", () => {
     inputByLabel("Senha de proteção extra").type(extra)
     cy.contains("button", "Desbloquear").click()
     cy.contains("s3nh@-insta", { timeout: CRYPTO_TIMEOUT }).should("be.visible")
+  })
+
+  it("a stale edit gets the conflict notice and keeps the other tab's save (real Postgres)", () => {
+    createVault()
+    addNote("Wi-Fi", "senha-do-wifi")
+
+    cy.get('[aria-label="Editar Wi-Fi"]').click()
+    inputByLabel("Título").should("have.value", "Wi-Fi")
+
+    // Another tab saves first: same envelopes, version moves on.
+    cy.request("/api/v1/personal-vault/items").then(({ body }) => {
+      const [item] = body
+      cy.request("PUT", `/api/v1/personal-vault/items/${item.id}`, {
+        protected: item.protected,
+        summary: item.summary,
+        body: item.body,
+        expected_version: item.version,
+      })
+        .its("body.version")
+        .should("eq", item.version + 1)
+    })
+
+    inputByLabel("Título").clear().type("Wi-Fi casa")
+    cy.contains("button", "Salvar").click()
+    cy.contains("Este item mudou em outra aba. Recarregamos a versão mais recente.", { timeout: 15000 }).should(
+      "be.visible",
+    )
+    cy.contains("Wi-Fi casa").should("not.exist")
+    cy.contains("Wi-Fi").should("be.visible")
   })
 
   it("refuses Authorization headers (CLI, API keys, CI tokens)", () => {

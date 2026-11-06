@@ -187,6 +187,23 @@ describe("personal vault page", () => {
     expect(screen.queryByText("Instagram")).not.toBeInTheDocument()
   })
 
+  it("idle lock closes an open reveal dialog and drops its content", async () => {
+    jest.useFakeTimers({ advanceTimers: true })
+    mocked(vaultCrypto.decryptItem).mockResolvedValue({
+      type: "login", title: "Instagram", username: "jean", password: "s3nh@-revelada", url: "", notes: "",
+    })
+    await openVault()
+    fireEvent.click(screen.getByRole("button", { name: "Revelar Instagram" }))
+    expect(await screen.findByText("s3nh@-revelada")).toBeInTheDocument()
+
+    act(() => {
+      jest.advanceTimersByTime(600_000)
+    })
+    expect(screen.getByRole("heading", { name: "Cofre trancado" })).toBeInTheDocument()
+    expect(screen.queryByRole("dialog")).not.toBeInTheDocument()
+    expect(screen.queryByText("s3nh@-revelada")).not.toBeInTheDocument()
+  })
+
   it("lock button closes the vault", async () => {
     await openVault()
     fireEvent.click(screen.getByRole("button", { name: "Trancar" }))
