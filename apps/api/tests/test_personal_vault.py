@@ -244,3 +244,72 @@ async def test_config_is_per_user(client, as_user):
 async def test_routes_reject_bearer_tokens(client):
     r = await client.get("/api/v1/personal-vault/config", headers={"Authorization": "Bearer cek_x"})
     assert r.status_code == 403
+
+
+from app.services import personal_vault_service  # noqa: E402
+
+
+def _item(protected=False):
+    return {"protected": protected, "summary": _envelope(), "body": _envelope(ct_len=200)}
+
+
+@pytest_asyncio.fixture
+async def setup_vault(client, as_user):
+    as_user("ana")
+    assert (await client.post("/api/v1/personal-vault/config", json=_config())).status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_item_crud(client, setup_vault):
+    r = await client.post("/api/v1/personal-vault/items", json=_item(protected=True))
+    assert r.status_code == 201
+    item = r.json()
+    assert item["protected"] is True and item["version"] == 1
+    r = await client.put(f"/api/v1/personal-vault/items/{item['id']}", json={**_item(), "expected_version": 1})
+    assert r.status_code == 200 and r.json()["version"] == 2 and r.json()["protected"] is False
+    assert [i["id"] for i in (await client.get("/api/v1/personal-vault/items")).json()] == [item["id"]]
+    assert (await client.delete(f"/api/v1/personal-vault/items/{item['id']}")).status_code == 204
+    assert (await client.get("/api/v1/personal-vault/items")).json() == []
+
+
+@pytest.mark.asyncio
+async def test_item_requires_config(client, as_user):
+    as_user("ana")
+    assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_item_stale_version_conflicts(client, setup_vault):
+    item = (await client.post("/api/v1/personal-vault/items", json=_item())).json()
+    url = f"/api/v1/personal-vault/items/{item['id']}"
+    assert (await client.put(url, json={**_item(), "expected_version": 1})).status_code == 200
+    r = await client.put(url, json={**_item(protected=True), "expected_version": 1})
+    assert r.status_code == 409 and r.json()["detail"] == "Version conflict"
+    assert (await client.get("/api/v1/personal-vault/items")).json()[0]["protected"] is False
+
+
+@pytest.mark.asyncio
+async def test_items_are_isolated(client, setup_vault, as_user):
+    item = (await client.post("/api/v1/personal-vault/items", json=_item())).json()
+    as_user("bia")
+    assert (await client.get("/api/v1/personal-vault/items")).json() == []
+    url = f"/api/v1/personal-vault/items/{item['id']}"
+    assert (await client.put(url, json={**_item(), "expected_version": 1})).status_code == 404
+    assert (await client.delete(url)).status_code == 404
+    as_user("ana")
+    assert len((await client.get("/api/v1/personal-vault/items")).json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_item_limit(client, setup_vault, monkeypatch):
+    monkeypatch.setattr(personal_vault_service, "MAX_PERSONAL_VAULT_ITEMS", 2)
+    for _ in range(2):
+        assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 201
+    r = await client.post("/api/v1/personal-vault/items", json=_item())
+    assert r.status_code == 409 and r.json()["detail"] == "Item limit reached"
+
+
+@pytest.mark.asyncio
+async def test_item_body_size_is_limited(client, setup_vault):
+    big = {"protected": False, "summary": _envelope(), "body": _envelope(ct_len=65_537)}
+    assert (await client.post("/api/v1/personal-vault/items", json=big)).status_code == 422
