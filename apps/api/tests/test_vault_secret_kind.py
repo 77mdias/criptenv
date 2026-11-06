@@ -119,6 +119,33 @@ async def test_full_list_resend_without_kinds_preserves_all(db):
     assert await _kinds(db, env) == {"A": "secret", "B": "config"}
 
 
+async def _legacy_row(db, env, key_id):
+    """A row from before migration 0016: no kind was ever chosen."""
+    db.add(VaultBlob(
+        id=uuid4(), project_id=env.project_id, environment_id=env.id, key_id=key_id,
+        iv="aXY=", ciphertext="Y3Q=", auth_tag="dGFn", version=1, checksum="a" * 64, kind=None,
+    ))
+    await db.flush()
+
+
+@pytest.mark.asyncio
+async def test_legacy_row_stays_unset_on_push_without_kind(db):
+    env = await _environment(db, uuid4())
+    await _legacy_row(db, env, "A")
+    await _push(db, env, _blob("A"))
+    assert await _kinds(db, env) == {"A": None}
+    blobs, _version = await VaultService(db).pull_blobs(env.project_id, env.id)
+    assert [blob.kind for blob in blobs] == [None]
+
+
+@pytest.mark.asyncio
+async def test_legacy_row_takes_an_explicit_kind(db):
+    env = await _environment(db, uuid4())
+    await _legacy_row(db, env, "A")
+    await _push(db, env, _blob("A", "secret"))
+    assert await _kinds(db, env) == {"A": "secret"}
+
+
 def test_invalid_kind_rejected():
     with pytest.raises(ValidationError):
         VaultBlobPush(key_id="A", iv="x", ciphertext="y", auth_tag="z", checksum="a" * 64, version=1, kind="public")

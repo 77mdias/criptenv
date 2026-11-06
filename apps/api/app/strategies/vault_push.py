@@ -55,6 +55,7 @@ class ReplaceAllVaultBlobsStrategy:
                 auth_tag=blob_data["auth_tag"],
                 version=version,
                 checksum=blob_data["checksum"],
+                # A key present before keeps its kind, including NULL (never chosen); a new key is config.
                 kind=blob_data.get("kind") or previous_kinds.get(blob_data["key_id"], "config"),
             )
             db.add(blob)

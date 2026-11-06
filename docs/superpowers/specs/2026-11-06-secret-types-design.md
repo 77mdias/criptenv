@@ -58,7 +58,8 @@ Fonte: <https://vercel.com/docs/environment-variables/sensitive-environment-vari
 
 **Onde o tipo mora**
 
-- Coluna nova não secreta em `vault_blobs`, com migration Alembic e valor padrão Config para todas as linhas existentes.
+- Coluna nova não secreta em `vault_blobs`, com migration Alembic. As linhas existentes ficam **sem tipo escolhido** (NULL): aparecem como Config e sincronizam como antes, sem nunca converter nada na Vercel. Assim uma variável já marcada como Secret à mão na Vercel não vira Config legível no primeiro sync depois do deploy. Mudado na revisão final; antes dizia "Config para todas as linhas existentes".
+- Editar só o valor de uma variável sem tipo escolhido não escolhe o tipo; só escolher Config ou Secret no formulário (ou `--secret`/`--config` na CLI) escolhe.
 - O tipo não é segredo e fica em texto claro. É o mesmo nível de informação que o nome da chave, que já fica em claro.
 - O nome e a forma da coluna ficam com o builder; minha sugestão é `kind`, com os valores `config` e `secret`.
 

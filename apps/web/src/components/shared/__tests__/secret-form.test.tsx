@@ -93,6 +93,25 @@ describe("SecretForm", () => {
     expect(screen.getByRole("radio", { name: /Secret/ })).toBeChecked()
   })
 
+  it("editing a variable whose kind was never chosen keeps it unchosen unless the type is picked", async () => {
+    const onSubmit = jest.fn()
+    render(
+      <SecretForm
+        open
+        title="Editar"
+        initialValue={{ key: "OLD_KEY", value: "1" }}
+        onOpenChange={jest.fn()}
+        onSubmit={onSubmit}
+      />
+    )
+
+    await userEvent.clear(screen.getByLabelText("Valor"))
+    await userEvent.type(screen.getByLabelText("Valor"), "2")
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }))
+
+    await waitFor(() => expect(onSubmit).toHaveBeenCalledWith({ key: "OLD_KEY", value: "2" }))
+  })
+
   it("shows validation errors and calls cancel handlers", async () => {
     const onOpenChange = jest.fn()
     const onSubmit = jest.fn()

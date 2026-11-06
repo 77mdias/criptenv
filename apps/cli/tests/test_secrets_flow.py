@@ -82,6 +82,14 @@ class TestRemoteSecretFlow:
         assert "secret" in line_a
         assert "config" in line_b
 
+    def test_list_shows_config_for_unset_kind(self, runner, remote_vault_client):
+        with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
+            assert runner.invoke(main, ["set", "OLD=1", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+            remote_vault_client.blobs[0]["kind"] = None  # row from before kinds existed
+            result = runner.invoke(main, ["list", "-p", "00000000-0000-4000-8000-000000000123"])
+        line = next(line for line in result.output.splitlines() if line.strip().startswith("OLD "))
+        assert "config" in line and "None" not in line
+
     def test_get_nonexistent(self, runner, remote_vault_client):
         with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
             result = runner.invoke(main, ["get", "NONEXISTENT", "-p", "00000000-0000-4000-8000-000000000123"])

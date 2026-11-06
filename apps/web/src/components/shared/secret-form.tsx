@@ -21,15 +21,14 @@ const KINDS: SecretKind[] = ["config", "secret"]
 export interface SecretFormValue {
   key: string
   value: string
-  kind: SecretKind
+  /** Absent: an existing variable whose kind was never chosen and the type was not picked now. */
+  kind?: SecretKind
 }
-
-type SecretFormInitialValue = Omit<SecretFormValue, "kind"> & { kind?: SecretKind }
 
 interface SecretFormProps {
   open: boolean
   title: string
-  initialValue?: SecretFormInitialValue | null
+  initialValue?: SecretFormValue | null
   loading?: boolean
   onOpenChange: (open: boolean) => void
   onSubmit: (value: SecretFormValue) => Promise<void> | void
@@ -71,6 +70,8 @@ function SecretFormDialog({
   const [value, setValue] = useState(initialValue?.value ?? "")
   const [showValue, setShowValue] = useState(false)
   const [kind, setKind] = useState<SecretKind>(initialValue?.kind ?? "config")
+  // Saving an old variable without picking a type must not turn it into an explicit Config.
+  const [kindPicked, setKindPicked] = useState(!initialValue || Boolean(initialValue.kind))
   const [error, setError] = useState<string | null>(null)
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -82,7 +83,7 @@ function SecretFormDialog({
     }
 
     setError(null)
-    await onSubmit({ ...parsed.data, kind })
+    await onSubmit({ ...parsed.data, ...(kindPicked ? { kind } : {}) })
   }
 
   return (
@@ -136,7 +137,10 @@ function SecretFormDialog({
                     name="secret-kind"
                     value={option}
                     checked={kind === option}
-                    onChange={() => setKind(option)}
+                    onChange={() => {
+                      setKind(option)
+                      setKindPicked(true)
+                    }}
                     className="mt-0.5 accent-[var(--accent)]"
                   />
                   <span>

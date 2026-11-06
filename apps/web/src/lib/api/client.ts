@@ -119,7 +119,8 @@ export interface VaultBlob {
   auth_tag: string;
   version: number;
   checksum: string;
-  kind: SecretKind;
+  /** null: never chosen (variable from before kinds existed); shown as config, synced without a kind. */
+  kind: SecretKind | null;
   created_at: string;
   updated_at: string | null;
 }

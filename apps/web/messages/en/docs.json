@@ -1269,7 +1269,8 @@
           "params": {
             "0": "Secret key and value",
             "1": "Target environment",
-            "2": "Target project"
+            "2": "Target project",
+            "3": "Type in Vercel: Secret (no one can read it after saving) or Config. Without a flag, keeps the current type; a new variable becomes Config"
           }
         },
         "get": {

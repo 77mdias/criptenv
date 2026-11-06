@@ -27,7 +27,8 @@ class VaultBlobPull(BaseModel):
     auth_tag: Any
     version: int
     checksum: str
-    kind: SecretKind
+    # None: never chosen (from before kinds existed); clients show it as config and send no kind.
+    kind: Optional[SecretKind] = None
     created_at: datetime
     updated_at: Optional[datetime] = None
 

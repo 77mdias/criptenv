@@ -105,6 +105,14 @@ describe("vault crypto helpers", () => {
     expect(secrets[0].kind).toBe("secret")
   })
 
+  it("leaves kind out for a variable whose kind was never chosen", async () => {
+    const [secret] = await decryptVault([vaultBlob({ key_id: "OLD", kind: null })], {} as CryptoKey)
+    const [blob] = await encryptVault([secret], {} as CryptoKey, 2)
+
+    expect(secret.kind).toBeUndefined()
+    expect("kind" in blob).toBe(false)
+  })
+
   it("sends kind only for secrets that have one", async () => {
     const blobs = await encryptVault(
       [

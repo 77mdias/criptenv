@@ -14,7 +14,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Trocar o tipo de uma variável que já está na Vercel: o sync tira o registro antigo só do target sincronizado (PATCH quando ele cobre outros targets, DELETE quando não) e cria de novo. O resultado lista as chaves recriadas; uma falha no meio diz quais chaves ficaram sem valor na Vercel.
 - Push do vault sem o campo `kind` (CLI antiga, rotação, import de `.env`) mantém o tipo que cada chave já tinha. Sync sem `kind` (CLI antiga, jobs de CI) mantém o comportamento de antes e nunca converte nada.
 - Web: escolha Config/Secret no formulário e rótulo do tipo na lista. CLI: `criptenv set KEY=valor --secret` / `--config`, e `criptenv list` mostra o tipo.
-- Migration `20261106_0016`: coluna `vault_blobs.kind` (`config` para as linhas existentes).
+- Migration `20261106_0016`: coluna `vault_blobs.kind`. As linhas existentes ficam sem tipo escolhido (NULL): aparecem como Config, sincronizam como antes e nunca são convertidas na Vercel até alguém escolher o tipo.
+- Se a Vercel recusar a troca de tipo de uma chave, essa chave fica como estava e o resto é sincronizado; o erro diz qual chave e por quê.
 
 ### Cofre pessoal: correções da revisão (Fase B) — 2026-11-06
 

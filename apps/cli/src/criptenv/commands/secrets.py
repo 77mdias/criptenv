@@ -151,7 +151,7 @@ def list_command(env_name: str | None, project: str | None):
     click.echo("")
     for s in secrets:
         updated = str(s.get("updated_at", ""))[:16].replace("T", " ")
-        click.echo(f"  {s.get('key_id', 'unknown'):<30} {s.get('kind', 'config'):<7} v{int(s.get('version', 1)):<3} {updated}")
+        click.echo(f"  {s.get('key_id', 'unknown'):<30} {s.get('kind') or 'config':<7} v{int(s.get('version', 1)):<3} {updated}")
 
     click.echo("")
     click.echo(f"Total: {len(secrets)} secret(s)")
