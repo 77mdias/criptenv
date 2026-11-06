@@ -72,7 +72,7 @@ export async function deriveSessionKey(
   )
 }
 
-export async function derivePbkdf2Bits(
+async function derivePbkdf2Bits(
   password: string,
   salt: Uint8Array,
   iterations: number
@@ -100,7 +100,7 @@ export async function derivePbkdf2Bits(
   return new Uint8Array(bits)
 }
 
-export async function importAesKey(rawKey: Uint8Array): Promise<CryptoKey> {
+async function importAesKey(rawKey: Uint8Array): Promise<CryptoKey> {
   return crypto.subtle.importKey("raw", rawKey, { name: "AES-GCM" }, false, ["encrypt", "decrypt"])
 }
 

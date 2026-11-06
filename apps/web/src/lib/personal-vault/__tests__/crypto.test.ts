@@ -197,4 +197,23 @@ describe("personal vault crypto", () => {
       code: "WRONG_RECOVERY_KEY",
     })
   })
+
+  it("unlocking never turns key material into text", async () => {
+    const { config, vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+    const decryptSpy = jest.spyOn(crypto.subtle, "decrypt")
+    const unwrapSpy = jest.spyOn(crypto.subtle, "unwrapKey")
+    try {
+      await unlockVault(config, MASTER)
+      expect(decryptSpy).not.toHaveBeenCalled()
+      expect(unwrapSpy).toHaveBeenCalledTimes(1)
+
+      unwrapSpy.mockClear()
+      await unlockProtectedKey(config, vaultKey, EXTRA)
+      // The outer layer decrypts the inner *envelope* (ciphertext); the key itself is unwrapped.
+      expect(unwrapSpy).toHaveBeenCalledTimes(1)
+    } finally {
+      decryptSpy.mockRestore()
+      unwrapSpy.mockRestore()
+    }
+  })
 })

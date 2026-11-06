@@ -8,8 +8,8 @@ Código: `apps/web/src/lib/personal-vault/crypto.ts` (cliente) e `apps/api/app/r
 
 | Chave | O que é | Onde vive |
 |---|---|---|
-| **VK** (chave do cofre) | 32 bytes aleatórios, AES-256-GCM | `CryptoKey` não extraível, na memória, só enquanto o cofre está aberto |
-| **PK** (chave de proteção extra) | 32 bytes aleatórios, AES-256-GCM | `CryptoKey` não extraível, só durante o "revelar" ou a edição de um item protegido |
+| **VK** (chave do cofre) | chave AES-256-GCM gerada pelo WebCrypto | `CryptoKey` não extraível, na memória, só enquanto o cofre está aberto |
+| **PK** (chave de proteção extra) | chave AES-256-GCM gerada pelo WebCrypto | `CryptoKey` não extraível, só durante o "revelar" ou a edição de um item protegido |
 | **Chave de recuperação** | 32 bytes aleatórios, em Crockford base32 (13 grupos de 4) | impressa pelo usuário; o servidor nunca a vê |
 
 ```
@@ -21,6 +21,8 @@ senha extra ───PBKDF2-SHA256 600k──▶ KEK_extra ──embrulha──�
 - **Resumo de todo item** (`type`, `title`, `username`, `url`): cifrado com VK. É o que a lista mostra com o cofre aberto.
 - **Corpo** (`password` e `notes`, ou `content`): cifrado com VK nos itens comuns e com **PK** nos itens com proteção extra.
 - **Para abrir PK é preciso VK e a senha extra.** O envelope de PK por KEK_extra é cifrado de novo com VK, então nenhuma das duas senhas sozinha basta.
+- **VK e PK nunca viram bytes nem texto no JavaScript.** São embrulhadas e desembrulhadas com `crypto.subtle.wrapKey`/`unwrapKey`; as KEKs saem direto de `deriveKey` (PBKDF2/HKDF) com uso restrito a `wrapKey`/`unwrapKey`. Uma cópia extraível existe só dentro da função que embrulha de novo (troca de senha, recuperação).
+- **Todo envelope leva associated data (AAD) do AES-GCM** no formato `criptenv:pv1:<contexto>`. Os campos da config levam o nome do campo. Os itens levam `item:<id>:summary` e `item:<id>:body:common|protected`, com o id gerado pelo cliente. Por isso o servidor não consegue trocar envelopes entre itens ou campos, nem inverter a marca `protected`, sem que a decifragem falhe. O corpo também não consegue sobrescrever `title`/`type`: o resultado é montado campo a campo.
 - **Senha errada aparece como falha de autenticação do AES-GCM** ao desembrulhar. Não guardamos nenhum verificador.
 - **Trocar uma senha só embrulha uma chave de novo.** Os itens não são cifrados outra vez. Por isso a config tem um único `iterations`, e trocar o KDF exige selar o cofre inteiro de novo.
 - **Usar a recuperação** redefine as duas senhas e **gera uma nova chave de recuperação**. A antiga deixa de valer.
@@ -54,6 +56,7 @@ O servidor **não vê** senhas, a chave de recuperação, títulos, usuários, U
 - **Sessão web roubada: substituição da config.** Quem roubar uma sessão web também pode **substituir a config** com `PUT /api/v1/personal-vault/config`. Ele não lê nada, mas deixa o dono sem acesso aos próprios dados, ou seja, é negação de serviço. Pedir reautenticação ou mandar e-mail de aviso na troca da config fica para depois.
 - **Limite de itens.** É checado com count + insert. Duas criações simultâneas podem passar de 1000 por um item.
 - **Cache em memória.** O cliente HTTP guarda as respostas GET (cifradas) por até 15 segundos.
+- **Rollback não é detectado.** O servidor pode devolver uma versão antiga de um item (com a `version` antiga). A AAD amarra o envelope ao item, não à versão; detectar isso exigiria guardar estado no cliente.
 
 ## Alternativas descartadas
 

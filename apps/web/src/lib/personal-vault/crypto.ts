@@ -15,10 +15,8 @@ import {
   bufferToBase64,
   CryptoError,
   decrypt,
-  derivePbkdf2Bits,
   encrypt,
   generateSalt,
-  importAesKey,
   importHkdfKey,
 } from "@/lib/crypto"
 
@@ -126,30 +124,22 @@ function invalidRecoveryKey(): CryptoError {
 }
 
 // ─── Vault lifecycle ────────────────────────────────────────────────────────
+// VK and PK only ever exist as CryptoKey objects: they are wrapped/unwrapped by
+// WebCrypto (wrapKey/unwrapKey), never exported to bytes or strings. Keys handed
+// to callers are non-extractable; extractable copies live only inside a re-wrap.
 
 export async function createPersonalVault(
   master: string,
   extra: string,
   iterations = PERSONAL_VAULT_ITERATIONS,
 ): Promise<SealedVault> {
-  const vaultRaw = randomKey()
-  const protectedRaw = randomKey()
-  try {
-    return await sealVault(vaultRaw, protectedRaw, master, extra, iterations)
-  } finally {
-    vaultRaw.fill(0)
-    protectedRaw.fill(0)
-  }
+  const [vaultKey, protectedKey] = await Promise.all([generateAesKey(), generateAesKey()])
+  return sealVault(vaultKey, protectedKey, master, extra, iterations)
 }
 
 export async function unlockVault(config: PersonalVaultConfigInput, master: string): Promise<CryptoKey> {
   const kek = await passwordKek(master, config.master_salt, config.iterations)
-  const raw = await unwrapRaw(config.master_wrapped_vault_key, kek, "WRONG_PASSWORD", AAD.masterVaultKey)
-  try {
-    return await importAesKey(raw)
-  } finally {
-    raw.fill(0)
-  }
+  return unwrapField(config.master_wrapped_vault_key, kek, AAD.masterVaultKey, "WRONG_PASSWORD", false)
 }
 
 export async function unlockProtectedKey(
@@ -158,12 +148,7 @@ export async function unlockProtectedKey(
   extra: string,
 ): Promise<CryptoKey> {
   const kek = await passwordKek(extra, config.extra_salt, config.iterations)
-  const raw = await unwrapProtectedRaw(config.extra_wrapped_protected_key, vaultKey, kek)
-  try {
-    return await importAesKey(raw)
-  } finally {
-    raw.fill(0)
-  }
+  return unwrapProtected(config.extra_wrapped_protected_key, vaultKey, kek, false)
 }
 
 /** Resets both passwords from the printed recovery key and issues a new one. */
@@ -175,14 +160,15 @@ export async function recoverVault(
   iterations = PERSONAL_VAULT_ITERATIONS,
 ): Promise<SealedVault> {
   const kek = await recoveryKek(decodeRecoveryKey(recoveryKey))
-  const vaultRaw = await unwrapRaw(config.recovery_wrapped_vault_key, kek, "WRONG_RECOVERY_KEY", AAD.recoveryVaultKey)
-  const protectedRaw = await unwrapRaw(config.recovery_wrapped_protected_key, kek, "WRONG_RECOVERY_KEY", AAD.recoveryProtectedKey)
-  try {
-    return await sealVault(vaultRaw, protectedRaw, newMaster, newExtra, iterations)
-  } finally {
-    vaultRaw.fill(0)
-    protectedRaw.fill(0)
-  }
+  const vaultKey = await unwrapField(config.recovery_wrapped_vault_key, kek, AAD.recoveryVaultKey, "WRONG_RECOVERY_KEY", true)
+  const protectedKey = await unwrapField(
+    config.recovery_wrapped_protected_key,
+    kek,
+    AAD.recoveryProtectedKey,
+    "WRONG_RECOVERY_KEY",
+    true,
+  )
+  return sealVault(vaultKey, protectedKey, newMaster, newExtra, iterations)
 }
 
 /** Changes the master password; only master_salt and master_wrapped_vault_key change. */
@@ -192,14 +178,10 @@ export async function rewrapMaster(
   newMaster: string,
 ): Promise<PersonalVaultConfigInput> {
   const current = await passwordKek(currentMaster, config.master_salt, config.iterations)
-  const raw = await unwrapRaw(config.master_wrapped_vault_key, current, "WRONG_PASSWORD", AAD.masterVaultKey)
-  try {
-    const salt = bufferToBase64(generateSalt())
-    const next = await passwordKek(newMaster, salt, config.iterations)
-    return { ...config, master_salt: salt, master_wrapped_vault_key: await wrapRaw(raw, next, AAD.masterVaultKey) }
-  } finally {
-    raw.fill(0)
-  }
+  const vaultKey = await unwrapField(config.master_wrapped_vault_key, current, AAD.masterVaultKey, "WRONG_PASSWORD", true)
+  const salt = bufferToBase64(generateSalt())
+  const next = await passwordKek(newMaster, salt, config.iterations)
+  return { ...config, master_salt: salt, master_wrapped_vault_key: await wrapField(vaultKey, next, AAD.masterVaultKey) }
 }
 
 /** Changes the extra password; only extra_salt and extra_wrapped_protected_key change. */
@@ -210,13 +192,13 @@ export async function rewrapExtra(
   newExtra: string,
 ): Promise<PersonalVaultConfigInput> {
   const current = await passwordKek(currentExtra, config.extra_salt, config.iterations)
-  const raw = await unwrapProtectedRaw(config.extra_wrapped_protected_key, vaultKey, current)
-  try {
-    const salt = bufferToBase64(generateSalt())
-    const next = await passwordKek(newExtra, salt, config.iterations)
-    return { ...config, extra_salt: salt, extra_wrapped_protected_key: await wrapProtected(raw, next, vaultKey) }
-  } finally {
-    raw.fill(0)
+  const protectedKey = await unwrapProtected(config.extra_wrapped_protected_key, vaultKey, current, true)
+  const salt = bufferToBase64(generateSalt())
+  const next = await passwordKek(newExtra, salt, config.iterations)
+  return {
+    ...config,
+    extra_salt: salt,
+    extra_wrapped_protected_key: await wrapProtected(protectedKey, next, vaultKey),
   }
 }
 
@@ -269,61 +251,64 @@ export async function decryptItem(
 
 // ─── Internals ──────────────────────────────────────────────────────────────
 
-function randomKey(): Uint8Array {
-  return crypto.getRandomValues(new Uint8Array(KEY_BYTES))
+const encodeText = (text: string) => new TextEncoder().encode(text)
+
+/** Extractable only so it can be wrapped; callers receive non-extractable copies. */
+function generateAesKey(): Promise<CryptoKey> {
+  return crypto.subtle.generateKey({ name: "AES-GCM", length: 256 }, true, ["encrypt", "decrypt"])
 }
 
 async function sealVault(
-  vaultRaw: Uint8Array,
-  protectedRaw: Uint8Array,
+  vaultKey: CryptoKey,
+  protectedKey: CryptoKey,
   master: string,
   extra: string,
   iterations: number,
 ): Promise<SealedVault> {
   const masterSalt = bufferToBase64(generateSalt())
   const extraSalt = bufferToBase64(generateSalt())
-  const recoveryRaw = randomKey()
-  try {
-    const recovery = await recoveryKek(recoveryRaw)
-    const vaultKey = await importAesKey(vaultRaw)
-    const config: PersonalVaultConfigInput = {
-      kdf: PERSONAL_VAULT_KDF,
-      iterations,
-      master_salt: masterSalt,
-      extra_salt: extraSalt,
-      master_wrapped_vault_key: await wrapRaw(vaultRaw, await passwordKek(master, masterSalt, iterations), AAD.masterVaultKey),
-      recovery_wrapped_vault_key: await wrapRaw(vaultRaw, recovery, AAD.recoveryVaultKey),
-      extra_wrapped_protected_key: await wrapProtected(
-        protectedRaw,
-        await passwordKek(extra, extraSalt, iterations),
-        vaultKey,
-      ),
-      recovery_wrapped_protected_key: await wrapRaw(protectedRaw, recovery, AAD.recoveryProtectedKey),
-    }
-    return { config, recoveryKey: encodeRecoveryKey(recoveryRaw), vaultKey }
-  } finally {
-    recoveryRaw.fill(0)
+  const recoveryRaw = crypto.getRandomValues(new Uint8Array(KEY_BYTES))
+  const recoveryKey = encodeRecoveryKey(recoveryRaw)
+  const recovery = await recoveryKek(recoveryRaw)
+  const config: PersonalVaultConfigInput = {
+    kdf: PERSONAL_VAULT_KDF,
+    iterations,
+    master_salt: masterSalt,
+    extra_salt: extraSalt,
+    master_wrapped_vault_key: await wrapField(vaultKey, await passwordKek(master, masterSalt, iterations), AAD.masterVaultKey),
+    recovery_wrapped_vault_key: await wrapField(vaultKey, recovery, AAD.recoveryVaultKey),
+    extra_wrapped_protected_key: await wrapProtected(protectedKey, await passwordKek(extra, extraSalt, iterations), vaultKey),
+    recovery_wrapped_protected_key: await wrapField(protectedKey, recovery, AAD.recoveryProtectedKey),
   }
+  // Hand back a non-extractable copy of VK for the open vault.
+  const openKey = await unwrapField(config.recovery_wrapped_vault_key, recovery, AAD.recoveryVaultKey, "WRONG_RECOVERY_KEY", false)
+  return { config, recoveryKey, vaultKey: openKey }
 }
 
 async function passwordKek(password: string, saltBase64: string, iterations: number): Promise<CryptoKey> {
-  const bits = await derivePbkdf2Bits(password, base64ToBuffer(saltBase64), iterations)
-  try {
-    return await importAesKey(bits)
-  } finally {
-    bits.fill(0)
-  }
-}
-
-async function recoveryKek(raw: Uint8Array): Promise<CryptoKey> {
-  const base = await importHkdfKey(raw)
+  const base = await crypto.subtle.importKey("raw", encodeText(password), "PBKDF2", false, ["deriveKey"])
   return crypto.subtle.deriveKey(
-    { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: new TextEncoder().encode(RECOVERY_INFO) },
+    { name: "PBKDF2", salt: base64ToBuffer(saltBase64) as BufferSource, iterations, hash: "SHA-256" },
     base,
     { name: "AES-GCM", length: 256 },
     false,
-    ["encrypt", "decrypt"],
+    ["wrapKey", "unwrapKey"],
   )
+}
+
+async function recoveryKek(raw: Uint8Array): Promise<CryptoKey> {
+  try {
+    const base = await importHkdfKey(raw)
+    return await crypto.subtle.deriveKey(
+      { name: "HKDF", hash: "SHA-256", salt: new Uint8Array(0), info: encodeText(RECOVERY_INFO) },
+      base,
+      { name: "AES-GCM", length: 256 },
+      false,
+      ["wrapKey", "unwrapKey"],
+    )
+  } finally {
+    raw.fill(0)
+  }
 }
 
 async function seal(plaintext: string, key: CryptoKey, aad: string): Promise<EncryptedField> {
@@ -335,27 +320,60 @@ function open(field: EncryptedField, key: CryptoKey, aad: string): Promise<strin
   return decrypt(field.ciphertext, key, field.iv, field.auth_tag, aad)
 }
 
-function wrapRaw(raw: Uint8Array, kek: CryptoKey, aad: string): Promise<EncryptedField> {
-  return seal(bufferToBase64(raw), kek, aad)
+async function wrapField(key: CryptoKey, kek: CryptoKey, aad: string): Promise<EncryptedField> {
+  const iv = crypto.getRandomValues(new Uint8Array(12))
+  const wrapped = new Uint8Array(
+    await crypto.subtle.wrapKey("raw", key, kek, { name: "AES-GCM", iv, additionalData: encodeText(aad) }),
+  )
+  return {
+    iv: bufferToBase64(iv),
+    ciphertext: bufferToBase64(wrapped.slice(0, -16)),
+    auth_tag: bufferToBase64(wrapped.slice(-16)),
+  }
 }
 
-async function unwrapRaw(field: EncryptedField, kek: CryptoKey, code: string, aad: string): Promise<Uint8Array> {
+async function unwrapField(
+  field: EncryptedField,
+  kek: CryptoKey,
+  aad: string,
+  code: string,
+  extractable: boolean,
+): Promise<CryptoKey> {
   try {
-    return base64ToBuffer(await open(field, kek, aad))
+    const ciphertext = base64ToBuffer(field.ciphertext)
+    const tag = base64ToBuffer(field.auth_tag)
+    const data = new Uint8Array(ciphertext.length + tag.length)
+    data.set(ciphertext)
+    data.set(tag, ciphertext.length)
+    return await crypto.subtle.unwrapKey(
+      "raw",
+      data,
+      kek,
+      { name: "AES-GCM", iv: base64ToBuffer(field.iv) as BufferSource, additionalData: encodeText(aad) },
+      { name: "AES-GCM", length: 256 },
+      extractable,
+      ["encrypt", "decrypt"],
+    )
   } catch {
     throw new CryptoError("Could not unlock personal vault", code)
   }
 }
 
-async function wrapProtected(raw: Uint8Array, extraKek: CryptoKey, vaultKey: CryptoKey): Promise<EncryptedField> {
-  return seal(JSON.stringify(await wrapRaw(raw, extraKek, AAD.extraInner)), vaultKey, AAD.extraOuter)
+async function wrapProtected(protectedKey: CryptoKey, extraKek: CryptoKey, vaultKey: CryptoKey): Promise<EncryptedField> {
+  return seal(JSON.stringify(await wrapField(protectedKey, extraKek, AAD.extraInner)), vaultKey, AAD.extraOuter)
 }
 
-async function unwrapProtectedRaw(field: EncryptedField, vaultKey: CryptoKey, extraKek: CryptoKey): Promise<Uint8Array> {
+async function unwrapProtected(
+  field: EncryptedField,
+  vaultKey: CryptoKey,
+  extraKek: CryptoKey,
+  extractable: boolean,
+): Promise<CryptoKey> {
+  let inner: EncryptedField
   try {
-    const inner = JSON.parse(await open(field, vaultKey, AAD.extraOuter)) as EncryptedField
-    return base64ToBuffer(await open(inner, extraKek, AAD.extraInner))
+    inner = JSON.parse(await open(field, vaultKey, AAD.extraOuter)) as EncryptedField
   } catch {
     throw new CryptoError("Could not unlock protected items", "WRONG_PASSWORD")
   }
+  return unwrapField(inner, extraKek, AAD.extraInner, "WRONG_PASSWORD", extractable)
 }
