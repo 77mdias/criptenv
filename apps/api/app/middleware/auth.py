@@ -59,14 +59,25 @@ async def get_current_web_user(
     token = request.cookies.get("session_token")
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    # CLI sessions are Session rows too: only ones created by a dashboard login count here.
-    return await _user_from_session_token(token, db, client="web")
+    session, user = await AuthService(db).resolve_session(token)
+    _require_verified_user(user)
+    # CLI sessions are Session rows too, and rows from before migration 0015 have no
+    # origin: only a session created by a dashboard login opens the vault.
+    if session.client != "web":
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Sign in again on the web dashboard to use the personal vault",
+        )
+    return user
 
 
-async def _user_from_session_token(token: str, db: AsyncSession, client: Optional[str] = None) -> User:
-    auth_service = AuthService(db)
-    user = await (auth_service.validate_session(token, client=client) if client else auth_service.validate_session(token))
+async def _user_from_session_token(token: str, db: AsyncSession) -> User:
+    user = await AuthService(db).validate_session(token)
+    _require_verified_user(user)
+    return user
 
+
+def _require_verified_user(user: Optional[User]) -> None:
     if user is None:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -79,8 +90,6 @@ async def _user_from_session_token(token: str, db: AsyncSession, client: Optiona
             status_code=status.HTTP_403_FORBIDDEN,
             detail="Email not verified. Please verify your email before accessing this resource.",
         )
-
-    return user
 
 
 async def get_current_user_or_api_key(

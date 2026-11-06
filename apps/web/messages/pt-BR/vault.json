@@ -5,7 +5,9 @@
   "errors": {
     "load": "Não foi possível carregar o cofre. Recarregue a página.",
     "save": "Não foi possível salvar. Tente de novo.",
-    "conflict": "O cofre mudou em outra aba. Recarregamos a versão mais recente. Tente de novo."
+    "conflict": "O cofre mudou em outra aba. Recarregamos a versão mais recente. Tente de novo.",
+    "reauth": "Por segurança, o cofre só abre com um login feito depois desta atualização. Saia e entre de novo.",
+    "reauthAction": "Entrar de novo"
   },
   "passwords": {
     "master": "Senha mestra",

@@ -5,7 +5,9 @@
   "errors": {
     "load": "No se pudo cargar la bóveda. Recarga la página.",
     "save": "No se pudo guardar. Inténtalo de nuevo.",
-    "conflict": "La bóveda cambió en otra pestaña. Recargamos la versión más reciente. Inténtalo de nuevo."
+    "conflict": "La bóveda cambió en otra pestaña. Recargamos la versión más reciente. Inténtalo de nuevo.",
+    "reauth": "Por seguridad, la bóveda solo se abre con un inicio de sesión hecho después de esta actualización. Cierra sesión y vuelve a entrar.",
+    "reauthAction": "Volver a entrar"
   },
   "passwords": {
     "master": "Contraseña maestra",

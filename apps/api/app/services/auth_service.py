@@ -188,10 +188,15 @@ class AuthService:
 
         return session
 
-    async def validate_session(self, token: str, client: Optional[str] = None) -> Optional[User]:
-        """Resolve a session token to its user; with `client`, only sessions of that origin count."""
+    async def validate_session(self, token: str) -> Optional[User]:
+        _, user = await self.resolve_session(token)
+        return user
+
+    async def resolve_session(self, token: str) -> tuple[Optional[Session], Optional[User]]:
+        """Valid session and its user, or (None, None). Callers that care about the
+        session's origin (web vs CLI) read `session.client`."""
         if len(token) < 32:
-            return None
+            return None, None
 
         now = datetime.now(timezone.utc)
         inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
@@ -205,8 +210,8 @@ class AuthService:
         )
         session = await self._scalar_one_or_none(result)
 
-        if not session or (client is not None and session.client != client):
-            return None
+        if not session:
+            return None, None
 
         # Update last_accessed_at on every successful validation
         session.last_accessed_at = now
@@ -218,7 +223,7 @@ class AuthService:
         user = await self._scalar_one_or_none(user_result)
         if user:
             await self.ensure_kdf_salt(user)
-        return user
+        return (session, user) if user else (None, None)
 
     async def invalidate_session(self, token: str) -> bool:
         result = await self.db.execute(

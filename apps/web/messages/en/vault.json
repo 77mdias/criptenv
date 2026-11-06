@@ -5,7 +5,9 @@
   "errors": {
     "load": "Could not load the vault. Reload the page.",
     "save": "Could not save. Try again.",
-    "conflict": "The vault changed in another tab. We reloaded the latest version. Try again."
+    "conflict": "The vault changed in another tab. We reloaded the latest version. Try again.",
+    "reauth": "For security, the vault only opens with a sign-in made after this update. Sign out and sign in again.",
+    "reauthAction": "Sign in again"
   },
   "passwords": {
     "master": "Master password",

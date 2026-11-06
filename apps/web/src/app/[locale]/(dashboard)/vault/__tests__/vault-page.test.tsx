@@ -5,6 +5,8 @@ import { ApiError } from "@/lib/api/client"
 import * as api from "@/lib/api/personal-vault"
 import * as vaultCrypto from "@/lib/personal-vault/crypto"
 import { getDashboardNavGroups } from "@/components/layout/dashboard-nav"
+import { authApi } from "@/lib/api/auth"
+import { useRouter } from "@/i18n/navigation"
 import PersonalVaultPage from "../page"
 
 jest.mock("@/lib/api/personal-vault", () => ({
@@ -16,6 +18,8 @@ jest.mock("@/lib/api/personal-vault", () => ({
   updatePersonalVaultItem: jest.fn(),
   deletePersonalVaultItem: jest.fn(),
 }))
+
+jest.mock("@/lib/api/auth", () => ({ authApi: { signout: jest.fn(() => Promise.resolve({ message: "ok" })) } }))
 
 jest.mock("@/lib/personal-vault/crypto", () => ({
   createPersonalVault: jest.fn(),
@@ -72,6 +76,20 @@ async function openVault() {
 describe("personal vault page", () => {
   afterEach(() => {
     jest.useRealTimers()
+  })
+
+  it("asks pre-migration sessions to sign in again instead of a dead-end reload error", async () => {
+    mocked(api.getPersonalVaultConfig).mockRejectedValue(
+      new ApiError("Sign in again on the web dashboard to use the personal vault", 403, null),
+    )
+    renderWithIntl(<PersonalVaultPage />)
+
+    expect(
+      await screen.findByText("Por segurança, o cofre só abre com um login feito depois desta atualização. Saia e entre de novo."),
+    ).toBeInTheDocument()
+    fireEvent.click(screen.getByRole("button", { name: "Entrar de novo" }))
+    await waitFor(() => expect(authApi.signout).toHaveBeenCalled())
+    expect(useRouter().push).toHaveBeenCalledWith("/login?redirect=%2Fvault")
   })
 
   it("shows setup when there is no config", async () => {

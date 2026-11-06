@@ -144,7 +144,7 @@ async def test_web_user_requires_cookie():
 @pytest.mark.asyncio
 async def test_web_user_accepts_session_cookie(monkeypatch):
     user = _user("ana")
-    monkeypatch.setattr(AuthService, "validate_session", AsyncMock(return_value=user))
+    monkeypatch.setattr(AuthService, "resolve_session", AsyncMock(return_value=(MagicMock(client="web"), user)))
     assert await get_current_web_user(_request(cookies={"session_token": "tok"}), db=MagicMock()) is user
 
 
@@ -152,7 +152,7 @@ async def test_web_user_accepts_session_cookie(monkeypatch):
 async def test_web_user_keeps_email_verification_rule(monkeypatch):
     user = _user("ana")
     user.email_verified = False
-    monkeypatch.setattr(AuthService, "validate_session", AsyncMock(return_value=user))
+    monkeypatch.setattr(AuthService, "resolve_session", AsyncMock(return_value=(MagicMock(client="web"), user)))
     with pytest.raises(HTTPException) as exc:
         await get_current_web_user(_request(cookies={"session_token": "tok"}), db=MagicMock())
     assert exc.value.status_code == 403
@@ -341,6 +341,25 @@ async def test_cli_session_token_sent_as_cookie_is_refused(db_session, user):
     web = await auth.create_session(user.id)
     with pytest.raises(HTTPException) as exc:
         await get_current_web_user(_request(cookies={"session_token": cli.plaintext_token}), db=db_session)
-    assert exc.value.status_code == 401
+    assert exc.value.status_code == 403
+    assert exc.value.detail == "Sign in again on the web dashboard to use the personal vault"
     ok = await get_current_web_user(_request(cookies={"session_token": web.plaintext_token}), db=db_session)
     assert ok.id == user.id
+
+
+@pytest.mark.asyncio
+async def test_pre_migration_session_is_told_to_sign_in_again(db_session, user):
+    legacy = await AuthService(db_session).create_session(user.id)
+    legacy.client = None  # rows created before migration 0015
+    await db_session.flush()
+    with pytest.raises(HTTPException) as exc:
+        await get_current_web_user(_request(cookies={"session_token": legacy.plaintext_token}), db=db_session)
+    assert exc.value.status_code == 403
+    assert exc.value.detail == "Sign in again on the web dashboard to use the personal vault"
+
+
+@pytest.mark.asyncio
+async def test_unknown_cookie_is_still_401(db_session):
+    with pytest.raises(HTTPException) as exc:
+        await get_current_web_user(_request(cookies={"session_token": "x" * 40}), db=db_session)
+    assert exc.value.status_code == 401
