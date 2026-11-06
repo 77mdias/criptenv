@@ -296,4 +296,30 @@ describe("vault items", () => {
     expect(vaultCrypto.unlockVault).toHaveBeenCalledWith(SAVED, "mestra-forte-123")
     expect(vaultCrypto.rewrapExtra).not.toHaveBeenCalled()
   })
+
+  it("editing an item deleted elsewhere shows a notice and reloads", async () => {
+    mocked(vaultCrypto.decryptItem).mockResolvedValue({ ...SUMMARIES.i2, password: "x", notes: "" } as vaultCrypto.PersonalVaultItemPlain)
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.updatePersonalVaultItem).mockRejectedValue(new ApiError("Item not found", 404, null))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar GitHub" }))
+    const dialog = await screen.findByRole("dialog")
+    await waitFor(() => expect(within(dialog).getByLabelText("Título")).toHaveValue("GitHub"))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    expect(await screen.findByText("Este item foi apagado em outra aba.")).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)
+  })
+
+  it("deleting an item already deleted elsewhere just reloads", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(true)
+    mocked(api.deletePersonalVaultItem).mockRejectedValue(new ApiError("Item not found", 404, null))
+    await renderItems()
+    fireEvent.click(screen.getByRole("button", { name: "Apagar Wi-Fi" }))
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText("Não foi possível salvar. Tente de novo.")).not.toBeInTheDocument()
+  })
 })

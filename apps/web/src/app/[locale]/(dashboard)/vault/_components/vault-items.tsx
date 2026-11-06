@@ -13,6 +13,7 @@ import {
   type PersonalVaultConfig,
   type PersonalVaultItem,
 } from "@/lib/api/personal-vault"
+import { ApiError } from "@/lib/api/client"
 import { decryptSummary, type ItemSummary } from "@/lib/personal-vault/crypto"
 import { ProtectedRevealDialog } from "./protected-reveal-dialog"
 import { VaultItemDialog } from "./vault-item-dialog"
@@ -81,8 +82,10 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
     try {
       await deletePersonalVaultItem(entry.item.id)
       reload()
-    } catch {
-      setError(t("errors.save"))
+    } catch (err) {
+      // Already deleted in another tab: the goal is met, just refresh the list.
+      if (err instanceof ApiError && err.status === 404) reload()
+      else setError(t("errors.save"))
     }
   }
 
@@ -188,9 +191,9 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
           setNotice(null)
           reload()
         }}
-        onConflict={() => {
+        onStale={(reason) => {
           setEditing(undefined)
-          setNotice(t("itemDialog.conflict"))
+          setNotice(reason === "deleted" ? t("itemDialog.deleted") : t("itemDialog.conflict"))
           reload()
         }}
       />

@@ -93,7 +93,8 @@
     "cancel": "Cancelar",
     "titleRequired": "Ponle un título al elemento.",
     "conflict": "Este elemento cambió en otra pestaña. Recargamos la versión más reciente.",
-    "wrongExtra": "Contraseña extra incorrecta"
+    "wrongExtra": "Contraseña extra incorrecta",
+    "deleted": "Este elemento se eliminó en otra pestaña."
   },
   "reveal": {
     "unlockDescription": "Este elemento tiene protección extra. Escribe la contraseña extra para verlo.",

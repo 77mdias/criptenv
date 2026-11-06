@@ -93,7 +93,8 @@
     "cancel": "Cancelar",
     "titleRequired": "Dê um título ao item.",
     "conflict": "Este item mudou em outra aba. Recarregamos a versão mais recente.",
-    "wrongExtra": "Senha extra incorreta"
+    "wrongExtra": "Senha extra incorreta",
+    "deleted": "Este item foi apagado em outra aba."
   },
   "reveal": {
     "unlockDescription": "Este item tem proteção extra. Digite a senha extra para ver.",

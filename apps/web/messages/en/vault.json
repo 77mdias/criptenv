@@ -93,7 +93,8 @@
     "cancel": "Cancel",
     "titleRequired": "Give the item a title.",
     "conflict": "This item changed in another tab. We reloaded the latest version.",
-    "wrongExtra": "Wrong extra password"
+    "wrongExtra": "Wrong extra password",
+    "deleted": "This item was deleted in another tab."
   },
   "reveal": {
     "unlockDescription": "This item has extra protection. Enter the extra password to see it.",

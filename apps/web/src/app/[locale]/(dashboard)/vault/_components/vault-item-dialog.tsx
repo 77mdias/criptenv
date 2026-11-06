@@ -24,7 +24,8 @@ interface Props {
   vaultKey: CryptoKey
   onClose: () => void
   onSaved: () => void
-  onConflict: () => void
+  /** The item changed or was deleted elsewhere: the list must reload, never retry. */
+  onStale: (reason: "changed" | "deleted") => void
 }
 
 export function VaultItemDialog({ entry, ...rest }: Props) {
@@ -43,7 +44,7 @@ const textareaClass =
   "flex min-h-20 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-base md:text-sm text-(--text-primary) focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2"
 const labelClass = "block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono"
 
-function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, "entry"> & { entry: DecryptedEntry | null }) {
+function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "entry"> & { entry: DecryptedEntry | null }) {
   const t = useTranslations("vault")
   const [form, setForm] = useState(emptyForm)
   const [isProtected, setIsProtected] = useState(entry?.item.protected ?? false)
@@ -126,8 +127,9 @@ function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, 
       else await createPersonalVaultItem(encrypted)
       onSaved()
     } catch (err) {
-      // Never retry a 409: the other tab's version wins and the list reloads.
-      if (err instanceof ApiError && err.status === 409) onConflict()
+      // Never retry: the other tab's version (or deletion) wins and the list reloads.
+      if (err instanceof ApiError && err.status === 409) onStale("changed")
+      else if (entry && err instanceof ApiError && err.status === 404) onStale("deleted")
       else report(err)
       setBusy(false)
     }
