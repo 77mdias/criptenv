@@ -71,7 +71,8 @@
     "delete": "Delete {title}",
     "deleteConfirm": "Delete \"{title}\"? This cannot be undone.",
     "copyUsername": "Copy username of {title}",
-    "copied": "Copied to the clipboard."
+    "copied": "Copied to the clipboard.",
+    "unreadable": "Unreadable item"
   },
   "itemDialog": {
     "newTitle": "New item",

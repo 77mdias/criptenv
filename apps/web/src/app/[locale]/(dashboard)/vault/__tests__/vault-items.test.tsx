@@ -322,4 +322,32 @@ describe("vault items", () => {
     await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
     expect(screen.queryByText("Não foi possível salvar. Tente de novo.")).not.toBeInTheDocument()
   })
+
+  it("an undecryptable item is listed as unreadable and the rest still shows", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(true)
+    mocked(api.deletePersonalVaultItem).mockResolvedValue(undefined)
+    mocked(api.listPersonalVaultItems).mockResolvedValue([item("i1", true), item("i2"), item("i3")])
+    mocked(vaultCrypto.decryptSummary).mockImplementation(async (id) => {
+      if (id === "i2") throw new CryptoError("bad", "DECRYPTION_FAILED")
+      return SUMMARIES[id]
+    })
+    renderWithIntl(
+      <PersonalVaultSessionProvider>
+        <VaultItems vaultKey={KEY} config={SAVED} onConfigChange={onConfigChange} />
+      </PersonalVaultSessionProvider>,
+    )
+
+    expect(await screen.findByText("Instagram")).toBeInTheDocument()
+    expect(screen.getByText("Wi-Fi")).toBeInTheDocument()
+    expect(screen.getByText("Item ilegível")).toBeInTheDocument()
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Revelar Item ilegível|Editar Item ilegível/ })).not.toBeInTheDocument()
+
+    type("Buscar", "ileg")
+    expect(screen.queryByText("Item ilegível")).not.toBeInTheDocument()
+    type("Buscar", "")
+
+    fireEvent.click(screen.getByRole("button", { name: "Apagar Item ilegível" }))
+    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
+  })
 })

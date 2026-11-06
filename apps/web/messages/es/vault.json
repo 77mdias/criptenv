@@ -71,7 +71,8 @@
     "delete": "Eliminar {title}",
     "deleteConfirm": "¿Eliminar \"{title}\"? No se puede deshacer.",
     "copyUsername": "Copiar usuario de {title}",
-    "copied": "Copiado al portapapeles."
+    "copied": "Copiado al portapapeles.",
+    "unreadable": "Elemento ilegible"
   },
   "itemDialog": {
     "newTitle": "Nuevo elemento",

@@ -71,7 +71,8 @@
     "delete": "Apagar {title}",
     "deleteConfirm": "Apagar \"{title}\"? Isso não pode ser desfeito.",
     "copyUsername": "Copiar usuário de {title}",
-    "copied": "Copiado para a área de transferência."
+    "copied": "Copiado para a área de transferência.",
+    "unreadable": "Item ilegível"
   },
   "itemDialog": {
     "newTitle": "Novo item",
