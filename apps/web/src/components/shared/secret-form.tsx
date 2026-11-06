@@ -2,7 +2,7 @@
 
 import { FormEvent, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { KeyRound } from "lucide-react"
+import { Eye, EyeOff, KeyRound } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   Dialog,
@@ -62,6 +62,7 @@ function SecretFormDialog({
   const secretSchema = useMemo(() => createSecretSchema(t), [t])
   const [keyName, setKeyName] = useState(initialValue?.key ?? "")
   const [value, setValue] = useState(initialValue?.value ?? "")
+  const [showValue, setShowValue] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -96,9 +97,21 @@ function SecretFormDialog({
           <Input
             label={t("valueLabel")}
             placeholder={t("valuePlaceholder")}
-            type="password"
+            type={showValue ? "text" : "password"}
             value={value}
             onChange={(event) => setValue(event.target.value)}
+            autoComplete="off"
+            spellCheck={false}
+            suffix={
+              <button
+                type="button"
+                onClick={() => setShowValue((shown) => !shown)}
+                aria-label={showValue ? t("hideValue") : t("showValue")}
+                className="flex text-[var(--text-muted)] hover:text-[var(--text-primary)]"
+              >
+                {showValue ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            }
           />
           {error && <p className="font-mono text-xs text-red-600">{error}</p>}
           <DialogFooter>

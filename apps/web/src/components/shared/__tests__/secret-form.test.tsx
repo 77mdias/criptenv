@@ -36,6 +36,21 @@ describe("SecretForm", () => {
     )
   })
 
+  it("toggles the value between hidden and visible", async () => {
+    render(
+      <SecretForm open title="Novo Secret" onOpenChange={jest.fn()} onSubmit={jest.fn()} />
+    )
+
+    const valueInput = screen.getByLabelText("Valor")
+    expect(valueInput).toHaveAttribute("type", "password")
+
+    await userEvent.click(screen.getByRole("button", { name: "Mostrar valor" }))
+    expect(valueInput).toHaveAttribute("type", "text")
+
+    await userEvent.click(screen.getByRole("button", { name: "Ocultar valor" }))
+    expect(valueInput).toHaveAttribute("type", "password")
+  })
+
   it("shows validation errors and calls cancel handlers", async () => {
     const onOpenChange = jest.fn()
     const onSubmit = jest.fn()
