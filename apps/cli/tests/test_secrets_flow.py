@@ -49,6 +49,39 @@ class TestRemoteSecretFlow:
             assert result.exit_code == 0
             assert "v2" in result.output
 
+    def test_set_secret_flag_marks_kind(self, runner, remote_vault_client):
+        with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
+            assert runner.invoke(main, ["set", "A=1", "--secret", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+        assert remote_vault_client.blobs[0]["kind"] == "secret"
+
+    def test_set_without_flag_keeps_existing_kind(self, runner, remote_vault_client):
+        with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
+            assert runner.invoke(main, ["set", "A=1", "--secret", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+            assert runner.invoke(main, ["set", "A=2", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+        assert remote_vault_client.blobs[0]["kind"] == "secret"
+
+    def test_set_config_flag_switches_kind(self, runner, remote_vault_client):
+        with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
+            assert runner.invoke(main, ["set", "A=1", "--secret", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+            assert runner.invoke(main, ["set", "A=2", "--config", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+        assert remote_vault_client.blobs[0]["kind"] == "config"
+
+    def test_set_new_key_without_flag_omits_kind(self, runner, remote_vault_client):
+        with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
+            assert runner.invoke(main, ["set", "B=1", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+        assert "kind" not in remote_vault_client.blobs[0]
+
+    def test_list_shows_kind(self, runner, remote_vault_client):
+        with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
+            assert runner.invoke(main, ["set", "A=1", "--secret", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+            assert runner.invoke(main, ["set", "B=1", "-p", "00000000-0000-4000-8000-000000000123"]).exit_code == 0
+            result = runner.invoke(main, ["list", "-p", "00000000-0000-4000-8000-000000000123"])
+        assert result.exit_code == 0
+        line_a = next(line for line in result.output.splitlines() if line.strip().startswith("A "))
+        line_b = next(line for line in result.output.splitlines() if line.strip().startswith("B "))
+        assert "secret" in line_a
+        assert "config" in line_b
+
     def test_get_nonexistent(self, runner, remote_vault_client):
         with patch("criptenv.commands.secrets.cli_context", remote_cli_context_for(remote_vault_client)):
             result = runner.invoke(main, ["get", "NONEXISTENT", "-p", "00000000-0000-4000-8000-000000000123"])

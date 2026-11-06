@@ -10,6 +10,20 @@ from criptenv.crypto.utils import to_base64
 from criptenv.remote_vault import RemoteVault
 
 
+def _blob(**extra):
+    return {"key_id": "A", "iv": "i", "ciphertext": "c", "auth_tag": "t", "version": 1, "checksum": "x", **extra}
+
+
+def test_push_shape_keeps_kind(remote_vault_client):
+    vault = RemoteVault(remote_vault_client, remote_vault_client.project_id)
+    assert vault.push_shape(_blob(kind="secret"))["kind"] == "secret"
+
+
+def test_push_shape_omits_missing_kind(remote_vault_client):
+    vault = RemoteVault(remote_vault_client, remote_vault_client.project_id)
+    assert "kind" not in vault.push_shape(_blob())
+
+
 def _web_checksum(key_id: str, iv: str, ciphertext: str, auth_tag: str) -> str:
     """Checksum format produced by the web dashboard."""
     return hashlib.sha256(

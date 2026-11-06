@@ -15,7 +15,13 @@ from criptenv.remote_vault import RemoteVault
 @click.argument("key_value")
 @click.option("--env", "-e", "env_name", default=None, help="Environment name or ID")
 @click.option("--project", "-p", default=None, help="Project name or ID")
-def set_command(key_value: str, env_name: str | None, project: str | None):
+@click.option(
+    "--secret/--config",
+    "secret",
+    default=None,
+    help="Sync to Vercel as a write-only Secret or a readable Config (default: keep, or config when new)",
+)
+def set_command(key_value: str, env_name: str | None, project: str | None, secret: bool | None):
     """Set a secret (KEY=value).
 
     The value is encrypted client-side before storage.
@@ -25,6 +31,7 @@ def set_command(key_value: str, env_name: str | None, project: str | None):
     Examples:
         criptenv set API_KEY=secret123
         criptenv set DB_PASSWORD=s3cur3 -e staging
+        criptenv set API_KEY=sk_live --secret
     """
     if "=" not in key_value:
         click.echo("Error: Must be KEY=value format", err=True)
@@ -45,6 +52,9 @@ def set_command(key_value: str, env_name: str | None, project: str | None):
                 state.environment.id,
                 version,
             ))
+            kind = {True: "secret", False: "config"}.get(secret) or (existing or {}).get("kind")
+            if kind:
+                new_blob["kind"] = kind
             blobs = [blob for blob in state.blobs if blob["key_id"] != key_id]
             blobs.append(new_blob)
             run_async(vault.push_state(state, blobs))
@@ -141,7 +151,7 @@ def list_command(env_name: str | None, project: str | None):
     click.echo("")
     for s in secrets:
         updated = str(s.get("updated_at", ""))[:16].replace("T", " ")
-        click.echo(f"  {s.get('key_id', 'unknown'):<30} v{int(s.get('version', 1)):<3} {updated}")
+        click.echo(f"  {s.get('key_id', 'unknown'):<30} {s.get('kind', 'config'):<7} v{int(s.get('version', 1)):<3} {updated}")
 
     click.echo("")
     click.echo(f"Total: {len(secrets)} secret(s)")

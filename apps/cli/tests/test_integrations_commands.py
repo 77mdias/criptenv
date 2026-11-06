@@ -1,6 +1,8 @@
+from types import SimpleNamespace
+from unittest.mock import patch, AsyncMock, MagicMock
+
 import pytest
 from click.testing import CliRunner
-from unittest.mock import patch, AsyncMock, MagicMock
 
 from criptenv.cli import main
 
@@ -86,7 +88,7 @@ async def test_client_list_integrations_reads_api_envelope():
     assert await client.list_integrations("p1") == [{"id": "i1", "provider": "vercel"}]
 
 
-def _sync_env(monkeypatch, client, entries=None):
+def _sync_env(monkeypatch, client, entries=None, blobs=None):
     """Patch the sync command's context, project resolution and vault."""
     from contextlib import contextmanager
 
@@ -97,7 +99,7 @@ def _sync_env(monkeypatch, client, entries=None):
         yield object(), None, client
 
     vault = MagicMock()
-    vault.load_state = AsyncMock(return_value="state")
+    vault.load_state = AsyncMock(return_value=SimpleNamespace(blobs=blobs or []))
     vault.decrypt_all = AsyncMock(return_value=entries or {})
     monkeypatch.setattr(integrations_module, "cli_context", fake_cli_context)
     monkeypatch.setattr(integrations_module, "resolve_project_id", lambda *a, **k: "proj-1")
@@ -126,6 +128,27 @@ def test_sync_push_sends_decrypted_environment(monkeypatch):
         secrets=[{"key": "A", "value": "1"}, {"key": "B", "value": "2"}],
     )
     assert "Pushed 2 secret(s)" in result.output
+
+
+def test_sync_push_sends_kind_and_reports_recreated(monkeypatch):
+    client = MagicMock()
+    client.list_integrations = AsyncMock(return_value=[{"id": "int_1", "provider": "vercel", "name": "V"}])
+    client.sync_integration = AsyncMock(return_value={"success": True, "synced_count": 2, "recreated": ["A"]})
+    _sync_env(
+        monkeypatch,
+        client,
+        entries={"A": "1", "B": "2"},
+        blobs=[{"key_id": "A", "kind": "secret"}, {"key_id": "B"}],
+    )
+
+    result = CliRunner().invoke(main, ["integrations", "sync", "--provider", "vercel", "--target", "production"])
+
+    assert result.exit_code == 0, result.output
+    assert client.sync_integration.await_args.kwargs["secrets"] == [
+        {"key": "A", "value": "1", "kind": "secret"},
+        {"key": "B", "value": "2"},
+    ]
+    assert "Recreated in vercel with the new type: A" in result.output
 
 
 def test_sync_reports_provider_failure_with_exit_code(monkeypatch):
