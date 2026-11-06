@@ -330,3 +330,17 @@ async def test_delete_account_removes_personal_vault(db_session, user):
     await AuthService(db_session).delete_account(user)
     assert (await db_session.execute(select(func.count()).select_from(PersonalVaultItem))).scalar() == 0
     assert (await db_session.execute(select(func.count()).select_from(PersonalVault))).scalar() == 0
+
+
+# ─── Final review fix: CLI sessions are not web sessions ────────────────────
+
+@pytest.mark.asyncio
+async def test_cli_session_token_sent_as_cookie_is_refused(db_session, user):
+    auth = AuthService(db_session)
+    cli = await auth.create_session(user.id, user_agent="CriptEnv CLI", client="cli")
+    web = await auth.create_session(user.id)
+    with pytest.raises(HTTPException) as exc:
+        await get_current_web_user(_request(cookies={"session_token": cli.plaintext_token}), db=db_session)
+    assert exc.value.status_code == 401
+    ok = await get_current_web_user(_request(cookies={"session_token": web.plaintext_token}), db=db_session)
+    assert ok.id == user.id

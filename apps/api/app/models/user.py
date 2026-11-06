@@ -44,6 +44,9 @@ class Session(Base):
     last_accessed_at = Column(DateTime(timezone=True), server_default=func.now())
     ip_address = Column(String(45))
     user_agent = Column(String(512))
+    # "web" (dashboard cookie) or "cli"; NULL for sessions created before the column existed.
+    # Web-only features (personal vault) require "web".
+    client = Column(String(16))
 
     user = relationship("User", back_populates="sessions", foreign_keys=[user_id])
 

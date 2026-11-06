@@ -59,12 +59,13 @@ async def get_current_web_user(
     token = request.cookies.get("session_token")
     if not token:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
-    return await _user_from_session_token(token, db)
+    # CLI sessions are Session rows too: only ones created by a dashboard login count here.
+    return await _user_from_session_token(token, db, client="web")
 
 
-async def _user_from_session_token(token: str, db: AsyncSession) -> User:
+async def _user_from_session_token(token: str, db: AsyncSession, client: Optional[str] = None) -> User:
     auth_service = AuthService(db)
-    user = await auth_service.validate_session(token)
+    user = await (auth_service.validate_session(token, client=client) if client else auth_service.validate_session(token))
 
     if user is None:
         raise HTTPException(

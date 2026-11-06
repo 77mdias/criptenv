@@ -151,7 +151,8 @@ class AuthService:
         self,
         user_id: UUID,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
+        client: str = "web",
     ) -> Session:
         token = self.generate_session_token()
         expires_at = datetime.now(timezone.utc) + timedelta(days=settings.SESSION_EXPIRE_DAYS)
@@ -175,7 +176,8 @@ class AuthService:
             token=self.hash_token(token),
             expires_at=expires_at,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
+            client=client,
         )
         self.db.add(session)
         await self.db.flush()
@@ -186,7 +188,8 @@ class AuthService:
 
         return session
 
-    async def validate_session(self, token: str) -> Optional[User]:
+    async def validate_session(self, token: str, client: Optional[str] = None) -> Optional[User]:
+        """Resolve a session token to its user; with `client`, only sessions of that origin count."""
         if len(token) < 32:
             return None
 
@@ -202,7 +205,7 @@ class AuthService:
         )
         session = await self._scalar_one_or_none(result)
 
-        if not session:
+        if not session or (client is not None and session.client != client):
             return None
 
         # Update last_accessed_at on every successful validation
