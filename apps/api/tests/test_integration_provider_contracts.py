@@ -210,15 +210,17 @@ class TestVercelContract:
         assert self._mutations(calls) == [("POST", "/v10/projects/prj_1/env")]
 
     @pytest.mark.asyncio
-    async def test_patch_failure_aborts_before_any_delete(self, http):
+    async def test_refused_conversion_leaves_that_key_alone_and_syncs_the_rest(self, http):
         calls, routes = http
         self._mismatch_routes(
             routes,
             [
                 {"id": "env_b", "key": "B", "type": "sensitive", "target": ["production", "preview"]},
-                {"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]},
+                {"id": "env_c", "key": "C", "type": "sensitive", "target": ["production", "development"]},
             ],
-            patch=httpx.Response(400, json={"error": {"message": "nope"}}),
+        )
+        routes[("PATCH", "/v9/projects/prj_1/env/env_c")] = httpx.Response(
+            403, json={"error": {"message": "team policy"}}
         )
 
         with pytest.raises(ProviderError) as excinfo:
@@ -228,8 +230,63 @@ class TestVercelContract:
                 "production",
             )
 
-        assert "B" in str(excinfo.value) and "preview" in str(excinfo.value)
-        assert [m for m, _ in self._mutations(calls)] == ["PATCH"]
+        message = str(excinfo.value)
+        assert "C" in message and "team policy" in message
+        assert "not recreated" not in message
+        # B was detached and is created again; C was not touched and is not sent.
+        post = next(c for c in calls if c.method == "POST")
+        assert [item["key"] for item in json.loads(post.content)] == ["B"]
+
+    @pytest.mark.asyncio
+    async def test_refused_delete_leaves_that_key_alone(self, http):
+        calls, routes = http
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            delete=httpx.Response(403, json={"error": {"message": "locked"}}),
+        )
+
+        with pytest.raises(ProviderError, match="locked"):
+            await VercelProvider().push_secrets(
+                [{"key": "A", "value": "1", "kind": "config"}, {"key": "C", "value": "3", "kind": "config"}],
+                VERCEL,
+                "production",
+            )
+
+        post = next(c for c in calls if c.method == "POST")
+        assert [item["key"] for item in json.loads(post.content)] == ["A"]
+
+    @pytest.mark.asyncio
+    async def test_transport_error_after_removal_names_missing_keys(self, http):
+        _, routes = http
+
+        def timeout(request):
+            raise httpx.ReadTimeout("")
+
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            post=timeout,
+        )
+
+        with pytest.raises(ProviderError, match="Removed from Vercel production and not recreated: C"):
+            await VercelProvider().push_secrets([{"key": "C", "value": "3", "kind": "config"}], VERCEL, "production")
+
+    @pytest.mark.asyncio
+    async def test_transport_error_during_removal_names_the_key_in_flight(self, http):
+        _, routes = http
+
+        def timeout(request):
+            raise httpx.ReadTimeout("")
+
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            delete=timeout,
+        )
+
+        with pytest.raises(ProviderError, match="not recreated: C"):
+            await VercelProvider().push_secrets([{"key": "C", "value": "3", "kind": "config"}], VERCEL, "production")
 
     @pytest.mark.asyncio
     async def test_create_failure_after_removal_names_missing_keys(self, http):

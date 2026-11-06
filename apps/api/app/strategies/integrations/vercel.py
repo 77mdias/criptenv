@@ -62,55 +62,59 @@ class VercelProvider(IntegrationProvider):
         A secret with an explicit ``kind`` goes as Secret (``sensitive``) or Config
         (``encrypted``). When Vercel already holds that key for this target with the
         other kind, the old record is first taken off this target (PATCH when it also
-        covers other targets, DELETE otherwise) and then created again. Secrets
-        without ``kind`` keep the pre-kind behaviour: no listing, no conversion.
+        covers other targets, DELETE otherwise) and then created again. When Vercel
+        refuses that for a key, the key is left exactly as it was and the rest is
+        still synced. Secrets without ``kind`` keep the pre-kind behaviour: no
+        listing, no conversion.
         """
         project_id = self._require(config)
         self._check_target(environment)
         self.recreated_keys = ()
 
-        payload = [self._env_payload(secret, environment) for secret in secrets]
+        removed: list[str] = []
+        refused: list[str] = []
+        skipped: set[str] = set()
+        in_flight: str | None = None
+        try:
+            async with self._client(config) as client:
+                explicit = {secret["key"]: secret["kind"] for secret in secrets if secret.get("kind")}
+                if explicit:
+                    conflicts = self._kind_conflicts(await self._list_envs(client, project_id), explicit, environment)
+                    for env, others in conflicts:
+                        in_flight = env["key"]
+                        path = f"/v9/projects/{project_id}/env/{env['id']}"
+                        response = await (client.patch(path, json={"target": others}) if others else client.delete(path))
+                        in_flight = None
+                        try:
+                            ensure_ok(response, "Vercel")
+                        except ProviderError as exc:
+                            skipped.add(env["key"])
+                            also = f" (that record also covers {', '.join(others)})" if others else ""
+                            refused.append(f"{env['key']}{also}: {exc}")
+                            continue
+                        removed.append(env["key"])
 
-        async with self._client(config) as client:
-            removed: list[str] = []
-            explicit = {secret["key"]: secret["kind"] for secret in secrets if secret.get("kind")}
-            if explicit:
-                conflicts = self._kind_conflicts(await self._list_envs(client, project_id), explicit, environment)
-                # Detaching from shared records first: if one is refused, no record was deleted yet.
-                for env, others in conflicts:
-                    if not others:
-                        continue
-                    response = await client.patch(f"/v9/projects/{project_id}/env/{env['id']}", json={"target": others})
-                    if not response.is_success:
-                        raise ProviderError(
-                            f"Vercel refused to take {env['key']} off {environment}; that record also covers "
-                            f"{', '.join(others)}, so nothing was deleted."
-                            + self._removed_note(removed, environment)
-                        )
-                    removed.append(env["key"])
-                for env, others in conflicts:
-                    if others:
-                        continue
-                    response = await client.delete(f"/v9/projects/{project_id}/env/{env['id']}")
-                    if not response.is_success:
-                        raise ProviderError(
-                            f"Vercel refused to delete {env['key']} from {environment}."
-                            + self._removed_note(removed, environment)
-                        )
-                    removed.append(env["key"])
+                payload = [self._env_payload(s, environment) for s in secrets if s["key"] not in skipped]
+                response = None
+                if payload:
+                    # upsert=true overwrites existing values instead of answering 409 (same as `vercel env add --force`).
+                    response = await client.post(
+                        f"/v10/projects/{project_id}/env",
+                        params={"upsert": "true"},
+                        json=payload,
+                    )
+                    try:
+                        ensure_ok(response, "Vercel")
+                    except ProviderError as exc:
+                        raise ProviderError(str(exc) + self._removed_note(removed, environment)) from exc
+        except httpx.HTTPError as exc:
+            # The request in flight may have been applied: count its key as possibly removed.
+            lost = removed + ([in_flight] if in_flight else [])
+            raise ProviderError(
+                f"Lost connection to Vercel ({type(exc).__name__})." + self._removed_note(lost, environment)
+            ) from exc
 
-            # upsert=true overwrites existing values instead of answering 409 (same as `vercel env add --force`).
-            response = await client.post(
-                f"/v10/projects/{project_id}/env",
-                params={"upsert": "true"},
-                json=payload,
-            )
-            try:
-                ensure_ok(response, "Vercel")
-            except ProviderError as exc:
-                raise ProviderError(str(exc) + self._removed_note(removed, environment)) from exc
-
-        failed = response.json().get("failed") or []
+        failed = (response.json().get("failed") or []) if response is not None else []
         if failed:
             failed_keys = [
                 item.get("error", {}).get("envVarKey") or item.get("error", {}).get("key", "?") for item in failed
@@ -121,6 +125,12 @@ class VercelProvider(IntegrationProvider):
             missing = [key for key in removed if key in failed_keys]
             prefix = f"Removed from Vercel {environment} and not recreated: {', '.join(missing)}. " if missing else ""
             raise ProviderError(f"{prefix}Vercel rejected {len(failed)} variable(s): {details}")
+        if refused:
+            recreated = f" Recreated with the new type: {', '.join(removed)}." if removed else ""
+            raise ProviderError(
+                f"Vercel refused to change the type of {len(refused)} variable(s), left unchanged: "
+                f"{'; '.join(refused)}. The other variables were synced.{recreated}"
+            )
         self.recreated_keys = tuple(removed)
         return True
 
