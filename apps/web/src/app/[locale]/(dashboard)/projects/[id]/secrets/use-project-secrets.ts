@@ -353,7 +353,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     async (secret: SecretFormValue) => {
       const nextSecrets = sortSecrets([
         ...secrets.filter((item) => item.key !== secret.key),
-        { key: secret.key, value: secret.value },
+        { key: secret.key, value: secret.value, kind: secret.kind },
       ])
 
       await pushSecrets(nextSecrets)

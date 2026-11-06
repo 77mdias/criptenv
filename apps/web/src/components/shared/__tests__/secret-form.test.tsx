@@ -32,6 +32,7 @@ describe("SecretForm", () => {
       expect(onSubmit).toHaveBeenCalledWith({
         key: "DATABASE_URL",
         value: "postgres://localhost",
+        kind: "config",
       })
     )
   })
@@ -49,6 +50,47 @@ describe("SecretForm", () => {
 
     await userEvent.click(screen.getByRole("button", { name: "Ocultar valor" }))
     expect(valueInput).toHaveAttribute("type", "password")
+  })
+
+  it("offers Config and Secret with Config chosen for a new variable", () => {
+    render(<SecretForm open title="Novo Secret" onOpenChange={jest.fn()} onSubmit={jest.fn()} />)
+
+    expect(screen.getByRole("group", { name: "Tipo" })).toBeInTheDocument()
+    expect(screen.getByRole("radio", { name: /Config/ })).toBeChecked()
+    expect(screen.getByRole("radio", { name: /Secret/ })).not.toBeChecked()
+    expect(screen.getByText("Na Vercel ninguém lê depois de salvo")).toBeInTheDocument()
+  })
+
+  it("submits the chosen kind", async () => {
+    const onSubmit = jest.fn()
+    render(<SecretForm open title="Novo Secret" onOpenChange={jest.fn()} onSubmit={onSubmit} />)
+
+    await userEvent.type(screen.getByLabelText("Chave"), "database_url")
+    await userEvent.type(screen.getByLabelText("Valor"), "postgres://localhost")
+    await userEvent.click(screen.getByRole("radio", { name: /Secret/ }))
+    await userEvent.click(screen.getByRole("button", { name: "Salvar" }))
+
+    await waitFor(() =>
+      expect(onSubmit).toHaveBeenCalledWith({
+        key: "DATABASE_URL",
+        value: "postgres://localhost",
+        kind: "secret",
+      })
+    )
+  })
+
+  it("starts from the kind of the variable being edited", () => {
+    render(
+      <SecretForm
+        open
+        title="Editar"
+        initialValue={{ key: "A_KEY", value: "1", kind: "secret" }}
+        onOpenChange={jest.fn()}
+        onSubmit={jest.fn()}
+      />
+    )
+
+    expect(screen.getByRole("radio", { name: /Secret/ })).toBeChecked()
   })
 
   it("shows validation errors and calls cancel handlers", async () => {

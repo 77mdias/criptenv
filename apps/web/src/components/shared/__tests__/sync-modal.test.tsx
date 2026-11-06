@@ -68,6 +68,26 @@ describe("SyncModal", () => {
     expect(await screen.findByRole("status")).toHaveTextContent("2 secrets enviados.")
   })
 
+  it("sends each variable's kind and lists the keys Vercel recreated", async () => {
+    mocked.sync.mockResolvedValue({ success: true, message: null, synced_count: 2, secrets: null, recreated: ["API_KEY"] })
+    const secrets = [
+      { key: "API_KEY", value: "sk_1", kind: "secret" as const },
+      { key: "DATABASE_URL", value: "postgres://x", kind: "config" as const },
+    ]
+    renderModal({ secrets })
+
+    await screen.findByLabelText(/integração/i)
+    fireEvent.click(screen.getByRole("button", { name: /^sincronizar$/i }))
+
+    await waitFor(() => expect(mocked.sync).toHaveBeenCalledTimes(1))
+    expect(mocked.sync).toHaveBeenCalledWith("p1", "v1", {
+      direction: "push",
+      environment: "preview",
+      secrets,
+    })
+    expect(await screen.findByRole("status")).toHaveTextContent("Recriadas na Vercel com o novo tipo: API_KEY")
+  })
+
   it("shows the provider's message when the sync fails", async () => {
     mocked.sync.mockResolvedValue({
       success: false,

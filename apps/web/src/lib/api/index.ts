@@ -12,6 +12,7 @@ export type {
   EnvironmentListResponse,
   VaultBlob,
   VaultBlobPush,
+  SecretKind,
   VaultPushRequest,
   VaultRekeyRequest,
   VaultPullResponse,
