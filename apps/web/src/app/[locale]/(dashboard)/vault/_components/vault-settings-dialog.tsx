@@ -9,7 +9,13 @@ import { Separator } from "@/components/ui/separator"
 import { ApiError } from "@/lib/api/client"
 import { CryptoError } from "@/lib/crypto"
 import { getPersonalVaultConfig, updatePersonalVaultConfig, type PersonalVaultConfig } from "@/lib/api/personal-vault"
-import { rewrapExtra, rewrapMaster, type PersonalVaultConfigInput } from "@/lib/personal-vault/crypto"
+import {
+  rewrapExtra,
+  rewrapMaster,
+  unlockProtectedKey,
+  unlockVault,
+  type PersonalVaultConfigInput,
+} from "@/lib/personal-vault/crypto"
 import { MIN_EXTRA_LENGTH, MIN_MASTER_LENGTH } from "./password-fields"
 
 interface Props {
@@ -67,6 +73,12 @@ function PasswordChangeForm({
     setBusy(true)
     setError(null)
     try {
+      // The other password is unknown here, so test it cryptographically: if the new one
+      // opens the other key, the two passwords are equal and the second layer would be gone.
+      if (await opensOtherKey(values.next)) {
+        setError(t("passwords.errors.extraSameAsMaster"))
+        return
+      }
       const next: PersonalVaultConfigInput =
         kind === "master"
           ? await rewrapMaster(config, values.current, values.next)
@@ -85,6 +97,16 @@ function PasswordChangeForm({
       else setError(t("errors.save"))
     } finally {
       setBusy(false)
+    }
+  }
+
+  async function opensOtherKey(candidate: string): Promise<boolean> {
+    try {
+      if (kind === "master") await unlockProtectedKey(config, vaultKey, candidate)
+      else await unlockVault(config, candidate)
+      return true
+    } catch {
+      return false
     }
   }
 

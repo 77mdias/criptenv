@@ -18,6 +18,7 @@ jest.mock("@/lib/api/personal-vault", () => ({
 }))
 
 jest.mock("@/lib/personal-vault/crypto", () => ({
+  unlockVault: jest.fn(),
   decryptSummary: jest.fn(),
   decryptItem: jest.fn(),
   encryptItem: jest.fn(),
@@ -193,6 +194,7 @@ describe("vault items", () => {
   })
 
   it("change master password sends the rewrapped config with the current version", async () => {
+    mocked(vaultCrypto.unlockProtectedKey).mockRejectedValue(new CryptoError("no", "WRONG_PASSWORD"))
     const next = { ...SAVED, master_salt: "N".repeat(44) }
     mocked(vaultCrypto.rewrapMaster).mockResolvedValue(next)
     mocked(api.updatePersonalVaultConfig).mockResolvedValue({ ...next, version: 5 })
@@ -211,6 +213,7 @@ describe("vault items", () => {
   })
 
   it("change extra password reports a wrong current password", async () => {
+    mocked(vaultCrypto.unlockVault).mockRejectedValue(new CryptoError("no", "WRONG_PASSWORD"))
     mocked(vaultCrypto.rewrapExtra).mockRejectedValue(new CryptoError("no", "WRONG_PASSWORD"))
     await renderItems()
 
@@ -227,6 +230,7 @@ describe("vault items", () => {
   })
 
   it("a config conflict reloads the config so the next try uses the new version", async () => {
+    mocked(vaultCrypto.unlockProtectedKey).mockRejectedValue(new CryptoError("no", "WRONG_PASSWORD"))
     const fresh = { ...SAVED, version: 7 }
     mocked(vaultCrypto.rewrapMaster).mockResolvedValue(SAVED)
     mocked(api.updatePersonalVaultConfig).mockRejectedValue(new ApiError("Version conflict", 409, null))
@@ -258,5 +262,36 @@ describe("vault items", () => {
     fireEvent.submit(within(dialog).getByLabelText("Título").closest("form")!)
     expect(vaultCrypto.encryptItem).not.toHaveBeenCalled()
     expect(api.updatePersonalVaultItem).not.toHaveBeenCalled()
+  })
+
+  it("a new master password cannot equal the extra password", async () => {
+    mocked(vaultCrypto.unlockProtectedKey).mockResolvedValue(PK)
+    await renderItems()
+    fireEvent.click(screen.getByRole("button", { name: "Configurações" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Senha mestra atual", "mestra-forte-123", dialog)
+    type("Nova senha mestra", "outra-mestra-789", dialog)
+    type("Confirme a nova senha mestra", "outra-mestra-789", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Trocar senha mestra" }))
+
+    expect(await within(dialog).findByText("A senha extra precisa ser diferente da senha mestra.")).toBeInTheDocument()
+    expect(vaultCrypto.unlockProtectedKey).toHaveBeenCalledWith(SAVED, KEY, "outra-mestra-789")
+    expect(vaultCrypto.rewrapMaster).not.toHaveBeenCalled()
+    expect(api.updatePersonalVaultConfig).not.toHaveBeenCalled()
+  })
+
+  it("a new extra password cannot equal the master password", async () => {
+    mocked(vaultCrypto.unlockVault).mockResolvedValue(KEY)
+    await renderItems()
+    fireEvent.click(screen.getByRole("button", { name: "Configurações" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Senha extra atual", "extra-123", dialog)
+    type("Nova senha extra", "mestra-forte-123", dialog)
+    type("Confirme a nova senha extra", "mestra-forte-123", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Trocar senha extra" }))
+
+    expect(await within(dialog).findByText("A senha extra precisa ser diferente da senha mestra.")).toBeInTheDocument()
+    expect(vaultCrypto.unlockVault).toHaveBeenCalledWith(SAVED, "mestra-forte-123")
+    expect(vaultCrypto.rewrapExtra).not.toHaveBeenCalled()
   })
 })
