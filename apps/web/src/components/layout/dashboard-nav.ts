@@ -1,6 +1,7 @@
 import {
   CircleHelp,
   FolderOpen,
+  KeyRound,
   LayoutDashboard,
   Plug,
   User,
@@ -26,6 +27,7 @@ export function getDashboardNavGroups(): DashboardNavGroups {
   const mainNavItems: DashboardNavItem[] = [
     { icon: LayoutDashboard, labelKey: "dashboard", href: "/dashboard" },
     { icon: FolderOpen, labelKey: "projects", href: "/projects", matchMode: "prefix" },
+    { icon: KeyRound, labelKey: "vault", href: "/vault", matchMode: "prefix" },
     { icon: Plug, labelKey: "integrations", href: "/integrations", matchMode: "prefix" },
   ]
 

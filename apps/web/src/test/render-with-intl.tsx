@@ -13,6 +13,7 @@ import marketingPtBR from "../../messages/pt-BR/marketing.json"
 import membersPtBR from "../../messages/pt-BR/members.json"
 import secretsPtBR from "../../messages/pt-BR/secrets.json"
 import settingsPtBR from "../../messages/pt-BR/settings.json"
+import vaultPtBR from "../../messages/pt-BR/vault.json"
 
 /**
  * Minimal catalogue for unit tests. Assertions in these tests are written
@@ -36,6 +37,7 @@ const defaultMessages = {
   members: membersPtBR,
   secrets: secretsPtBR,
   settings: settingsPtBR,
+  vault: vaultPtBR,
 }
 
 export function renderWithIntl(

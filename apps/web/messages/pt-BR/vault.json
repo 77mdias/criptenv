@@ -1,0 +1,59 @@
+{
+  "title": "Cofre pessoal",
+  "subtitle": "Logins e notas só seus, cifrados no seu navegador. Este cofre só abre pelo dashboard web.",
+  "loading": "Carregando cofre...",
+  "errors": {
+    "load": "Não foi possível carregar o cofre. Recarregue a página.",
+    "save": "Não foi possível salvar. Tente de novo.",
+    "conflict": "O cofre mudou em outra aba. Recarregue a página para ver a versão mais recente."
+  },
+  "passwords": {
+    "master": "Senha mestra",
+    "masterConfirm": "Confirme a senha mestra",
+    "extra": "Senha de proteção extra",
+    "extraConfirm": "Confirme a senha extra",
+    "masterHelp": "Mínimo de 12 caracteres. Use uma senha diferente da do login.",
+    "extraHelp": "Mínimo de 8 caracteres. Abre só os itens com proteção extra.",
+    "errors": {
+      "masterShort": "A senha mestra precisa ter pelo menos 12 caracteres.",
+      "masterMismatch": "As senhas mestras não conferem.",
+      "extraShort": "A senha extra precisa ter pelo menos 8 caracteres.",
+      "extraMismatch": "As senhas extras não conferem.",
+      "extraSameAsMaster": "A senha extra precisa ser diferente da senha mestra."
+    }
+  },
+  "setup": {
+    "title": "Crie seu cofre pessoal",
+    "description": "Guarde logins de redes sociais, contas e notas seguras fora dos seus projetos. Tudo é cifrado aqui no navegador antes de ir para o servidor.",
+    "submit": "Continuar"
+  },
+  "recoverySheet": {
+    "title": "Chave de recuperação",
+    "description": "Imprima ou anote esta chave e guarde em um lugar seguro. Ela aparece só agora.",
+    "warning": "Sem a senha mestra ou esta chave de recuperação, ninguém consegue abrir este cofre, nem a equipe do CriptEnv.",
+    "print": "Imprimir",
+    "confirm": "Guardei a chave de recuperação",
+    "finish": "Concluir"
+  },
+  "unlock": {
+    "title": "Cofre trancado",
+    "description": "Digite a senha mestra para abrir. O cofre tranca sozinho após 10 minutos sem uso.",
+    "submit": "Abrir cofre",
+    "wrong": "Senha mestra incorreta",
+    "forgot": "Esqueci a senha mestra"
+  },
+  "recovery": {
+    "title": "Recuperar o cofre",
+    "description": "Use a chave de recuperação impressa para definir novas senhas. Uma nova chave será gerada e a antiga deixa de valer.",
+    "key": "Chave de recuperação",
+    "submit": "Recuperar",
+    "cancel": "Voltar",
+    "invalidKey": "Chave de recuperação inválida. Confira os caracteres.",
+    "wrongKey": "Esta chave não abre este cofre."
+  },
+  "items": {
+    "lock": "Trancar",
+    "empty": "Nenhum item ainda",
+    "emptyDescription": "Adicione um login ou uma nota segura."
+  }
+}
