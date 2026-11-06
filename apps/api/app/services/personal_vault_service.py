@@ -47,8 +47,13 @@ class PersonalVaultService:
         if await self.get_config(user_id) is not None:
             raise PersonalVaultConflict("Personal vault already exists")
         vault = PersonalVault(user_id=user_id, version=1, **data.model_dump(include=set(_CONFIG_FIELDS)))
-        self.db.add(vault)
-        await self.db.flush()
+        try:
+            # Two first-time setups racing past the check above: the PK (user_id) decides.
+            async with self.db.begin_nested():
+                self.db.add(vault)
+                await self.db.flush()
+        except IntegrityError:
+            raise PersonalVaultConflict("Personal vault already exists")
         return vault
 
     async def update_config(self, user_id: UUID, data: PersonalVaultConfigUpdate) -> PersonalVault:

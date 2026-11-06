@@ -406,3 +406,22 @@ async def test_unknown_cookie_is_still_401(db_session):
     with pytest.raises(HTTPException) as exc:
         await get_current_web_user(_request(cookies={"session_token": "x" * 40}), db=db_session)
     assert exc.value.status_code == 401
+
+
+# ─── B3: concurrent vault creation ──────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_concurrent_create_config_conflicts_not_500(client, as_user, monkeypatch):
+    as_user("ana")
+    assert (await client.post("/api/v1/personal-vault/config", json=_config())).status_code == 201
+    # Simulate the race: the existence check misses the row another request just inserted.
+    real_get = personal_vault_service.PersonalVaultService.get_config
+    calls = {"n": 0}
+
+    async def racing_get(self, user_id):
+        calls["n"] += 1
+        return None if calls["n"] == 1 else await real_get(self, user_id)
+
+    monkeypatch.setattr(personal_vault_service.PersonalVaultService, "get_config", racing_get)
+    r = await client.post("/api/v1/personal-vault/config", json=_config())
+    assert r.status_code == 409 and r.json()["detail"] == "Personal vault already exists"
