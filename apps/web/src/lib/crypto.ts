@@ -197,14 +197,15 @@ export async function deriveProjectEnvironmentKey(
  */
 export async function encrypt(
   plaintext: string,
-  key: CryptoKey
+  key: CryptoKey,
+  aad?: string
 ): Promise<{ iv: string; ciphertext: string; authTag: string }> {
   const encoder = new TextEncoder()
   const iv = crypto.getRandomValues(new Uint8Array(IV_LENGTH))
 
   try {
     const encrypted = await crypto.subtle.encrypt(
-      { name: "AES-GCM", iv },
+      { name: "AES-GCM", iv, ...additionalData(aad) },
       key,
       encoder.encode(plaintext)
     )
@@ -238,7 +239,8 @@ export async function decrypt(
   ciphertext: string,
   key: CryptoKey,
   iv: string,
-  authTag: string
+  authTag: string,
+  aad?: string
 ): Promise<string> {
   const ctBuffer = base64ToBuffer(ciphertext)
   const ivBuffer = base64ToBuffer(iv)
@@ -250,7 +252,7 @@ export async function decrypt(
 
   try {
     const decrypted = await crypto.subtle.decrypt(
-      { name: "AES-GCM", iv: ivBuffer.buffer as ArrayBuffer },
+      { name: "AES-GCM", iv: ivBuffer.buffer as ArrayBuffer, ...additionalData(aad) },
       key,
       encryptedData
     )
@@ -262,6 +264,11 @@ export async function decrypt(
 }
 
 // --- Helpers ---
+
+/** Optional AES-GCM associated data: binds a ciphertext to its context without encrypting it. */
+function additionalData(aad?: string): { additionalData?: Uint8Array } {
+  return aad === undefined ? {} : { additionalData: new TextEncoder().encode(aad) }
+}
 
 export function bufferToBase64(buffer: Uint8Array): string {
   let binary = ""

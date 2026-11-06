@@ -249,8 +249,15 @@ async def test_routes_reject_bearer_tokens(client):
 from app.services import personal_vault_service  # noqa: E402
 
 
-def _item(protected=False):
-    return {"protected": protected, "summary": _envelope(), "body": _envelope(ct_len=200)}
+def _item(protected=False, item_id=None):
+    return {"id": str(item_id or uuid4()), "protected": protected,
+            "summary": _envelope(), "body": _envelope(ct_len=200)}
+
+
+def _update(protected=False, expected_version=1):
+    payload = _item(protected)
+    payload.pop("id")
+    return {**payload, "expected_version": expected_version}
 
 
 @pytest_asyncio.fixture
@@ -265,11 +272,34 @@ async def test_item_crud(client, setup_vault):
     assert r.status_code == 201
     item = r.json()
     assert item["protected"] is True and item["version"] == 1
-    r = await client.put(f"/api/v1/personal-vault/items/{item['id']}", json={**_item(), "expected_version": 1})
+    r = await client.put(f"/api/v1/personal-vault/items/{item['id']}", json=_update())
     assert r.status_code == 200 and r.json()["version"] == 2 and r.json()["protected"] is False
     assert [i["id"] for i in (await client.get("/api/v1/personal-vault/items")).json()] == [item["id"]]
     assert (await client.delete(f"/api/v1/personal-vault/items/{item['id']}")).status_code == 204
     assert (await client.get("/api/v1/personal-vault/items")).json() == []
+
+
+@pytest.mark.asyncio
+async def test_item_create_uses_client_id(client, setup_vault):
+    item_id = uuid4()
+    r = await client.post("/api/v1/personal-vault/items", json=_item(item_id=item_id))
+    assert r.status_code == 201 and r.json()["id"] == str(item_id)
+
+
+@pytest.mark.asyncio
+async def test_item_create_duplicate_id_conflicts(client, setup_vault):
+    payload = _item()
+    assert (await client.post("/api/v1/personal-vault/items", json=payload)).status_code == 201
+    r = await client.post("/api/v1/personal-vault/items", json=payload)
+    assert r.status_code == 409 and r.json()["detail"] == "Item id already exists"
+    assert len((await client.get("/api/v1/personal-vault/items")).json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_item_create_requires_an_id(client, setup_vault):
+    payload = _item()
+    payload.pop("id")
+    assert (await client.post("/api/v1/personal-vault/items", json=payload)).status_code == 422
 
 
 @pytest.mark.asyncio
@@ -282,8 +312,8 @@ async def test_item_requires_config(client, as_user):
 async def test_item_stale_version_conflicts(client, setup_vault):
     item = (await client.post("/api/v1/personal-vault/items", json=_item())).json()
     url = f"/api/v1/personal-vault/items/{item['id']}"
-    assert (await client.put(url, json={**_item(), "expected_version": 1})).status_code == 200
-    r = await client.put(url, json={**_item(protected=True), "expected_version": 1})
+    assert (await client.put(url, json=_update())).status_code == 200
+    r = await client.put(url, json=_update(protected=True))
     assert r.status_code == 409 and r.json()["detail"] == "Version conflict"
     assert (await client.get("/api/v1/personal-vault/items")).json()[0]["protected"] is False
 
@@ -294,7 +324,7 @@ async def test_items_are_isolated(client, setup_vault, as_user):
     as_user("bia")
     assert (await client.get("/api/v1/personal-vault/items")).json() == []
     url = f"/api/v1/personal-vault/items/{item['id']}"
-    assert (await client.put(url, json={**_item(), "expected_version": 1})).status_code == 404
+    assert (await client.put(url, json=_update())).status_code == 404
     assert (await client.delete(url)).status_code == 404
     as_user("ana")
     assert len((await client.get("/api/v1/personal-vault/items")).json()) == 1
@@ -311,7 +341,7 @@ async def test_item_limit(client, setup_vault, monkeypatch):
 
 @pytest.mark.asyncio
 async def test_item_body_size_is_limited(client, setup_vault):
-    big = {"protected": False, "summary": _envelope(), "body": _envelope(ct_len=65_537)}
+    big = {"id": str(uuid4()), "protected": False, "summary": _envelope(), "body": _envelope(ct_len=65_537)}
     assert (await client.post("/api/v1/personal-vault/items", json=big)).status_code == 422
 
 

@@ -27,6 +27,17 @@ export const PERSONAL_VAULT_KDF = "PBKDF2-SHA256"
 
 const KEY_BYTES = 32
 const RECOVERY_INFO = "criptenv-personal-recovery-v1"
+// AES-GCM associated data: binds every envelope to its item and field, so a server
+// cannot swap envelopes between items/fields or flip the protected flag undetected.
+const AAD = {
+  masterVaultKey: "criptenv:pv1:config:master_vault_key",
+  recoveryVaultKey: "criptenv:pv1:config:recovery_vault_key",
+  recoveryProtectedKey: "criptenv:pv1:config:recovery_protected_key",
+  extraInner: "criptenv:pv1:config:extra_protected_key:inner",
+  extraOuter: "criptenv:pv1:config:extra_protected_key:outer",
+  summary: (id: string) => `criptenv:pv1:item:${id}:summary`,
+  body: (id: string, isProtected: boolean) => `criptenv:pv1:item:${id}:body:${isProtected ? "protected" : "common"}`,
+}
 // Crockford base32: no I, L, O, U, so a printed key is hard to misread.
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
 
@@ -59,6 +70,7 @@ export interface ItemSummary {
 }
 
 export interface EncryptedItem {
+  id: string
   protected: boolean
   summary: EncryptedField
   body: EncryptedField
@@ -132,7 +144,7 @@ export async function createPersonalVault(
 
 export async function unlockVault(config: PersonalVaultConfigInput, master: string): Promise<CryptoKey> {
   const kek = await passwordKek(master, config.master_salt, config.iterations)
-  const raw = await unwrapRaw(config.master_wrapped_vault_key, kek, "WRONG_PASSWORD")
+  const raw = await unwrapRaw(config.master_wrapped_vault_key, kek, "WRONG_PASSWORD", AAD.masterVaultKey)
   try {
     return await importAesKey(raw)
   } finally {
@@ -163,8 +175,8 @@ export async function recoverVault(
   iterations = PERSONAL_VAULT_ITERATIONS,
 ): Promise<SealedVault> {
   const kek = await recoveryKek(decodeRecoveryKey(recoveryKey))
-  const vaultRaw = await unwrapRaw(config.recovery_wrapped_vault_key, kek, "WRONG_RECOVERY_KEY")
-  const protectedRaw = await unwrapRaw(config.recovery_wrapped_protected_key, kek, "WRONG_RECOVERY_KEY")
+  const vaultRaw = await unwrapRaw(config.recovery_wrapped_vault_key, kek, "WRONG_RECOVERY_KEY", AAD.recoveryVaultKey)
+  const protectedRaw = await unwrapRaw(config.recovery_wrapped_protected_key, kek, "WRONG_RECOVERY_KEY", AAD.recoveryProtectedKey)
   try {
     return await sealVault(vaultRaw, protectedRaw, newMaster, newExtra, iterations)
   } finally {
@@ -180,11 +192,11 @@ export async function rewrapMaster(
   newMaster: string,
 ): Promise<PersonalVaultConfigInput> {
   const current = await passwordKek(currentMaster, config.master_salt, config.iterations)
-  const raw = await unwrapRaw(config.master_wrapped_vault_key, current, "WRONG_PASSWORD")
+  const raw = await unwrapRaw(config.master_wrapped_vault_key, current, "WRONG_PASSWORD", AAD.masterVaultKey)
   try {
     const salt = bufferToBase64(generateSalt())
     const next = await passwordKek(newMaster, salt, config.iterations)
-    return { ...config, master_salt: salt, master_wrapped_vault_key: await wrapRaw(raw, next) }
+    return { ...config, master_salt: salt, master_wrapped_vault_key: await wrapRaw(raw, next, AAD.masterVaultKey) }
   } finally {
     raw.fill(0)
   }
@@ -211,6 +223,7 @@ export async function rewrapExtra(
 // ─── Items ──────────────────────────────────────────────────────────────────
 
 export async function encryptItem(
+  id: string,
   item: PersonalVaultItemPlain,
   vaultKey: CryptoKey,
   protectedKey: CryptoKey | null,
@@ -220,25 +233,38 @@ export async function encryptItem(
       ? { type: item.type, title: item.title, username: item.username, url: item.url }
       : { type: item.type, title: item.title }
   const body = item.type === "login" ? { password: item.password, notes: item.notes } : { content: item.content }
+  const isProtected = protectedKey !== null
   return {
-    protected: protectedKey !== null,
-    summary: await seal(JSON.stringify(summary), vaultKey),
-    body: await seal(JSON.stringify(body), protectedKey ?? vaultKey),
+    id,
+    protected: isProtected,
+    summary: await seal(JSON.stringify(summary), vaultKey, AAD.summary(id)),
+    body: await seal(JSON.stringify(body), protectedKey ?? vaultKey, AAD.body(id, isProtected)),
   }
 }
 
-export async function decryptSummary(summary: EncryptedField, vaultKey: CryptoKey): Promise<ItemSummary> {
-  return JSON.parse(await open(summary, vaultKey)) as ItemSummary
+export async function decryptSummary(id: string, summary: EncryptedField, vaultKey: CryptoKey): Promise<ItemSummary> {
+  return JSON.parse(await open(summary, vaultKey, AAD.summary(id))) as ItemSummary
 }
 
 export async function decryptItem(
-  item: { summary: EncryptedField; body: EncryptedField },
+  item: { id: string; protected: boolean; summary: EncryptedField; body: EncryptedField },
   vaultKey: CryptoKey,
   bodyKey: CryptoKey,
 ): Promise<PersonalVaultItemPlain> {
-  const summary = await decryptSummary(item.summary, vaultKey)
-  const body = JSON.parse(await open(item.body, bodyKey))
-  return { ...summary, ...body } as PersonalVaultItemPlain
+  const summary = await decryptSummary(item.id, item.summary, vaultKey)
+  const body = JSON.parse(await open(item.body, bodyKey, AAD.body(item.id, item.protected)))
+  // Field by field: summary owns type/title/username/url, so a body can never override them.
+  if (summary.type === "login") {
+    return {
+      type: "login",
+      title: summary.title,
+      username: summary.username ?? "",
+      url: summary.url ?? "",
+      password: String(body.password ?? ""),
+      notes: String(body.notes ?? ""),
+    }
+  }
+  return { type: "note", title: summary.title, content: String(body.content ?? "") }
 }
 
 // ─── Internals ──────────────────────────────────────────────────────────────
@@ -265,14 +291,14 @@ async function sealVault(
       iterations,
       master_salt: masterSalt,
       extra_salt: extraSalt,
-      master_wrapped_vault_key: await wrapRaw(vaultRaw, await passwordKek(master, masterSalt, iterations)),
-      recovery_wrapped_vault_key: await wrapRaw(vaultRaw, recovery),
+      master_wrapped_vault_key: await wrapRaw(vaultRaw, await passwordKek(master, masterSalt, iterations), AAD.masterVaultKey),
+      recovery_wrapped_vault_key: await wrapRaw(vaultRaw, recovery, AAD.recoveryVaultKey),
       extra_wrapped_protected_key: await wrapProtected(
         protectedRaw,
         await passwordKek(extra, extraSalt, iterations),
         vaultKey,
       ),
-      recovery_wrapped_protected_key: await wrapRaw(protectedRaw, recovery),
+      recovery_wrapped_protected_key: await wrapRaw(protectedRaw, recovery, AAD.recoveryProtectedKey),
     }
     return { config, recoveryKey: encodeRecoveryKey(recoveryRaw), vaultKey }
   } finally {
@@ -300,35 +326,35 @@ async function recoveryKek(raw: Uint8Array): Promise<CryptoKey> {
   )
 }
 
-async function seal(plaintext: string, key: CryptoKey): Promise<EncryptedField> {
-  const { iv, ciphertext, authTag } = await encrypt(plaintext, key)
+async function seal(plaintext: string, key: CryptoKey, aad: string): Promise<EncryptedField> {
+  const { iv, ciphertext, authTag } = await encrypt(plaintext, key, aad)
   return { iv, ciphertext, auth_tag: authTag }
 }
 
-function open(field: EncryptedField, key: CryptoKey): Promise<string> {
-  return decrypt(field.ciphertext, key, field.iv, field.auth_tag)
+function open(field: EncryptedField, key: CryptoKey, aad: string): Promise<string> {
+  return decrypt(field.ciphertext, key, field.iv, field.auth_tag, aad)
 }
 
-function wrapRaw(raw: Uint8Array, kek: CryptoKey): Promise<EncryptedField> {
-  return seal(bufferToBase64(raw), kek)
+function wrapRaw(raw: Uint8Array, kek: CryptoKey, aad: string): Promise<EncryptedField> {
+  return seal(bufferToBase64(raw), kek, aad)
 }
 
-async function unwrapRaw(field: EncryptedField, kek: CryptoKey, code: string): Promise<Uint8Array> {
+async function unwrapRaw(field: EncryptedField, kek: CryptoKey, code: string, aad: string): Promise<Uint8Array> {
   try {
-    return base64ToBuffer(await open(field, kek))
+    return base64ToBuffer(await open(field, kek, aad))
   } catch {
     throw new CryptoError("Could not unlock personal vault", code)
   }
 }
 
 async function wrapProtected(raw: Uint8Array, extraKek: CryptoKey, vaultKey: CryptoKey): Promise<EncryptedField> {
-  return seal(JSON.stringify(await wrapRaw(raw, extraKek)), vaultKey)
+  return seal(JSON.stringify(await wrapRaw(raw, extraKek, AAD.extraInner)), vaultKey, AAD.extraOuter)
 }
 
 async function unwrapProtectedRaw(field: EncryptedField, vaultKey: CryptoKey, extraKek: CryptoKey): Promise<Uint8Array> {
   try {
-    const inner = JSON.parse(await open(field, vaultKey)) as EncryptedField
-    return base64ToBuffer(await open(inner, extraKek))
+    const inner = JSON.parse(await open(field, vaultKey, AAD.extraOuter)) as EncryptedField
+    return base64ToBuffer(await open(inner, extraKek, AAD.extraInner))
   } catch {
     throw new CryptoError("Could not unlock protected items", "WRONG_PASSWORD")
   }

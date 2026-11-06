@@ -47,17 +47,22 @@ class PersonalVaultConfigResponse(PersonalVaultConfigCreate):
     updated_at: datetime | None = None
 
 
-class PersonalVaultItemCreate(BaseModel):
+class PersonalVaultItemFields(BaseModel):
     protected: bool = False
     summary: EncryptedSummary
     body: EncryptedBody
 
 
-class PersonalVaultItemUpdate(PersonalVaultItemCreate):
+class PersonalVaultItemCreate(PersonalVaultItemFields):
+    # Minted by the client: envelopes are bound to it (AES-GCM AAD) before upload.
+    id: UUID
+
+
+class PersonalVaultItemUpdate(PersonalVaultItemFields):
     expected_version: int = Field(..., ge=1)
 
 
-class PersonalVaultItemResponse(PersonalVaultItemCreate):
+class PersonalVaultItemResponse(PersonalVaultItemFields):
     model_config = ConfigDict(from_attributes=True)
 
     id: UUID

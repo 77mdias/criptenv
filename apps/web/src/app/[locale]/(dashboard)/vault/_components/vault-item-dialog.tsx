@@ -57,6 +57,8 @@ function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, 
   const [busy, setBusy] = useState(false)
   // An edit must not save until the current item is decrypted, or blank fields would overwrite it.
   const [loaded, setLoaded] = useState(!entry)
+  // Ids are minted here so the envelopes can be bound to them (AES-GCM AAD) before upload.
+  const [itemId] = useState(() => entry?.item.id ?? crypto.randomUUID())
 
   function fill(plain: PersonalVaultItemPlain) {
     setForm({ ...emptyForm, ...plain })
@@ -119,7 +121,7 @@ function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, 
         ? { type: "login", title: form.title, username: form.username, password: form.password, url: form.url, notes: form.notes }
         : { type: "note", title: form.title, content: form.content }
     try {
-      const encrypted = await encryptItem(plain, vaultKey, isProtected ? await withProtectedKey() : null)
+      const encrypted = await encryptItem(itemId, plain, vaultKey, isProtected ? await withProtectedKey() : null)
       if (entry) await updatePersonalVaultItem(entry.item.id, encrypted, entry.item.version)
       else await createPersonalVaultItem(encrypted)
       onSaved()

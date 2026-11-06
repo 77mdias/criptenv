@@ -54,14 +54,16 @@ describe("personal vault api", () => {
     expect(call.init.method).toBe("PUT")
     expect(call.body).toEqual({ ...config, expected_version: 3 })
 
-    const item = { protected: true, summary: envelope, body: envelope }
+    const item = { id: "item-1", protected: true, summary: envelope, body: envelope }
     await updatePersonalVaultItem("item-1", item, 2)
     call = lastCall(fetchMock)
     expect(call.url).toMatch(/\/api\/v1\/personal-vault\/items\/item-1$/)
-    expect(call.body).toEqual({ ...item, expected_version: 2 })
+    // The id travels in the URL only: the body never tries to move an item.
+    expect(call.body).toEqual({ protected: true, summary: envelope, body: envelope, expected_version: 2 })
 
     await createPersonalVaultItem(item)
     expect(lastCall(fetchMock).init.method).toBe("POST")
+    expect(lastCall(fetchMock).body).toEqual(item)
 
     fetchMock.mockResolvedValueOnce(respond(204, null))
     await deletePersonalVaultItem("item-1")
@@ -83,7 +85,7 @@ describe("personal vault api", () => {
 
     await expect(listPersonalVaultItems()).resolves.toEqual([{ id: "old" }])
     await expect(
-      updatePersonalVaultItem("old", { protected: false, summary: envelope, body: envelope }, 1),
+      updatePersonalVaultItem("old", { id: "old", protected: false, summary: envelope, body: envelope }, 1),
     ).rejects.toMatchObject({ status: 409 })
     await expect(listPersonalVaultItems()).resolves.toEqual([{ id: "new" }])
     expect(fetchMock).toHaveBeenCalledTimes(3)

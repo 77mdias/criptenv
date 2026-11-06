@@ -1,3 +1,4 @@
+import { encrypt } from "@/lib/crypto"
 import {
   createPersonalVault,
   decodeRecoveryKey,
@@ -18,6 +19,8 @@ import {
 const ITER = 1_000
 const MASTER = "mestra-forte-123"
 const EXTRA = "extra-123"
+const ID_A = "2f1c9a4e-0000-4000-8000-00000000000a"
+const ID_B = "2f1c9a4e-0000-4000-8000-00000000000b"
 
 function codeOf(fn: () => unknown): string | undefined {
   try {
@@ -73,9 +76,9 @@ describe("personal vault crypto", () => {
   it("protected body needs the extra password on top of the vault key", async () => {
     const { config, vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
     const pk = await unlockProtectedKey(config, vaultKey, EXTRA)
-    const enc = await encryptItem(login, vaultKey, pk)
+    const enc = await encryptItem(ID_A, login, vaultKey, pk)
     expect(enc.protected).toBe(true)
-    expect(await decryptSummary(enc.summary, vaultKey)).toEqual({
+    expect(await decryptSummary(ID_A, enc.summary, vaultKey)).toEqual({
       type: "login",
       title: "Instagram",
       username: "jean",
@@ -95,9 +98,9 @@ describe("personal vault crypto", () => {
   it("common items use the vault key for the body", async () => {
     const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
     const note: PersonalVaultItemPlain = { type: "note", title: "Wi-Fi", content: "senha-do-wifi" }
-    const enc = await encryptItem(note, vaultKey, null)
+    const enc = await encryptItem(ID_A, note, vaultKey, null)
     expect(enc.protected).toBe(false)
-    expect(await decryptSummary(enc.summary, vaultKey)).toEqual({ type: "note", title: "Wi-Fi" })
+    expect(await decryptSummary(ID_A, enc.summary, vaultKey)).toEqual({ type: "note", title: "Wi-Fi" })
     expect(await decryptItem(enc, vaultKey, vaultKey)).toEqual(note)
   })
 
@@ -105,7 +108,7 @@ describe("personal vault crypto", () => {
     const created = await createPersonalVault(MASTER, EXTRA, ITER)
     const pk = await unlockProtectedKey(created.config, created.vaultKey, EXTRA)
     const note: PersonalVaultItemPlain = { type: "note", title: "Banco", content: "PIN 1234" }
-    const enc = await encryptItem(note, created.vaultKey, pk)
+    const enc = await encryptItem(ID_A, note, created.vaultKey, pk)
 
     const rec = await recoverVault(created.config, created.recoveryKey, "nova-mestra-456", "nova-extra-4", ITER)
     expect(rec.recoveryKey).not.toBe(created.recoveryKey)
@@ -138,7 +141,7 @@ describe("personal vault crypto", () => {
 
   it("rewrapExtra changes only the extra fields and keeps protected data readable", async () => {
     const { config, vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
-    const enc = await encryptItem(login, vaultKey, await unlockProtectedKey(config, vaultKey, EXTRA))
+    const enc = await encryptItem(ID_A, login, vaultKey, await unlockProtectedKey(config, vaultKey, EXTRA))
     const next = await rewrapExtra(config, vaultKey, EXTRA, "nova-extra-9")
     expect({ ...next, extra_salt: 0, extra_wrapped_protected_key: 0 }).toEqual({
       ...config,
@@ -148,5 +151,50 @@ describe("personal vault crypto", () => {
     const pk = await unlockProtectedKey(next, vaultKey, "nova-extra-9")
     expect(await decryptItem(enc, vaultKey, pk)).toEqual(login)
     await expect(unlockProtectedKey(next, vaultKey, EXTRA)).rejects.toMatchObject({ code: "WRONG_PASSWORD" })
+  })
+
+  it("binds envelopes to their item: swapping between items is rejected", async () => {
+    const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+    const a = await encryptItem(ID_A, login, vaultKey, null)
+    const b = await encryptItem(ID_B, { type: "note", title: "Outro", content: "x" }, vaultKey, null)
+    expect(a.id).toBe(ID_A)
+    await expect(decryptSummary(ID_A, b.summary, vaultKey)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+    await expect(decryptItem({ ...a, body: b.body }, vaultKey, vaultKey)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+    await expect(decryptSummary(ID_A, a.body, vaultKey)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+  })
+
+  it("flipping the protected flag is rejected", async () => {
+    const { config, vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+    const pk = await unlockProtectedKey(config, vaultKey, EXTRA)
+    const enc = await encryptItem(ID_A, login, vaultKey, pk)
+    await expect(decryptItem({ ...enc, protected: false }, vaultKey, pk)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+    const common = await encryptItem(ID_B, login, vaultKey, null)
+    await expect(decryptItem({ ...common, protected: true }, vaultKey, vaultKey)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+  })
+
+  it("a body cannot override summary fields", async () => {
+    const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+    const enc = await encryptItem(ID_A, login, vaultKey, null)
+    const forged = await encrypt(
+      JSON.stringify({ title: "Forjado", type: "note", password: "p", notes: "" }),
+      vaultKey,
+      `criptenv:pv1:item:${ID_A}:body:common`,
+    )
+    const body = { iv: forged.iv, ciphertext: forged.ciphertext, auth_tag: forged.authTag }
+    const plain = await decryptItem({ ...enc, body }, vaultKey, vaultKey)
+    expect(plain).toEqual({ ...login, password: "p" })
+  })
+
+  it("config envelopes are bound to their field", async () => {
+    // Both recovery envelopes use the same KEK: only the AAD tells them apart.
+    const { config, recoveryKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+    const swapped = {
+      ...config,
+      recovery_wrapped_vault_key: config.recovery_wrapped_protected_key,
+      recovery_wrapped_protected_key: config.recovery_wrapped_vault_key,
+    }
+    await expect(recoverVault(swapped, recoveryKey, "x".repeat(12), "y".repeat(8), ITER)).rejects.toMatchObject({
+      code: "WRONG_RECOVERY_KEY",
+    })
   })
 })

@@ -45,7 +45,7 @@ const SAVED = {
 }
 const KEY = { name: "vk" } as unknown as CryptoKey
 const PK = { name: "pk" } as unknown as CryptoKey
-const ENC = { protected: true, summary: envelope, body: envelope }
+const ENC = { id: "enc", protected: true, summary: envelope, body: envelope }
 
 const item = (id: string, isProtected = false) => ({
   id,
@@ -67,7 +67,7 @@ const onConfigChange = jest.fn()
 
 function renderItems(items = [item("i1", true), item("i2"), item("i3")]) {
   mocked(api.listPersonalVaultItems).mockResolvedValue(items)
-  mocked(vaultCrypto.decryptSummary).mockImplementation(async (summary) => SUMMARIES[summary.ciphertext])
+  mocked(vaultCrypto.decryptSummary).mockImplementation(async (id) => SUMMARIES[id])
   renderWithIntl(
     <PersonalVaultSessionProvider>
       <VaultItems vaultKey={KEY} config={SAVED} onConfigChange={onConfigChange} />
@@ -159,6 +159,7 @@ describe("vault items", () => {
     await waitFor(() => expect(api.createPersonalVaultItem).toHaveBeenCalledWith(ENC))
     expect(vaultCrypto.unlockProtectedKey).toHaveBeenCalledWith(SAVED, KEY, "extra-123")
     expect(vaultCrypto.encryptItem).toHaveBeenCalledWith(
+      expect.stringMatching(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/),
       { type: "login", title: "Banco", username: "jean", password: "1234", url: "", notes: "" },
       KEY,
       PK,
@@ -181,6 +182,7 @@ describe("vault items", () => {
     expect(await screen.findByText("Este item mudou em outra aba. Recarregamos a versão mais recente.")).toBeInTheDocument()
     expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)
     expect(api.updatePersonalVaultItem).toHaveBeenCalledWith("i2", { ...ENC, protected: false }, 1)
+    expect(vaultCrypto.encryptItem).toHaveBeenCalledWith("i2", expect.anything(), KEY, null)
     await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
   })
 

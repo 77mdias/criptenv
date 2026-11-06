@@ -6,6 +6,7 @@ versioning and size limits over opaque client-side envelopes.
 from uuid import UUID
 
 from sqlalchemy import delete, func, select, update
+from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.personal_vault import PersonalVault, PersonalVaultItem
@@ -84,8 +85,13 @@ class PersonalVaultService:
         if count >= MAX_PERSONAL_VAULT_ITEMS:
             raise PersonalVaultLimitReached("Item limit reached")
         item = PersonalVaultItem(user_id=user_id, version=1, **data.model_dump())
-        self.db.add(item)
-        await self.db.flush()
+        try:
+            # Savepoint: a duplicate client id must not poison the request's transaction.
+            async with self.db.begin_nested():
+                self.db.add(item)
+                await self.db.flush()
+        except IntegrityError:
+            raise PersonalVaultConflict("Item id already exists")
         await self.db.refresh(item)
         return item
 

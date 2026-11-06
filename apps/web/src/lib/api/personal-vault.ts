@@ -54,7 +54,14 @@ export function updatePersonalVaultItem(
   input: EncryptedItem,
   expectedVersion: number,
 ): Promise<PersonalVaultItem> {
-  return request("PUT", `${BASE}/items/${encodeURIComponent(id)}`, { ...input, expected_version: expectedVersion })
+  // The id travels in the URL only: the body never tries to move an item.
+  const { protected: isProtected, summary, body } = input
+  return request("PUT", `${BASE}/items/${encodeURIComponent(id)}`, {
+    protected: isProtected,
+    summary,
+    body,
+    expected_version: expectedVersion,
+  })
 }
 
 export function deletePersonalVaultItem(id: string): Promise<void> {

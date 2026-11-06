@@ -53,7 +53,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   useEffect(() => {
     let cancelled = false
     listPersonalVaultItems()
-      .then((items) => Promise.all(items.map(async (item) => ({ item, summary: await decryptSummary(item.summary, vaultKey) }))))
+      .then((items) => Promise.all(items.map(async (item) => ({ item, summary: await decryptSummary(item.id, item.summary, vaultKey) }))))
       .then((decrypted) => {
         if (!cancelled) setEntries(decrypted)
       })
