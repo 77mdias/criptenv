@@ -7,6 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Tipos Config e Secret nas variáveis — 2026-11-06
+
+- Cada variável de ambiente de projeto tem um tipo: **Config** (padrão) ou **Secret**. Dentro do CriptEnv as duas continuam visíveis e editáveis; o tipo só define como a variável chega na Vercel.
+- Sync para a Vercel: Secret vai como `sensitive` / `visibility: secret` (ninguém lê depois de salvo, inclusive em Development); Config vai como `encrypted` / `visibility: config`.
+- Trocar o tipo de uma variável que já está na Vercel: o sync tira o registro antigo só do target sincronizado (PATCH quando ele cobre outros targets, DELETE quando não) e cria de novo. O resultado lista as chaves recriadas; uma falha no meio diz quais chaves ficaram sem valor na Vercel.
+- Push do vault sem o campo `kind` (CLI antiga, rotação, import de `.env`) mantém o tipo que cada chave já tinha. Sync sem `kind` (CLI antiga, jobs de CI) mantém o comportamento de antes e nunca converte nada.
+- Web: escolha Config/Secret no formulário e rótulo do tipo na lista. CLI: `criptenv set KEY=valor --secret` / `--config`, e `criptenv list` mostra o tipo.
+- Migration `20261106_0016`: coluna `vault_blobs.kind` (`config` para as linhas existentes).
+
 ### Cofre pessoal: correções da revisão (Fase B) — 2026-11-06
 
 - Item apagado em outra aba: editar mostra "Este item foi apagado em outra aba." e recarrega a lista; apagar de novo só recarrega.
