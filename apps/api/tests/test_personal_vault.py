@@ -313,3 +313,20 @@ async def test_item_limit(client, setup_vault, monkeypatch):
 async def test_item_body_size_is_limited(client, setup_vault):
     big = {"protected": False, "summary": _envelope(), "body": _envelope(ct_len=65_537)}
     assert (await client.post("/api/v1/personal-vault/items", json=big)).status_code == 422
+
+
+# ─── Task 5: account deletion ───────────────────────────────────────────────
+
+from sqlalchemy import func, select  # noqa: E402
+
+from app.models.personal_vault import PersonalVault  # noqa: E402
+
+
+@pytest.mark.asyncio
+async def test_delete_account_removes_personal_vault(db_session, user):
+    db_session.add(PersonalVault(user_id=user.id, version=1, **_config()))
+    db_session.add(PersonalVaultItem(user_id=user.id, summary=_envelope(), body=_envelope()))
+    await db_session.flush()
+    await AuthService(db_session).delete_account(user)
+    assert (await db_session.execute(select(func.count()).select_from(PersonalVaultItem))).scalar() == 0
+    assert (await db_session.execute(select(func.count()).select_from(PersonalVault))).scalar() == 0

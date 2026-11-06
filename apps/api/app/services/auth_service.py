@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 
 from app.models.member import ProjectInvite
+from app.models.personal_vault import PersonalVault, PersonalVaultItem
 from app.models.user import (
     User,
     Session,
@@ -485,6 +486,9 @@ class AuthService:
         await self.db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
         # Delete all email verification tokens
         await self.db.execute(delete(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id))
+        # Personal vault (cofre pessoal): explicit, so it never depends on DB-level CASCADE
+        await self.db.execute(delete(PersonalVaultItem).where(PersonalVaultItem.user_id == user.id))
+        await self.db.execute(delete(PersonalVault).where(PersonalVault.user_id == user.id))
         # The user model has cascade deletes for OAuth accounts and memberships
         # Projects where user is owner: we delete them (cascade from User.projects)
         await self.db.delete(user)
