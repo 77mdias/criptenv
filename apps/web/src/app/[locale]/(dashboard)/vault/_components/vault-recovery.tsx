@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { CryptoError } from "@/lib/crypto"
 import { ApiError } from "@/lib/api/client"
-import { updatePersonalVaultConfig, type PersonalVaultConfig } from "@/lib/api/personal-vault"
+import { getPersonalVaultConfig, updatePersonalVaultConfig, type PersonalVaultConfig } from "@/lib/api/personal-vault"
 import { recoverVault } from "@/lib/personal-vault/crypto"
 import { emptyPasswords, validateVaultPasswords, VaultPasswordFields, type VaultPasswordError } from "./password-fields"
 import { RecoveryKeySheet } from "./recovery-key-sheet"
@@ -15,11 +15,12 @@ interface Props {
   config: PersonalVaultConfig
   onCancel: () => void
   onRecovered: (config: PersonalVaultConfig, vaultKey: CryptoKey) => void
+  onConfigChange: (config: PersonalVaultConfig) => void
 }
 
 type Sealed = Awaited<ReturnType<typeof recoverVault>>
 
-export function VaultRecovery({ config, onCancel, onRecovered }: Props) {
+export function VaultRecovery({ config, onCancel, onRecovered, onConfigChange }: Props) {
   const t = useTranslations("vault")
   const [recoveryKey, setRecoveryKey] = useState("")
   const [passwords, setPasswords] = useState(emptyPasswords)
@@ -34,6 +35,7 @@ export function VaultRecovery({ config, onCancel, onRecovered }: Props) {
     const invalid = validateVaultPasswords(passwords)
     setPasswordError(invalid)
     setKeyError(null)
+    setError(null)
     if (invalid) return
     setBusy(true)
     try {
@@ -61,7 +63,15 @@ export function VaultRecovery({ config, onCancel, onRecovered }: Props) {
     try {
       onRecovered(await updatePersonalVaultConfig(sealed.config, config.version), sealed.vaultKey)
     } catch (err) {
-      setError(err instanceof ApiError && err.status === 409 ? t("errors.conflict") : t("errors.save"))
+      if (err instanceof ApiError && err.status === 409) {
+        // The key on screen was sealed against a stale config and was never saved: drop it.
+        setSealed(null)
+        const fresh = await getPersonalVaultConfig().catch(() => null)
+        if (fresh) onConfigChange(fresh)
+        setError(t("recovery.conflict"))
+      } else {
+        setError(t("errors.save"))
+      }
       setBusy(false)
     }
   }
@@ -87,6 +97,7 @@ export function VaultRecovery({ config, onCancel, onRecovered }: Props) {
         onChange={(event) => setRecoveryKey(event.target.value)}
       />
       <VaultPasswordFields value={passwords} onChange={setPasswords} error={passwordError} disabled={busy} />
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       <div className="flex flex-wrap items-center gap-3">
         <Button type="submit" loading={busy} disabled={!recoveryKey}>
           {t("recovery.submit")}

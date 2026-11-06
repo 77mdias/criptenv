@@ -5,7 +5,7 @@
   "errors": {
     "load": "No se pudo cargar la bóveda. Recarga la página.",
     "save": "No se pudo guardar. Inténtalo de nuevo.",
-    "conflict": "La bóveda cambió en otra pestaña. Recarga la página para ver la versión más reciente."
+    "conflict": "La bóveda cambió en otra pestaña. Recargamos la versión más reciente. Inténtalo de nuevo."
   },
   "passwords": {
     "master": "Contraseña maestra",
@@ -49,7 +49,8 @@
     "submit": "Recuperar",
     "cancel": "Volver",
     "invalidKey": "Clave de recuperación no válida. Revisa los caracteres.",
-    "wrongKey": "Esta clave no abre esta bóveda."
+    "wrongKey": "Esta clave no abre esta bóveda.",
+    "conflict": "La bóveda cambió en otra pestaña. La clave mostrada no se guardó y no es válida. Vuelve a hacer la recuperación."
   },
   "items": {
     "lock": "Bloquear",

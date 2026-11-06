@@ -5,7 +5,7 @@
   "errors": {
     "load": "Could not load the vault. Reload the page.",
     "save": "Could not save. Try again.",
-    "conflict": "The vault changed in another tab. Reload the page to see the latest version."
+    "conflict": "The vault changed in another tab. We reloaded the latest version. Try again."
   },
   "passwords": {
     "master": "Master password",
@@ -49,7 +49,8 @@
     "submit": "Recover",
     "cancel": "Back",
     "invalidKey": "Invalid recovery key. Check the characters.",
-    "wrongKey": "This key does not open this vault."
+    "wrongKey": "This key does not open this vault.",
+    "conflict": "The vault changed in another tab. The key shown was not saved and is not valid. Run the recovery again."
   },
   "items": {
     "lock": "Lock",

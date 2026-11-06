@@ -52,7 +52,7 @@ function VaultScreen() {
   else if (config === undefined) content = <Skeleton className="h-40 w-full" aria-label={t("loading")} />
   else if (config === null) content = <VaultSetup onCreated={opened} />
   else if (vaultKey) content = <VaultItems vaultKey={vaultKey} config={config} onConfigChange={setConfig} />
-  else if (recovering) content = <VaultRecovery config={config} onCancel={() => setRecovering(false)} onRecovered={opened} />
+  else if (recovering) content = <VaultRecovery config={config} onCancel={() => setRecovering(false)} onRecovered={opened} onConfigChange={setConfig} />
   else content = <VaultUnlock config={config} onForgot={() => setRecovering(true)} />
 
   return (

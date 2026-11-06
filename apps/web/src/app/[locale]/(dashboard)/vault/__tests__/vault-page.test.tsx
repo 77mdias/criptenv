@@ -1,6 +1,7 @@
 import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import { renderWithIntl } from "@/test/render-with-intl"
 import { CryptoError } from "@/lib/crypto"
+import { ApiError } from "@/lib/api/client"
 import * as api from "@/lib/api/personal-vault"
 import * as vaultCrypto from "@/lib/personal-vault/crypto"
 import { getDashboardNavGroups } from "@/components/layout/dashboard-nav"
@@ -185,6 +186,33 @@ describe("personal vault page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Concluir" }))
     await waitFor(() => expect(api.updatePersonalVaultConfig).toHaveBeenCalledWith(CONFIG, 4))
     expect(await screen.findByRole("button", { name: "Trancar" })).toBeInTheDocument()
+  })
+
+  it("recovery conflict drops the unsaved key and reloads the config", async () => {
+    mocked(api.getPersonalVaultConfig).mockResolvedValueOnce(SAVED).mockResolvedValueOnce({ ...SAVED, version: 9 })
+    mocked(vaultCrypto.recoverVault).mockResolvedValue({ config: CONFIG, recoveryKey: "NEW0-KEY1", vaultKey: KEY })
+    mocked(api.updatePersonalVaultConfig).mockRejectedValue(new ApiError("Version conflict", 409, null))
+    renderWithIntl(<PersonalVaultPage />)
+
+    fireEvent.click(await screen.findByRole("button", { name: "Esqueci a senha mestra" }))
+    type("Chave de recuperação", "old-key")
+    fillPasswords("nova-mestra-456", "nova-extra-4")
+    fireEvent.click(screen.getByRole("button", { name: "Recuperar" }))
+    await screen.findByText("NEW0-KEY1")
+    fireEvent.click(screen.getByLabelText("Guardei a chave de recuperação"))
+    fireEvent.click(screen.getByRole("button", { name: "Concluir" }))
+
+    expect(
+      await screen.findByText("O cofre mudou em outra aba. A chave mostrada não foi salva e não vale. Faça a recuperação de novo."),
+    ).toBeInTheDocument()
+    expect(screen.queryByText("NEW0-KEY1")).not.toBeInTheDocument()
+    expect(api.getPersonalVaultConfig).toHaveBeenCalledTimes(2)
+
+    fillPasswords("nova-mestra-456", "nova-extra-4")
+    type("Chave de recuperação", "old-key")
+    fireEvent.click(screen.getByRole("button", { name: "Recuperar" }))
+    await screen.findByText("NEW0-KEY1")
+    expect(vaultCrypto.recoverVault).toHaveBeenLastCalledWith({ ...SAVED, version: 9 }, "old-key", "nova-mestra-456", "nova-extra-4")
   })
 
   it("recovery explains an invalid key", async () => {

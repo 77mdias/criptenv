@@ -5,7 +5,7 @@
   "errors": {
     "load": "Não foi possível carregar o cofre. Recarregue a página.",
     "save": "Não foi possível salvar. Tente de novo.",
-    "conflict": "O cofre mudou em outra aba. Recarregue a página para ver a versão mais recente."
+    "conflict": "O cofre mudou em outra aba. Recarregamos a versão mais recente. Tente de novo."
   },
   "passwords": {
     "master": "Senha mestra",
@@ -49,7 +49,8 @@
     "submit": "Recuperar",
     "cancel": "Voltar",
     "invalidKey": "Chave de recuperação inválida. Confira os caracteres.",
-    "wrongKey": "Esta chave não abre este cofre."
+    "wrongKey": "Esta chave não abre este cofre.",
+    "conflict": "O cofre mudou em outra aba. A chave mostrada não foi salva e não vale. Faça a recuperação de novo."
   },
   "items": {
     "lock": "Trancar",

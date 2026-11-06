@@ -225,4 +225,24 @@ describe("vault items", () => {
     expect(vaultCrypto.rewrapExtra).toHaveBeenCalledWith(SAVED, KEY, "errada-1", "nova-extra-9")
     expect(api.updatePersonalVaultConfig).not.toHaveBeenCalled()
   })
+
+  it("a config conflict reloads the config so the next try uses the new version", async () => {
+    const fresh = { ...SAVED, version: 7 }
+    mocked(vaultCrypto.rewrapMaster).mockResolvedValue(SAVED)
+    mocked(api.updatePersonalVaultConfig).mockRejectedValue(new ApiError("Version conflict", 409, null))
+    mocked(api.getPersonalVaultConfig).mockResolvedValue(fresh)
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Configurações" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Senha mestra atual", "mestra-forte-123", dialog)
+    type("Nova senha mestra", "outra-mestra-789", dialog)
+    type("Confirme a nova senha mestra", "outra-mestra-789", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Trocar senha mestra" }))
+
+    expect(
+      await within(dialog).findByText("O cofre mudou em outra aba. Recarregamos a versão mais recente. Tente de novo."),
+    ).toBeInTheDocument()
+    expect(onConfigChange).toHaveBeenCalledWith(fresh)
+  })
 })

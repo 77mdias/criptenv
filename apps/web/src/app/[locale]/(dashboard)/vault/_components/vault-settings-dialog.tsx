@@ -8,7 +8,7 @@ import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
 import { ApiError } from "@/lib/api/client"
 import { CryptoError } from "@/lib/crypto"
-import { updatePersonalVaultConfig, type PersonalVaultConfig } from "@/lib/api/personal-vault"
+import { getPersonalVaultConfig, updatePersonalVaultConfig, type PersonalVaultConfig } from "@/lib/api/personal-vault"
 import { rewrapExtra, rewrapMaster, type PersonalVaultConfigInput } from "@/lib/personal-vault/crypto"
 import { MIN_EXTRA_LENGTH, MIN_MASTER_LENGTH } from "./password-fields"
 
@@ -76,7 +76,12 @@ function PasswordChangeForm({
       setDone(true)
     } catch (err) {
       if (err instanceof CryptoError && err.code === "WRONG_PASSWORD") setError(t("settings.wrongCurrent"))
-      else if (err instanceof ApiError && err.status === 409) setError(t("errors.conflict"))
+      else if (err instanceof ApiError && err.status === 409) {
+        // Another tab saved first: pick up its version so the next try can succeed.
+        const fresh = await getPersonalVaultConfig().catch(() => null)
+        if (fresh) onConfigChange(fresh)
+        setError(t("errors.conflict"))
+      }
       else setError(t("errors.save"))
     } finally {
       setBusy(false)
