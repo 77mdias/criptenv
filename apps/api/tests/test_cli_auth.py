@@ -316,6 +316,7 @@ class TestCLIToken:
             return user
 
         async def fake_create_session(self, **kwargs):
+            assert kwargs["client"] == "cli"  # CLI sessions must never pass as web sessions
             now = datetime.now(timezone.utc)
             return SimpleNamespace(
                 id=uuid4(),
@@ -418,6 +419,7 @@ class TestCLIToken:
             return user
 
         async def fake_create_session(self, **kwargs):
+            assert kwargs["client"] == "cli"  # CLI sessions must never pass as web sessions
             now = datetime.now(timezone.utc)
             return SimpleNamespace(
                 id=uuid4(),
@@ -503,6 +505,7 @@ class TestDevicePoll:
             return user
 
         async def fake_create_session(self, **kwargs):
+            assert kwargs["client"] == "cli"  # CLI sessions must never pass as web sessions
             now = datetime.now(timezone.utc)
             return SimpleNamespace(
                 id=uuid4(),

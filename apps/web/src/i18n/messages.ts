@@ -19,6 +19,7 @@ export const NAMESPACES = [
   "audit",
   "settings",
   "integrations",
+  "vault",
   "help",
   "secrets",
   // docs area — sidebar/search chrome and (progressively) page content

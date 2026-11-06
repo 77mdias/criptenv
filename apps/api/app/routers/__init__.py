@@ -16,6 +16,7 @@ from app.routers.rotation import router as rotation_router, expiring_router
 from app.routers.notifications import router as notifications_router
 from app.routers.alert_settings import router as alert_settings_router
 from app.routers.me import router as me_router
+from app.routers.personal_vault import router as personal_vault_router
 
 __all__ = [
     "auth_router",
@@ -36,5 +37,6 @@ __all__ = [
     "expiring_router",
     "notifications_router",
     "alert_settings_router",
-    "me_router"
+    "me_router",
+    "personal_vault_router",
 ]

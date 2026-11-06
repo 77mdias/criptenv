@@ -12,6 +12,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 import bcrypt
 
 from app.models.member import ProjectInvite
+from app.models.personal_vault import PersonalVault, PersonalVaultItem
 from app.models.user import (
     User,
     Session,
@@ -150,7 +151,8 @@ class AuthService:
         self,
         user_id: UUID,
         ip_address: Optional[str] = None,
-        user_agent: Optional[str] = None
+        user_agent: Optional[str] = None,
+        client: str = "web",
     ) -> Session:
         token = self.generate_session_token()
         expires_at = datetime.now(timezone.utc) + timedelta(days=settings.SESSION_EXPIRE_DAYS)
@@ -174,7 +176,8 @@ class AuthService:
             token=self.hash_token(token),
             expires_at=expires_at,
             ip_address=ip_address,
-            user_agent=user_agent
+            user_agent=user_agent,
+            client=client,
         )
         self.db.add(session)
         await self.db.flush()
@@ -186,8 +189,14 @@ class AuthService:
         return session
 
     async def validate_session(self, token: str) -> Optional[User]:
+        _, user = await self.resolve_session(token)
+        return user
+
+    async def resolve_session(self, token: str) -> tuple[Optional[Session], Optional[User]]:
+        """Valid session and its user, or (None, None). Callers that care about the
+        session's origin (web vs CLI) read `session.client`."""
         if len(token) < 32:
-            return None
+            return None, None
 
         now = datetime.now(timezone.utc)
         inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
@@ -202,7 +211,7 @@ class AuthService:
         session = await self._scalar_one_or_none(result)
 
         if not session:
-            return None
+            return None, None
 
         # Update last_accessed_at on every successful validation
         session.last_accessed_at = now
@@ -214,7 +223,7 @@ class AuthService:
         user = await self._scalar_one_or_none(user_result)
         if user:
             await self.ensure_kdf_salt(user)
-        return user
+        return (session, user) if user else (None, None)
 
     async def invalidate_session(self, token: str) -> bool:
         result = await self.db.execute(
@@ -485,6 +494,9 @@ class AuthService:
         await self.db.execute(delete(PasswordResetToken).where(PasswordResetToken.user_id == user.id))
         # Delete all email verification tokens
         await self.db.execute(delete(EmailVerificationToken).where(EmailVerificationToken.user_id == user.id))
+        # Personal vault (cofre pessoal): explicit, so it never depends on DB-level CASCADE
+        await self.db.execute(delete(PersonalVaultItem).where(PersonalVaultItem.user_id == user.id))
+        await self.db.execute(delete(PersonalVault).where(PersonalVault.user_id == user.id))
         # The user model has cascade deletes for OAuth accounts and memberships
         # Projects where user is owner: we delete them (cascade from User.projects)
         await self.db.delete(user)

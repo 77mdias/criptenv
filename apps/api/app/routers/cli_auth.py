@@ -599,6 +599,7 @@ async def cli_token(
         user_id=user.id,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent", "CriptEnv CLI"),
+        client="cli",
     )
 
     return CLITokenResponse(
@@ -688,6 +689,7 @@ async def device_poll(
         user_id=user.id,
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent", "CriptEnv CLI"),
+        client="cli",
     )
 
     # Single use: a replayed poll must not mint another session.

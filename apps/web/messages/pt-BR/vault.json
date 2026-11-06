@@ -1,0 +1,119 @@
+{
+  "title": "Cofre pessoal",
+  "subtitle": "Logins e notas só seus, cifrados no seu navegador. Este cofre só abre pelo dashboard web.",
+  "loading": "Carregando cofre...",
+  "errors": {
+    "load": "Não foi possível carregar o cofre. Recarregue a página.",
+    "save": "Não foi possível salvar. Tente de novo.",
+    "conflict": "O cofre mudou em outra aba. Recarregamos a versão mais recente. Tente de novo.",
+    "reauth": "Por segurança, o cofre só abre com um login feito depois desta atualização. Saia e entre de novo.",
+    "reauthAction": "Entrar de novo"
+  },
+  "passwords": {
+    "master": "Senha mestra",
+    "masterConfirm": "Confirme a senha mestra",
+    "extra": "Senha de proteção extra",
+    "extraConfirm": "Confirme a senha extra",
+    "masterHelp": "Mínimo de 12 caracteres. Use uma senha diferente da do login.",
+    "extraHelp": "Mínimo de 8 caracteres. Abre só os itens com proteção extra.",
+    "errors": {
+      "masterShort": "A senha mestra precisa ter pelo menos 12 caracteres.",
+      "masterMismatch": "As senhas mestras não conferem.",
+      "extraShort": "A senha extra precisa ter pelo menos 8 caracteres.",
+      "extraMismatch": "As senhas extras não conferem.",
+      "extraSameAsMaster": "A senha extra precisa ser diferente da senha mestra."
+    }
+  },
+  "setup": {
+    "title": "Crie seu cofre pessoal",
+    "description": "Guarde logins de redes sociais, contas e notas seguras fora dos seus projetos. Tudo é cifrado aqui no navegador antes de ir para o servidor.",
+    "submit": "Continuar"
+  },
+  "recoverySheet": {
+    "title": "Chave de recuperação",
+    "description": "Imprima ou anote esta chave e guarde em um lugar seguro. Ela aparece só agora.",
+    "warning": "Sem a senha mestra ou esta chave de recuperação, ninguém consegue abrir este cofre, nem a equipe do CriptEnv.",
+    "print": "Imprimir",
+    "confirm": "Guardei a chave de recuperação",
+    "finish": "Concluir"
+  },
+  "unlock": {
+    "title": "Cofre trancado",
+    "description": "Digite a senha mestra para abrir. O cofre tranca sozinho após 10 minutos sem uso.",
+    "submit": "Abrir cofre",
+    "wrong": "Senha mestra incorreta",
+    "forgot": "Esqueci a senha mestra"
+  },
+  "recovery": {
+    "title": "Recuperar o cofre",
+    "description": "Use a chave de recuperação impressa para definir novas senhas. Uma nova chave será gerada e a antiga deixa de valer.",
+    "key": "Chave de recuperação",
+    "submit": "Recuperar",
+    "cancel": "Voltar",
+    "invalidKey": "Chave de recuperação inválida. Confira os caracteres.",
+    "wrongKey": "Esta chave não abre este cofre.",
+    "conflict": "O cofre mudou em outra aba. A chave mostrada não foi salva e não vale. Faça a recuperação de novo."
+  },
+  "items": {
+    "lock": "Trancar",
+    "empty": "Nenhum item ainda",
+    "emptyDescription": "Adicione um login ou uma nota segura.",
+    "search": "Buscar",
+    "filterAll": "Todos",
+    "filterLogin": "Logins",
+    "filterNote": "Notas",
+    "new": "Novo item",
+    "settings": "Configurações",
+    "noResults": "Nenhum item encontrado",
+    "protected": "Proteção extra",
+    "reveal": "Revelar {title}",
+    "edit": "Editar {title}",
+    "delete": "Apagar {title}",
+    "deleteConfirm": "Apagar \"{title}\"? Isso não pode ser desfeito.",
+    "copyUsername": "Copiar usuário de {title}",
+    "copied": "Copiado para a área de transferência."
+  },
+  "itemDialog": {
+    "newTitle": "Novo item",
+    "editTitle": "Editar item",
+    "type": "Tipo",
+    "typeLogin": "Login",
+    "typeNote": "Nota segura",
+    "title": "Título",
+    "username": "Usuário",
+    "password": "Senha",
+    "url": "URL",
+    "notes": "Notas",
+    "content": "Conteúdo",
+    "protected": "Proteção extra",
+    "protectedHelp": "Senha, notas e conteúdo só abrem com a senha extra.",
+    "unlockDescription": "Este item tem proteção extra. Digite a senha extra para editar.",
+    "unlock": "Desbloquear",
+    "save": "Salvar",
+    "cancel": "Cancelar",
+    "titleRequired": "Dê um título ao item.",
+    "conflict": "Este item mudou em outra aba. Recarregamos a versão mais recente.",
+    "wrongExtra": "Senha extra incorreta"
+  },
+  "reveal": {
+    "unlockDescription": "Este item tem proteção extra. Digite a senha extra para ver.",
+    "unlock": "Desbloquear",
+    "wrongExtra": "Senha extra incorreta",
+    "copy": "Copiar {field}"
+  },
+  "settings": {
+    "title": "Configurações do cofre",
+    "description": "Trocar uma senha não muda a chave de recuperação.",
+    "currentMaster": "Senha mestra atual",
+    "newMaster": "Nova senha mestra",
+    "confirmMaster": "Confirme a nova senha mestra",
+    "submitMaster": "Trocar senha mestra",
+    "currentExtra": "Senha extra atual",
+    "newExtra": "Nova senha extra",
+    "confirmExtra": "Confirme a nova senha extra",
+    "submitExtra": "Trocar senha extra",
+    "wrongCurrent": "Senha atual incorreta",
+    "mismatch": "As senhas não conferem.",
+    "saved": "Senha alterada."
+  }
+}

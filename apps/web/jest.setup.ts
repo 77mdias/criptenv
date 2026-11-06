@@ -1,6 +1,7 @@
 import "@testing-library/jest-dom"
 import React from "react"
 import { webcrypto } from "node:crypto"
+import { TextDecoder, TextEncoder } from "node:util"
 
 const router = {
   back: jest.fn(),
@@ -54,6 +55,11 @@ if (!globalThis.crypto?.subtle) {
     configurable: true,
     value: webcrypto,
   })
+}
+
+// jsdom lacks TextEncoder/TextDecoder, which the WebCrypto code paths need.
+if (typeof globalThis.TextEncoder === "undefined") {
+  Object.assign(globalThis, { TextEncoder, TextDecoder })
 }
 
 Object.defineProperty(window, "matchMedia", {

@@ -1,0 +1,206 @@
+"use client"
+
+import { useEffect, useMemo, useState } from "react"
+import { useTranslations } from "next-intl"
+import { Copy, Eye, KeyRound, Lock, Pencil, Plus, Settings, ShieldCheck, StickyNote, Trash2 } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Skeleton } from "@/components/ui/skeleton"
+import { EmptyState } from "@/components/shared/empty-state"
+import {
+  deletePersonalVaultItem,
+  listPersonalVaultItems,
+  type PersonalVaultConfig,
+  type PersonalVaultItem,
+} from "@/lib/api/personal-vault"
+import { decryptSummary, type ItemSummary } from "@/lib/personal-vault/crypto"
+import { ProtectedRevealDialog } from "./protected-reveal-dialog"
+import { VaultItemDialog } from "./vault-item-dialog"
+import { VaultSettingsDialog } from "./vault-settings-dialog"
+import { usePersonalVaultSession } from "./vault-session"
+
+export interface DecryptedEntry {
+  item: PersonalVaultItem
+  summary: ItemSummary
+}
+
+interface Props {
+  vaultKey: CryptoKey
+  config: PersonalVaultConfig
+  onConfigChange: (config: PersonalVaultConfig) => void
+}
+
+const FILTERS = [
+  { value: "all", label: "items.filterAll" },
+  { value: "login", label: "items.filterLogin" },
+  { value: "note", label: "items.filterNote" },
+] as const
+type Filter = (typeof FILTERS)[number]["value"]
+
+export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
+  const t = useTranslations("vault")
+  const { lock } = usePersonalVaultSession()
+  const [entries, setEntries] = useState<DecryptedEntry[] | null>(null)
+  const [reloadToken, setReloadToken] = useState(0)
+  const [query, setQuery] = useState("")
+  const [filter, setFilter] = useState<Filter>("all")
+  const [revealing, setRevealing] = useState<DecryptedEntry | null>(null)
+  const [editing, setEditing] = useState<DecryptedEntry | null | undefined>(undefined)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [notice, setNotice] = useState<string | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    listPersonalVaultItems()
+      .then((items) => Promise.all(items.map(async (item) => ({ item, summary: await decryptSummary(item.id, item.summary, vaultKey) }))))
+      .then((decrypted) => {
+        if (!cancelled) setEntries(decrypted)
+      })
+      .catch(() => {
+        if (!cancelled) setError(t("errors.load"))
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [vaultKey, reloadToken, t])
+
+  const visible = useMemo(() => {
+    const needle = query.trim().toLowerCase()
+    return (entries ?? []).filter(({ summary }) => {
+      if (filter !== "all" && summary.type !== filter) return false
+      if (!needle) return true
+      return [summary.title, summary.username, summary.url].some((value) => value?.toLowerCase().includes(needle))
+    })
+  }, [entries, query, filter])
+
+  const reload = () => setReloadToken((n) => n + 1)
+
+  async function handleDelete(entry: DecryptedEntry) {
+    if (!window.confirm(t("items.deleteConfirm", { title: entry.summary.title }))) return
+    try {
+      await deletePersonalVaultItem(entry.item.id)
+      reload()
+    } catch {
+      setError(t("errors.save"))
+    }
+  }
+
+  function copy(value: string) {
+    void navigator.clipboard?.writeText(value).then(() => setNotice(t("items.copied")))
+  }
+
+  return (
+    <div className="space-y-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <Button type="button" icon={Plus} onClick={() => setEditing(null)}>
+          {t("items.new")}
+        </Button>
+        <div className="ml-auto flex gap-2">
+          <Button type="button" variant="ghost" icon={Settings} onClick={() => setSettingsOpen(true)}>
+            {t("items.settings")}
+          </Button>
+          <Button type="button" variant="secondary" icon={Lock} onClick={lock}>
+            {t("items.lock")}
+          </Button>
+        </div>
+      </div>
+
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end">
+        <div className="flex-1">
+          <Input label={t("items.search")} type="search" value={query} onChange={(event) => setQuery(event.target.value)} />
+        </div>
+        <div className="flex gap-1" role="group">
+          {FILTERS.map(({ value, label }) => (
+            <Button
+              key={value}
+              type="button"
+              size="sm"
+              variant={filter === value ? "primary" : "ghost"}
+              aria-pressed={filter === value}
+              onClick={() => setFilter(value)}
+            >
+              {t(label)}
+            </Button>
+          ))}
+        </div>
+      </div>
+
+      {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
+      {notice && <p role="status" className="text-sm text-(--text-secondary)">{notice}</p>}
+      {!entries && !error && <Skeleton className="h-24 w-full" />}
+      {entries?.length === 0 && (
+        <EmptyState icon={KeyRound} title={t("items.empty")} description={t("items.emptyDescription")} />
+      )}
+      {entries && entries.length > 0 && visible.length === 0 && (
+        <p className="text-sm text-(--text-muted)">{t("items.noResults")}</p>
+      )}
+      {visible.length > 0 && (
+        <ul className="divide-y divide-(--border) rounded-lg border border-(--border)">
+          {visible.map((entry) => {
+            const { item, summary } = entry
+            return (
+              <li key={item.id} className="flex items-center gap-3 px-4 py-3">
+                {summary.type === "login" ? (
+                  <KeyRound aria-hidden className="h-4 w-4 shrink-0 text-(--text-muted)" />
+                ) : (
+                  <StickyNote aria-hidden className="h-4 w-4 shrink-0 text-(--text-muted)" />
+                )}
+                <div className="min-w-0 flex-1">
+                  <p className="flex items-center gap-1.5 truncate text-sm font-medium">
+                    <span className="truncate">{summary.title}</span>
+                    {item.protected && (
+                      <ShieldCheck role="img" aria-label={t("items.protected")} className="h-3.5 w-3.5 shrink-0 text-(--accent)" />
+                    )}
+                  </p>
+                  {summary.username && <p className="truncate text-xs text-(--text-muted)">{summary.username}</p>}
+                </div>
+                <div className="flex shrink-0 gap-1">
+                  {summary.username && (
+                    <Button type="button" size="icon" variant="ghost" aria-label={t("items.copyUsername", { title: summary.title })} onClick={() => copy(summary.username!)}>
+                      <Copy aria-hidden className="h-4 w-4" />
+                    </Button>
+                  )}
+                  <Button type="button" size="icon" variant="ghost" aria-label={t("items.reveal", { title: summary.title })} onClick={() => setRevealing(entry)}>
+                    <Eye aria-hidden className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t("items.edit", { title: summary.title })} onClick={() => setEditing(entry)}>
+                    <Pencil aria-hidden className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t("items.delete", { title: summary.title })} onClick={() => void handleDelete(entry)}>
+                    <Trash2 aria-hidden className="h-4 w-4" />
+                  </Button>
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+
+      <ProtectedRevealDialog entry={revealing} config={config} vaultKey={vaultKey} onClose={() => setRevealing(null)} />
+      <VaultItemDialog
+        entry={editing}
+        config={config}
+        vaultKey={vaultKey}
+        onClose={() => setEditing(undefined)}
+        onSaved={() => {
+          setEditing(undefined)
+          setNotice(null)
+          reload()
+        }}
+        onConflict={() => {
+          setEditing(undefined)
+          setNotice(t("itemDialog.conflict"))
+          reload()
+        }}
+      />
+      <VaultSettingsDialog
+        open={settingsOpen}
+        config={config}
+        vaultKey={vaultKey}
+        onClose={() => setSettingsOpen(false)}
+        onConfigChange={onConfigChange}
+      />
+    </div>
+  )
+}

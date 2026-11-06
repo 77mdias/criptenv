@@ -7,6 +7,26 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Cofre pessoal (web) — 2026-11-06
+
+Cofre por usuário, parecido com o do Bitwarden, para logins e notas seguras fora dos projetos. Só no dashboard web. Modelo criptográfico em `docs/security/personal-vault.md`.
+
+**API:**
+- Tabelas `personal_vaults` e `personal_vault_items` (migration `20261106_0014`) e rotas `/api/v1/personal-vault/config` e `/items` (CRUD com `expected_version` e 409 em conflito, até 1000 itens).
+- `get_current_web_user`: só aceita o cookie de sessão e responde 403 a qualquer header `Authorization`. Assim CLI, API keys e tokens de CI ficam de fora.
+- Apagar a conta apaga também o cofre.
+
+**Web:**
+- Página `/vault` (item "Cofre" na sidebar). Criação com senha mestra e senha de proteção extra e uma chave de recuperação para imprimir (nada é gravado antes de confirmar). Desbloqueio a cada acesso, trava após 10 minutos sem uso e recuperação que gera uma chave nova.
+- Itens de login e nota segura, com busca, filtro e "Proteção extra": o corpo só abre com a senha extra, pedida a cada revelar.
+- Troca da senha mestra e da senha extra sem cifrar os itens de novo.
+- PBKDF2-SHA256 com 600 mil iterações, só WebCrypto, sem dependência nova.
+- Fix no cliente HTTP: um 409 numa mutação agora também invalida o cache de GET. Antes, a lista recarregada depois de um conflito podia vir do cache velho.
+- Todo envelope leva associated data (AAD) do AES-GCM com o campo, o id do item (gerado no cliente) e a flag `protected`. Assim o servidor não consegue trocar conteúdo entre itens nem tirar a proteção extra sem ser detectado.
+- VK e PK nunca viram bytes nem texto: são embrulhadas com `wrapKey`/`unwrapKey`.
+- A troca de senha recusa uma senha mestra igual à extra (e o contrário).
+- Sessões sem origem web (de antes da migration `0015`, ou da CLI) recebem 403 e um aviso para entrar de novo.
+
 ### CLI 0.2.4 (PyPI) — 2026-11-04
 
 - **Erros de API sem traceback:** `CriptEnvAPIError` passou a ser `ClickException`. Antes, qualquer erro de API não tratado (401/404/5xx/rede) imprimia o traceback do Python na maioria dos comandos; agora sai `Error: ...` com status 1.

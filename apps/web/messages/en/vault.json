@@ -1,0 +1,119 @@
+{
+  "title": "Personal vault",
+  "subtitle": "Logins and notes that are only yours, encrypted in your browser. This vault only opens from the web dashboard.",
+  "loading": "Loading vault...",
+  "errors": {
+    "load": "Could not load the vault. Reload the page.",
+    "save": "Could not save. Try again.",
+    "conflict": "The vault changed in another tab. We reloaded the latest version. Try again.",
+    "reauth": "For security, the vault only opens with a sign-in made after this update. Sign out and sign in again.",
+    "reauthAction": "Sign in again"
+  },
+  "passwords": {
+    "master": "Master password",
+    "masterConfirm": "Confirm master password",
+    "extra": "Extra protection password",
+    "extraConfirm": "Confirm extra password",
+    "masterHelp": "At least 12 characters. Use a different password from your login.",
+    "extraHelp": "At least 8 characters. Opens only the items with extra protection.",
+    "errors": {
+      "masterShort": "The master password must have at least 12 characters.",
+      "masterMismatch": "The master passwords do not match.",
+      "extraShort": "The extra password must have at least 8 characters.",
+      "extraMismatch": "The extra passwords do not match.",
+      "extraSameAsMaster": "The extra password must be different from the master password."
+    }
+  },
+  "setup": {
+    "title": "Create your personal vault",
+    "description": "Keep social media logins, accounts and secure notes outside your projects. Everything is encrypted here in the browser before it reaches the server.",
+    "submit": "Continue"
+  },
+  "recoverySheet": {
+    "title": "Recovery key",
+    "description": "Print or write down this key and keep it somewhere safe. It is shown only now.",
+    "warning": "Without the master password or this recovery key, nobody can open this vault, not even the CriptEnv team.",
+    "print": "Print",
+    "confirm": "I saved the recovery key",
+    "finish": "Finish"
+  },
+  "unlock": {
+    "title": "Vault locked",
+    "description": "Enter the master password to open it. The vault locks itself after 10 minutes of inactivity.",
+    "submit": "Open vault",
+    "wrong": "Wrong master password",
+    "forgot": "I forgot the master password"
+  },
+  "recovery": {
+    "title": "Recover the vault",
+    "description": "Use the printed recovery key to set new passwords. A new key is generated and the old one stops working.",
+    "key": "Recovery key",
+    "submit": "Recover",
+    "cancel": "Back",
+    "invalidKey": "Invalid recovery key. Check the characters.",
+    "wrongKey": "This key does not open this vault.",
+    "conflict": "The vault changed in another tab. The key shown was not saved and is not valid. Run the recovery again."
+  },
+  "items": {
+    "lock": "Lock",
+    "empty": "No items yet",
+    "emptyDescription": "Add a login or a secure note.",
+    "search": "Search",
+    "filterAll": "All",
+    "filterLogin": "Logins",
+    "filterNote": "Notes",
+    "new": "New item",
+    "settings": "Settings",
+    "noResults": "No items found",
+    "protected": "Extra protection",
+    "reveal": "Reveal {title}",
+    "edit": "Edit {title}",
+    "delete": "Delete {title}",
+    "deleteConfirm": "Delete \"{title}\"? This cannot be undone.",
+    "copyUsername": "Copy username of {title}",
+    "copied": "Copied to the clipboard."
+  },
+  "itemDialog": {
+    "newTitle": "New item",
+    "editTitle": "Edit item",
+    "type": "Type",
+    "typeLogin": "Login",
+    "typeNote": "Secure note",
+    "title": "Title",
+    "username": "Username",
+    "password": "Password",
+    "url": "URL",
+    "notes": "Notes",
+    "content": "Content",
+    "protected": "Extra protection",
+    "protectedHelp": "Password, notes and content open only with the extra password.",
+    "unlockDescription": "This item has extra protection. Enter the extra password to edit it.",
+    "unlock": "Unlock",
+    "save": "Save",
+    "cancel": "Cancel",
+    "titleRequired": "Give the item a title.",
+    "conflict": "This item changed in another tab. We reloaded the latest version.",
+    "wrongExtra": "Wrong extra password"
+  },
+  "reveal": {
+    "unlockDescription": "This item has extra protection. Enter the extra password to see it.",
+    "unlock": "Unlock",
+    "wrongExtra": "Wrong extra password",
+    "copy": "Copy {field}"
+  },
+  "settings": {
+    "title": "Vault settings",
+    "description": "Changing a password does not change the recovery key.",
+    "currentMaster": "Current master password",
+    "newMaster": "New master password",
+    "confirmMaster": "Confirm new master password",
+    "submitMaster": "Change master password",
+    "currentExtra": "Current extra password",
+    "newExtra": "New extra password",
+    "confirmExtra": "Confirm new extra password",
+    "submitExtra": "Change extra password",
+    "wrongCurrent": "Wrong current password",
+    "mismatch": "The passwords do not match.",
+    "saved": "Password changed."
+  }
+}

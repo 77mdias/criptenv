@@ -267,3 +267,19 @@ html.dark {
 .security-nav-dot.is-active span:last-child {
   color: var(--text-primary);
 }
+
+/* Personal vault: printing the recovery key prints only the sheet, not the dashboard shell. */
+@media print {
+  body:has(.recovery-sheet) * {
+    visibility: hidden;
+  }
+  body:has(.recovery-sheet) .recovery-sheet,
+  body:has(.recovery-sheet) .recovery-sheet * {
+    visibility: visible;
+  }
+  body:has(.recovery-sheet) .recovery-sheet {
+    position: absolute;
+    inset: 0;
+    padding: 2rem;
+  }
+}

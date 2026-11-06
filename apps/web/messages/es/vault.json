@@ -1,0 +1,119 @@
+{
+  "title": "Bóveda personal",
+  "subtitle": "Inicios de sesión y notas solo tuyos, cifrados en tu navegador. Esta bóveda solo se abre desde el panel web.",
+  "loading": "Cargando bóveda...",
+  "errors": {
+    "load": "No se pudo cargar la bóveda. Recarga la página.",
+    "save": "No se pudo guardar. Inténtalo de nuevo.",
+    "conflict": "La bóveda cambió en otra pestaña. Recargamos la versión más reciente. Inténtalo de nuevo.",
+    "reauth": "Por seguridad, la bóveda solo se abre con un inicio de sesión hecho después de esta actualización. Cierra sesión y vuelve a entrar.",
+    "reauthAction": "Volver a entrar"
+  },
+  "passwords": {
+    "master": "Contraseña maestra",
+    "masterConfirm": "Confirma la contraseña maestra",
+    "extra": "Contraseña de protección extra",
+    "extraConfirm": "Confirma la contraseña extra",
+    "masterHelp": "Mínimo 12 caracteres. Usa una contraseña distinta de la de inicio de sesión.",
+    "extraHelp": "Mínimo 8 caracteres. Abre solo los elementos con protección extra.",
+    "errors": {
+      "masterShort": "La contraseña maestra debe tener al menos 12 caracteres.",
+      "masterMismatch": "Las contraseñas maestras no coinciden.",
+      "extraShort": "La contraseña extra debe tener al menos 8 caracteres.",
+      "extraMismatch": "Las contraseñas extra no coinciden.",
+      "extraSameAsMaster": "La contraseña extra debe ser distinta de la contraseña maestra."
+    }
+  },
+  "setup": {
+    "title": "Crea tu bóveda personal",
+    "description": "Guarda inicios de sesión de redes sociales, cuentas y notas seguras fuera de tus proyectos. Todo se cifra aquí en el navegador antes de llegar al servidor.",
+    "submit": "Continuar"
+  },
+  "recoverySheet": {
+    "title": "Clave de recuperación",
+    "description": "Imprime o anota esta clave y guárdala en un lugar seguro. Solo se muestra ahora.",
+    "warning": "Sin la contraseña maestra o esta clave de recuperación, nadie puede abrir esta bóveda, ni siquiera el equipo de CriptEnv.",
+    "print": "Imprimir",
+    "confirm": "Guardé la clave de recuperación",
+    "finish": "Terminar"
+  },
+  "unlock": {
+    "title": "Bóveda bloqueada",
+    "description": "Escribe la contraseña maestra para abrirla. La bóveda se bloquea sola tras 10 minutos sin uso.",
+    "submit": "Abrir bóveda",
+    "wrong": "Contraseña maestra incorrecta",
+    "forgot": "Olvidé la contraseña maestra"
+  },
+  "recovery": {
+    "title": "Recuperar la bóveda",
+    "description": "Usa la clave de recuperación impresa para definir nuevas contraseñas. Se genera una clave nueva y la anterior deja de valer.",
+    "key": "Clave de recuperación",
+    "submit": "Recuperar",
+    "cancel": "Volver",
+    "invalidKey": "Clave de recuperación no válida. Revisa los caracteres.",
+    "wrongKey": "Esta clave no abre esta bóveda.",
+    "conflict": "La bóveda cambió en otra pestaña. La clave mostrada no se guardó y no es válida. Vuelve a hacer la recuperación."
+  },
+  "items": {
+    "lock": "Bloquear",
+    "empty": "Aún no hay elementos",
+    "emptyDescription": "Agrega un inicio de sesión o una nota segura.",
+    "search": "Buscar",
+    "filterAll": "Todos",
+    "filterLogin": "Inicios de sesión",
+    "filterNote": "Notas",
+    "new": "Nuevo elemento",
+    "settings": "Configuración",
+    "noResults": "No se encontraron elementos",
+    "protected": "Protección extra",
+    "reveal": "Mostrar {title}",
+    "edit": "Editar {title}",
+    "delete": "Eliminar {title}",
+    "deleteConfirm": "¿Eliminar \"{title}\"? No se puede deshacer.",
+    "copyUsername": "Copiar usuario de {title}",
+    "copied": "Copiado al portapapeles."
+  },
+  "itemDialog": {
+    "newTitle": "Nuevo elemento",
+    "editTitle": "Editar elemento",
+    "type": "Tipo",
+    "typeLogin": "Inicio de sesión",
+    "typeNote": "Nota segura",
+    "title": "Título",
+    "username": "Usuario",
+    "password": "Contraseña",
+    "url": "URL",
+    "notes": "Notas",
+    "content": "Contenido",
+    "protected": "Protección extra",
+    "protectedHelp": "La contraseña, las notas y el contenido solo se abren con la contraseña extra.",
+    "unlockDescription": "Este elemento tiene protección extra. Escribe la contraseña extra para editarlo.",
+    "unlock": "Desbloquear",
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "titleRequired": "Ponle un título al elemento.",
+    "conflict": "Este elemento cambió en otra pestaña. Recargamos la versión más reciente.",
+    "wrongExtra": "Contraseña extra incorrecta"
+  },
+  "reveal": {
+    "unlockDescription": "Este elemento tiene protección extra. Escribe la contraseña extra para verlo.",
+    "unlock": "Desbloquear",
+    "wrongExtra": "Contraseña extra incorrecta",
+    "copy": "Copiar {field}"
+  },
+  "settings": {
+    "title": "Configuración de la bóveda",
+    "description": "Cambiar una contraseña no cambia la clave de recuperación.",
+    "currentMaster": "Contraseña maestra actual",
+    "newMaster": "Nueva contraseña maestra",
+    "confirmMaster": "Confirma la nueva contraseña maestra",
+    "submitMaster": "Cambiar contraseña maestra",
+    "currentExtra": "Contraseña extra actual",
+    "newExtra": "Nueva contraseña extra",
+    "confirmExtra": "Confirma la nueva contraseña extra",
+    "submitExtra": "Cambiar contraseña extra",
+    "wrongCurrent": "Contraseña actual incorrecta",
+    "mismatch": "Las contraseñas no coinciden.",
+    "saved": "Contraseña cambiada."
+  }
+}

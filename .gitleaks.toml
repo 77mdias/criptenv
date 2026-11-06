@@ -18,6 +18,8 @@ regexes = [
   '''<API_KEY>''',
   '''<TOKEN>''',
   '''<SECRET>''',
+  # Personal vault test fixture password (Jest tests and plan); not a credential.
+  '''^nova-mestra-456$''',
 ]
 
 paths = [
