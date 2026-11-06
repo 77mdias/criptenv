@@ -156,3 +156,91 @@ async def test_web_user_keeps_email_verification_rule(monkeypatch):
     with pytest.raises(HTTPException) as exc:
         await get_current_web_user(_request(cookies={"session_token": "tok"}), db=MagicMock())
     assert exc.value.status_code == 403
+
+
+# ─── Tasks 3-4: HTTP routes ─────────────────────────────────────────────────
+
+from httpx import ASGITransport, AsyncClient  # noqa: E402
+
+from main import app  # noqa: E402
+from app.database import get_db  # noqa: E402
+
+
+@pytest_asyncio.fixture
+async def client(factory):
+    async def _get_db():
+        async with factory() as db:
+            try:
+                yield db
+                await db.commit()
+            except Exception:
+                await db.rollback()
+                raise
+
+    app.dependency_overrides[get_db] = _get_db
+    try:
+        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
+            yield c
+    finally:
+        app.dependency_overrides.pop(get_db, None)
+        app.dependency_overrides.pop(get_current_web_user, None)
+
+
+@pytest_asyncio.fixture
+async def as_user(factory):
+    users = {}
+    async with factory() as db:
+        for name in ("ana", "bia"):
+            users[name] = _user(name)
+            db.add(users[name])
+        await db.commit()
+
+    def _switch(name):
+        app.dependency_overrides[get_current_web_user] = lambda: users[name]
+        return users[name]
+
+    return _switch
+
+
+@pytest.mark.asyncio
+async def test_config_lifecycle(client, as_user):
+    as_user("ana")
+    assert (await client.get("/api/v1/personal-vault/config")).status_code == 404
+    r = await client.post("/api/v1/personal-vault/config", json=_config())
+    assert r.status_code == 201 and r.json()["version"] == 1
+    assert (await client.post("/api/v1/personal-vault/config", json=_config())).status_code == 409
+    r = await client.put("/api/v1/personal-vault/config",
+                         json={**_config(master_salt="M" * 44), "expected_version": 1})
+    assert r.status_code == 200 and r.json()["version"] == 2 and r.json()["master_salt"] == "M" * 44
+    r = await client.get("/api/v1/personal-vault/config")
+    assert r.status_code == 200 and r.json()["master_salt"] == "M" * 44
+
+
+@pytest.mark.asyncio
+async def test_config_stale_version_conflicts(client, as_user):
+    as_user("ana")
+    await client.post("/api/v1/personal-vault/config", json=_config())
+    await client.put("/api/v1/personal-vault/config", json={**_config(), "expected_version": 1})
+    r = await client.put("/api/v1/personal-vault/config", json={**_config(), "expected_version": 1})
+    assert r.status_code == 409 and r.json()["detail"] == "Version conflict"
+
+
+@pytest.mark.asyncio
+async def test_config_update_without_vault_is_404(client, as_user):
+    as_user("ana")
+    r = await client.put("/api/v1/personal-vault/config", json={**_config(), "expected_version": 1})
+    assert r.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_config_is_per_user(client, as_user):
+    as_user("ana")
+    await client.post("/api/v1/personal-vault/config", json=_config())
+    as_user("bia")
+    assert (await client.get("/api/v1/personal-vault/config")).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_routes_reject_bearer_tokens(client):
+    r = await client.get("/api/v1/personal-vault/config", headers={"Authorization": "Bearer cek_x"})
+    assert r.status_code == 403
