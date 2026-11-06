@@ -121,17 +121,28 @@ function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "en
       form.type === "login"
         ? { type: "login", title: form.title, username: form.username, password: form.password, url: form.url, notes: form.notes }
         : { type: "note", title: form.title, content: form.content }
+    // True once this save targets a copy that already exists on the server.
+    let existing = entry !== null
     try {
       const encrypted = await encryptItem(itemId, plain, vaultKey, isProtected ? await withProtectedKey() : null)
-      if (entry) await updatePersonalVaultItem(entry.item.id, encrypted, entry.item.version)
-      else await createPersonalVaultItem(encrypted)
+      if (entry) {
+        await updatePersonalVaultItem(entry.item.id, encrypted, entry.item.version)
+      } else {
+        try {
+          await createPersonalVaultItem(encrypted)
+        } catch (err) {
+          if (!(err instanceof ApiError && err.status === 409 && err.message === "Item id already exists")) throw err
+          // An earlier save of this new item landed but its response was lost. Apply the
+          // latest edits on top of it; a brand-new item can only be at version 1.
+          existing = true
+          await updatePersonalVaultItem(itemId, encrypted, 1)
+        }
+      }
       onSaved()
     } catch (err) {
-      // Our own id already exists: an earlier save landed but its response was lost.
-      if (!entry && err instanceof ApiError && err.status === 409 && err.message === "Item id already exists") onSaved()
       // Never retry: the other tab's version (or deletion) wins and the list reloads.
-      else if (entry && err instanceof ApiError && err.status === 409) onStale("changed")
-      else if (entry && err instanceof ApiError && err.status === 404) onStale("deleted")
+      if (existing && err instanceof ApiError && err.status === 409) onStale("changed")
+      else if (existing && err instanceof ApiError && err.status === 404) onStale("deleted")
       else report(err)
       setBusy(false)
     }

@@ -351,9 +351,30 @@ describe("vault items", () => {
     await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
   })
 
-  it("a create retried after a lost response just reloads the list", async () => {
+  it("a create retried after a lost response saves the latest edits over the landed copy", async () => {
     mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
     mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item id already exists", 409, null))
+    mocked(api.updatePersonalVaultItem).mockResolvedValue(item("enc"))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Título", "Banco", dialog)
+    type("Senha", "P2", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    await waitFor(() => expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1))
+    const [createdId] = mocked(vaultCrypto.encryptItem).mock.calls[0]
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledWith(createdId, { ...ENC, protected: false }, 1)
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText("Este item mudou em outra aba. Recarregamos a versão mais recente.")).not.toBeInTheDocument()
+  })
+
+  it("if the landed copy was edited elsewhere, the retry reports a conflict instead", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item id already exists", 409, null))
+    mocked(api.updatePersonalVaultItem).mockRejectedValue(new ApiError("Version conflict", 409, null))
     await renderItems()
 
     fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
@@ -361,9 +382,8 @@ describe("vault items", () => {
     type("Título", "Banco", dialog)
     fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
 
-    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
-    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
-    expect(screen.queryByText("Este item mudou em outra aba. Recarregamos a versão mais recente.")).not.toBeInTheDocument()
+    expect(await screen.findByText("Este item mudou em outra aba. Recarregamos a versão mais recente.")).toBeInTheDocument()
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)
   })
 
   it("the item limit is still reported as an error", async () => {
