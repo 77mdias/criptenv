@@ -104,3 +104,55 @@ async def test_item_row_roundtrip(db_session, user):
     db_session.add(item)
     await db_session.flush()
     assert item.version == 1 and item.protected is True
+
+
+# ─── Task 2: cookie-only web auth ───────────────────────────────────────────
+
+from unittest.mock import AsyncMock, MagicMock  # noqa: E402
+
+from fastapi import HTTPException  # noqa: E402
+from starlette.requests import Request  # noqa: E402
+
+from app.middleware.auth import get_current_web_user  # noqa: E402
+from app.services.auth_service import AuthService  # noqa: E402
+
+
+def _request(headers=None, cookies=None):
+    raw = [(k.lower().encode(), v.encode()) for k, v in (headers or {}).items()]
+    if cookies:
+        raw.append((b"cookie", "; ".join(f"{k}={v}" for k, v in cookies.items()).encode()))
+    return Request({"type": "http", "method": "GET", "path": "/", "headers": raw, "query_string": b""})
+
+
+@pytest.mark.asyncio
+async def test_web_user_rejects_bearer_even_if_valid(monkeypatch):
+    monkeypatch.setattr(AuthService, "validate_session", AsyncMock(return_value=_user("ana")))
+    request = _request(headers={"Authorization": "Bearer cek_valid"}, cookies={"session_token": "tok"})
+    with pytest.raises(HTTPException) as exc:
+        await get_current_web_user(request, db=MagicMock())
+    assert exc.value.status_code == 403
+    assert exc.value.detail == "Personal vault is only available in the web dashboard"
+
+
+@pytest.mark.asyncio
+async def test_web_user_requires_cookie():
+    with pytest.raises(HTTPException) as exc:
+        await get_current_web_user(_request(), db=MagicMock())
+    assert exc.value.status_code == 401
+
+
+@pytest.mark.asyncio
+async def test_web_user_accepts_session_cookie(monkeypatch):
+    user = _user("ana")
+    monkeypatch.setattr(AuthService, "validate_session", AsyncMock(return_value=user))
+    assert await get_current_web_user(_request(cookies={"session_token": "tok"}), db=MagicMock()) is user
+
+
+@pytest.mark.asyncio
+async def test_web_user_keeps_email_verification_rule(monkeypatch):
+    user = _user("ana")
+    user.email_verified = False
+    monkeypatch.setattr(AuthService, "validate_session", AsyncMock(return_value=user))
+    with pytest.raises(HTTPException) as exc:
+        await get_current_web_user(_request(cookies={"session_token": "tok"}), db=MagicMock())
+    assert exc.value.status_code == 403

@@ -39,7 +39,30 @@ async def get_current_user(
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    return await _user_from_session_token(token, db)
 
+
+async def get_current_web_user(
+    request: Request,
+    db: AsyncSession = Depends(get_db),
+) -> User:
+    """Dashboard-only auth: the httpOnly session cookie, never a header.
+
+    CLI sessions, API keys and CI tokens all travel as `Authorization: Bearer`,
+    so rejecting the header keeps web-only features (personal vault) off them.
+    """
+    if request.headers.get("Authorization"):
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="Personal vault is only available in the web dashboard",
+        )
+    token = request.cookies.get("session_token")
+    if not token:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Not authenticated")
+    return await _user_from_session_token(token, db)
+
+
+async def _user_from_session_token(token: str, db: AsyncSession) -> User:
     auth_service = AuthService(db)
     user = await auth_service.validate_session(token)
 
