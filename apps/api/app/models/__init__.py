@@ -18,6 +18,7 @@ from app.models.oauth_account import OAuthAccount
 from app.models.notification import Notification
 from app.models.secret_expiration import SecretExpiration, SecretRotation
 from app.models.integration import Integration
+from app.models.personal_vault import PersonalVault, PersonalVaultItem
 
 __all__ = [
     "User",
@@ -42,4 +43,6 @@ __all__ = [
     "SecretExpiration",
     "SecretRotation",
     "Integration",
+    "PersonalVault",
+    "PersonalVaultItem",
 ]
