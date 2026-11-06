@@ -24,7 +24,8 @@ interface Props {
   vaultKey: CryptoKey
   onClose: () => void
   onSaved: () => void
-  onConflict: () => void
+  /** The item changed or was deleted elsewhere: the list must reload, never retry. */
+  onStale: (reason: "changed" | "deleted") => void
 }
 
 export function VaultItemDialog({ entry, ...rest }: Props) {
@@ -43,7 +44,7 @@ const textareaClass =
   "flex min-h-20 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-base md:text-sm text-(--text-primary) focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2"
 const labelClass = "block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono"
 
-function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, "entry"> & { entry: DecryptedEntry | null }) {
+function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "entry"> & { entry: DecryptedEntry | null }) {
   const t = useTranslations("vault")
   const [form, setForm] = useState(emptyForm)
   const [isProtected, setIsProtected] = useState(entry?.item.protected ?? false)
@@ -120,14 +121,28 @@ function ItemForm({ entry, config, vaultKey, onSaved, onConflict }: Omit<Props, 
       form.type === "login"
         ? { type: "login", title: form.title, username: form.username, password: form.password, url: form.url, notes: form.notes }
         : { type: "note", title: form.title, content: form.content }
+    // True once this save targets a copy that already exists on the server.
+    let existing = entry !== null
     try {
       const encrypted = await encryptItem(itemId, plain, vaultKey, isProtected ? await withProtectedKey() : null)
-      if (entry) await updatePersonalVaultItem(entry.item.id, encrypted, entry.item.version)
-      else await createPersonalVaultItem(encrypted)
+      if (entry) {
+        await updatePersonalVaultItem(entry.item.id, encrypted, entry.item.version)
+      } else {
+        try {
+          await createPersonalVaultItem(encrypted)
+        } catch (err) {
+          if (!(err instanceof ApiError && err.status === 409 && err.message === "Item id already exists")) throw err
+          // An earlier save of this new item landed but its response was lost. Apply the
+          // latest edits on top of it; a brand-new item can only be at version 1.
+          existing = true
+          await updatePersonalVaultItem(itemId, encrypted, 1)
+        }
+      }
       onSaved()
     } catch (err) {
-      // Never retry a 409: the other tab's version wins and the list reloads.
-      if (err instanceof ApiError && err.status === 409) onConflict()
+      // Never retry: the other tab's version (or deletion) wins and the list reloads.
+      if (existing && err instanceof ApiError && err.status === 409) onStale("changed")
+      else if (existing && err instanceof ApiError && err.status === 404) onStale("deleted")
       else report(err)
       setBusy(false)
     }

@@ -100,7 +100,9 @@ export function encodeRecoveryKey(bytes: Uint8Array): string {
 }
 
 export function decodeRecoveryKey(input: string): Uint8Array {
-  const chars = input.toUpperCase().replace(/[\s-]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1")
+  // Any separator is ignored (dashes of every kind, dots, underscores, whitespace),
+  // since keys get pasted from PDFs and documents; letters keep validating below.
+  const chars = input.toUpperCase().replace(/[^0-9A-Z]/g, "").replace(/O/g, "0").replace(/[IL]/g, "1")
   const bytes: number[] = []
   let value = 0
   let bits = 0

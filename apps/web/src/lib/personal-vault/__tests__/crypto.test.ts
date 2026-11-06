@@ -51,6 +51,10 @@ describe("personal vault crypto", () => {
     expect(key).toMatch(/^([0-9A-HJKMNP-TV-Z]{4}-){12}[0-9A-HJKMNP-TV-Z]{4}$/)
     const sloppy = ` ${key.toLowerCase().replace(/-/g, " ").replace(/0/g, "o").replace(/1/g, "l")} `
     expect(Array.from(decodeRecoveryKey(sloppy))).toEqual(Array.from(bytes))
+    // Pasted from PDFs/docs: typographic dashes, underscores, dots, newlines, NBSP.
+    for (const separator of ["–", "—", "_", ".", "\n", "\u00a0", " - "]) {
+      expect(Array.from(decodeRecoveryKey(key.split("-").join(separator)))).toEqual(Array.from(bytes))
+    }
     expect(codeOf(() => decodeRecoveryKey("abc"))).toBe("INVALID_RECOVERY_KEY")
     expect(codeOf(() => decodeRecoveryKey(key.replace(/^./, "U")))).toBe("INVALID_RECOVERY_KEY")
   })

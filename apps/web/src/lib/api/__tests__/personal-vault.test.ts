@@ -1,4 +1,5 @@
 import { ApiError } from "../client"
+import { queryClient } from "../query-client"
 import {
   createPersonalVaultItem,
   deletePersonalVaultItem,
@@ -32,6 +33,7 @@ function lastCall(fetchMock: jest.Mock) {
 describe("personal vault api", () => {
   beforeEach(() => {
     window.history.replaceState(null, "", "http://localhost/")
+    queryClient.clear() // the GET cache is module-wide; tests must not see each other's lists
   })
 
   it("returns null when the vault is not set up", async () => {
@@ -88,6 +90,20 @@ describe("personal vault api", () => {
       updatePersonalVaultItem("old", { id: "old", protected: false, summary: envelope, body: envelope }, 1),
     ).rejects.toMatchObject({ status: 409 })
     await expect(listPersonalVaultItems()).resolves.toEqual([{ id: "new" }])
+    expect(fetchMock).toHaveBeenCalledTimes(3)
+  })
+
+  it("a 404 on a mutation also drops cached items, so a deleted item disappears", async () => {
+    const fetchMock = jest
+      .fn()
+      .mockResolvedValueOnce(respond(200, [{ id: "gone" }]))
+      .mockResolvedValueOnce(respond(404, { detail: "Item not found" }))
+      .mockResolvedValueOnce(respond(200, []))
+    global.fetch = fetchMock as typeof fetch
+
+    await expect(listPersonalVaultItems()).resolves.toEqual([{ id: "gone" }])
+    await expect(deletePersonalVaultItem("gone")).rejects.toMatchObject({ status: 404 })
+    await expect(listPersonalVaultItems()).resolves.toEqual([])
     expect(fetchMock).toHaveBeenCalledTimes(3)
   })
 })

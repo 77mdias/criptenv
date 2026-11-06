@@ -1,10 +1,10 @@
 """Personal vault schemas. The server never sees plaintext: it only checks
 envelope shapes and sizes, and that the client used a strong enough KDF."""
 from datetime import datetime
-from typing import Literal
+from typing import Annotated, Literal
 from uuid import UUID
 
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, StringConstraints
 
 # AES-GCM: 12-byte IV and 16-byte tag, base64-encoded.
 _IV = Field(..., min_length=16, max_length=16)
@@ -53,9 +53,16 @@ class PersonalVaultItemFields(BaseModel):
     body: EncryptedBody
 
 
+# Lowercase hyphenated only: the client binds its AAD to this exact string, and the
+# server returns UUIDs in this form, so any other spelling would never decrypt again.
+CanonicalUUID = Annotated[
+    str, StringConstraints(pattern=r"^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$")
+]
+
+
 class PersonalVaultItemCreate(PersonalVaultItemFields):
     # Minted by the client: envelopes are bound to it (AES-GCM AAD) before upload.
-    id: UUID
+    id: CanonicalUUID
 
 
 class PersonalVaultItemUpdate(PersonalVaultItemFields):

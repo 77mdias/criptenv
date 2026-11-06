@@ -295,6 +295,19 @@ async def test_item_create_duplicate_id_conflicts(client, setup_vault):
     assert len((await client.get("/api/v1/personal-vault/items")).json()) == 1
 
 
+@pytest.mark.parametrize("bad_id", [
+    "2F1C9A4E-0000-4000-8000-00000000000A",
+    "2f1c9a4e000040008000000000000000",
+    "{2f1c9a4e-0000-4000-8000-00000000000a}",
+    "urn:uuid:2f1c9a4e-0000-4000-8000-00000000000a",
+])
+@pytest.mark.asyncio
+async def test_item_create_rejects_non_canonical_id(client, setup_vault, bad_id):
+    # The client binds its AAD to the exact id string; the server must return that same string.
+    payload = {**_item(), "id": bad_id}
+    assert (await client.post("/api/v1/personal-vault/items", json=payload)).status_code == 422
+
+
 @pytest.mark.asyncio
 async def test_item_create_requires_an_id(client, setup_vault):
     payload = _item()
@@ -393,3 +406,43 @@ async def test_unknown_cookie_is_still_401(db_session):
     with pytest.raises(HTTPException) as exc:
         await get_current_web_user(_request(cookies={"session_token": "x" * 40}), db=db_session)
     assert exc.value.status_code == 401
+
+
+# ─── B3: concurrent vault creation ──────────────────────────────────────────
+
+@pytest.mark.asyncio
+async def test_concurrent_create_config_conflicts_not_500(client, as_user, monkeypatch):
+    as_user("ana")
+    assert (await client.post("/api/v1/personal-vault/config", json=_config())).status_code == 201
+    # Simulate the race: the existence check misses the row another request just inserted.
+    real_get = personal_vault_service.PersonalVaultService.get_config
+    calls = {"n": 0}
+
+    async def racing_get(self, user_id):
+        calls["n"] += 1
+        return None if calls["n"] == 1 else await real_get(self, user_id)
+
+    monkeypatch.setattr(personal_vault_service.PersonalVaultService, "get_config", racing_get)
+    r = await client.post("/api/v1/personal-vault/config", json=_config())
+    assert r.status_code == 409 and r.json()["detail"] == "Personal vault already exists"
+
+
+# ─── B5: every route is web-only ────────────────────────────────────────────
+
+@pytest.mark.parametrize("method,path", [
+    ("GET", "/api/v1/personal-vault/config"),
+    ("POST", "/api/v1/personal-vault/config"),
+    ("PUT", "/api/v1/personal-vault/config"),
+    ("GET", "/api/v1/personal-vault/items"),
+    ("POST", "/api/v1/personal-vault/items"),
+    ("PUT", "/api/v1/personal-vault/items/2f1c9a4e-0000-4000-8000-00000000000a"),
+    ("DELETE", "/api/v1/personal-vault/items/2f1c9a4e-0000-4000-8000-00000000000a"),
+])
+@pytest.mark.asyncio
+async def test_every_route_rejects_bearer(client, method, path):
+    bodies = {"/api/v1/personal-vault/config": {**_config(), "expected_version": 1},
+              "/api/v1/personal-vault/items": _item()}
+    json_body = bodies.get(path, _update()) if method in ("POST", "PUT") else None
+    r = await client.request(method, path, json=json_body, headers={"Authorization": "Bearer cek_x"},
+                             cookies={"session_token": "t" * 40})
+    assert r.status_code == 403

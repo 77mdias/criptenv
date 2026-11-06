@@ -641,8 +641,9 @@ export async function request<T>(
     invalidateCache();
     return result;
   } catch (error) {
-    // 409 = the server moved on (optimistic concurrency); cached reads are stale.
-    if (error instanceof ApiError && error.status === 409) invalidateCache();
+    // 409 (version moved on) or 404 (deleted elsewhere): the server changed under us,
+    // so cached reads are stale.
+    if (error instanceof ApiError && (error.status === 409 || error.status === 404)) invalidateCache();
     throw error;
   }
 }

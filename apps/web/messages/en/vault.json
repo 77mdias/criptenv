@@ -71,7 +71,8 @@
     "delete": "Delete {title}",
     "deleteConfirm": "Delete \"{title}\"? This cannot be undone.",
     "copyUsername": "Copy username of {title}",
-    "copied": "Copied to the clipboard."
+    "copied": "Copied to the clipboard.",
+    "unreadable": "Unreadable item"
   },
   "itemDialog": {
     "newTitle": "New item",
@@ -93,7 +94,8 @@
     "cancel": "Cancel",
     "titleRequired": "Give the item a title.",
     "conflict": "This item changed in another tab. We reloaded the latest version.",
-    "wrongExtra": "Wrong extra password"
+    "wrongExtra": "Wrong extra password",
+    "deleted": "This item was deleted in another tab."
   },
   "reveal": {
     "unlockDescription": "This item has extra protection. Enter the extra password to see it.",

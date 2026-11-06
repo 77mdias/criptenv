@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Cofre pessoal: correções da revisão (Fase B) — 2026-11-06
+
+- Item apagado em outra aba: editar mostra "Este item foi apagado em outra aba." e recarrega a lista; apagar de novo só recarrega.
+- Um envelope que não decifra aparece como "Item ilegível" (só com a opção de apagar), em vez de derrubar a lista inteira.
+- Dois `POST /config` simultâneos: um recebe 201 e o outro 409, não mais 500.
+- A chave de recuperação aceita qualquer separador colado de um documento (travessões, `_`, `.`, quebras de linha).
+- A API só aceita ids de item no formato UUID minúsculo com hífens, o mesmo texto que o cliente amarra no AAD.
+- Salvar de novo um item novo depois de uma resposta perdida só recarrega a lista; o limite de itens continua aparecendo como erro.
+- Testes: 403 nas 7 rotas do cofre, trava por inatividade fechando o "revelar" aberto, e edição desatualizada contra o Postgres real (Cypress).
+
 ### Cofre pessoal (web) — 2026-11-06
 
 Cofre por usuário, parecido com o do Bitwarden, para logins e notas seguras fora dos projetos. Só no dashboard web. Modelo criptográfico em `docs/security/personal-vault.md`.

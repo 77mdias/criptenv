@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { Copy, Eye, KeyRound, Lock, Pencil, Plus, Settings, ShieldCheck, StickyNote, Trash2 } from "lucide-react"
+import { Copy, Eye, KeyRound, Lock, Pencil, Plus, Settings, ShieldAlert, ShieldCheck, StickyNote, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -13,6 +13,7 @@ import {
   type PersonalVaultConfig,
   type PersonalVaultItem,
 } from "@/lib/api/personal-vault"
+import { ApiError } from "@/lib/api/client"
 import { decryptSummary, type ItemSummary } from "@/lib/personal-vault/crypto"
 import { ProtectedRevealDialog } from "./protected-reveal-dialog"
 import { VaultItemDialog } from "./vault-item-dialog"
@@ -41,6 +42,8 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   const t = useTranslations("vault")
   const { lock } = usePersonalVaultSession()
   const [entries, setEntries] = useState<DecryptedEntry[] | null>(null)
+  // Items whose envelopes do not decrypt (corrupt or tampered): listed apart, delete-only.
+  const [unreadable, setUnreadable] = useState<PersonalVaultItem[]>([])
   const [reloadToken, setReloadToken] = useState(0)
   const [query, setQuery] = useState("")
   const [filter, setFilter] = useState<Filter>("all")
@@ -53,9 +56,11 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   useEffect(() => {
     let cancelled = false
     listPersonalVaultItems()
-      .then((items) => Promise.all(items.map(async (item) => ({ item, summary: await decryptSummary(item.id, item.summary, vaultKey) }))))
-      .then((decrypted) => {
-        if (!cancelled) setEntries(decrypted)
+      .then(async (items) => {
+        const results = await Promise.allSettled(items.map((item) => decryptSummary(item.id, item.summary, vaultKey)))
+        if (cancelled) return
+        setEntries(results.flatMap((r, i) => (r.status === "fulfilled" ? [{ item: items[i], summary: r.value }] : [])))
+        setUnreadable(items.filter((_, i) => results[i].status === "rejected"))
       })
       .catch(() => {
         if (!cancelled) setError(t("errors.load"))
@@ -76,13 +81,15 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
 
   const reload = () => setReloadToken((n) => n + 1)
 
-  async function handleDelete(entry: DecryptedEntry) {
-    if (!window.confirm(t("items.deleteConfirm", { title: entry.summary.title }))) return
+  async function handleDelete(itemId: string, title: string) {
+    if (!window.confirm(t("items.deleteConfirm", { title }))) return
     try {
-      await deletePersonalVaultItem(entry.item.id)
+      await deletePersonalVaultItem(itemId)
       reload()
-    } catch {
-      setError(t("errors.save"))
+    } catch (err) {
+      // Already deleted in another tab: the goal is met, just refresh the list.
+      if (err instanceof ApiError && err.status === 404) reload()
+      else setError(t("errors.save"))
     }
   }
 
@@ -129,10 +136,10 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
       {error && <p role="alert" className="text-sm text-red-600">{error}</p>}
       {notice && <p role="status" className="text-sm text-(--text-secondary)">{notice}</p>}
       {!entries && !error && <Skeleton className="h-24 w-full" />}
-      {entries?.length === 0 && (
+      {entries?.length === 0 && unreadable.length === 0 && (
         <EmptyState icon={KeyRound} title={t("items.empty")} description={t("items.emptyDescription")} />
       )}
-      {entries && entries.length > 0 && visible.length === 0 && (
+      {entries && entries.length > 0 && visible.length === 0 && (query.trim() || filter !== "all") && (
         <p className="text-sm text-(--text-muted)">{t("items.noResults")}</p>
       )}
       {visible.length > 0 && (
@@ -167,13 +174,33 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
                   <Button type="button" size="icon" variant="ghost" aria-label={t("items.edit", { title: summary.title })} onClick={() => setEditing(entry)}>
                     <Pencil aria-hidden className="h-4 w-4" />
                   </Button>
-                  <Button type="button" size="icon" variant="ghost" aria-label={t("items.delete", { title: summary.title })} onClick={() => void handleDelete(entry)}>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t("items.delete", { title: summary.title })} onClick={() => void handleDelete(item.id, summary.title)}>
                     <Trash2 aria-hidden className="h-4 w-4" />
                   </Button>
                 </div>
               </li>
             )
           })}
+        </ul>
+      )}
+
+      {unreadable.length > 0 && !query.trim() && filter === "all" && (
+        <ul className="divide-y divide-(--border) rounded-lg border border-dashed border-(--border)">
+          {unreadable.map((item) => (
+            <li key={item.id} className="flex items-center gap-3 px-4 py-3">
+              <ShieldAlert aria-hidden className="h-4 w-4 shrink-0 text-red-600" />
+              <p className="min-w-0 flex-1 truncate text-sm text-(--text-muted)">{t("items.unreadable")}</p>
+              <Button
+                type="button"
+                size="icon"
+                variant="ghost"
+                aria-label={t("items.delete", { title: t("items.unreadable") })}
+                onClick={() => void handleDelete(item.id, t("items.unreadable"))}
+              >
+                <Trash2 aria-hidden className="h-4 w-4" />
+              </Button>
+            </li>
+          ))}
         </ul>
       )}
 
@@ -188,9 +215,9 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
           setNotice(null)
           reload()
         }}
-        onConflict={() => {
+        onStale={(reason) => {
           setEditing(undefined)
-          setNotice(t("itemDialog.conflict"))
+          setNotice(reason === "deleted" ? t("itemDialog.deleted") : t("itemDialog.conflict"))
           reload()
         }}
       />

@@ -147,3 +147,13 @@ B1, B2, B3, B4, B5  (independentes entre si; B2 depois de A1 porque usa a nova a
 ```
 
 Ao final: suíte da API, `npm run test:unit`, `npm run check:i18n`, `npm run lint`, `npm run build` e o Cypress `personal-vault.cy.ts`. Também atualizar `docs/security/personal-vault.md` (AAD, wrapKey e os riscos que deixam de existir) e o `docs/development/CHANGELOG.md`.
+
+### Tarefa B6: pontos menores da revisão da Fase A
+
+**Arquivos:** `apps/api/app/schemas/personal_vault.py`, `apps/api/app/services/personal_vault_service.py`, `vault/_components/vault-item-dialog.tsx`, `docs/security/personal-vault.md`. Testes: `apps/api/tests/test_personal_vault.py`, `vault/__tests__/vault-items.test.tsx`.
+
+- **UUID canônico na API:** `PersonalVaultItemCreate.id` só aceita o formato minúsculo com hífens (`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`), porque o cliente amarra o AAD exatamente a essa string. Maiúsculas, chaves, `urn:` ou sem hífen dão 422.
+- **Repetir a criação depois de uma resposta perdida:** um 409 `"Item id already exists"` ao **criar** significa que o item já foi salvo. O diálogo fecha e a lista recarrega (`onSaved`), sem o aviso de "mudou em outra aba".
+- **Comentário** em `create_item` explicando por que todo `IntegrityError` vira "Item id already exists" (só a PK pode disparar).
+- **Doc:** a cópia extraível da chave existe também na criação do cofre, não só ao embrulhar de novo.
+- [ ] Testes: `test_item_create_rejects_non_canonical_id` (maiúsculo, sem hífen e `{...}` dão 422) e `a create retried after a lost response just reloads the list`. RED → GREEN → commit `fix: canonical item ids and quiet create retries in the personal vault`.

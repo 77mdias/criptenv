@@ -296,4 +296,107 @@ describe("vault items", () => {
     expect(vaultCrypto.unlockVault).toHaveBeenCalledWith(SAVED, "mestra-forte-123")
     expect(vaultCrypto.rewrapExtra).not.toHaveBeenCalled()
   })
+
+  it("editing an item deleted elsewhere shows a notice and reloads", async () => {
+    mocked(vaultCrypto.decryptItem).mockResolvedValue({ ...SUMMARIES.i2, password: "x", notes: "" } as vaultCrypto.PersonalVaultItemPlain)
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.updatePersonalVaultItem).mockRejectedValue(new ApiError("Item not found", 404, null))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar GitHub" }))
+    const dialog = await screen.findByRole("dialog")
+    await waitFor(() => expect(within(dialog).getByLabelText("Título")).toHaveValue("GitHub"))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    expect(await screen.findByText("Este item foi apagado em outra aba.")).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)
+  })
+
+  it("deleting an item already deleted elsewhere just reloads", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(true)
+    mocked(api.deletePersonalVaultItem).mockRejectedValue(new ApiError("Item not found", 404, null))
+    await renderItems()
+    fireEvent.click(screen.getByRole("button", { name: "Apagar Wi-Fi" }))
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText("Não foi possível salvar. Tente de novo.")).not.toBeInTheDocument()
+  })
+
+  it("an undecryptable item is listed as unreadable and the rest still shows", async () => {
+    jest.spyOn(window, "confirm").mockReturnValue(true)
+    mocked(api.deletePersonalVaultItem).mockResolvedValue(undefined)
+    mocked(api.listPersonalVaultItems).mockResolvedValue([item("i1", true), item("i2"), item("i3")])
+    mocked(vaultCrypto.decryptSummary).mockImplementation(async (id) => {
+      if (id === "i2") throw new CryptoError("bad", "DECRYPTION_FAILED")
+      return SUMMARIES[id]
+    })
+    renderWithIntl(
+      <PersonalVaultSessionProvider>
+        <VaultItems vaultKey={KEY} config={SAVED} onConfigChange={onConfigChange} />
+      </PersonalVaultSessionProvider>,
+    )
+
+    expect(await screen.findByText("Instagram")).toBeInTheDocument()
+    expect(screen.getByText("Wi-Fi")).toBeInTheDocument()
+    expect(screen.getByText("Item ilegível")).toBeInTheDocument()
+    expect(screen.queryByRole("alert")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /Revelar Item ilegível|Editar Item ilegível/ })).not.toBeInTheDocument()
+
+    type("Buscar", "ileg")
+    expect(screen.queryByText("Item ilegível")).not.toBeInTheDocument()
+    type("Buscar", "")
+
+    fireEvent.click(screen.getByRole("button", { name: "Apagar Item ilegível" }))
+    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
+  })
+
+  it("a create retried after a lost response saves the latest edits over the landed copy", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item id already exists", 409, null))
+    mocked(api.updatePersonalVaultItem).mockResolvedValue(item("enc"))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Título", "Banco", dialog)
+    type("Senha", "P2", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    await waitFor(() => expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1))
+    const [createdId] = mocked(vaultCrypto.encryptItem).mock.calls[0]
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledWith(createdId, { ...ENC, protected: false }, 1)
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText("Este item mudou em outra aba. Recarregamos a versão mais recente.")).not.toBeInTheDocument()
+  })
+
+  it("if the landed copy was edited elsewhere, the retry reports a conflict instead", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item id already exists", 409, null))
+    mocked(api.updatePersonalVaultItem).mockRejectedValue(new ApiError("Version conflict", 409, null))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Título", "Banco", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    expect(await screen.findByText("Este item mudou em outra aba. Recarregamos a versão mais recente.")).toBeInTheDocument()
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)
+  })
+
+  it("the item limit is still reported as an error", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item limit reached", 409, null))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Título", "Banco", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    expect(await within(dialog).findByText("Não foi possível salvar. Tente de novo.")).toBeInTheDocument()
+    expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(1)
+  })
 })
