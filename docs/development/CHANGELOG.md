@@ -22,6 +22,10 @@ Cofre por usuário, parecido com o do Bitwarden, para logins e notas seguras for
 - Troca da senha mestra e da senha extra sem cifrar os itens de novo.
 - PBKDF2-SHA256 com 600 mil iterações, só WebCrypto, sem dependência nova.
 - Fix no cliente HTTP: um 409 numa mutação agora também invalida o cache de GET. Antes, a lista recarregada depois de um conflito podia vir do cache velho.
+- Todo envelope leva associated data (AAD) do AES-GCM com o campo, o id do item (gerado no cliente) e a flag `protected`. Assim o servidor não consegue trocar conteúdo entre itens nem tirar a proteção extra sem ser detectado.
+- VK e PK nunca viram bytes nem texto: são embrulhadas com `wrapKey`/`unwrapKey`.
+- A troca de senha recusa uma senha mestra igual à extra (e o contrário).
+- Sessões sem origem web (de antes da migration `0015`, ou da CLI) recebem 403 e um aviso para entrar de novo.
 
 ### CLI 0.2.4 (PyPI) — 2026-11-04
 
