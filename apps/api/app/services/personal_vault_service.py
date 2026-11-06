@@ -84,13 +84,15 @@ class PersonalVaultService:
         )
         if count >= MAX_PERSONAL_VAULT_ITEMS:
             raise PersonalVaultLimitReached("Item limit reached")
-        item = PersonalVaultItem(user_id=user_id, version=1, **data.model_dump())
+        item = PersonalVaultItem(user_id=user_id, version=1, **{**data.model_dump(), "id": UUID(data.id)})
         try:
             # Savepoint: a duplicate client id must not poison the request's transaction.
             async with self.db.begin_nested():
                 self.db.add(item)
                 await self.db.flush()
         except IntegrityError:
+            # The only constraint an insert can hit is the primary key (user_id is the
+            # session's own, verified by get_config above), so this is a duplicate id.
             raise PersonalVaultConflict("Item id already exists")
         await self.db.refresh(item)
         return item

@@ -350,4 +350,33 @@ describe("vault items", () => {
     fireEvent.click(screen.getByRole("button", { name: "Apagar Item ilegível" }))
     await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
   })
+
+  it("a create retried after a lost response just reloads the list", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item id already exists", 409, null))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Título", "Banco", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    expect(screen.queryByText("Este item mudou em outra aba. Recarregamos a versão mais recente.")).not.toBeInTheDocument()
+  })
+
+  it("the item limit is still reported as an error", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item limit reached", 409, null))
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Título", "Banco", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    expect(await within(dialog).findByText("Não foi possível salvar. Tente de novo.")).toBeInTheDocument()
+    expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(1)
+  })
 })

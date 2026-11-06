@@ -295,6 +295,19 @@ async def test_item_create_duplicate_id_conflicts(client, setup_vault):
     assert len((await client.get("/api/v1/personal-vault/items")).json()) == 1
 
 
+@pytest.mark.parametrize("bad_id", [
+    "2F1C9A4E-0000-4000-8000-00000000000A",
+    "2f1c9a4e000040008000000000000000",
+    "{2f1c9a4e-0000-4000-8000-00000000000a}",
+    "urn:uuid:2f1c9a4e-0000-4000-8000-00000000000a",
+])
+@pytest.mark.asyncio
+async def test_item_create_rejects_non_canonical_id(client, setup_vault, bad_id):
+    # The client binds its AAD to the exact id string; the server must return that same string.
+    payload = {**_item(), "id": bad_id}
+    assert (await client.post("/api/v1/personal-vault/items", json=payload)).status_code == 422
+
+
 @pytest.mark.asyncio
 async def test_item_create_requires_an_id(client, setup_vault):
     payload = _item()

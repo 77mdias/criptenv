@@ -127,8 +127,10 @@ function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "en
       else await createPersonalVaultItem(encrypted)
       onSaved()
     } catch (err) {
+      // Our own id already exists: an earlier save landed but its response was lost.
+      if (!entry && err instanceof ApiError && err.status === 409 && err.message === "Item id already exists") onSaved()
       // Never retry: the other tab's version (or deletion) wins and the list reloads.
-      if (err instanceof ApiError && err.status === 409) onStale("changed")
+      else if (entry && err instanceof ApiError && err.status === 409) onStale("changed")
       else if (entry && err instanceof ApiError && err.status === 404) onStale("deleted")
       else report(err)
       setBusy(false)
