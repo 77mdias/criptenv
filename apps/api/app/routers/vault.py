@@ -16,7 +16,11 @@ from app.middleware.ci_auth import (
     require_ci_session_scope,
     require_ci_session_environment,
 )
-from app.middleware.api_key_auth import require_api_key_scope, require_api_key_environment
+from app.middleware.api_key_auth import (
+    require_api_key_environment,
+    require_api_key_project,
+    require_api_key_scope,
+)
 from app.models.user import User
 from app.models.environment import Environment
 from sqlalchemy import select
@@ -117,6 +121,8 @@ async def _authenticate_vault_read(
     project_uuid: UUID,
     env_uuid: UUID,
 ) -> tuple[User, Environment]:
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        require_api_key_project(auth_context.api_key, project_uuid)
     environment = await _get_environment_or_404(db, project_uuid, env_uuid)
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
         require_api_key_scope(auth_context.api_key, "read:secrets")

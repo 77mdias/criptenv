@@ -1940,7 +1940,7 @@
       },
       "apiKeys": {
         "title": "API keys",
-        "body": "Las API keys empiezan con <code>cek_</code> y valen hasta que se revocan (o hasta su caducidad opcional). Son ideales para integraciones server-to-server que leen proyectos, entornos y vault blobs cifrados mediante la API pública.",
+        "body": "Las API keys empiezan con <code>cek_</code> y valen hasta que se revocan (o hasta su caducidad opcional). Son ideales para integraciones server-to-server que leen proyectos, entornos y vault blobs cifrados mediante la API pública. Cada clave queda vinculada al proyecto en el que se creó: <code>GET /api/v1/projects</code> solo lista ese proyecto, y cualquier otro proyecto responde 404, aunque seas miembro de él.",
         "scopesTitle": "Scopes",
         "scopesBody": "Hoy la API pública aplica <code>read:secrets</code> para la lectura del vault y respeta <code>environment_scope</code>, que debe ser un entorno existente. Los scopes de escritura quedan reservados para futuros endpoints públicos.",
         "scope": "Scope",

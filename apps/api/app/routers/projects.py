@@ -15,7 +15,8 @@ from app.schemas.project import (
     ProjectVaultRekeyRequest,
 )
 from app.services.vault_service import VaultService
-from app.middleware.auth import get_current_user, get_current_user_or_api_key
+from app.middleware.auth import AuthContext, get_current_auth_context, get_current_user
+from app.middleware.api_key_auth import require_api_key_project
 from app.models.user import User
 
 router = APIRouter(prefix="/api/v1/projects", tags=["Projects"])
@@ -85,14 +86,21 @@ async def create_project(
 @router.get("", response_model=ProjectListResponse)
 async def list_projects(
     include_archived: bool = False,
-    current_user: User = Depends(get_current_user_or_api_key),
+    auth_context: AuthContext = Depends(get_current_auth_context),
     db: AsyncSession = Depends(get_db)
 ):
     project_service = ProjectService(db)
     project_rows = await project_service.list_user_projects_with_roles(
-        user_id=current_user.id,
+        user_id=auth_context.user.id,
         include_archived=include_archived
     )
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        # An API key only ever sees the project it was created for.
+        key_project_id = str(auth_context.api_key.project_id)
+        project_rows = [
+            (project, role) for project, role in project_rows
+            if str(project.id) == key_project_id
+        ]
 
     return ProjectListResponse(
         projects=[
@@ -106,7 +114,7 @@ async def list_projects(
 @router.get("/{project_id}", response_model=ProjectResponse)
 async def get_project(
     project_id: str,
-    current_user: User = Depends(get_current_user_or_api_key),
+    auth_context: AuthContext = Depends(get_current_auth_context),
     db: AsyncSession = Depends(get_db)
 ):
     from uuid import UUID
@@ -121,7 +129,10 @@ async def get_project(
             detail="Invalid project ID"
         )
 
-    member = await project_service.check_user_access(current_user.id, project_uuid)
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        require_api_key_project(auth_context.api_key, project_uuid)
+
+    member = await project_service.check_user_access(auth_context.user.id, project_uuid)
     if not member:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
@@ -141,7 +152,7 @@ async def get_project(
 @router.get("/{project_id}/secrets/matrix", response_model=SecretMatrixResponse)
 async def get_secret_matrix(
     project_id: str,
-    current_user: User = Depends(get_current_user_or_api_key),
+    auth_context: AuthContext = Depends(get_current_auth_context),
     db: AsyncSession = Depends(get_db)
 ):
     """Which keys exist in which environment (names and versions only, no ciphertext)."""
@@ -152,9 +163,26 @@ async def get_secret_matrix(
     except ValueError:
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid project ID")
 
-    if not await ProjectService(db).check_user_access(current_user.id, project_uuid):
+    api_key = auth_context.api_key if auth_context.auth_type == "api_key" else None
+    if api_key is not None:
+        require_api_key_project(api_key, project_uuid)
+
+    if not await ProjectService(db).check_user_access(auth_context.user.id, project_uuid):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    return await OverviewService(db).get_secret_matrix(project_uuid)
+    matrix = await OverviewService(db).get_secret_matrix(project_uuid)
+
+    environment_scope = getattr(api_key, "environment_scope", None) if api_key is not None else None
+    if environment_scope is not None:
+        # An environment-scoped key must not learn key names of other environments.
+        allowed = {str(env["id"]) for env in matrix["environments"] if env["name"] == environment_scope}
+        matrix["environments"] = [env for env in matrix["environments"] if str(env["id"]) in allowed]
+        keys = []
+        for row in matrix["keys"]:
+            cells = {env_id: cell for env_id, cell in row["cells"].items() if env_id in allowed}
+            if any(cell is not None for cell in cells.values()):
+                keys.append({"key_id": row["key_id"], "cells": cells})
+        matrix["keys"] = keys
+    return matrix
 
 
 @router.patch("/{project_id}", response_model=ProjectResponse)
