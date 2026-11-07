@@ -381,6 +381,17 @@ async def test_over_limit_user_can_still_edit_and_delete(client, setup_vault, mo
     assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 402
 
 
+@pytest.mark.asyncio
+async def test_retry_at_the_limit_is_a_duplicate_not_a_limit(client, setup_vault, monkeypatch):
+    # The last allowed item landed but its response was lost: the retry must get the
+    # duplicate-id 409 (the web then saves the latest edits over it), not a 402.
+    _plan(monkeypatch, personal_vault_items=1)
+    payload = _item()
+    assert (await client.post("/api/v1/personal-vault/items", json=payload)).status_code == 201
+    r = await client.post("/api/v1/personal-vault/items", json=payload)
+    assert r.status_code == 409 and r.json()["detail"] == "Item id already exists"
+
+
 # ─── Folders: encrypted names, item membership stays inside the item summary ─
 
 from app.models.personal_vault import PersonalVaultFolder  # noqa: E402
@@ -455,6 +466,15 @@ async def test_folder_limit_comes_from_plan(client, setup_vault, monkeypatch):
 async def test_folder_name_size_is_limited(client, setup_vault):
     assert (await client.post(FOLDERS, json=_folder(ct="N" * 1024))).status_code == 201
     assert (await client.post(FOLDERS, json=_folder(ct="N" * 1025))).status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_folder_retry_at_the_limit_is_a_duplicate_not_a_limit(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_folders=1)
+    payload = _folder()
+    assert (await client.post(FOLDERS, json=payload)).status_code == 201
+    r = await client.post(FOLDERS, json=payload)
+    assert r.status_code == 409 and r.json()["detail"] == "Folder id already exists"
 
 
 @pytest.mark.asyncio

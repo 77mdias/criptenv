@@ -15,6 +15,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Planos: os limites saem de `apps/api/app/plans.py`. O plano gratuito permite **120 itens e 10 pastas** (antes, 1000 itens fixos), e o `unlimited` não tem limite. `DEFAULT_PLAN` (padrão `free`) define o plano de quem não tem um próprio; um valor desconhecido impede a API de subir. `GET /api/v1/me/plan` informa o plano ao web, que mostra o uso ("3 de 10 pastas") e avisa ao chegar no limite. Passar do limite responde **402** (antes era 409).
 - Rotas novas: `GET|POST /api/v1/personal-vault/folders` e `PUT|DELETE /api/v1/personal-vault/folders/{id}`, só com sessão web. Apagar a conta apaga as pastas.
 - Migrations `20261107_0017` (coluna `users.plan`, vazia = `DEFAULT_PLAN`) e `20261107_0018` (tabela `personal_vault_folders`).
+- Deploy: publicar a API antes do web. Se o web novo subir primeiro, o cofre abre sem as pastas e avisa "Não foi possível carregar as pastas". Os itens continuam aparecendo.
 
 ### Tipos Config e Secret nas variáveis — 2026-11-06
 

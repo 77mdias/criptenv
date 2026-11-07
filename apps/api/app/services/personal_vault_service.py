@@ -87,6 +87,10 @@ class PersonalVaultService:
         if await self.get_config(user_id) is None:
             raise PersonalVaultNotFound("Personal vault not set up")
         # shortcut: count+insert can exceed the limit by one under concurrent creates; add a DB constraint if it matters
+        # A retry of a create whose response was lost must get the duplicate 409, not a
+        # 402, even at the limit: the client then saves its latest edits over the copy.
+        if await self.db.scalar(select(PersonalVaultItem.id).where(PersonalVaultItem.id == UUID(data.id))):
+            raise PersonalVaultConflict("Item id already exists")
         if limit is not None:
             count = await self.db.scalar(
                 select(func.count()).select_from(PersonalVaultItem).where(PersonalVaultItem.user_id == user_id)
@@ -156,6 +160,9 @@ class PersonalVaultService:
         """`limit` comes from the user's plan (app/plans.py); None = no limit."""
         if await self.get_config(user_id) is None:
             raise PersonalVaultNotFound("Personal vault not set up")
+        # Same as items: a lost-response retry at the limit is a duplicate, not a 402.
+        if await self.db.scalar(select(PersonalVaultFolder.id).where(PersonalVaultFolder.id == UUID(data.id))):
+            raise PersonalVaultConflict("Folder id already exists")
         if limit is not None:
             # shortcut: count+insert can exceed the limit by one under concurrent creates; add a DB constraint if it matters
             count = await self.db.scalar(

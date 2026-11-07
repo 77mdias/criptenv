@@ -90,7 +90,8 @@
     "unreadable": "Unreadable folder",
     "usage": "{used} of {max} folders",
     "usageUnlimited": "{used, plural, one {# folder} other {# folders}}",
-    "limitReached": "You reached the free plan's folder limit."
+    "limitReached": "You reached the free plan's folder limit.",
+    "loadError": "Could not load the folders."
   },
   "folderDialog": {
     "newTitle": "New folder",

@@ -90,7 +90,8 @@
     "unreadable": "Pasta ilegível",
     "usage": "{used} de {max} pastas",
     "usageUnlimited": "{used, plural, =1 {# pasta} other {# pastas}}",
-    "limitReached": "Você chegou ao limite de pastas do plano gratuito."
+    "limitReached": "Você chegou ao limite de pastas do plano gratuito.",
+    "loadError": "Não foi possível carregar as pastas."
   },
   "folderDialog": {
     "newTitle": "Nova pasta",

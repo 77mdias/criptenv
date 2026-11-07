@@ -62,6 +62,8 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   const [plan, setPlan] = useState<Plan | null>(null)
   // A 402 from the server: the limit is reached even if the plan above is unknown or stale.
   const [limitHit, setLimitHit] = useState<"items" | "folders" | null>(null)
+  // Folders failing to load must not hide the items (e.g. a web deployed before its API).
+  const [foldersFailed, setFoldersFailed] = useState(false)
   const [revealing, setRevealing] = useState<DecryptedEntry | null>(null)
   const [editing, setEditing] = useState<DecryptedEntry | null | undefined>(undefined)
   const [moving, setMoving] = useState<DecryptedEntry | null>(null)
@@ -73,8 +75,14 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
 
   useEffect(() => {
     let cancelled = false
-    Promise.all([listPersonalVaultItems(), listPersonalVaultFolders()])
-      .then(async ([items, folderRows]) => {
+    Promise.all([
+      listPersonalVaultItems(),
+      listPersonalVaultFolders().then(
+        (rows) => ({ rows, failed: false }),
+        () => ({ rows: [], failed: true }),
+      ),
+    ])
+      .then(async ([items, { rows: folderRows, failed }]) => {
         const [results, names] = await Promise.all([
           Promise.allSettled(items.map((item) => decryptSummary(item.id, item.summary, vaultKey))),
           Promise.allSettled(folderRows.map((f) => decryptFolderName(f.id, f.name, vaultKey))),
@@ -82,6 +90,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
         if (cancelled) return
         setEntries(results.flatMap((r, i) => (r.status === "fulfilled" ? [{ item: items[i], summary: r.value }] : [])))
         setUnreadable(items.filter((_, i) => results[i].status === "rejected"))
+        setFoldersFailed(failed)
         setFolders(
           folderRows
             .map((folder, i) => ({ folder, name: names[i].status === "fulfilled" ? names[i].value : null }))
@@ -163,6 +172,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
     if (!window.confirm(t("items.deleteConfirm", { title }))) return
     try {
       await deletePersonalVaultItem(itemId)
+      setLimitHit(null)
       reload()
     } catch (err) {
       // Already deleted in another tab: the goal is met, just refresh the list.
@@ -209,6 +219,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
 
       {/* shortcut: the notices name the free plan because it is the only plan with limits; use the plan's name once paid plans exist */}
       {(itemsFull || limitHit === "items") && <p role="status" className="text-sm text-(--text-secondary)">{t("items.limitReached")}</p>}
+      {foldersFailed && <p role="status" className="text-sm text-(--text-secondary)">{t("folders.loadError")}</p>}
       {(foldersFull || limitHit === "folders") && (
         <p role="status" className="text-sm text-(--text-secondary)">{t("folders.limitReached")}</p>
       )}
@@ -365,6 +376,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
         onSaved={() => {
           setEditing(undefined)
           setNotice(null)
+          setLimitHit(null)
           reload()
         }}
         onStale={(reason) => {

@@ -90,7 +90,8 @@
     "unreadable": "Carpeta ilegible",
     "usage": "{used} de {max} carpetas",
     "usageUnlimited": "{used, plural, one {# carpeta} other {# carpetas}}",
-    "limitReached": "Llegaste al límite de carpetas del plan gratuito."
+    "limitReached": "Llegaste al límite de carpetas del plan gratuito.",
+    "loadError": "No se pudieron cargar las carpetas."
   },
   "folderDialog": {
     "newTitle": "Nueva carpeta",

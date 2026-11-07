@@ -604,6 +604,44 @@ describe("folders", () => {
   })
 })
 
+describe("review fixes", () => {
+  it("the item limit notice goes away once an item is deleted", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Plan limit reached", 402, null))
+    mocked(api.deletePersonalVaultItem).mockResolvedValue(undefined)
+    jest.spyOn(window, "confirm").mockReturnValue(true)
+    await renderItems()
+
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Título", "Banco", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    expect(await screen.findByText("Você chegou ao limite de itens do plano gratuito.")).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole("button", { name: "Apagar GitHub" }))
+    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
+    await waitFor(() =>
+      expect(screen.queryByText("Você chegou ao limite de itens do plano gratuito.")).not.toBeInTheDocument(),
+    )
+  })
+
+  it("items still load when the folders cannot", async () => {
+    mocked(api.listPersonalVaultItems).mockResolvedValue([item("i1", true), item("i2"), item("i3")])
+    mocked(api.listPersonalVaultFolders).mockRejectedValue(new ApiError("Not Found", 404, null))
+    mocked(meApi.plan).mockResolvedValue(FREE)
+    mocked(vaultCrypto.decryptSummary).mockImplementation(async (id) => SUMMARIES[id])
+    renderWithIntl(
+      <PersonalVaultSessionProvider>
+        <VaultItems vaultKey={KEY} config={SAVED} onConfigChange={onConfigChange} />
+      </PersonalVaultSessionProvider>,
+    )
+    expect(await screen.findByText("Instagram")).toBeInTheDocument()
+    expect(screen.getByText("Não foi possível carregar as pastas.")).toBeInTheDocument()
+    expect(screen.queryByText("Não foi possível carregar o cofre. Recarregue a página.")).not.toBeInTheDocument()
+  })
+})
+
 describe("item folders", () => {
   const IN_FOLDERS: Record<string, vaultCrypto.ItemSummary> = {
     i1: { ...SUMMARIES.i1, folderId: "f1" },
