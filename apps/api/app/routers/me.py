@@ -4,7 +4,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.middleware.auth import get_current_user
 from app.models.user import User
+from app.plans import plan_for
 from app.schemas.overview import ActivityDay, OverviewResponse
+from app.schemas.plan import PlanResponse
 from app.services.overview_service import OverviewService
 
 router = APIRouter(prefix="/api/v1/me", tags=["Me"])
@@ -27,3 +29,10 @@ async def get_activity_stats(
 ):
     """Audit events per day across the user's projects (secret changes vs other)."""
     return await OverviewService(db).get_activity_stats(current_user.id, days)
+
+
+@router.get("/plan", response_model=PlanResponse)
+async def get_plan(current_user: User = Depends(get_current_user)):
+    """The user's plan: its limits (null = no limit) and the features it unlocks."""
+    plan = plan_for(current_user.plan)
+    return PlanResponse(id=plan.id, limits=dict(plan.limits), features=sorted(plan.features))

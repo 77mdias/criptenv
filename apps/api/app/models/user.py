@@ -24,6 +24,8 @@ class User(Base):
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
     last_login_at = Column(DateTime(timezone=True))
+    # NULL = the server's DEFAULT_PLAN (app/plans.py); paid plans will set it.
+    plan = Column(String(32), nullable=True)
 
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan", foreign_keys="Session.user_id")
     projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
