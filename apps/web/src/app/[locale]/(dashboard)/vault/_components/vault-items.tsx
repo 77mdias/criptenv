@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { Copy, Eye, FolderInput, KeyRound, Lock, Pencil, Plus, Settings, ShieldAlert, ShieldCheck, StickyNote, Trash2 } from "lucide-react"
+import { KeyRound, Lock, Pencil, Plus, Settings, ShieldAlert, ShieldCheck, StickyNote, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -26,6 +26,7 @@ import { VaultItemDialog } from "./vault-item-dialog"
 import { VaultSettingsDialog } from "./vault-settings-dialog"
 import { usePersonalVaultSession } from "./vault-session"
 import { SiteIcon } from "./site-icon"
+import { ItemActions } from "./item-actions"
 import { readSiteIconsSetting, writeSiteIconsSetting } from "@/lib/personal-vault/site-icons"
 
 export interface DecryptedEntry {
@@ -298,25 +299,15 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
                       </p>
                       {summary.username && <p className="truncate text-xs text-(--text-muted)">{summary.username}</p>}
                     </div>
-                    <div className="flex shrink-0 gap-1">
-                      {summary.username && (
-                        <Button type="button" size="icon" variant="ghost" aria-label={t("items.copyUsername", { title: summary.title })} onClick={() => copy(summary.username!)}>
-                          <Copy aria-hidden className="h-4 w-4" />
-                        </Button>
-                      )}
-                      <Button type="button" size="icon" variant="ghost" aria-label={t("items.reveal", { title: summary.title })} onClick={() => setRevealing(entry)}>
-                        <Eye aria-hidden className="h-4 w-4" />
-                      </Button>
-                      <Button type="button" size="icon" variant="ghost" aria-label={t("items.move", { title: summary.title })} onClick={() => setMoving(entry)}>
-                    <FolderInput aria-hidden className="h-4 w-4" />
-                  </Button>
-                  <Button type="button" size="icon" variant="ghost" aria-label={t("items.edit", { title: summary.title })} onClick={() => setEditing(entry)}>
-                        <Pencil aria-hidden className="h-4 w-4" />
-                      </Button>
-                      <Button type="button" size="icon" variant="ghost" aria-label={t("items.delete", { title: summary.title })} onClick={() => void handleDelete(item.id, summary.title)}>
-                        <Trash2 aria-hidden className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    <ItemActions
+                      title={summary.title}
+                      username={summary.username}
+                      onCopyUsername={() => copy(summary.username!)}
+                      onReveal={() => setRevealing(entry)}
+                      onMove={() => setMoving(entry)}
+                      onEdit={() => setEditing(entry)}
+                      onDelete={() => void handleDelete(item.id, summary.title)}
+                    />
                   </li>
                 )
               })}

@@ -76,7 +76,15 @@
     "usage": "{used} de {max} itens",
     "usageUnlimited": "{used, plural, =1 {# item} other {# itens}}",
     "limitReached": "Você chegou ao limite de itens do plano gratuito.",
-    "move": "Mover {title}"
+    "move": "Mover {title}",
+    "actions": "Ações de {title}",
+    "menu": {
+      "copyUsername": "Copiar usuário",
+      "reveal": "Revelar",
+      "move": "Mover para pasta",
+      "edit": "Editar",
+      "delete": "Apagar"
+    }
   },
   "folders": {
     "title": "Pastas",

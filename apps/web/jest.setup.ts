@@ -95,6 +95,17 @@ Object.defineProperty(window, "ResizeObserver", {
   value: ResizeObserverMock,
 })
 
+// Floating UI (Radix dropdowns, popovers, selects) asks every ancestor whether it
+// matches `:modal` or `:popover-open`. nwsapi resolves those through a recursion that
+// takes tens of seconds on a full page. jsdom has no top layer (no showModal, no
+// popover), so nothing can match them: answer false without asking nwsapi.
+const TOP_LAYER_SELECTORS = new Set([":modal", ":popover-open"])
+const nativeMatches = Element.prototype.matches
+Element.prototype.matches = function matches(this: Element, selectors: string) {
+  if (TOP_LAYER_SELECTORS.has(selectors)) return false
+  return nativeMatches.call(this, selectors)
+}
+
 beforeEach(() => {
   jest.clearAllMocks()
   localStorage.clear()

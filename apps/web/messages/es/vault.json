@@ -76,7 +76,15 @@
     "usage": "{used} de {max} elementos",
     "usageUnlimited": "{used, plural, one {# elemento} other {# elementos}}",
     "limitReached": "Llegaste al límite de elementos del plan gratuito.",
-    "move": "Mover {title}"
+    "move": "Mover {title}",
+    "actions": "Acciones de {title}",
+    "menu": {
+      "copyUsername": "Copiar usuario",
+      "reveal": "Mostrar",
+      "move": "Mover a carpeta",
+      "edit": "Editar",
+      "delete": "Eliminar"
+    }
   },
   "folders": {
     "title": "Carpetas",
