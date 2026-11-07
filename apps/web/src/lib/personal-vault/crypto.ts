@@ -35,6 +35,7 @@ const AAD = {
   extraOuter: "criptenv:pv1:config:extra_protected_key:outer",
   summary: (id: string) => `criptenv:pv1:item:${id}:summary`,
   body: (id: string, isProtected: boolean) => `criptenv:pv1:item:${id}:body:${isProtected ? "protected" : "common"}`,
+  folderName: (id: string) => `criptenv:pv1:folder:${id}:name`,
 }
 // Crockford base32: no I, L, O, U, so a printed key is hard to misread.
 const CROCKFORD = "0123456789ABCDEFGHJKMNPQRSTVWXYZ"
@@ -56,15 +57,17 @@ export interface PersonalVaultConfigInput {
   recovery_wrapped_protected_key: EncryptedField
 }
 
+// folderId lives in the encrypted summary, so the server never learns which items share a folder.
 export type PersonalVaultItemPlain =
-  | { type: "login"; title: string; username: string; password: string; url: string; notes: string }
-  | { type: "note"; title: string; content: string }
+  | { type: "login"; title: string; username: string; password: string; url: string; notes: string; folderId?: string }
+  | { type: "note"; title: string; content: string; folderId?: string }
 
 export interface ItemSummary {
   type: "login" | "note"
   title: string
   username?: string
   url?: string
+  folderId?: string
 }
 
 export interface EncryptedItem {
@@ -216,6 +219,7 @@ export async function encryptItem(
     item.type === "login"
       ? { type: item.type, title: item.title, username: item.username, url: item.url }
       : { type: item.type, title: item.title }
+  if (item.folderId) summary.folderId = item.folderId
   const body = item.type === "login" ? { password: item.password, notes: item.notes } : { content: item.content }
   const isProtected = protectedKey !== null
   return {
@@ -230,6 +234,11 @@ export async function decryptSummary(id: string, summary: EncryptedField, vaultK
   return JSON.parse(await open(summary, vaultKey, AAD.summary(id))) as ItemSummary
 }
 
+/** Re-encrypts only the summary (e.g. a new folderId); the body envelope is reused as is. */
+export function resealSummary(id: string, summary: ItemSummary, vaultKey: CryptoKey): Promise<EncryptedField> {
+  return seal(JSON.stringify(summary), vaultKey, AAD.summary(id))
+}
+
 export async function decryptItem(
   item: { id: string; protected: boolean; summary: EncryptedField; body: EncryptedField },
   vaultKey: CryptoKey,
@@ -237,7 +246,8 @@ export async function decryptItem(
 ): Promise<PersonalVaultItemPlain> {
   const summary = await decryptSummary(item.id, item.summary, vaultKey)
   const body = JSON.parse(await open(item.body, bodyKey, AAD.body(item.id, item.protected)))
-  // Field by field: summary owns type/title/username/url, so a body can never override them.
+  // Field by field: summary owns type/title/username/url/folderId, so a body can never override them.
+  const folder = summary.folderId ? { folderId: summary.folderId } : {}
   if (summary.type === "login") {
     return {
       type: "login",
@@ -246,9 +256,20 @@ export async function decryptItem(
       url: summary.url ?? "",
       password: String(body.password ?? ""),
       notes: String(body.notes ?? ""),
+      ...folder,
     }
   }
-  return { type: "note", title: summary.title, content: String(body.content ?? "") }
+  return { type: "note", title: summary.title, content: String(body.content ?? ""), ...folder }
+}
+
+// ─── Folders ────────────────────────────────────────────────────────────────
+
+export function encryptFolderName(id: string, name: string, vaultKey: CryptoKey): Promise<EncryptedField> {
+  return seal(name, vaultKey, AAD.folderName(id))
+}
+
+export function decryptFolderName(id: string, name: EncryptedField, vaultKey: CryptoKey): Promise<string> {
+  return open(name, vaultKey, AAD.folderName(id))
 }
 
 // ─── Internals ──────────────────────────────────────────────────────────────

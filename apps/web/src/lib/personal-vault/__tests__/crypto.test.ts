@@ -2,12 +2,15 @@ import { encrypt } from "@/lib/crypto"
 import {
   createPersonalVault,
   decodeRecoveryKey,
+  decryptFolderName,
   decryptItem,
   decryptSummary,
   encodeRecoveryKey,
+  encryptFolderName,
   encryptItem,
   PERSONAL_VAULT_ITERATIONS,
   recoverVault,
+  resealSummary,
   rewrapExtra,
   rewrapMaster,
   unlockProtectedKey,
@@ -219,5 +222,51 @@ describe("personal vault crypto", () => {
       decryptSpy.mockRestore()
       unwrapSpy.mockRestore()
     }
+  })
+
+  describe("folders", () => {
+    it("folder name round-trips", async () => {
+      const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+      const sealed = await encryptFolderName(ID_A, "Trabalho", vaultKey)
+      expect(sealed.ciphertext).not.toContain("Trabalho")
+      expect(await decryptFolderName(ID_A, sealed, vaultKey)).toBe("Trabalho")
+    })
+
+    it("folder name is bound to its id", async () => {
+      const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+      const sealed = await encryptFolderName(ID_A, "Trabalho", vaultKey)
+      await expect(decryptFolderName(ID_B, sealed, vaultKey)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+    })
+
+    it("a folder name cannot pass as an item summary", async () => {
+      const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+      const sealed = await encryptFolderName(ID_A, "Trabalho", vaultKey)
+      await expect(decryptSummary(ID_A, sealed, vaultKey)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+    })
+
+    it("summary keeps folderId", async () => {
+      const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+      const enc = await encryptItem(ID_A, { ...login, folderId: "f1" }, vaultKey, null)
+      expect((await decryptSummary(ID_A, enc.summary, vaultKey)).folderId).toBe("f1")
+      expect((await decryptItem(enc, vaultKey, vaultKey)).folderId).toBe("f1")
+    })
+
+    it("summary without folderId has no folderId key", async () => {
+      const { vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+      const enc = await encryptItem(ID_A, { type: "note", title: "Wi-Fi", content: "x" }, vaultKey, null)
+      expect(Object.keys(await decryptSummary(ID_A, enc.summary, vaultKey))).toEqual(["type", "title"])
+      expect("folderId" in (await decryptItem(enc, vaultKey, vaultKey))).toBe(false)
+    })
+
+    it("resealSummary moves an item without touching the body", async () => {
+      const { config, vaultKey } = await createPersonalVault(MASTER, EXTRA, ITER)
+      const pk = await unlockProtectedKey(config, vaultKey, EXTRA)
+      const enc = await encryptItem(ID_A, { ...login, folderId: "f1" }, vaultKey, pk)
+      const summary = await decryptSummary(ID_A, enc.summary, vaultKey)
+      const moved = await resealSummary(ID_A, { ...summary, folderId: "f2" }, vaultKey)
+      const opened = await decryptItem({ id: ID_A, protected: true, summary: moved, body: enc.body }, vaultKey, pk)
+      expect(opened).toEqual({ ...login, folderId: "f2" })
+      await expect(decryptSummary(ID_B, moved, vaultKey)).rejects.toMatchObject({ code: "DECRYPTION_FAILED" })
+    })
   })
 })
