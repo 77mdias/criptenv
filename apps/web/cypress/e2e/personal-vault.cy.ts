@@ -132,4 +132,53 @@ describe("personal vault", () => {
     cy.get('img[src*="/api/v1/icons/"]').should("not.exist")
     cy.get("@icon.all").should("have.length", 1)
   })
+
+  it("organizes items in folders and keeps them when the folder is deleted", () => {
+    const folderButton = (name: string) =>
+      cy.get(`nav[aria-label="Pastas"] button[aria-label^="${name},"]`, { timeout: 15000 })
+    const row = (title: string) => cy.contains("li", title, { timeout: 15000 })
+    createVault()
+
+    cy.contains("button", "Nova pasta", { timeout: 15000 }).click()
+    inputByLabel("Nome").type("Trabalho")
+    cy.contains("button", "Salvar").click()
+    folderButton("Trabalho").should("be.visible")
+
+    cy.contains("button", "Novo item").click()
+    cy.get("#vault-item-type").select("note")
+    inputByLabel("Título").type("Chave")
+    inputByLabel("Conteúdo").type("abc-123")
+    cy.get("#vault-item-folder").select("Trabalho")
+    cy.contains("button", "Salvar").click()
+    row("Chave").should("be.visible")
+
+    folderButton("Sem pasta").click()
+    cy.contains("li", "Chave").should("not.exist")
+    folderButton("Trabalho").click()
+    row("Chave").should("be.visible")
+
+    // Moving only re-encrypts the summary: no extra password, the note stays readable.
+    cy.get('button[aria-label="Mover Chave"]').click()
+    cy.get("#vault-move-folder").select("Sem pasta")
+    cy.contains("button", /^Mover$/).click()
+    cy.contains("li", "Chave", { timeout: 15000 }).should("not.exist")
+    folderButton("Sem pasta").click()
+    row("Chave").should("be.visible")
+
+    cy.get('button[aria-label="Mover Chave"]').click()
+    cy.get("#vault-move-folder").select("Trabalho")
+    cy.contains("button", /^Mover$/).click()
+    cy.contains("li", "Chave", { timeout: 15000 }).should("not.exist")
+    folderButton("Trabalho").click()
+    row("Chave").should("be.visible")
+
+    // Deleting the folder never deletes its items: they show under "Sem pasta".
+    cy.get('button[aria-label="Apagar Trabalho"]').click()
+    cy.contains("h2", "Todas", { timeout: 15000 }).should("be.visible")
+    cy.get('nav[aria-label="Pastas"] button[aria-label^="Trabalho,"]').should("not.exist")
+    folderButton("Sem pasta").click()
+    row("Chave").should("be.visible")
+    cy.get('button[aria-label="Revelar Chave"]').click()
+    cy.contains("abc-123", { timeout: CRYPTO_TIMEOUT }).should("be.visible")
+  })
 })
