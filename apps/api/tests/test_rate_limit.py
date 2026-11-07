@@ -466,3 +466,14 @@ def test_redis_client_is_created_with_resilient_pool_options():
     assert kwargs["socket_keepalive"] is True
     assert kwargs["retry_on_timeout"] is True
     assert kwargs["retry"] is not None
+
+
+def test_icon_paths_get_their_own_bucket_and_limit():
+    from app.middleware.rate_limit import build_rate_limit_key, resolve_rate_limit
+
+    req = _request("/api/v1/icons/github.com/icon.png")
+    assert build_rate_limit_key(req, "1.2.3.4") == "icons:1.2.3.4"
+    assert resolve_rate_limit(req) == "300/minute"
+    vault = _request("/api/v1/personal-vault/items")
+    assert build_rate_limit_key(vault, "1.2.3.4") == "ip:1.2.3.4"
+    assert resolve_rate_limit(vault) == "100/minute"

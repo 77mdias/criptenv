@@ -17,6 +17,7 @@ from app.routers.notifications import router as notifications_router
 from app.routers.alert_settings import router as alert_settings_router
 from app.routers.me import router as me_router
 from app.routers.personal_vault import router as personal_vault_router
+from app.routers.icons import router as icons_router
 
 __all__ = [
     "auth_router",
@@ -39,4 +40,5 @@ __all__ = [
     "alert_settings_router",
     "me_router",
     "personal_vault_router",
+    "icons_router",
 ]

@@ -29,7 +29,8 @@ from app.routers import (
     notifications_router,
     alert_settings_router,
     me_router,
-    personal_vault_router
+    personal_vault_router,
+    icons_router,
 )
 from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
@@ -271,6 +272,7 @@ app.include_router(notifications_router)
 app.include_router(alert_settings_router)
 app.include_router(me_router)
 app.include_router(personal_vault_router)
+app.include_router(icons_router)
 
 
 # Custom OpenAPI schema with dual security schemes
