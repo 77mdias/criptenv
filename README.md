@@ -118,8 +118,9 @@ Check the install with `criptenv doctor`.
 criptenv login                                    # opens the browser (OAuth / web login)
 criptenv login --device                           # device code flow, for SSH and headless machines
 criptenv login --email-address you@example.com   # email + password
-criptenv login --api-key                          # API key (or set CRIPTENV_API_KEY)
 ```
+
+API keys (`criptenv login --api-key` or `CRIPTENV_API_KEY`) are for automation on an existing project and cannot create projects — see [CI/CD](#-cicd--cloud-sync).
 
 ### 3. Create a project and select it
 
@@ -128,7 +129,7 @@ criptenv projects create my-app      # asks for the project's Vault password
 criptenv use <project-id>            # default project for the next commands
 ```
 
-Every command also accepts `-p/--project` (name or ID) and `-e/--env` (environment name or ID). Without `-e`, the project's default environment is used.
+Secret and file commands (`set`, `get`, `list`, `delete`, `rotate`, `run`, `diff`, `import`, `export`, `push`, `pull`) also accept `-p/--project` and `-e/--env` (environment name or ID). Without `-e`, the project's default environment is used.
 
 ### 4. Manage secrets
 
@@ -186,10 +187,10 @@ Run `criptenv <command> --help` for options and examples, or see the [CLI refere
     token: ${{ secrets.CRIPTENV_TOKEN }}          # created with `criptenv ci tokens create`
     project: ${{ secrets.CRIPTENV_PROJECT_ID }}
     environment: production
-    vault-password: ${{ secrets.CRIPTENV_VAULT_PASSWORD }}  # optional: export plaintext
+    vault-password: ${{ secrets.CRIPTENV_VAULT_PASSWORD }}
 ```
 
-See [packages/github-action](packages/github-action/README.md) for every input and output.
+Set `vault-password` to get usable plaintext values. Without it, each variable holds the encrypted ciphertext (kept for backwards compatibility). See [packages/github-action](packages/github-action/README.md) for every input and output.
 
 **Other pipelines** — `criptenv ci login` with a CI token, or an API key in `CRIPTENV_API_KEY` (optionally restricted to one environment). For non-interactive writes, set `CRIPTENV_VAULT_PASSWORD`.
 
