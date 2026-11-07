@@ -1,6 +1,6 @@
 # Pastas no cofre pessoal e limites por plano
 
-**Status:** decisões aprovadas pelo Jean em 2026-11-07; documento aguardando a leitura dele
+**Status:** aprovado pelo Jean em 2026-11-07
 **Data:** 2026-11-07
 **Depois desta:** gerador de token secreto, token de API e certificado (spec separada)
 
@@ -15,8 +15,8 @@ Junto com isso, o Jean quer **planos de assinatura no futuro**, que liberam fun�
 1. O usuário cria, renomeia e apaga as próprias pastas, dentro do cofre dele.
 2. Cada item pode ficar em uma pasta. A lista filtra por pasta, junto com o filtro por tipo e a busca.
 3. O servidor continua sem ler nada: não vê o nome das pastas nem quais itens estão em cada uma.
-4. Os limites do cofre vêm do plano do usuário. No plano gratuito: **10 pastas e 200 itens**.
-5. O web mostra o uso ("3 de 10 pastas", "45 de 200 itens") e avisa quando o limite do plano for atingido.
+4. Os limites do cofre vêm do plano do usuário. No plano gratuito: **10 pastas e 120 itens**.
+5. O web mostra o uso ("3 de 10 pastas", "45 de 120 itens") e avisa quando o limite do plano for atingido.
 
 ## Não-objetivos
 
@@ -39,7 +39,7 @@ Junto com isso, o Jean quer **planos de assinatura no futuro**, que liberam fun�
 - Quem cria as pastas é o próprio usuário. Um nível só.
 - Os filtros Todos, Logins e Notas continuam e funcionam junto com a pasta (ex.: "Trabalho" + "Logins").
 - Layout **B**: coluna de pastas à esquerda, estilo Bitwarden, com "Todas", as pastas do usuário, "Sem pasta" e "+ Nova pasta", cada uma com a quantidade de itens. No celular, a coluna vira um menu de pastas no topo da lista.
-- Limites por plano, pensando em planos pagos no futuro. Plano gratuito: **10 pastas e 200 itens**.
+- Limites por plano, pensando em planos pagos no futuro. Plano gratuito: **10 pastas e 120 itens** (o Jean primeiro disse 200 e depois baixou para 120).
 - Aprovou, sem mudar: cada item em uma pasta só; apagar a pasta manda os itens para "Sem pasta"; nome da pasta cifrado no navegador; a pasta do item fica dentro do resumo cifrado.
 - **Quem hospeda o próprio CriptEnv** escolhe o plano padrão numa configuração do servidor. O padrão é o gratuito, e há um plano "sem limites" para quem hospeda.
 - **Mover um item de pasta não pede a senha extra**, nem em item com proteção extra. A senha extra continua valendo para ver e editar o conteúdo.
@@ -58,14 +58,14 @@ Junto com isso, o Jean quer **planos de assinatura no futuro**, que liberam fun�
 ### Planos e limites
 
 - **Um lugar só no código da API define os planos.** Cada plano tem um id, os limites (`personal_vault_items`, `personal_vault_folders`) e a lista de funções liberadas. Um limite pode ser "sem limite". Hoje existem dois planos, nenhum com função extra:
-  - `free`: 200 itens e 10 pastas.
+  - `free`: 120 itens e 10 pastas.
   - `unlimited`: sem limite de itens nem de pastas, para quem hospeda o próprio CriptEnv.
 - **Plano padrão numa configuração do servidor** (variável de ambiente, padrão `free`). Um valor que não é um plano conhecido impede a API de subir, com um erro claro, para um erro de digitação não virar limite sem ninguém perceber.
 - **Cada usuário pode ter um plano próprio**, numa coluna nova em `users` (texto, vazia por padrão). Vazia quer dizer "o plano padrão do servidor", então quem hospeda pode trocar o padrão a qualquer momento, inclusive para usuários antigos. Quando os planos pagos chegarem, o pagamento preenche essa coluna. Um valor desconhecido nela vale como `free`, nunca como "sem limite".
 - **A API checa o limite ao criar** uma pasta ou um item. O limite atual de 1000 itens (`MAX_PERSONAL_VAULT_ITEMS`) sai e passa a vir do plano.
 - **O erro de limite é próprio**, separado do 409 de conflito de versão, e diz qual limite estourou e o máximo do plano. O web reconhece esse erro sem comparar texto.
 - **A API informa ao web o plano do usuário**, com os limites e as funções liberadas, para o web mostrar o uso e já saber o que está liberado.
-- **Baixar um limite nunca apaga nada.** Quem já tiver mais de 200 itens continua com todos e consegue ler, editar e apagar. Só não cria novos até ficar abaixo do limite.
+- **Baixar um limite nunca apaga nada.** Quem já tiver mais de 120 itens continua com todos e consegue ler, editar e apagar. Só não cria novos até ficar abaixo do limite.
 
 ### API
 
@@ -83,7 +83,7 @@ Todas as rotas novas seguem o resto do cofre: só cookie de sessão web (`get_cu
 - **O título da lista mostra a pasta escolhida.** Filtro por tipo e busca valem dentro da pasta escolhida.
 - **Formulário do item ganha o campo "Pasta"**, com "Sem pasta" e as pastas do usuário. Ao criar um item com uma pasta selecionada na coluna, o campo já vem com ela. Editar o item mantém a pasta, a não ser que o usuário troque.
 - **Ação "Mover para pasta"** em cada item da lista, para qualquer item, **sem pedir a senha extra**. Ela cifra de novo só o resumo, com a pasta nova, e reenvia o corpo cifrado como está. Isso já é aceito pela API de hoje, porque a AAD do corpo amarra o id do item e a marca de proteção, não a versão.
-- **Uso de itens** perto do botão de novo item: "45 de 200 itens". Sem limite no plano, só "45 itens" (e "3 pastas").
+- **Uso de itens** perto do botão de novo item: "45 de 120 itens". Sem limite no plano, só "45 itens" (e "3 pastas").
 - **No limite**, "+ Nova pasta" ou "Novo item" ficam desligados, com um aviso de que é o limite do plano gratuito. O texto já deixa espaço para um "conheça os planos" no futuro, mas sem link agora.
 - **Pasta com nome que não decifra** aparece como "Pasta ilegível", só com a opção de apagar (mesma ideia dos itens ilegíveis de hoje).
 - Trancar o cofre desmonta a coluna junto com a lista, como já acontece com os dados decifrados.
@@ -112,7 +112,7 @@ Todas as rotas novas seguem o resto do cofre: só cookie de sessão web (`get_cu
 
 ## Riscos e notas de deploy
 
-- **Usuários com mais de 200 itens** em produção deixam de conseguir criar itens. Antes do deploy, contar no banco quantos usuários passam de 200 itens.
+- **Usuários com mais de 120 itens** em produção deixam de conseguir criar itens. Antes do deploy, contar no banco quantos usuários passam de 120 itens.
 - **Limite com count + insert**, como hoje: duas criações ao mesmo tempo podem passar do limite por um.
 - **Migração** nova: coluna `plan` em `users` e a tabela de pastas. Roda no entrypoint do container, como as outras.
 - API e web precisam ir juntos: o web novo chama as rotas de pastas.

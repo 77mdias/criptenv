@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** o usuário cria pastas (um nível) no cofre pessoal e organiza nelas os itens, com os limites do cofre vindo do plano dele (gratuito: 10 pastas, 200 itens).
+**Goal:** o usuário cria pastas (um nível) no cofre pessoal e organiza nelas os itens, com os limites do cofre vindo do plano dele (gratuito: 10 pastas, 120 itens).
 
 **Architecture:** API ganha um registro de planos em `app/plans.py`, a coluna `users.plan`, a rota `GET /api/v1/me/plan`, a tabela `personal_vault_folders` com CRUD em `/api/v1/personal-vault/folders`, e o limite de itens passa a vir do plano (erro 402). No web, o nome da pasta é cifrado com a VK (AAD própria) e a pasta do item vai dentro do resumo cifrado (`folderId`). A lista ganha a coluna de pastas à esquerda, e cada item ganha a ação "Mover para pasta", que só recifra o resumo.
 
@@ -13,7 +13,7 @@
 ## Global Constraints
 
 - Zero-knowledge: o servidor nunca recebe o nome de uma pasta nem qual item está em qual pasta em texto claro. Item não tem coluna de pasta.
-- Planos: `free` = `{"personal_vault_items": 200, "personal_vault_folders": 10}`; `unlimited` = os dois `None`. Nenhum plano tem função extra (`features` vazio).
+- Planos: `free` = `{"personal_vault_items": 120, "personal_vault_folders": 10}`; `unlimited` = os dois `None`. Nenhum plano tem função extra (`features` vazio).
 - `DEFAULT_PLAN` (env, padrão `"free"`): valor fora dos planos conhecidos faz `Settings()` falhar. `users.plan` vazio (NULL) = `DEFAULT_PLAN`; valor desconhecido em `users.plan` = `free`.
 - Erro de limite: HTTP **402**, `detail` = `"Plan limit reached"`. Conflito de versão continua 409.
 - AAD do nome da pasta: `criptenv:pv1:folder:<id>:name`. Nome: 1 a 100 caracteres depois de `trim()` (checado no web). Envelope do nome: `iv` 16, `auth_tag` 24, `ciphertext` 1 a 1024 caracteres (checado na API).
@@ -65,7 +65,7 @@
 
 ```python
 def test_free_plan_limits():
-    assert dict(PLANS["free"].limits) == {"personal_vault_items": 200, "personal_vault_folders": 10}
+    assert dict(PLANS["free"].limits) == {"personal_vault_items": 120, "personal_vault_folders": 10}
     assert PLANS["free"].features == frozenset()
 
 def test_unlimited_plan_has_no_limits():
@@ -88,7 +88,7 @@ async def test_me_plan_route(client, as_user):  # mesmo padrão de fixtures de t
     # usuário com plan=None e DEFAULT_PLAN="free"
     r = await client.get("/api/v1/me/plan")
     assert r.status_code == 200
-    assert r.json() == {"id": "free", "limits": {"personal_vault_items": 200, "personal_vault_folders": 10}, "features": []}
+    assert r.json() == {"id": "free", "limits": {"personal_vault_items": 120, "personal_vault_folders": 10}, "features": []}
     # usuário com plan="unlimited": limits com null
 ```
 
@@ -387,11 +387,11 @@ Expected: todos os specs passam, inclusive o novo. Se der EACCES em `.vinext/dev
   - `personal-vault.md`:
     - Em "O que o servidor vê": por pasta, o envelope do nome, a versão e as datas, mais a quantidade de pastas. Ele não vê quais itens estão em cada pasta, porque o `folderId` fica no resumo cifrado.
     - A AAD `folder:<id>:name` na lista de contextos.
-    - Em "O que o servidor garante": limites por plano no lugar do "até 1000 itens" (gratuito: 200 itens e 10 pastas; `unlimited` sem limite; `DEFAULT_PLAN`).
+    - Em "O que o servidor garante": limites por plano no lugar do "até 1000 itens" (gratuito: 120 itens e 10 pastas; `unlimited` sem limite; `DEFAULT_PLAN`).
     - Em "No navegador": mover de pasta só recifra o resumo com a VK e reenvia o corpo como está, então não pede a senha extra.
     - Em "Riscos conhecidos": a aba antiga durante o deploy tira o item da pasta ao editar.
   - CHANGELOG: entrada "Pastas no cofre pessoal e limites por plano — 2026-11-07", no mesmo formato das outras, com as migrações `20261107_0017` e `20261107_0018`.
-  - Spec: status "aprovado".
+  - Spec: já está aprovada; nada a mudar no status.
 
 - [ ] **Step 4: Full verification**
 
