@@ -71,7 +71,19 @@ export interface ActivityDay {
   other: number;
 }
 
+/** null = no limit on this plan. */
+export interface Plan {
+  id: string;
+  limits: { personal_vault_items: number | null; personal_vault_folders: number | null };
+  features: string[];
+}
+
 export const meApi = {
+  plan(): Promise<Plan> {
+    return request<Plan>("GET", "/api/v1/me/plan");
+  },
+
+
   overview(): Promise<OverviewResponse> {
     return request<OverviewResponse>("GET", "/api/v1/me/overview");
   },

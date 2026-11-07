@@ -343,13 +343,151 @@ async def test_items_are_isolated(client, setup_vault, as_user):
     assert len((await client.get("/api/v1/personal-vault/items")).json()) == 1
 
 
+from app import plans  # noqa: E402
+from app.config import settings  # noqa: E402
+
+
+def _plan(monkeypatch, **limits):
+    """Shrink the free plan's limits for one test (the real ones are 120 items, 10 folders)."""
+    free = plans.PLANS["free"]
+    monkeypatch.setitem(plans.PLANS, "free", plans.Plan("free", {**free.limits, **limits}))
+    monkeypatch.setattr(settings, "DEFAULT_PLAN", "free")
+
+
 @pytest.mark.asyncio
-async def test_item_limit(client, setup_vault, monkeypatch):
-    monkeypatch.setattr(personal_vault_service, "MAX_PERSONAL_VAULT_ITEMS", 2)
+async def test_item_limit_comes_from_plan(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_items=2)
     for _ in range(2):
         assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 201
     r = await client.post("/api/v1/personal-vault/items", json=_item())
-    assert r.status_code == 409 and r.json()["detail"] == "Item limit reached"
+    assert r.status_code == 402 and r.json()["detail"] == "Plan limit reached"
+
+
+@pytest.mark.asyncio
+async def test_unlimited_plan_has_no_item_limit(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_items=1)
+    monkeypatch.setattr(settings, "DEFAULT_PLAN", "unlimited")
+    for _ in range(3):
+        assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_over_limit_user_can_still_edit_and_delete(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_items=3)
+    ids = [(await client.post("/api/v1/personal-vault/items", json=_item())).json()["id"] for _ in range(3)]
+    _plan(monkeypatch, personal_vault_items=2)
+    assert (await client.put(f"/api/v1/personal-vault/items/{ids[0]}", json=_update())).status_code == 200
+    assert (await client.delete(f"/api/v1/personal-vault/items/{ids[1]}")).status_code == 204
+    assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 402
+
+
+@pytest.mark.asyncio
+async def test_retry_at_the_limit_is_a_duplicate_not_a_limit(client, setup_vault, monkeypatch):
+    # The last allowed item landed but its response was lost: the retry must get the
+    # duplicate-id 409 (the web then saves the latest edits over it), not a 402.
+    _plan(monkeypatch, personal_vault_items=1)
+    payload = _item()
+    assert (await client.post("/api/v1/personal-vault/items", json=payload)).status_code == 201
+    r = await client.post("/api/v1/personal-vault/items", json=payload)
+    assert r.status_code == 409 and r.json()["detail"] == "Item id already exists"
+
+
+# ─── Folders: encrypted names, item membership stays inside the item summary ─
+
+from app.models.personal_vault import PersonalVaultFolder  # noqa: E402
+
+FOLDERS = "/api/v1/personal-vault/folders"
+
+
+def _folder(folder_id=None, ct="N" * 40):
+    return {"id": str(folder_id or uuid4()), "name": {**_envelope(), "ciphertext": ct}}
+
+
+@pytest.mark.asyncio
+async def test_folder_lifecycle(client, setup_vault):
+    created = await client.post(FOLDERS, json=_folder())
+    assert created.status_code == 201 and created.json()["version"] == 1
+    folder_id = created.json()["id"]
+    listed = (await client.get(FOLDERS)).json()
+    assert [f["id"] for f in listed] == [folder_id] and listed[0]["name"]["ciphertext"] == "N" * 40
+    r = await client.put(f"{FOLDERS}/{folder_id}",
+                         json={"name": {**_envelope(), "ciphertext": "R" * 40}, "expected_version": 1})
+    assert r.status_code == 200 and r.json()["version"] == 2 and r.json()["name"]["ciphertext"] == "R" * 40
+    assert (await client.delete(f"{FOLDERS}/{folder_id}")).status_code == 204
+    assert (await client.get(FOLDERS)).json() == []
+
+
+@pytest.mark.asyncio
+async def test_folder_stale_version_conflicts(client, setup_vault):
+    folder_id = (await client.post(FOLDERS, json=_folder())).json()["id"]
+    body = {"name": _envelope(), "expected_version": 1}
+    assert (await client.put(f"{FOLDERS}/{folder_id}", json=body)).status_code == 200
+    r = await client.put(f"{FOLDERS}/{folder_id}", json=body)
+    assert r.status_code == 409 and r.json()["detail"] == "Version conflict"
+
+
+@pytest.mark.asyncio
+async def test_folder_duplicate_id_conflicts(client, setup_vault):
+    payload = _folder()
+    assert (await client.post(FOLDERS, json=payload)).status_code == 201
+    r = await client.post(FOLDERS, json=payload)
+    assert r.status_code == 409 and r.json()["detail"] == "Folder id already exists"
+    assert len((await client.get(FOLDERS)).json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_folder_requires_vault(client, as_user):
+    as_user("ana")
+    assert (await client.post(FOLDERS, json=_folder())).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_folders_are_per_user(client, setup_vault, as_user):
+    folder_id = (await client.post(FOLDERS, json=_folder())).json()["id"]
+    as_user("bia")
+    assert (await client.get(FOLDERS)).json() == []
+    url = f"{FOLDERS}/{folder_id}"
+    assert (await client.put(url, json={"name": _envelope(), "expected_version": 1})).status_code == 404
+    assert (await client.delete(url)).status_code == 404
+    as_user("ana")
+    assert len((await client.get(FOLDERS)).json()) == 1
+
+
+@pytest.mark.asyncio
+async def test_folder_limit_comes_from_plan(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_folders=2)
+    for _ in range(2):
+        assert (await client.post(FOLDERS, json=_folder())).status_code == 201
+    r = await client.post(FOLDERS, json=_folder())
+    assert r.status_code == 402 and r.json()["detail"] == "Plan limit reached"
+
+
+@pytest.mark.asyncio
+async def test_folder_name_size_is_limited(client, setup_vault):
+    assert (await client.post(FOLDERS, json=_folder(ct="N" * 1024))).status_code == 201
+    assert (await client.post(FOLDERS, json=_folder(ct="N" * 1025))).status_code == 422
+
+
+@pytest.mark.asyncio
+async def test_folder_retry_at_the_limit_is_a_duplicate_not_a_limit(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_folders=1)
+    payload = _folder()
+    assert (await client.post(FOLDERS, json=payload)).status_code == 201
+    r = await client.post(FOLDERS, json=payload)
+    assert r.status_code == 409 and r.json()["detail"] == "Folder id already exists"
+
+
+@pytest.mark.asyncio
+async def test_deleting_folder_keeps_items(client, setup_vault):
+    folder_id = (await client.post(FOLDERS, json=_folder())).json()["id"]
+    for _ in range(2):
+        await client.post("/api/v1/personal-vault/items", json=_item())
+    before = (await client.get("/api/v1/personal-vault/items")).json()
+    assert (await client.delete(f"{FOLDERS}/{folder_id}")).status_code == 204
+    after = (await client.get("/api/v1/personal-vault/items")).json()
+    assert len(after) == 2
+    assert sorted((i["id"], i["summary"]["ciphertext"], i["version"]) for i in after) == \
+        sorted((i["id"], i["summary"]["ciphertext"], i["version"]) for i in before)
 
 
 @pytest.mark.asyncio
@@ -369,8 +507,10 @@ from app.models.personal_vault import PersonalVault  # noqa: E402
 async def test_delete_account_removes_personal_vault(db_session, user):
     db_session.add(PersonalVault(user_id=user.id, version=1, **_config()))
     db_session.add(PersonalVaultItem(user_id=user.id, summary=_envelope(), body=_envelope()))
+    db_session.add(PersonalVaultFolder(user_id=user.id, name=_envelope()))
     await db_session.flush()
     await AuthService(db_session).delete_account(user)
+    assert (await db_session.execute(select(func.count()).select_from(PersonalVaultFolder))).scalar() == 0
     assert (await db_session.execute(select(func.count()).select_from(PersonalVaultItem))).scalar() == 0
     assert (await db_session.execute(select(func.count()).select_from(PersonalVault))).scalar() == 0
 
@@ -437,11 +577,18 @@ async def test_concurrent_create_config_conflicts_not_500(client, as_user, monke
     ("POST", "/api/v1/personal-vault/items"),
     ("PUT", "/api/v1/personal-vault/items/2f1c9a4e-0000-4000-8000-00000000000a"),
     ("DELETE", "/api/v1/personal-vault/items/2f1c9a4e-0000-4000-8000-00000000000a"),
+    ("GET", "/api/v1/personal-vault/folders"),
+    ("POST", "/api/v1/personal-vault/folders"),
+    ("PUT", "/api/v1/personal-vault/folders/2f1c9a4e-0000-4000-8000-00000000000b"),
+    ("DELETE", "/api/v1/personal-vault/folders/2f1c9a4e-0000-4000-8000-00000000000b"),
 ])
 @pytest.mark.asyncio
 async def test_every_route_rejects_bearer(client, method, path):
     bodies = {"/api/v1/personal-vault/config": {**_config(), "expected_version": 1},
-              "/api/v1/personal-vault/items": _item()}
+              "/api/v1/personal-vault/items": _item(),
+              "/api/v1/personal-vault/folders": _folder(),
+              "/api/v1/personal-vault/folders/2f1c9a4e-0000-4000-8000-00000000000b":
+                  {"name": _envelope(), "expected_version": 1}}
     json_body = bodies.get(path, _update()) if method in ("POST", "PUT") else None
     r = await client.request(method, path, json=json_body, headers={"Authorization": "Bearer cek_x"},
                              cookies={"session_token": "t" * 40})

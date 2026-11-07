@@ -67,3 +67,38 @@ export function updatePersonalVaultItem(
 export function deletePersonalVaultItem(id: string): Promise<void> {
   return request("DELETE", `${BASE}/items/${encodeURIComponent(id)}`)
 }
+
+/** The plan limit was reached (items or folders): the server answers 402, never 409. */
+export function isPlanLimitError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 402
+}
+
+// ─── Folders: the name is an envelope; which items are in a folder lives in each item's summary.
+
+export interface PersonalVaultFolder {
+  id: string
+  name: EncryptedField
+  version: number
+  created_at: string
+  updated_at: string
+}
+
+export function listPersonalVaultFolders(): Promise<PersonalVaultFolder[]> {
+  return request("GET", `${BASE}/folders`)
+}
+
+export function createPersonalVaultFolder(input: { id: string; name: EncryptedField }): Promise<PersonalVaultFolder> {
+  return request("POST", `${BASE}/folders`, input)
+}
+
+export function updatePersonalVaultFolder(
+  id: string,
+  name: EncryptedField,
+  expectedVersion: number,
+): Promise<PersonalVaultFolder> {
+  return request("PUT", `${BASE}/folders/${encodeURIComponent(id)}`, { name, expected_version: expectedVersion })
+}
+
+export function deletePersonalVaultFolder(id: string): Promise<void> {
+  return request("DELETE", `${BASE}/folders/${encodeURIComponent(id)}`)
+}

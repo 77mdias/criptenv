@@ -4,6 +4,8 @@ from typing import Any, List
 from urllib.parse import urlparse, urlencode, parse_qs, urlunparse
 import json
 
+from app.plans import PLANS
+
 # Environments treated as production for security defaults.
 PRODUCTION_ENVIRONMENTS = frozenset({"production", "prod", "release"})
 
@@ -56,6 +58,8 @@ class Settings(BaseSettings):
     MERCADO_PAGO_BASE_URL: str = "https://api.mercadopago.com"
     PAYMENTS_ENABLED: bool = True
     PAYMENTS_ENV: str = "sandbox"
+    # Plan of users without one of their own (app/plans.py). Self-hosted installs can use "unlimited".
+    DEFAULT_PLAN: str = "free"
     
     # OAuth Provider Credentials
     GITHUB_CLIENT_ID: str = ""
@@ -84,6 +88,14 @@ class Settings(BaseSettings):
     R2_SECRET_ACCESS_KEY: str = ""
     R2_BUCKET: str = "criptenv-avatars"
     R2_PUBLIC_URL: str = ""
+
+    @field_validator("DEFAULT_PLAN")
+    @classmethod
+    def known_default_plan(cls, value: str) -> str:
+        # A typo here must stop the API, not silently cap or uncap every user.
+        if value not in PLANS:
+            raise ValueError(f"DEFAULT_PLAN must be one of: {', '.join(PLANS)}")
+        return value
 
     @field_validator("DEBUG", mode="before")
     @classmethod

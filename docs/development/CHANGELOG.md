@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Pastas no cofre pessoal e limites por plano — 2026-11-07
+
+- Cofre pessoal: cada usuário cria as próprias pastas (um nível), escolhe a pasta de cada item no formulário e move itens com "Mover para pasta". Coluna de pastas à esquerda, com "Todas", "Sem pasta" e a contagem de itens; no celular, vira uma linha no topo. Os filtros Todos, Logins e Notas e a busca valem dentro da pasta escolhida.
+- Zero-knowledge: o nome da pasta é cifrado com a chave do cofre (AAD `criptenv:pv1:folder:<id>:name`), e a pasta de cada item fica no resumo cifrado (`folderId`). O servidor não sabe quais itens estão juntos. Apagar uma pasta não apaga nem reescreve itens: eles aparecem em "Sem pasta".
+- Mover de pasta não pede a senha extra, nem em item protegido: só o resumo é cifrado de novo e o corpo vai como está.
+- Planos: os limites saem de `apps/api/app/plans.py`. O plano gratuito permite **120 itens e 10 pastas** (antes, 1000 itens fixos), e o `unlimited` não tem limite. `DEFAULT_PLAN` (padrão `free`) define o plano de quem não tem um próprio; um valor desconhecido impede a API de subir. `GET /api/v1/me/plan` informa o plano ao web, que mostra o uso ("3 de 10 pastas") e avisa ao chegar no limite. Passar do limite responde **402** (antes era 409).
+- Rotas novas: `GET|POST /api/v1/personal-vault/folders` e `PUT|DELETE /api/v1/personal-vault/folders/{id}`, só com sessão web. Apagar a conta apaga as pastas.
+- Migrations `20261107_0017` (coluna `users.plan`, vazia = `DEFAULT_PLAN`) e `20261107_0018` (tabela `personal_vault_folders`).
+- Deploy: publicar a API antes do web. Se o web novo subir primeiro, o cofre abre sem as pastas e avisa "Não foi possível carregar as pastas". Os itens continuam aparecendo.
+
 ### Tipos Config e Secret nas variáveis — 2026-11-06
 
 - Cada variável de ambiente de projeto tem um tipo: **Config** (padrão) ou **Secret**. Dentro do CriptEnv as duas continuam visíveis e editáveis; o tipo só define como a variável chega na Vercel.

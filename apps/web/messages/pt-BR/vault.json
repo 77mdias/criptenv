@@ -72,7 +72,35 @@
     "deleteConfirm": "Apagar \"{title}\"? Isso não pode ser desfeito.",
     "copyUsername": "Copiar usuário de {title}",
     "copied": "Copiado para a área de transferência.",
-    "unreadable": "Item ilegível"
+    "unreadable": "Item ilegível",
+    "usage": "{used} de {max} itens",
+    "usageUnlimited": "{used, plural, =1 {# item} other {# itens}}",
+    "limitReached": "Você chegou ao limite de itens do plano gratuito.",
+    "move": "Mover {title}"
+  },
+  "folders": {
+    "title": "Pastas",
+    "all": "Todas",
+    "none": "Sem pasta",
+    "new": "Nova pasta",
+    "entry": "{name}, {count, plural, =1 {# item} other {# itens}}",
+    "rename": "Renomear {name}",
+    "delete": "Apagar {name}",
+    "deleteConfirm": "Apagar a pasta \"{name}\"? Os itens dela vão para Sem pasta.",
+    "unreadable": "Pasta ilegível",
+    "usage": "{used} de {max} pastas",
+    "usageUnlimited": "{used, plural, =1 {# pasta} other {# pastas}}",
+    "limitReached": "Você chegou ao limite de pastas do plano gratuito.",
+    "loadError": "Não foi possível carregar as pastas."
+  },
+  "folderDialog": {
+    "newTitle": "Nova pasta",
+    "editTitle": "Renomear pasta",
+    "name": "Nome",
+    "nameRequired": "Dê um nome à pasta.",
+    "nameTooLong": "Use até 100 caracteres.",
+    "save": "Salvar",
+    "conflict": "Esta pasta mudou em outra aba. Recarregamos a versão mais recente."
   },
   "itemDialog": {
     "newTitle": "Novo item",
@@ -95,7 +123,13 @@
     "titleRequired": "Dê um título ao item.",
     "conflict": "Este item mudou em outra aba. Recarregamos a versão mais recente.",
     "wrongExtra": "Senha extra incorreta",
-    "deleted": "Este item foi apagado em outra aba."
+    "deleted": "Este item foi apagado em outra aba.",
+    "folder": "Pasta"
+  },
+  "moveDialog": {
+    "title": "Mover \"{title}\"",
+    "folder": "Pasta",
+    "save": "Mover"
   },
   "reveal": {
     "unlockDescription": "Este item tem proteção extra. Digite a senha extra para ver.",
