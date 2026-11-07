@@ -36,9 +36,10 @@ from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
 from app.middleware.rate_limit import RateLimitConfig, RateLimitMiddleware  # M3.4: Rate limiting
 from app.middleware.request_context import RequestContextMiddleware
-from app.observability import configure_logging, init_error_tracking
+from app.observability import configure_logging, init_error_tracking, install_icon_log_redaction, redact_icon_path
 
 configure_logging()
+install_icon_log_redaction()
 logger = logging.getLogger(__name__)
 
 
@@ -192,7 +193,7 @@ async def request_logging_middleware(request: Request, call_next):
 
     process_time = time.time() - start_time
     logger.info(
-        f"{request.method} {request.url.path} "
+        f"{request.method} {redact_icon_path(request.url.path)} "
         f"status={response.status_code} "
         f"duration={process_time:.4f}s "
         f"client={request.client.host if request.client else 'unknown'}"

@@ -2,6 +2,7 @@
 
 No network: the SSRF resolver and the HTTP transport are both replaced.
 """
+import logging
 from urllib.parse import urlsplit
 
 import httpx
@@ -171,3 +172,10 @@ async def test_icon_over_50_kb_is_not_cached(site):
     await get_site_icon("site.test")
     await get_site_icon("site.test")
     assert len(reqs) == 4
+
+
+async def test_outbound_requests_are_not_logged(site, caplog):
+    caplog.set_level(logging.DEBUG)
+    site({"https://site.test/": (200, HTML, b"<head></head>"), "https://site.test/favicon.ico": (200, {}, ICO)})
+    assert await get_site_icon("site.test") is not None
+    assert "site.test" not in caplog.text

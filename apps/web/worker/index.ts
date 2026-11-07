@@ -4,6 +4,7 @@
  */
 import handler from "vinext/server/app-router-entry";
 import { renderEmergencyPage, renderNotFoundPage } from "./error-page";
+import { redactIconPath } from "./redact";
 
 /** Minimal shape of the Workers Assets binding (avoids importing the full
  *  @cloudflare/workers-types just for one field). */
@@ -194,14 +195,14 @@ const worker = {
         // Log non-success responses for debugging
         if (!response.ok) {
           console.warn(
-            `[worker] API proxy ${request.method} ${url.pathname} -> ${response.status} ${response.statusText}`
+            `[worker] API proxy ${request.method} ${redactIconPath(url.pathname)} -> ${response.status} ${response.statusText}`
           );
         }
 
         return withSecurityHeaders(response, url, env);
       } catch (err) {
         const message = err instanceof Error ? err.message : "Unknown error";
-        console.error("[worker] API proxy error:", message, "URL:", targetUrl);
+        console.error("[worker] API proxy error:", message, "URL:", redactIconPath(targetUrl));
         return new Response(
           JSON.stringify({ detail: `API proxy error: ${message}` }),
           { status: 502, headers: { "Content-Type": "application/json" } }
@@ -226,7 +227,7 @@ const worker = {
         "[worker] Unhandled error:",
         err instanceof Error ? err.stack : err,
         "Path:",
-        url.pathname
+        redactIconPath(url.pathname)
       );
       return renderEmergencyPage(request);
     }

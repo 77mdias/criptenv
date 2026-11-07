@@ -1,4 +1,5 @@
 """GET /api/v1/icons/{hostname}/icon.png: web session only, never stores anything."""
+import logging
 from unittest.mock import AsyncMock
 from uuid import uuid4
 
@@ -101,3 +102,13 @@ async def test_requires_web_session(raw_client, icon_mock):
     r = await raw_client.get("/api/v1/icons/github.com/icon.png", headers={"Authorization": "Bearer x"})
     assert r.status_code == 403
     icon_mock.assert_not_awaited()
+
+
+async def test_request_log_line_hides_hostname(caplog, client, icon_mock):
+    caplog.set_level(logging.INFO)
+    icon_mock.return_value = None
+    await client.get("/api/v1/icons/github.com/icon.png")
+    # The "httpx" records here are the test client's own request log, not the server's.
+    server = "\n".join(r.getMessage() for r in caplog.records if r.name != "httpx")
+    assert "github.com" not in server
+    assert "/api/v1/icons/[oculto]/icon.png" in server

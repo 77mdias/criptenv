@@ -6,9 +6,11 @@ the browser). Every outbound request goes through the SSRF guard in
 """
 import asyncio
 import ipaddress
+import logging
 import re
 import time
 from collections import OrderedDict
+from contextvars import ContextVar
 from dataclasses import dataclass
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit, urlunsplit
@@ -142,6 +144,20 @@ class _Fetched:
     body: bytes
 
 
+# httpx logs every request at INFO with the pinned IP and path, which point
+# straight at the site. Mute it only inside an icon fetch (contextvars are per task).
+_fetching_icon: ContextVar[bool] = ContextVar("site_icon_fetching", default=False)
+
+
+class _MuteDuringIconFetch(logging.Filter):
+    def filter(self, record: logging.LogRecord) -> bool:
+        return not _fetching_icon.get()
+
+
+# shortcut: httpcore's DEBUG-only child loggers are not muted; DEBUG is local dev only.
+logging.getLogger("httpx").addFilter(_MuteDuringIconFetch())
+
+
 def _make_client() -> httpx.AsyncClient:
     return httpx.AsyncClient(
         timeout=httpx.Timeout(CONNECT_TIMEOUT_SECONDS),
@@ -198,6 +214,14 @@ def _decode(page: _Fetched) -> str:
 
 
 async def _fetch_icon(hostname: str) -> SiteIcon | None:
+    token = _fetching_icon.set(True)
+    try:
+        return await _fetch_with_client(hostname)
+    finally:
+        _fetching_icon.reset(token)
+
+
+async def _fetch_with_client(hostname: str) -> SiteIcon | None:
     async with _make_client() as client:
         page = await _get(client, f"https://{hostname}/", MAX_PAGE_BYTES, truncate=True, accept="text/html")
         candidates = []
