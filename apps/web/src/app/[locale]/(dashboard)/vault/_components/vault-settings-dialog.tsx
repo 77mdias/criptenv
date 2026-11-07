@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react"
 import { useTranslations } from "next-intl"
 import { Button } from "@/components/ui/button"
+import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
 import { Separator } from "@/components/ui/separator"
@@ -24,9 +25,11 @@ interface Props {
   vaultKey: CryptoKey
   onClose: () => void
   onConfigChange: (config: PersonalVaultConfig) => void
+  siteIcons: boolean
+  onSiteIconsChange: (on: boolean) => void
 }
 
-export function VaultSettingsDialog({ open, onClose, ...rest }: Props) {
+export function VaultSettingsDialog({ open, onClose, siteIcons, onSiteIconsChange, ...rest }: Props) {
   const t = useTranslations("vault")
   return (
     <Dialog open={open} onOpenChange={(next) => !next && onClose()}>
@@ -37,6 +40,13 @@ export function VaultSettingsDialog({ open, onClose, ...rest }: Props) {
         </DialogHeader>
         {open && (
           <div className="space-y-6">
+            <div className="space-y-1.5">
+              <Checkbox checked={siteIcons} onChange={(event) => onSiteIconsChange(event.target.checked)}>
+                {t("settings.siteIcons")}
+              </Checkbox>
+              <p className="text-xs text-(--text-muted)">{t("settings.siteIconsHint")}</p>
+            </div>
+            <Separator />
             <PasswordChangeForm kind="master" {...rest} />
             <Separator />
             <PasswordChangeForm kind="extra" {...rest} />
@@ -57,7 +67,7 @@ function PasswordChangeForm({
   config,
   vaultKey,
   onConfigChange,
-}: Omit<Props, "open" | "onClose"> & { kind: "master" | "extra" }) {
+}: Omit<Props, "open" | "onClose" | "siteIcons" | "onSiteIconsChange"> & { kind: "master" | "extra" }) {
   const t = useTranslations("vault")
   const labels = LABELS[kind]
   const [values, setValues] = useState({ current: "", next: "", confirm: "" })

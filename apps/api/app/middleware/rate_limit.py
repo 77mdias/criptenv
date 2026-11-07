@@ -14,6 +14,7 @@ from starlette.responses import JSONResponse
 from starlette.middleware.base import BaseHTTPMiddleware
 
 from app.models.api_key import API_KEY_PREFIX
+from app.services.site_icon_service import ICON_PATH_PREFIX
 
 
 # Rate limit constants per authentication method
@@ -21,6 +22,9 @@ AUTH_RATE_LIMIT = "5/minute"      # Auth endpoints: 5 req/min per IP
 API_KEY_RATE_LIMIT = "1000/minute"  # API key: 1000 req/min per key
 CI_TOKEN_RATE_LIMIT = "200/minute"  # CI token: 200 req/min per token
 PUBLIC_RATE_LIMIT = "100/minute"    # Public endpoints: 100 req/min per IP
+# Site icons: one <img> per vault login, so they get their own bucket and never
+# eat the 100/min the vault itself needs.
+ICON_RATE_LIMIT = "300/minute"
 
 # Paths that verify credentials, so they get the strict AUTH_RATE_LIMIT instead
 # of the generic anonymous bucket. These are the brute-force surfaces (signin,
@@ -298,6 +302,8 @@ def is_auth_rate_limited_path(path: str) -> bool:
 
 def build_rate_limit_key(request: Request, client_ip: str) -> str:
     """Bucket a request by credential when present, otherwise by client IP."""
+    if request.url.path.startswith(ICON_PATH_PREFIX):
+        return f"icons:{client_ip}"
     if is_auth_rate_limited_path(request.url.path):
         return f"auth:{client_ip}"
 
@@ -310,6 +316,8 @@ def build_rate_limit_key(request: Request, client_ip: str) -> str:
 
 def resolve_rate_limit(request: Request) -> str:
     """Pick the rate limit string that applies to this request."""
+    if request.url.path.startswith(ICON_PATH_PREFIX):
+        return ICON_RATE_LIMIT
     if is_auth_rate_limited_path(request.url.path):
         return AUTH_RATE_LIMIT
     return get_rate_limit_for_auth_type(identify_auth_type(request))

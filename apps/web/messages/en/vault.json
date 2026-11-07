@@ -116,6 +116,8 @@
     "submitExtra": "Change extra password",
     "wrongCurrent": "Wrong current password",
     "mismatch": "The passwords do not match.",
-    "saved": "Password changed."
+    "saved": "Password changed.",
+    "siteIcons": "Show website icons",
+    "siteIconsHint": "To show the icon, CriptEnv looks up the site by the item's domain. The domain passes through the server but is not stored."
   }
 }

@@ -16,6 +16,7 @@ This module provides:
 import json
 import logging
 import os
+import re
 import sys
 import time
 import uuid
@@ -102,6 +103,55 @@ def new_request_id() -> str:
     return uuid.uuid4().hex
 
 
+_ICON_PATH_RE = re.compile(r"/api/v1/icons/[^/?#\s]+")
+
+
+def redact_icon_path(text: str) -> str:
+    """Hide the vault login's hostname in an icon request path or URL."""
+    return _ICON_PATH_RE.sub("/api/v1/icons/[oculto]", text)
+
+
+class IconAccessLogFilter(logging.Filter):
+    """Redacts icon hostnames from uvicorn/gunicorn access log arguments."""
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        if isinstance(record.args, tuple):
+            record.args = tuple(redact_icon_path(a) if isinstance(a, str) else a for a in record.args)
+        return True
+
+
+def install_icon_log_redaction() -> None:
+    """Attach the filter to `uvicorn.access` (also what gunicorn's UvicornWorker logs to)."""
+    access = logging.getLogger("uvicorn.access")
+    if not any(isinstance(f, IconAccessLogFilter) for f in access.filters):
+        access.addFilter(IconAccessLogFilter())
+
+
+def _drop_icon_transactions(event: dict, hint: dict) -> Optional[dict]:
+    """Sentry `before_send_transaction`: icon requests never leave the server."""
+    url = (event.get("request") or {}).get("url") or ""
+    if event.get("transaction", "").startswith("/api/v1/icons/") or "/api/v1/icons/" in url:
+        return None
+    return event
+
+
+def _scrub_icon_event(event: dict, hint: dict) -> dict:
+    """Sentry `before_send`: an error during an icon request must not carry the hostname."""
+    request = event.get("request")
+    if isinstance(request, dict) and isinstance(request.get("url"), str):
+        request["url"] = redact_icon_path(request["url"])
+    if isinstance(event.get("transaction"), str):
+        event["transaction"] = redact_icon_path(event["transaction"])
+    crumbs = event.get("breadcrumbs")
+    for crumb in (crumbs.get("values") if isinstance(crumbs, dict) else crumbs) or []:
+        if isinstance(crumb.get("message"), str):
+            crumb["message"] = redact_icon_path(crumb["message"])
+        data = crumb.get("data")
+        if isinstance(data, dict) and isinstance(data.get("url"), str):
+            data["url"] = redact_icon_path(data["url"])
+    return event
+
+
 def init_error_tracking() -> bool:
     """Initialise Sentry when configured. Returns True when active.
 
@@ -134,5 +184,7 @@ def init_error_tracking() -> bool:
         environment=environment,
         traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
         send_default_pii=False,  # never ship secrets/PII by default
+        before_send_transaction=_drop_icon_transactions,
+        before_send=_scrub_icon_event,
     )
     return True

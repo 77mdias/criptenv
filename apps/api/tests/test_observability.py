@@ -107,3 +107,55 @@ class TestErrorTracking:
 
     def test_new_request_id_is_unique(self):
         assert new_request_id() != new_request_id()
+
+
+# ─── Site icon hostnames never reach logs or Sentry ──────────────────────────
+
+from app.observability import (  # noqa: E402
+    IconAccessLogFilter,
+    _drop_icon_transactions,
+    install_icon_log_redaction,
+    redact_icon_path,
+)
+
+
+def test_redact_icon_path():
+    assert redact_icon_path("/api/v1/icons/github.com/icon.png") == "/api/v1/icons/[oculto]/icon.png"
+    assert redact_icon_path("/api/v1/personal-vault/items") == "/api/v1/personal-vault/items"
+
+
+def test_access_log_filter_hides_hostname():
+    rec = logging.LogRecord(
+        "uvicorn.access", logging.INFO, "", 0, '%s - "%s %s HTTP/%s" %d',
+        ("1.2.3.4:5", "GET", "/api/v1/icons/github.com/icon.png", "1.1", 200), None,
+    )
+    assert IconAccessLogFilter().filter(rec) is True
+    assert "github.com" not in rec.getMessage()
+
+
+def test_install_is_idempotent():
+    install_icon_log_redaction()
+    install_icon_log_redaction()
+    filters = logging.getLogger("uvicorn.access").filters
+    assert sum(isinstance(f, IconAccessLogFilter) for f in filters) == 1
+
+
+def test_sentry_drops_icon_transactions():
+    assert _drop_icon_transactions({"transaction": "/api/v1/icons/{hostname}/icon.png"}, {}) is None
+    event = {"transaction": "/x", "request": {"url": "https://h/api/v1/icons/github.com/icon.png"}}
+    assert _drop_icon_transactions(event, {}) is None
+    assert _drop_icon_transactions({"transaction": "/api/v1/projects"}, {}) == {"transaction": "/api/v1/projects"}
+
+
+def test_sentry_error_events_lose_the_icon_hostname():
+    from app.observability import _scrub_icon_event
+
+    event = {
+        "request": {"url": "https://h/api/v1/icons/github.com/icon.png"},
+        "transaction": "/api/v1/icons/github.com/icon.png",
+        "breadcrumbs": {"values": [
+            {"message": "GET /api/v1/icons/github.com/icon.png 500"},
+            {"data": {"url": "https://h/api/v1/icons/github.com/icon.png"}},
+        ]},
+    }
+    assert "github.com" not in json.dumps(_scrub_icon_event(event, {}))

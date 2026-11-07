@@ -116,6 +116,8 @@
     "submitExtra": "Cambiar contraseña extra",
     "wrongCurrent": "Contraseña actual incorrecta",
     "mismatch": "Las contraseñas no coinciden.",
-    "saved": "Contraseña cambiada."
+    "saved": "Contraseña cambiada.",
+    "siteIcons": "Mostrar íconos de sitios",
+    "siteIconsHint": "Para mostrar el ícono, CriptEnv busca el sitio por el dominio del elemento. El dominio pasa por el servidor, pero no se guarda."
   }
 }

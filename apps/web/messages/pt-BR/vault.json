@@ -116,6 +116,8 @@
     "submitExtra": "Trocar senha extra",
     "wrongCurrent": "Senha atual incorreta",
     "mismatch": "As senhas não conferem.",
-    "saved": "Senha alterada."
+    "saved": "Senha alterada.",
+    "siteIcons": "Mostrar ícones de sites",
+    "siteIconsHint": "Para mostrar o ícone, o CriptEnv busca o site pelo domínio do item. O domínio passa pelo servidor, mas não é guardado."
   }
 }

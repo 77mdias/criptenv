@@ -19,6 +19,8 @@ import { ProtectedRevealDialog } from "./protected-reveal-dialog"
 import { VaultItemDialog } from "./vault-item-dialog"
 import { VaultSettingsDialog } from "./vault-settings-dialog"
 import { usePersonalVaultSession } from "./vault-session"
+import { SiteIcon } from "./site-icon"
+import { readSiteIconsSetting, writeSiteIconsSetting } from "@/lib/personal-vault/site-icons"
 
 export interface DecryptedEntry {
   item: PersonalVaultItem
@@ -50,6 +52,8 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   const [revealing, setRevealing] = useState<DecryptedEntry | null>(null)
   const [editing, setEditing] = useState<DecryptedEntry | null | undefined>(undefined)
   const [settingsOpen, setSettingsOpen] = useState(false)
+  // The list only renders after unlock, in the browser, so reading storage here cannot mismatch SSR.
+  const [siteIcons, setSiteIcons] = useState(readSiteIconsSetting)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
 
@@ -149,7 +153,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
             return (
               <li key={item.id} className="flex items-center gap-3 px-4 py-3">
                 {summary.type === "login" ? (
-                  <KeyRound aria-hidden className="h-4 w-4 shrink-0 text-(--text-muted)" />
+                  <SiteIcon url={summary.url} enabled={siteIcons} />
                 ) : (
                   <StickyNote aria-hidden className="h-4 w-4 shrink-0 text-(--text-muted)" />
                 )}
@@ -227,6 +231,11 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
         vaultKey={vaultKey}
         onClose={() => setSettingsOpen(false)}
         onConfigChange={onConfigChange}
+        siteIcons={siteIcons}
+        onSiteIconsChange={(on) => {
+          writeSiteIconsSetting(on)
+          setSiteIcons(on)
+        }}
       />
     </div>
   )
