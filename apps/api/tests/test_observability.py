@@ -145,3 +145,17 @@ def test_sentry_drops_icon_transactions():
     event = {"transaction": "/x", "request": {"url": "https://h/api/v1/icons/github.com/icon.png"}}
     assert _drop_icon_transactions(event, {}) is None
     assert _drop_icon_transactions({"transaction": "/api/v1/projects"}, {}) == {"transaction": "/api/v1/projects"}
+
+
+def test_sentry_error_events_lose_the_icon_hostname():
+    from app.observability import _scrub_icon_event
+
+    event = {
+        "request": {"url": "https://h/api/v1/icons/github.com/icon.png"},
+        "transaction": "/api/v1/icons/github.com/icon.png",
+        "breadcrumbs": {"values": [
+            {"message": "GET /api/v1/icons/github.com/icon.png 500"},
+            {"data": {"url": "https://h/api/v1/icons/github.com/icon.png"}},
+        ]},
+    }
+    assert "github.com" not in json.dumps(_scrub_icon_event(event, {}))

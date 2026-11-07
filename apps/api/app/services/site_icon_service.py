@@ -10,6 +10,7 @@ import logging
 import re
 import time
 from collections import OrderedDict
+from concurrent.futures import ThreadPoolExecutor
 from contextvars import ContextVar
 from dataclasses import dataclass
 from html.parser import HTMLParser
@@ -30,8 +31,17 @@ CONNECT_TIMEOUT_SECONDS = 5.0
 TOTAL_TIMEOUT_SECONDS = 10
 CACHE_TTL_SECONDS = 24 * 60 * 60
 CACHE_MAX_ENTRIES = 5000
+CACHE_MAX_BYTES = 16 * 1024 * 1024  # 5000 x 50 KB would be 250 MB per worker
+MAX_CONCURRENT_FETCHES = 8
+PARSE_CHUNK_CHARS = 8192
 
 _REDIRECT_STATUSES = {301, 302, 303, 307, 308}
+
+# DNS lookups and HTML parsing run here, never on the loop's shared pool or the
+# loop itself: a resolver that drops queries or a huge page only slows icons.
+_ICON_POOL = ThreadPoolExecutor(max_workers=4, thread_name_prefix="icon-worker")
+# Caps memory and outbound load per process; waiting here does not count toward the 10 s budget.
+_FETCH_SLOTS = asyncio.Semaphore(MAX_CONCURRENT_FETCHES)
 
 _LABEL_RE = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
 _SIZES_RE = re.compile(r"^\s*(\d+)[xX](\d+)\s*$")
@@ -107,7 +117,10 @@ class _HeadLinks(HTMLParser):
 def icon_candidates(html: str, page_url: str) -> list[str]:
     """Absolute https icon URLs from the page's <head>, best first, at most 5."""
     parser = _HeadLinks()
-    parser.feed(html)
+    for start in range(0, len(html), PARSE_CHUNK_CHARS):
+        parser.feed(html[start : start + PARSE_CHUNK_CHARS])
+        if parser.done:
+            break
     base = urljoin(page_url, parser.base) if parser.base else page_url
     ranked: list[tuple[int, str]] = []
     for href, sizes in parser.links:
@@ -173,7 +186,7 @@ async def _get(
     """GET through the SSRF guard, following at most MAX_REDIRECTS, each re-checked."""
     for _ in range(MAX_REDIRECTS + 1):
         try:
-            target = await resolve_public_target(url)
+            target = await resolve_public_target(url, executor=_ICON_POOL)
         except ValueError:
             return None
         headers = {"Host": target.host_header}
@@ -226,7 +239,9 @@ async def _fetch_with_client(hostname: str) -> SiteIcon | None:
         page = await _get(client, f"https://{hostname}/", MAX_PAGE_BYTES, truncate=True, accept="text/html")
         candidates = []
         if page and page.content_type.lower().startswith("text/html"):
-            candidates = icon_candidates(_decode(page), page.url)
+            candidates = await asyncio.get_running_loop().run_in_executor(
+                _ICON_POOL, icon_candidates, _decode(page), page.url
+            )
         for url in dict.fromkeys([*candidates, f"https://{hostname}/favicon.ico"]):
             image = await _get(client, url, MAX_IMAGE_BYTES, truncate=False)
             media_type = sniff_image(image.body) if image else None
@@ -237,26 +252,50 @@ async def _fetch_with_client(hostname: str) -> SiteIcon | None:
 
 # shortcut: cache per process (gunicorn runs 3 workers); move to Redis if traffic grows.
 _cache: "OrderedDict[str, tuple[float, SiteIcon | None]]" = OrderedDict()
+_cache_bytes = 0
 
 
 def clear_icon_cache() -> None:
+    global _cache_bytes
     _cache.clear()
+    _cache_bytes = 0
+
+
+def _cached(hostname: str) -> tuple[bool, SiteIcon | None]:
+    entry = _cache.get(hostname)
+    if entry and time.monotonic() - entry[0] < CACHE_TTL_SECONDS:
+        return True, entry[1]
+    return False, None
+
+
+def _remember(hostname: str, icon: SiteIcon | None) -> None:
+    global _cache_bytes
+    old = _cache.pop(hostname, None)
+    if old and old[1]:
+        _cache_bytes -= len(old[1].content)
+    _cache[hostname] = (time.monotonic(), icon)
+    if icon:
+        _cache_bytes += len(icon.content)
+    while len(_cache) > CACHE_MAX_ENTRIES or _cache_bytes > CACHE_MAX_BYTES:
+        _, (_, evicted) = _cache.popitem(last=False)
+        if evicted:
+            _cache_bytes -= len(evicted.content)
 
 
 async def get_site_icon(hostname: str) -> SiteIcon | None:
     """Icon for an already normalized hostname, or None. Never raises."""
-    now = time.monotonic()
-    cached = _cache.get(hostname)
-    if cached and now - cached[0] < CACHE_TTL_SECONDS:
-        return cached[1]
-    try:
-        async with asyncio.timeout(TOTAL_TIMEOUT_SECONDS):
-            icon = await _fetch_icon(hostname)
-    except Exception:
-        icon = None
+    hit, icon = _cached(hostname)
+    if hit:
+        return icon
+    async with _FETCH_SLOTS:
+        hit, icon = _cached(hostname)  # another request may have fetched it while we waited
+        if hit:
+            return icon
+        try:
+            async with asyncio.timeout(TOTAL_TIMEOUT_SECONDS):
+                icon = await _fetch_icon(hostname)
+        except Exception:
+            icon = None
     if icon is None or len(icon.content) <= MAX_CACHED_BYTES:
-        _cache.pop(hostname, None)
-        _cache[hostname] = (now, icon)
-        while len(_cache) > CACHE_MAX_ENTRIES:
-            _cache.popitem(last=False)
+        _remember(hostname, icon)
     return icon

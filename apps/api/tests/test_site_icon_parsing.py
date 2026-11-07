@@ -69,3 +69,19 @@ def test_candidates_skip_non_icon_rels_unsafe_schemes_body_links_and_cap_at_five
 ])
 def test_sniff_image(data, expected):
     assert sniff_image(data) == expected
+
+
+def test_candidates_stop_parsing_after_head(monkeypatch):
+    from app.services import site_icon_service as svc
+
+    fed = []
+    original = svc._HeadLinks.feed
+
+    def spy(self, data):
+        fed.append(len(data))
+        return original(self, data)
+
+    monkeypatch.setattr(svc._HeadLinks, "feed", spy)
+    html = '<head><link rel="icon" href="/i.png"></head>' + "<div>" * 100_000
+    assert icon_candidates(html, "https://site.test/") == ["https://site.test/i.png"]
+    assert sum(fed) < 20_000

@@ -5,8 +5,10 @@ pinned to the resolved IP so DNS cannot change between the check and the
 connection.
 """
 import asyncio
+import functools
 import ipaddress
 import socket
+from concurrent.futures import Executor
 from dataclasses import dataclass
 from urllib.parse import urlsplit
 
@@ -31,11 +33,15 @@ def _is_unsafe(address: ipaddress.IPv4Address | ipaddress.IPv6Address) -> bool:
     )
 
 
-async def resolve_public_target(url: str, *, allow_localhost_http: bool = False) -> PinnedTarget:
+async def resolve_public_target(
+    url: str, *, allow_localhost_http: bool = False, executor: Executor | None = None
+) -> PinnedTarget:
     """Validate `url` and resolve it for a connection pinned to a public IP.
 
     `allow_localhost_http` lets `http://localhost:<port>` through (local
-    development webhooks only). Raises ValueError for any unsafe target.
+    development webhooks only). `executor` runs the DNS lookup off the loop's
+    shared pool, so a slow resolver cannot starve other work. Raises ValueError
+    for any unsafe target.
     """
     try:
         parsed = urlsplit(url)
@@ -71,12 +77,15 @@ async def resolve_public_target(url: str, *, allow_localhost_http: bool = False)
     if port is not None and not ((parsed.scheme == "https" and port == 443) or local_development_exception):
         raise ValueError("URL port is not supported")
 
+    lookup_port = port or (80 if parsed.scheme == "http" else 443)
+    loop = asyncio.get_running_loop()
     try:
-        resolved = await asyncio.get_running_loop().getaddrinfo(
-            hostname,
-            port or (80 if parsed.scheme == "http" else 443),
-            type=socket.SOCK_STREAM,
-        )
+        if executor is None:
+            resolved = await loop.getaddrinfo(hostname, lookup_port, type=socket.SOCK_STREAM)
+        else:
+            resolved = await loop.run_in_executor(
+                executor, functools.partial(socket.getaddrinfo, hostname, lookup_port, type=socket.SOCK_STREAM)
+            )
     except (OSError, ValueError) as exc:
         raise ValueError("URL host could not be resolved") from exc
 

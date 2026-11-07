@@ -135,6 +135,23 @@ def _drop_icon_transactions(event: dict, hint: dict) -> Optional[dict]:
     return event
 
 
+def _scrub_icon_event(event: dict, hint: dict) -> dict:
+    """Sentry `before_send`: an error during an icon request must not carry the hostname."""
+    request = event.get("request")
+    if isinstance(request, dict) and isinstance(request.get("url"), str):
+        request["url"] = redact_icon_path(request["url"])
+    if isinstance(event.get("transaction"), str):
+        event["transaction"] = redact_icon_path(event["transaction"])
+    crumbs = event.get("breadcrumbs")
+    for crumb in (crumbs.get("values") if isinstance(crumbs, dict) else crumbs) or []:
+        if isinstance(crumb.get("message"), str):
+            crumb["message"] = redact_icon_path(crumb["message"])
+        data = crumb.get("data")
+        if isinstance(data, dict) and isinstance(data.get("url"), str):
+            data["url"] = redact_icon_path(data["url"])
+    return event
+
+
 def init_error_tracking() -> bool:
     """Initialise Sentry when configured. Returns True when active.
 
@@ -168,5 +185,6 @@ def init_error_tracking() -> bool:
         traces_sample_rate=float(os.getenv("SENTRY_TRACES_SAMPLE_RATE", "0.0")),
         send_default_pii=False,  # never ship secrets/PII by default
         before_send_transaction=_drop_icon_transactions,
+        before_send=_scrub_icon_event,
     )
     return True

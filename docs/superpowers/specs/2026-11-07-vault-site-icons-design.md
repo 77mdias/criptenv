@@ -81,7 +81,7 @@ Lido no código aberto deles (`bitwarden/server/src/Icons` e `bitwarden/clients/
 
 **Serviço** `app/services/site_icon_service.py`:
 
-1. **Cache em memória:** chave = hostname. Guarda acerto (ícones de até 50 KB) e "não achei", por 24 horas, até 5.000 entradas (descarta as mais antigas).
+1. **Cache em memória:** chave = hostname. Guarda acerto (ícones de até 50 KB) e "não achei", por 24 horas, até 5.000 entradas e 16 MB no total por processo (descarta as mais antigas). Revisão final: 5.000 × 50 KB daria 250 MB por worker.
 2. **Página:** `GET https://{hostname}/`. Lê no máximo 512 KB do corpo e só se for `text/html`.
 3. **Ler o `<head>`** com `html.parser` da biblioteca padrão: guarda `<link>` com `href` e `rel` igual a `icon`, `shortcut icon` ou `apple-touch-icon`. Respeita `<base href>`. Resolve `href` relativo e `//host/...`. Para no `</head>` ou no `<body>`.
 4. **Ordem** (igual ao Bitwarden, pelo `sizes`): 32×32, depois 64×64, depois quadrado entre 24 e 128, depois 16×16, depois o resto. Tenta os 5 primeiros em sequência; o primeiro que passar na conferência ganha.

@@ -17,11 +17,13 @@ pytestmark = pytest.mark.asyncio
 HTML = {"content-type": "text/html; charset=utf-8"}
 PNG = b"\x89PNG\r\n\x1a\n" + b"x" * 20
 ICO = b"\x00\x00\x01\x00" + b"x" * 20
+RESOLVES = []  # kwargs of every resolver call in the current test
 
 
 @pytest.fixture(autouse=True)
 def _clean_cache():
     clear_icon_cache()
+    RESOLVES.clear()
     yield
     clear_icon_cache()
 
@@ -44,6 +46,7 @@ def site(monkeypatch):
             return httpx.Response(status, headers=headers, content=body)
 
         async def fake_resolve(url, **kwargs):
+            RESOLVES.append(kwargs)
             host = urlsplit(url).hostname
             if host == "internal.test":
                 raise ValueError("URL target is not public")
@@ -179,3 +182,51 @@ async def test_outbound_requests_are_not_logged(site, caplog):
     site({"https://site.test/": (200, HTML, b"<head></head>"), "https://site.test/favicon.ico": (200, {}, ICO)})
     assert await get_site_icon("site.test") is not None
     assert "site.test" not in caplog.text
+
+
+async def test_dns_and_parsing_run_on_the_icon_pool(site, monkeypatch):
+    import threading
+
+    seen = {}
+    original = svc.icon_candidates
+
+    def spy(html, page_url):
+        seen["thread"] = threading.current_thread().name
+        return original(html, page_url)
+
+    monkeypatch.setattr(svc, "icon_candidates", spy)
+    site({"https://site.test/": (200, HTML, b"<head></head>"), "https://site.test/favicon.ico": (200, {}, ICO)})
+    assert await get_site_icon("site.test") is not None
+    assert RESOLVES and all(kwargs.get("executor") is svc._ICON_POOL for kwargs in RESOLVES)
+    assert seen["thread"].startswith("icon-worker")
+
+
+async def test_concurrent_fetches_are_capped(site, monkeypatch):
+    import asyncio
+
+    monkeypatch.setattr(svc, "_FETCH_SLOTS", asyncio.Semaphore(1))
+    site({})
+    state = {"now": 0, "peak": 0}
+
+    async def handler(request):
+        state["now"] += 1
+        state["peak"] = max(state["peak"], state["now"])
+        await asyncio.sleep(0.01)
+        state["now"] -= 1
+        return httpx.Response(404)
+
+    monkeypatch.setattr(svc, "_make_client", lambda: httpx.AsyncClient(transport=httpx.MockTransport(handler)))
+    await asyncio.gather(*(get_site_icon(f"h{i}.test") for i in range(5)))
+    assert state["peak"] == 1
+
+
+async def test_cache_evicts_oldest_beyond_byte_budget(site, monkeypatch):
+    monkeypatch.setattr(svc, "CACHE_MAX_BYTES", 50)  # ICO is 24 bytes: two fit, three do not
+    reqs = site({f"https://{h}/favicon.ico": (200, {}, ICO) for h in ("a.test", "b.test", "c.test")})
+    for host in ("a.test", "b.test", "c.test"):
+        await get_site_icon(host)
+    before = len(reqs)
+    await get_site_icon("b.test")
+    assert len(reqs) == before  # still cached
+    await get_site_icon("a.test")
+    assert len(reqs) == before + 2  # evicted: page + favicon again

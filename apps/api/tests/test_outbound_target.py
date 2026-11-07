@@ -40,3 +40,20 @@ async def test_public_target_allows_localhost_http_only_with_flag(monkeypatch):
     dns(monkeypatch, "127.0.0.1")
     t = await resolve_public_target("http://localhost:8000/x", allow_localhost_http=True)
     assert t.request_url == "http://127.0.0.1:8000/x"
+
+
+async def test_public_target_resolves_on_the_given_executor(monkeypatch):
+    import threading
+    from concurrent.futures import ThreadPoolExecutor
+
+    threads = []
+
+    def fake_getaddrinfo(host, port, *args, **kwargs):
+        threads.append(threading.current_thread().name)
+        return [(socket.AF_INET, socket.SOCK_STREAM, 6, "", ("93.184.216.34", 443))]
+
+    monkeypatch.setattr(socket, "getaddrinfo", fake_getaddrinfo)
+    with ThreadPoolExecutor(1, thread_name_prefix="icon-dns-test") as pool:
+        t = await resolve_public_target("https://example.com/", executor=pool)
+    assert t.resolved_ip == "93.184.216.34"
+    assert threads and threads[0].startswith("icon-dns-test")
