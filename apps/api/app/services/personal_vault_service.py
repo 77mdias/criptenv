@@ -9,10 +9,12 @@ from sqlalchemy import delete, func, select, update
 from sqlalchemy.exc import IntegrityError
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from app.models.personal_vault import PersonalVault, PersonalVaultItem
+from app.models.personal_vault import PersonalVault, PersonalVaultFolder, PersonalVaultItem
 from app.schemas.personal_vault import (
     PersonalVaultConfigCreate,
     PersonalVaultConfigUpdate,
+    PersonalVaultFolderCreate,
+    PersonalVaultFolderUpdate,
     PersonalVaultItemCreate,
     PersonalVaultItemUpdate,
 )
@@ -137,3 +139,70 @@ class PersonalVaultService:
             .execution_options(populate_existing=True)
         )
         return result.scalar_one_or_none()
+
+    # ─── Folders ─────────────────────────────────────────────────────────────
+
+    async def list_folders(self, user_id: UUID) -> list[PersonalVaultFolder]:
+        result = await self.db.execute(
+            select(PersonalVaultFolder)
+            .where(PersonalVaultFolder.user_id == user_id)
+            .order_by(PersonalVaultFolder.created_at, PersonalVaultFolder.id)
+        )
+        return list(result.scalars())
+
+    async def create_folder(
+        self, user_id: UUID, data: PersonalVaultFolderCreate, limit: int | None
+    ) -> PersonalVaultFolder:
+        """`limit` comes from the user's plan (app/plans.py); None = no limit."""
+        if await self.get_config(user_id) is None:
+            raise PersonalVaultNotFound("Personal vault not set up")
+        if limit is not None:
+            # shortcut: count+insert can exceed the limit by one under concurrent creates; add a DB constraint if it matters
+            count = await self.db.scalar(
+                select(func.count()).select_from(PersonalVaultFolder).where(PersonalVaultFolder.user_id == user_id)
+            )
+            if count >= limit:
+                raise PersonalVaultLimitReached("Plan limit reached")
+        folder = PersonalVaultFolder(user_id=user_id, version=1, id=UUID(data.id), name=data.name.model_dump())
+        try:
+            # Savepoint: a duplicate client id must not poison the request's transaction.
+            async with self.db.begin_nested():
+                self.db.add(folder)
+                await self.db.flush()
+        except IntegrityError:
+            raise PersonalVaultConflict("Folder id already exists")
+        await self.db.refresh(folder)
+        return folder
+
+    async def update_folder(
+        self, user_id: UUID, folder_id: UUID, data: PersonalVaultFolderUpdate
+    ) -> PersonalVaultFolder:
+        result = await self.db.execute(
+            update(PersonalVaultFolder)
+            .where(
+                PersonalVaultFolder.id == folder_id,
+                PersonalVaultFolder.user_id == user_id,
+                PersonalVaultFolder.version == data.expected_version,
+            )
+            .values(name=data.name.model_dump(), version=data.expected_version + 1, updated_at=func.now())
+        )
+        folder = (
+            await self.db.execute(
+                select(PersonalVaultFolder)
+                .where(PersonalVaultFolder.id == folder_id, PersonalVaultFolder.user_id == user_id)
+                .execution_options(populate_existing=True)
+            )
+        ).scalar_one_or_none()
+        if folder is None:
+            raise PersonalVaultNotFound("Folder not found")
+        if result.rowcount == 0:
+            raise PersonalVaultConflict("Version conflict")
+        return folder
+
+    async def delete_folder(self, user_id: UUID, folder_id: UUID) -> None:
+        # Items are left as they are: one pointing at a deleted folder shows under "no folder".
+        result = await self.db.execute(
+            delete(PersonalVaultFolder).where(PersonalVaultFolder.id == folder_id, PersonalVaultFolder.user_id == user_id)
+        )
+        if result.rowcount == 0:
+            raise PersonalVaultNotFound("Folder not found")

@@ -7,11 +7,14 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.middleware.auth import get_current_web_user
 from app.models.user import User
-from app.plans import PERSONAL_VAULT_ITEMS, plan_for
+from app.plans import PERSONAL_VAULT_FOLDERS, PERSONAL_VAULT_ITEMS, plan_for
 from app.schemas.personal_vault import (
     PersonalVaultConfigCreate,
     PersonalVaultConfigResponse,
     PersonalVaultConfigUpdate,
+    PersonalVaultFolderCreate,
+    PersonalVaultFolderResponse,
+    PersonalVaultFolderUpdate,
     PersonalVaultItemCreate,
     PersonalVaultItemResponse,
     PersonalVaultItemUpdate,
@@ -110,6 +113,50 @@ async def delete_item(
 ):
     try:
         await PersonalVaultService(db).delete_item(user.id, item_id)
+    except _ERRORS as exc:
+        raise _http(exc)
+    return Response(status_code=status.HTTP_204_NO_CONTENT)
+
+
+@router.get("/folders", response_model=list[PersonalVaultFolderResponse])
+async def list_folders(user: User = Depends(get_current_web_user), db: AsyncSession = Depends(get_db)):
+    return await PersonalVaultService(db).list_folders(user.id)
+
+
+@router.post("/folders", response_model=PersonalVaultFolderResponse, status_code=status.HTTP_201_CREATED)
+async def create_folder(
+    data: PersonalVaultFolderCreate,
+    user: User = Depends(get_current_web_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        limit = plan_for(user.plan).limits[PERSONAL_VAULT_FOLDERS]
+        return await PersonalVaultService(db).create_folder(user.id, data, limit)
+    except _ERRORS as exc:
+        raise _http(exc)
+
+
+@router.put("/folders/{folder_id}", response_model=PersonalVaultFolderResponse)
+async def update_folder(
+    folder_id: UUID,
+    data: PersonalVaultFolderUpdate,
+    user: User = Depends(get_current_web_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        return await PersonalVaultService(db).update_folder(user.id, folder_id, data)
+    except _ERRORS as exc:
+        raise _http(exc)
+
+
+@router.delete("/folders/{folder_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_folder(
+    folder_id: UUID,
+    user: User = Depends(get_current_web_user),
+    db: AsyncSession = Depends(get_db),
+):
+    try:
+        await PersonalVaultService(db).delete_folder(user.id, folder_id)
     except _ERRORS as exc:
         raise _http(exc)
     return Response(status_code=status.HTTP_204_NO_CONTENT)

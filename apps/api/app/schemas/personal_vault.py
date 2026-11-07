@@ -76,3 +76,30 @@ class PersonalVaultItemResponse(PersonalVaultItemFields):
     version: int
     created_at: datetime | None = None
     updated_at: datetime | None = None
+
+
+class EncryptedFolderName(BaseModel):
+    iv: str = _IV
+    ciphertext: str = Field(..., min_length=1, max_length=1024)
+    auth_tag: str = _TAG
+
+
+class PersonalVaultFolderCreate(BaseModel):
+    # Minted by the client: the name envelope is bound to it (AES-GCM AAD).
+    id: CanonicalUUID
+    name: EncryptedFolderName
+
+
+class PersonalVaultFolderUpdate(BaseModel):
+    name: EncryptedFolderName
+    expected_version: int = Field(..., ge=1)
+
+
+class PersonalVaultFolderResponse(BaseModel):
+    model_config = ConfigDict(from_attributes=True)
+
+    id: UUID
+    name: EncryptedFolderName
+    version: int
+    created_at: datetime | None = None
+    updated_at: datetime | None = None
