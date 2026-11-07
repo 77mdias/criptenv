@@ -72,7 +72,33 @@
     "deleteConfirm": "¿Eliminar \"{title}\"? No se puede deshacer.",
     "copyUsername": "Copiar usuario de {title}",
     "copied": "Copiado al portapapeles.",
-    "unreadable": "Elemento ilegible"
+    "unreadable": "Elemento ilegible",
+    "usage": "{used} de {max} elementos",
+    "usageUnlimited": "{used, plural, one {# elemento} other {# elementos}}",
+    "limitReached": "Llegaste al límite de elementos del plan gratuito."
+  },
+  "folders": {
+    "title": "Carpetas",
+    "all": "Todas",
+    "none": "Sin carpeta",
+    "new": "Nueva carpeta",
+    "entry": "{name}, {count, plural, one {# elemento} other {# elementos}}",
+    "rename": "Renombrar {name}",
+    "delete": "Eliminar {name}",
+    "deleteConfirm": "¿Eliminar la carpeta \"{name}\"? Sus elementos pasan a Sin carpeta.",
+    "unreadable": "Carpeta ilegible",
+    "usage": "{used} de {max} carpetas",
+    "usageUnlimited": "{used, plural, one {# carpeta} other {# carpetas}}",
+    "limitReached": "Llegaste al límite de carpetas del plan gratuito."
+  },
+  "folderDialog": {
+    "newTitle": "Nueva carpeta",
+    "editTitle": "Renombrar carpeta",
+    "name": "Nombre",
+    "nameRequired": "Dale un nombre a la carpeta.",
+    "nameTooLong": "Usa hasta 100 caracteres.",
+    "save": "Guardar",
+    "conflict": "Esta carpeta cambió en otra pestaña. Cargamos la versión más reciente."
   },
   "itemDialog": {
     "newTitle": "Nuevo elemento",

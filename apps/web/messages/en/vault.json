@@ -72,7 +72,33 @@
     "deleteConfirm": "Delete \"{title}\"? This cannot be undone.",
     "copyUsername": "Copy username of {title}",
     "copied": "Copied to the clipboard.",
-    "unreadable": "Unreadable item"
+    "unreadable": "Unreadable item",
+    "usage": "{used} of {max} items",
+    "usageUnlimited": "{used, plural, one {# item} other {# items}}",
+    "limitReached": "You reached the free plan's item limit."
+  },
+  "folders": {
+    "title": "Folders",
+    "all": "All",
+    "none": "No folder",
+    "new": "New folder",
+    "entry": "{name}, {count, plural, one {# item} other {# items}}",
+    "rename": "Rename {name}",
+    "delete": "Delete {name}",
+    "deleteConfirm": "Delete the folder \"{name}\"? Its items move to No folder.",
+    "unreadable": "Unreadable folder",
+    "usage": "{used} of {max} folders",
+    "usageUnlimited": "{used, plural, one {# folder} other {# folders}}",
+    "limitReached": "You reached the free plan's folder limit."
+  },
+  "folderDialog": {
+    "newTitle": "New folder",
+    "editTitle": "Rename folder",
+    "name": "Name",
+    "nameRequired": "Give the folder a name.",
+    "nameTooLong": "Use up to 100 characters.",
+    "save": "Save",
+    "conflict": "This folder changed in another tab. We loaded the latest version."
   },
   "itemDialog": {
     "newTitle": "New item",

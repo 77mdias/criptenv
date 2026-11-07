@@ -17,6 +17,12 @@ jest.mock("@/lib/api/personal-vault", () => ({
   createPersonalVaultItem: jest.fn(),
   updatePersonalVaultItem: jest.fn(),
   deletePersonalVaultItem: jest.fn(),
+  listPersonalVaultFolders: jest.fn(() => Promise.resolve([])),
+  isPlanLimitError: jest.fn(() => false),
+}))
+
+jest.mock("@/lib/api/me", () => ({
+  meApi: { plan: jest.fn(() => Promise.resolve({ id: "free", limits: { personal_vault_items: 120, personal_vault_folders: 10 }, features: [] })) },
 }))
 
 jest.mock("@/lib/api/auth", () => ({ authApi: { signout: jest.fn(() => Promise.resolve({ message: "ok" })) } }))
@@ -31,6 +37,7 @@ jest.mock("@/lib/personal-vault/crypto", () => ({
   unlockProtectedKey: jest.fn(),
   rewrapMaster: jest.fn(),
   rewrapExtra: jest.fn(),
+  decryptFolderName: jest.fn(),
 }))
 
 const mocked = <T extends (...args: never[]) => unknown>(fn: T) => fn as unknown as jest.MockedFunction<T>

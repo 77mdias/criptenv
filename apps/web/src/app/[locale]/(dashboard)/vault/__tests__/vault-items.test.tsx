@@ -3,6 +3,7 @@ import { renderWithIntl } from "@/test/render-with-intl"
 import { ApiError } from "@/lib/api/client"
 import { CryptoError } from "@/lib/crypto"
 import * as api from "@/lib/api/personal-vault"
+import { meApi, type Plan } from "@/lib/api/me"
 import * as vaultCrypto from "@/lib/personal-vault/crypto"
 import { PersonalVaultSessionProvider } from "../_components/vault-session"
 import { VaultItems } from "../_components/vault-items"
@@ -15,7 +16,14 @@ jest.mock("@/lib/api/personal-vault", () => ({
   createPersonalVaultItem: jest.fn(),
   updatePersonalVaultItem: jest.fn(),
   deletePersonalVaultItem: jest.fn(),
+  listPersonalVaultFolders: jest.fn(),
+  createPersonalVaultFolder: jest.fn(),
+  updatePersonalVaultFolder: jest.fn(),
+  deletePersonalVaultFolder: jest.fn(),
+  isPlanLimitError: jest.requireActual("@/lib/api/personal-vault").isPlanLimitError,
 }))
+
+jest.mock("@/lib/api/me", () => ({ meApi: { plan: jest.fn() } }))
 
 jest.mock("@/lib/personal-vault/crypto", () => ({
   unlockVault: jest.fn(),
@@ -25,6 +33,9 @@ jest.mock("@/lib/personal-vault/crypto", () => ({
   unlockProtectedKey: jest.fn(),
   rewrapMaster: jest.fn(),
   rewrapExtra: jest.fn(),
+  encryptFolderName: jest.fn(),
+  decryptFolderName: jest.fn(),
+  resealSummary: jest.fn(),
 }))
 
 const mocked = <T extends (...args: never[]) => unknown>(fn: T) => fn as unknown as jest.MockedFunction<T>
@@ -65,9 +76,26 @@ const SUMMARIES: Record<string, vaultCrypto.ItemSummary> = {
 
 const onConfigChange = jest.fn()
 
-function renderItems(items = [item("i1", true), item("i2"), item("i3")]) {
+const FREE: Plan = { id: "free", limits: { personal_vault_items: 120, personal_vault_folders: 10 }, features: [] }
+const folder = (id: string, version = 1) => ({ id, name: { ...envelope, ciphertext: id }, version, created_at: "", updated_at: "" })
+
+function renderItems(
+  items = [item("i1", true), item("i2"), item("i3")],
+  {
+    folders = [] as ReturnType<typeof folder>[],
+    names = {} as Record<string, string>,
+    summaries = SUMMARIES,
+    plan = Promise.resolve(FREE) as Promise<Plan>,
+  } = {},
+) {
   mocked(api.listPersonalVaultItems).mockResolvedValue(items)
-  mocked(vaultCrypto.decryptSummary).mockImplementation(async (id) => SUMMARIES[id])
+  mocked(api.listPersonalVaultFolders).mockResolvedValue(folders)
+  mocked(meApi.plan).mockReturnValue(plan)
+  mocked(vaultCrypto.decryptSummary).mockImplementation(async (id) => summaries[id])
+  mocked(vaultCrypto.decryptFolderName).mockImplementation(async (id) => {
+    if (!(id in names)) throw new CryptoError("bad", "DECRYPTION_FAILED")
+    return names[id]
+  })
   renderWithIntl(
     <PersonalVaultSessionProvider>
       <VaultItems vaultKey={KEY} config={SAVED} onConfigChange={onConfigChange} />
@@ -432,5 +460,146 @@ describe("site icons", () => {
     localStorage.setItem("criptenv:vault:site-icons", "off")
     await renderItems()
     expect(document.querySelector("img")).toBeNull()
+  })
+})
+
+describe("folders", () => {
+  const IN_FOLDERS: Record<string, vaultCrypto.ItemSummary> = {
+    i1: { ...SUMMARIES.i1, folderId: "f1" },
+    i2: { ...SUMMARIES.i2, folderId: "f2" },
+    i3: { ...SUMMARIES.i3, folderId: "f1" },
+  }
+  const TWO = { folders: [folder("f1"), folder("f2")], names: { f1: "Trabalho", f2: "Pessoal" } }
+  const column = () => within(screen.getByRole("navigation", { name: "Pastas" }))
+
+  it("lists folders alphabetically with counts and filters together with the type filter", async () => {
+    await renderItems(undefined, { ...TWO, summaries: IN_FOLDERS })
+    const names = column().getAllByRole("button").map((b) => b.getAttribute("aria-label") ?? b.textContent)
+    expect(names.slice(0, 4)).toEqual(["Todas, 3 itens", "Pessoal, 1 item", "Trabalho, 2 itens", "Sem pasta, 0 itens"])
+
+    fireEvent.click(column().getByRole("button", { name: "Trabalho, 2 itens" }))
+    expect(screen.getByRole("heading", { name: "Trabalho" })).toBeInTheDocument()
+    expect(screen.getByText("Instagram")).toBeInTheDocument()
+    expect(screen.getByText("Wi-Fi")).toBeInTheDocument()
+    expect(screen.queryByText("GitHub")).not.toBeInTheDocument()
+
+    fireEvent.click(screen.getByRole("button", { name: "Logins" }))
+    expect(screen.getByText("Instagram")).toBeInTheDocument()
+    expect(screen.queryByText("Wi-Fi")).not.toBeInTheDocument()
+  })
+
+  it("items without a folder or pointing to a deleted folder are under Sem pasta", async () => {
+    const summaries = { i1: SUMMARIES.i1, i2: { ...SUMMARIES.i2, folderId: "gone" }, i3: { ...SUMMARIES.i3, folderId: "f1" } }
+    await renderItems(undefined, { folders: [folder("f1")], names: { f1: "Trabalho" }, summaries })
+    expect(column().getByRole("button", { name: "Todas, 3 itens" })).toBeInTheDocument()
+    fireEvent.click(column().getByRole("button", { name: "Sem pasta, 2 itens" }))
+    expect(screen.getByText("Instagram")).toBeInTheDocument()
+    expect(screen.getByText("GitHub")).toBeInTheDocument()
+    expect(screen.queryByText("Wi-Fi")).not.toBeInTheDocument()
+  })
+
+  it("creates a folder with an encrypted name", async () => {
+    mocked(vaultCrypto.encryptFolderName).mockResolvedValue(envelope)
+    mocked(api.createPersonalVaultFolder).mockResolvedValue(folder("new"))
+    await renderItems()
+    fireEvent.click(column().getByRole("button", { name: "Nova pasta" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Nome", "  Trabalho  ", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+
+    await waitFor(() => expect(api.createPersonalVaultFolder).toHaveBeenCalledTimes(1))
+    const [id, name, key] = mocked(vaultCrypto.encryptFolderName).mock.calls[0]
+    expect(id).toMatch(/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/)
+    expect([name, key]).toEqual(["Trabalho", KEY])
+    expect(api.createPersonalVaultFolder).toHaveBeenCalledWith({ id, name: envelope })
+    await waitFor(() => expect(api.listPersonalVaultFolders).toHaveBeenCalledTimes(2))
+  })
+
+  it("refuses an empty or too long folder name", async () => {
+    await renderItems()
+    fireEvent.click(column().getByRole("button", { name: "Nova pasta" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Nome", "   ", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    expect(await within(dialog).findByText("Dê um nome à pasta.")).toBeInTheDocument()
+    type("Nome", "x".repeat(101), dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    expect(await within(dialog).findByText("Use até 100 caracteres.")).toBeInTheDocument()
+    expect(vaultCrypto.encryptFolderName).not.toHaveBeenCalled()
+    expect(api.createPersonalVaultFolder).not.toHaveBeenCalled()
+  })
+
+  it("renames and deletes the selected folder without touching items", async () => {
+    mocked(vaultCrypto.encryptFolderName).mockResolvedValue(envelope)
+    mocked(api.updatePersonalVaultFolder).mockResolvedValue(folder("f1", 2))
+    mocked(api.deletePersonalVaultFolder).mockResolvedValue(undefined)
+    jest.spyOn(window, "confirm").mockReturnValue(true)
+    await renderItems(undefined, { ...TWO, summaries: IN_FOLDERS })
+
+    fireEvent.click(column().getByRole("button", { name: "Trabalho, 2 itens" }))
+    fireEvent.click(screen.getByRole("button", { name: "Renomear Trabalho" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByLabelText("Nome")).toHaveValue("Trabalho")
+    type("Nome", "Clientes", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    await waitFor(() => expect(api.updatePersonalVaultFolder).toHaveBeenCalledWith("f1", envelope, 1))
+    expect(vaultCrypto.encryptFolderName).toHaveBeenCalledWith("f1", "Clientes", KEY)
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+
+    fireEvent.click(screen.getByRole("button", { name: "Apagar Trabalho" }))
+    expect(window.confirm).toHaveBeenCalledWith('Apagar a pasta "Trabalho"? Os itens dela vão para Sem pasta.')
+    await waitFor(() => expect(api.deletePersonalVaultFolder).toHaveBeenCalledWith("f1"))
+    expect(await screen.findByRole("heading", { name: "Todas" })).toBeInTheDocument()
+    expect(api.updatePersonalVaultItem).not.toHaveBeenCalled()
+  })
+
+  it("an unreadable folder can only be deleted", async () => {
+    await renderItems(undefined, { folders: [folder("f1"), folder("bad")], names: { f1: "Trabalho" },
+      summaries: { ...IN_FOLDERS, i2: { ...SUMMARIES.i2, folderId: "bad" } } })
+    fireEvent.click(column().getByRole("button", { name: "Pasta ilegível, 1 item" }))
+    expect(screen.getByText("GitHub")).toBeInTheDocument()
+    expect(screen.getByRole("button", { name: "Apagar Pasta ilegível" })).toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: /^Renomear/ })).not.toBeInTheDocument()
+  })
+
+  it("shows usage and disables creation at the plan limit", async () => {
+    const plan = Promise.resolve({ ...FREE, limits: { personal_vault_items: 3, personal_vault_folders: 2 } })
+    await renderItems(undefined, { ...TWO, summaries: IN_FOLDERS, plan })
+    expect(await screen.findByText("2 de 2 pastas")).toBeInTheDocument()
+    expect(screen.getByText("3 de 3 itens")).toBeInTheDocument()
+    expect(column().getByRole("button", { name: "Nova pasta" })).toBeDisabled()
+    expect(screen.getByRole("button", { name: "Novo item" })).toBeDisabled()
+    expect(screen.getByText("Você chegou ao limite de pastas do plano gratuito.")).toBeInTheDocument()
+    expect(screen.getByText("Você chegou ao limite de itens do plano gratuito.")).toBeInTheDocument()
+  })
+
+  it("an unlimited plan shows plain counts and never disables creation", async () => {
+    const plan = Promise.resolve({ ...FREE, id: "unlimited", limits: { personal_vault_items: null, personal_vault_folders: null } })
+    await renderItems(undefined, { ...TWO, summaries: IN_FOLDERS, plan })
+    expect(await screen.findByText("2 pastas")).toBeInTheDocument()
+    expect(screen.getByText("3 itens")).toBeInTheDocument()
+    expect(column().getByRole("button", { name: "Nova pasta" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Novo item" })).toBeEnabled()
+  })
+
+  it("a 402 from the server shows the limit notice", async () => {
+    mocked(vaultCrypto.encryptFolderName).mockResolvedValue(envelope)
+    mocked(api.createPersonalVaultFolder).mockRejectedValue(new ApiError("Plan limit reached", 402, null))
+    await renderItems()
+    fireEvent.click(column().getByRole("button", { name: "Nova pasta" }))
+    const dialog = await screen.findByRole("dialog")
+    type("Nome", "Trabalho", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    expect(await screen.findByText("Você chegou ao limite de pastas do plano gratuito.")).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+  })
+
+  it("when the plan cannot load, creation stays enabled and no usage is shown", async () => {
+    await renderItems(undefined, { ...TWO, summaries: IN_FOLDERS, plan: Promise.reject(new Error("offline")) })
+    await waitFor(() => expect(meApi.plan).toHaveBeenCalled())
+    expect(column().getByRole("button", { name: "Nova pasta" })).toBeEnabled()
+    expect(screen.getByRole("button", { name: "Novo item" })).toBeEnabled()
+    expect(screen.queryByText(/pastas$/)).not.toBeInTheDocument()
+    expect(screen.queryByText(/itens$/)).not.toBeInTheDocument()
   })
 })
