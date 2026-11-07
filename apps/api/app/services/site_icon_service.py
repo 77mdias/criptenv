@@ -4,14 +4,32 @@ Only the hostname reaches this module (the vault URL itself stays encrypted in
 the browser). Every outbound request goes through the SSRF guard in
 `outbound_target`, and nothing about the request is stored or logged.
 """
+import asyncio
 import ipaddress
 import re
+import time
+from collections import OrderedDict
+from dataclasses import dataclass
 from html.parser import HTMLParser
 from urllib.parse import urljoin, urlsplit, urlunsplit
+
+import httpx
+
+from app.services.outbound_target import resolve_public_target
 
 ICON_PATH_PREFIX = "/api/v1/icons/"
 
 MAX_CANDIDATES = 5
+MAX_REDIRECTS = 2
+MAX_PAGE_BYTES = 512 * 1024
+MAX_IMAGE_BYTES = 200 * 1024
+MAX_CACHED_BYTES = 50 * 1024
+CONNECT_TIMEOUT_SECONDS = 5.0
+TOTAL_TIMEOUT_SECONDS = 10
+CACHE_TTL_SECONDS = 24 * 60 * 60
+CACHE_MAX_ENTRIES = 5000
+
+_REDIRECT_STATUSES = {301, 302, 303, 307, 308}
 
 _LABEL_RE = re.compile(r"^[a-z0-9]([a-z0-9-]{0,61}[a-z0-9])?$")
 _SIZES_RE = re.compile(r"^\s*(\d+)[xX](\d+)\s*$")
@@ -108,3 +126,113 @@ def sniff_image(data: bytes) -> str | None:
     if data.startswith(_JPEG):
         return "image/jpeg"
     return None
+
+
+@dataclass(frozen=True)
+class SiteIcon:
+    content: bytes
+    media_type: str
+
+
+@dataclass(frozen=True)
+class _Fetched:
+    url: str
+    content_type: str
+    charset: str | None
+    body: bytes
+
+
+def _make_client() -> httpx.AsyncClient:
+    return httpx.AsyncClient(
+        timeout=httpx.Timeout(CONNECT_TIMEOUT_SECONDS),
+        follow_redirects=False,
+        trust_env=False,
+        headers={"User-Agent": "CriptEnv-Icons/1.0"},
+    )
+
+
+async def _get(
+    client: httpx.AsyncClient, url: str, limit: int, *, truncate: bool, accept: str | None = None
+) -> _Fetched | None:
+    """GET through the SSRF guard, following at most MAX_REDIRECTS, each re-checked."""
+    for _ in range(MAX_REDIRECTS + 1):
+        try:
+            target = await resolve_public_target(url)
+        except ValueError:
+            return None
+        headers = {"Host": target.host_header}
+        if accept:
+            headers["Accept"] = accept
+        try:
+            async with client.stream(
+                "GET", target.request_url, headers=headers, extensions={"sni_hostname": target.sni_hostname}
+            ) as response:
+                if response.status_code in _REDIRECT_STATUSES:
+                    location = response.headers.get("location")
+                    if not location:
+                        return None
+                    parts = urlsplit(urljoin(url, location))
+                    url = urlunsplit(parts._replace(scheme="https") if parts.scheme == "http" else parts)
+                    continue
+                if not response.is_success:
+                    return None
+                body = bytearray()
+                async for chunk in response.aiter_bytes():
+                    body += chunk
+                    if len(body) > limit:
+                        if not truncate:
+                            return None
+                        del body[limit:]
+                        break
+                return _Fetched(url, response.headers.get("content-type", ""), response.charset_encoding, bytes(body))
+        except httpx.HTTPError:
+            return None
+    return None
+
+
+def _decode(page: _Fetched) -> str:
+    try:
+        return page.body.decode(page.charset or "utf-8", errors="replace")
+    except LookupError:  # charset the site made up
+        return page.body.decode("utf-8", errors="replace")
+
+
+async def _fetch_icon(hostname: str) -> SiteIcon | None:
+    async with _make_client() as client:
+        page = await _get(client, f"https://{hostname}/", MAX_PAGE_BYTES, truncate=True, accept="text/html")
+        candidates = []
+        if page and page.content_type.lower().startswith("text/html"):
+            candidates = icon_candidates(_decode(page), page.url)
+        for url in dict.fromkeys([*candidates, f"https://{hostname}/favicon.ico"]):
+            image = await _get(client, url, MAX_IMAGE_BYTES, truncate=False)
+            media_type = sniff_image(image.body) if image else None
+            if media_type:
+                return SiteIcon(image.body, media_type)
+    return None
+
+
+# shortcut: cache per process (gunicorn runs 3 workers); move to Redis if traffic grows.
+_cache: "OrderedDict[str, tuple[float, SiteIcon | None]]" = OrderedDict()
+
+
+def clear_icon_cache() -> None:
+    _cache.clear()
+
+
+async def get_site_icon(hostname: str) -> SiteIcon | None:
+    """Icon for an already normalized hostname, or None. Never raises."""
+    now = time.monotonic()
+    cached = _cache.get(hostname)
+    if cached and now - cached[0] < CACHE_TTL_SECONDS:
+        return cached[1]
+    try:
+        async with asyncio.timeout(TOTAL_TIMEOUT_SECONDS):
+            icon = await _fetch_icon(hostname)
+    except Exception:
+        icon = None
+    if icon is None or len(icon.content) <= MAX_CACHED_BYTES:
+        _cache.pop(hostname, None)
+        _cache[hostname] = (now, icon)
+        while len(_cache) > CACHE_MAX_ENTRIES:
+            _cache.popitem(last=False)
+    return icon
