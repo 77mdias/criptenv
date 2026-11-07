@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
-import { Copy, Eye, KeyRound, Lock, Pencil, Plus, Settings, ShieldAlert, ShieldCheck, StickyNote, Trash2 } from "lucide-react"
+import { Copy, Eye, FolderInput, KeyRound, Lock, Pencil, Plus, Settings, ShieldAlert, ShieldCheck, StickyNote, Trash2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
@@ -20,6 +20,7 @@ import { meApi, type Plan } from "@/lib/api/me"
 import { decryptFolderName, decryptSummary, type ItemSummary } from "@/lib/personal-vault/crypto"
 import { FolderColumn, type DecryptedFolder, type FolderSelection } from "./folder-column"
 import { FolderDialog } from "./folder-dialog"
+import { MoveItemDialog } from "./move-item-dialog"
 import { ProtectedRevealDialog } from "./protected-reveal-dialog"
 import { VaultItemDialog } from "./vault-item-dialog"
 import { VaultSettingsDialog } from "./vault-settings-dialog"
@@ -63,6 +64,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   const [limitHit, setLimitHit] = useState<"items" | "folders" | null>(null)
   const [revealing, setRevealing] = useState<DecryptedEntry | null>(null)
   const [editing, setEditing] = useState<DecryptedEntry | null | undefined>(undefined)
+  const [moving, setMoving] = useState<DecryptedEntry | null>(null)
   const [settingsOpen, setSettingsOpen] = useState(false)
   // The list only renders after unlock, in the browser, so reading storage here cannot mismatch SSR.
   const [siteIcons, setSiteIcons] = useState(readSiteIconsSetting)
@@ -294,7 +296,10 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
                       <Button type="button" size="icon" variant="ghost" aria-label={t("items.reveal", { title: summary.title })} onClick={() => setRevealing(entry)}>
                         <Eye aria-hidden className="h-4 w-4" />
                       </Button>
-                      <Button type="button" size="icon" variant="ghost" aria-label={t("items.edit", { title: summary.title })} onClick={() => setEditing(entry)}>
+                      <Button type="button" size="icon" variant="ghost" aria-label={t("items.move", { title: summary.title })} onClick={() => setMoving(entry)}>
+                    <FolderInput aria-hidden className="h-4 w-4" />
+                  </Button>
+                  <Button type="button" size="icon" variant="ghost" aria-label={t("items.edit", { title: summary.title })} onClick={() => setEditing(entry)}>
                         <Pencil aria-hidden className="h-4 w-4" />
                       </Button>
                       <Button type="button" size="icon" variant="ghost" aria-label={t("items.delete", { title: summary.title })} onClick={() => void handleDelete(item.id, summary.title)}>
@@ -364,6 +369,29 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
         }}
         onStale={(reason) => {
           setEditing(undefined)
+          setNotice(reason === "deleted" ? t("itemDialog.deleted") : t("itemDialog.conflict"))
+          reload()
+        }}
+        folders={folders}
+        defaultFolderId={currentFolder?.name != null ? current : undefined}
+        onLimit={() => {
+          setEditing(undefined)
+          setLimitHit("items")
+          reload()
+        }}
+      />
+      <MoveItemDialog
+        entry={moving}
+        folders={folders}
+        vaultKey={vaultKey}
+        onClose={() => setMoving(null)}
+        onSaved={() => {
+          setMoving(null)
+          setNotice(null)
+          reload()
+        }}
+        onStale={(reason) => {
+          setMoving(null)
           setNotice(reason === "deleted" ? t("itemDialog.deleted") : t("itemDialog.conflict"))
           reload()
         }}

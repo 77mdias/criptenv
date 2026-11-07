@@ -414,9 +414,9 @@ describe("vault items", () => {
     expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)
   })
 
-  it("the item limit is still reported as an error", async () => {
+  it("a 402 when creating an item shows the item limit notice", async () => {
     mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
-    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Item limit reached", 409, null))
+    mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Plan limit reached", 402, null))
     await renderItems()
 
     fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
@@ -424,8 +424,8 @@ describe("vault items", () => {
     type("Título", "Banco", dialog)
     fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
 
-    expect(await within(dialog).findByText("Não foi possível salvar. Tente de novo.")).toBeInTheDocument()
-    expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(1)
+    expect(await screen.findByText("Você chegou ao limite de itens do plano gratuito.")).toBeInTheDocument()
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
   })
 })
 
@@ -601,5 +601,117 @@ describe("folders", () => {
     expect(screen.getByRole("button", { name: "Novo item" })).toBeEnabled()
     expect(screen.queryByText(/pastas$/)).not.toBeInTheDocument()
     expect(screen.queryByText(/itens$/)).not.toBeInTheDocument()
+  })
+})
+
+describe("item folders", () => {
+  const IN_FOLDERS: Record<string, vaultCrypto.ItemSummary> = {
+    i1: { ...SUMMARIES.i1, folderId: "f1" },
+    i2: { ...SUMMARIES.i2, folderId: "f2" },
+    i3: { ...SUMMARIES.i3, folderId: "f1" },
+  }
+  const TWO = { folders: [folder("f1"), folder("f2")], names: { f1: "Trabalho", f2: "Pessoal" }, summaries: IN_FOLDERS }
+  const column = () => within(screen.getByRole("navigation", { name: "Pastas" }))
+  const plainOf = (call: number) => mocked(vaultCrypto.encryptItem).mock.calls[call][1]
+
+  it("a new item takes the selected folder by default", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.createPersonalVaultItem).mockResolvedValue(item("new"))
+    await renderItems(undefined, TWO)
+
+    fireEvent.click(column().getByRole("button", { name: "Trabalho, 2 itens" }))
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    let dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByLabelText("Pasta")).toHaveValue("f1")
+    type("Título", "Banco", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    await waitFor(() => expect(api.createPersonalVaultItem).toHaveBeenCalledTimes(1))
+    expect(plainOf(0)).toMatchObject({ title: "Banco", folderId: "f1" })
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
+    dialog = await screen.findByRole("dialog")
+    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "" } })
+    type("Título", "Solto", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    await waitFor(() => expect(api.createPersonalVaultItem).toHaveBeenCalledTimes(2))
+    expect(plainOf(1)).not.toHaveProperty("folderId")
+  })
+
+  it("editing an item keeps its folder, common or protected", async () => {
+    mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
+    mocked(api.updatePersonalVaultItem).mockResolvedValue(item("i3"))
+    mocked(vaultCrypto.decryptItem).mockResolvedValue({ type: "note", title: "Wi-Fi", content: "x", folderId: "f1" })
+    await renderItems(undefined, TWO)
+
+    fireEvent.click(screen.getByRole("button", { name: "Editar Wi-Fi" }))
+    let dialog = await screen.findByRole("dialog")
+    await waitFor(() => expect(within(dialog).getByLabelText("Título")).toHaveValue("Wi-Fi"))
+    expect(within(dialog).getByLabelText("Pasta")).toHaveValue("f1")
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    await waitFor(() => expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1))
+    expect(plainOf(0)).toMatchObject({ folderId: "f1" })
+
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    mocked(vaultCrypto.unlockProtectedKey).mockResolvedValue(PK)
+    mocked(vaultCrypto.decryptItem).mockResolvedValue({ ...SUMMARIES.i1, password: "s3nh@", notes: "", folderId: "f1" } as vaultCrypto.PersonalVaultItemPlain)
+    fireEvent.click(screen.getByRole("button", { name: "Editar Instagram" }))
+    dialog = await screen.findByRole("dialog")
+    type("Senha de proteção extra", "extra-123", dialog)
+    fireEvent.click(within(dialog).getByRole("button", { name: "Desbloquear" }))
+    await waitFor(() => expect(within(dialog).getByLabelText("Título")).toHaveValue("Instagram"))
+    fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
+    await waitFor(() => expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(2))
+    expect(plainOf(1)).toMatchObject({ title: "Instagram", folderId: "f1" })
+    expect(mocked(vaultCrypto.encryptItem).mock.calls[1][3]).toBe(PK)
+  })
+
+  it("moving a protected item never asks for the extra password", async () => {
+    const moved = { ...envelope, ciphertext: "moved" }
+    mocked(vaultCrypto.resealSummary).mockResolvedValue(moved)
+    mocked(api.updatePersonalVaultItem).mockResolvedValue(item("i1", true))
+    await renderItems(undefined, TWO)
+
+    fireEvent.click(screen.getByRole("button", { name: "Mover Instagram" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(within(dialog).getByLabelText("Pasta")).toHaveValue("f1")
+    expect(within(dialog).queryByLabelText("Senha de proteção extra")).not.toBeInTheDocument()
+    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "f2" } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mover" }))
+
+    await waitFor(() => expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1))
+    expect(vaultCrypto.resealSummary).toHaveBeenCalledWith("i1", { ...SUMMARIES.i1, folderId: "f2" }, KEY)
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledWith("i1", { id: "i1", protected: true, summary: moved, body: envelope }, 1)
+    expect(vaultCrypto.unlockProtectedKey).not.toHaveBeenCalled()
+    expect(vaultCrypto.encryptItem).not.toHaveBeenCalled()
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+  })
+
+  it("moving to Sem pasta drops the folderId from the summary", async () => {
+    mocked(vaultCrypto.resealSummary).mockResolvedValue(envelope)
+    mocked(api.updatePersonalVaultItem).mockResolvedValue(item("i3"))
+    await renderItems(undefined, TWO)
+    fireEvent.click(screen.getByRole("button", { name: "Mover Wi-Fi" }))
+    const dialog = await screen.findByRole("dialog")
+    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "" } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mover" }))
+    await waitFor(() => expect(vaultCrypto.resealSummary).toHaveBeenCalledTimes(1))
+    expect(mocked(vaultCrypto.resealSummary).mock.calls[0][1]).toEqual({ type: "note", title: "Wi-Fi" })
+  })
+
+  it.each([
+    [409, "Este item mudou em outra aba. Recarregamos a versão mais recente."],
+    [404, "Este item foi apagado em outra aba."],
+  ])("a stale move (%i) reloads with a notice", async (code, text) => {
+    mocked(vaultCrypto.resealSummary).mockResolvedValue(envelope)
+    mocked(api.updatePersonalVaultItem).mockRejectedValue(new ApiError("stale", code, null))
+    await renderItems(undefined, TWO)
+    fireEvent.click(screen.getByRole("button", { name: "Mover GitHub" }))
+    const dialog = await screen.findByRole("dialog")
+    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "f1" } })
+    fireEvent.click(within(dialog).getByRole("button", { name: "Mover" }))
+    expect(await screen.findByText(text)).toBeInTheDocument()
+    expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
   })
 })

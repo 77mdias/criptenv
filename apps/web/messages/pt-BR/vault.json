@@ -75,7 +75,8 @@
     "unreadable": "Item ilegível",
     "usage": "{used} de {max} itens",
     "usageUnlimited": "{used, plural, =1 {# item} other {# itens}}",
-    "limitReached": "Você chegou ao limite de itens do plano gratuito."
+    "limitReached": "Você chegou ao limite de itens do plano gratuito.",
+    "move": "Mover {title}"
   },
   "folders": {
     "title": "Pastas",
@@ -121,7 +122,13 @@
     "titleRequired": "Dê um título ao item.",
     "conflict": "Este item mudou em outra aba. Recarregamos a versão mais recente.",
     "wrongExtra": "Senha extra incorreta",
-    "deleted": "Este item foi apagado em outra aba."
+    "deleted": "Este item foi apagado em outra aba.",
+    "folder": "Pasta"
+  },
+  "moveDialog": {
+    "title": "Mover \"{title}\"",
+    "folder": "Pasta",
+    "save": "Mover"
   },
   "reveal": {
     "unlockDescription": "Este item tem proteção extra. Digite a senha extra para ver.",

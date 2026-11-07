@@ -75,7 +75,8 @@
     "unreadable": "Elemento ilegible",
     "usage": "{used} de {max} elementos",
     "usageUnlimited": "{used, plural, one {# elemento} other {# elementos}}",
-    "limitReached": "Llegaste al límite de elementos del plan gratuito."
+    "limitReached": "Llegaste al límite de elementos del plan gratuito.",
+    "move": "Mover {title}"
   },
   "folders": {
     "title": "Carpetas",
@@ -121,7 +122,13 @@
     "titleRequired": "Ponle un título al elemento.",
     "conflict": "Este elemento cambió en otra pestaña. Recargamos la versión más reciente.",
     "wrongExtra": "Contraseña extra incorrecta",
-    "deleted": "Este elemento se eliminó en otra pestaña."
+    "deleted": "Este elemento se eliminó en otra pestaña.",
+    "folder": "Carpeta"
+  },
+  "moveDialog": {
+    "title": "Mover \"{title}\"",
+    "folder": "Carpeta",
+    "save": "Mover"
   },
   "reveal": {
     "unlockDescription": "Este elemento tiene protección extra. Escribe la contraseña extra para verlo.",

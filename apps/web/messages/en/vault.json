@@ -75,7 +75,8 @@
     "unreadable": "Unreadable item",
     "usage": "{used} of {max} items",
     "usageUnlimited": "{used, plural, one {# item} other {# items}}",
-    "limitReached": "You reached the free plan's item limit."
+    "limitReached": "You reached the free plan's item limit.",
+    "move": "Move {title}"
   },
   "folders": {
     "title": "Folders",
@@ -121,7 +122,13 @@
     "titleRequired": "Give the item a title.",
     "conflict": "This item changed in another tab. We reloaded the latest version.",
     "wrongExtra": "Wrong extra password",
-    "deleted": "This item was deleted in another tab."
+    "deleted": "This item was deleted in another tab.",
+    "folder": "Folder"
+  },
+  "moveDialog": {
+    "title": "Move \"{title}\"",
+    "folder": "Folder",
+    "save": "Move"
   },
   "reveal": {
     "unlockDescription": "This item has extra protection. Enter the extra password to see it.",

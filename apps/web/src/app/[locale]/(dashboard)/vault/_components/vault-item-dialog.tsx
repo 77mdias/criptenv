@@ -8,7 +8,12 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Input } from "@/components/ui/input"
 import { ApiError } from "@/lib/api/client"
 import { CryptoError } from "@/lib/crypto"
-import { createPersonalVaultItem, updatePersonalVaultItem, type PersonalVaultConfig } from "@/lib/api/personal-vault"
+import {
+  createPersonalVaultItem,
+  isPlanLimitError,
+  updatePersonalVaultItem,
+  type PersonalVaultConfig,
+} from "@/lib/api/personal-vault"
 import {
   decryptItem,
   encryptItem,
@@ -16,6 +21,7 @@ import {
   type PersonalVaultItemPlain,
 } from "@/lib/personal-vault/crypto"
 import type { DecryptedEntry } from "./vault-items"
+import type { DecryptedFolder } from "./folder-column"
 
 interface Props {
   /** `undefined` = closed, `null` = new item, an entry = edit it */
@@ -26,6 +32,11 @@ interface Props {
   onSaved: () => void
   /** The item changed or was deleted elsewhere: the list must reload, never retry. */
   onStale: (reason: "changed" | "deleted") => void
+  folders: DecryptedFolder[]
+  /** Folder a new item starts in (the one selected in the list). */
+  defaultFolderId?: string
+  /** The plan's item limit was reached. */
+  onLimit: () => void
 }
 
 export function VaultItemDialog({ entry, ...rest }: Props) {
@@ -38,15 +49,53 @@ export function VaultItemDialog({ entry, ...rest }: Props) {
   )
 }
 
-const emptyForm = { type: "login" as "login" | "note", title: "", username: "", password: "", url: "", notes: "", content: "" }
+const emptyForm = { type: "login" as "login" | "note", title: "", username: "", password: "", url: "", notes: "", content: "", folderId: "" }
 
 const textareaClass =
   "flex min-h-20 w-full rounded-lg border border-(--border) bg-(--surface) px-3 py-2 text-base md:text-sm text-(--text-primary) focus:outline-none focus:ring-2 focus:ring-(--accent) focus:ring-offset-2"
 const labelClass = "block text-xs font-bold text-(--text-muted) uppercase tracking-wider font-mono"
 
-function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "entry"> & { entry: DecryptedEntry | null }) {
+/** "" = no folder. Unreadable folders are not offered. */
+export function FolderSelect({ id, label, folders, value, onChange }: {
+  id: string
+  label: string
+  folders: DecryptedFolder[]
+  value: string
+  onChange: (value: string) => void
+}) {
   const t = useTranslations("vault")
-  const [form, setForm] = useState(emptyForm)
+  return (
+    <div className="space-y-1.5">
+      <label htmlFor={id} className={labelClass}>
+        {label}
+      </label>
+      <select id={id} className={textareaClass + " min-h-10"} value={value} onChange={(event) => onChange(event.target.value)}>
+        <option value="">{t("folders.none")}</option>
+        {folders.map(({ folder, name }) =>
+          name === null ? null : (
+            <option key={folder.id} value={folder.id}>
+              {name}
+            </option>
+          ),
+        )}
+      </select>
+    </div>
+  )
+}
+
+function ItemForm({
+  entry,
+  config,
+  vaultKey,
+  onSaved,
+  onStale,
+  folders,
+  defaultFolderId,
+  onLimit,
+}: Omit<Props, "entry"> & { entry: DecryptedEntry | null }) {
+  const t = useTranslations("vault")
+  // An edit gets its folder from the decrypted item (fill); a new item starts in the selected folder.
+  const [form, setForm] = useState({ ...emptyForm, folderId: entry ? "" : (defaultFolderId ?? "") })
   const [isProtected, setIsProtected] = useState(entry?.item.protected ?? false)
   // Editing a protected item starts locked: its body needs the extra password first.
   const [locked, setLocked] = useState(entry?.item.protected ?? false)
@@ -117,10 +166,11 @@ function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "en
     }
     setBusy(true)
     setError(null)
+    const folder = form.folderId ? { folderId: form.folderId } : {}
     const plain: PersonalVaultItemPlain =
       form.type === "login"
-        ? { type: "login", title: form.title, username: form.username, password: form.password, url: form.url, notes: form.notes }
-        : { type: "note", title: form.title, content: form.content }
+        ? { type: "login", title: form.title, username: form.username, password: form.password, url: form.url, notes: form.notes, ...folder }
+        : { type: "note", title: form.title, content: form.content, ...folder }
     // True once this save targets a copy that already exists on the server.
     let existing = entry !== null
     try {
@@ -141,7 +191,8 @@ function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "en
       onSaved()
     } catch (err) {
       // Never retry: the other tab's version (or deletion) wins and the list reloads.
-      if (existing && err instanceof ApiError && err.status === 409) onStale("changed")
+      if (isPlanLimitError(err)) onLimit()
+      else if (existing && err instanceof ApiError && err.status === 409) onStale("changed")
       else if (existing && err instanceof ApiError && err.status === 404) onStale("deleted")
       else report(err)
       setBusy(false)
@@ -209,6 +260,13 @@ function ItemForm({ entry, config, vaultKey, onSaved, onStale }: Omit<Props, "en
               <textarea id="vault-item-content" className={textareaClass + " min-h-32"} value={form.content} onChange={set("content")} />
             </div>
           )}
+          <FolderSelect
+            id="vault-item-folder"
+            label={t("itemDialog.folder")}
+            folders={folders}
+            value={form.folderId}
+            onChange={(folderId) => setForm((current) => ({ ...current, folderId }))}
+          />
           <div className="space-y-2">
             <Checkbox checked={isProtected} onChange={(event) => setIsProtected(event.target.checked)}>
               {t("itemDialog.protected")}
