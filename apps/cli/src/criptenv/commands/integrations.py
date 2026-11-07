@@ -278,7 +278,9 @@ def integrations_sync(
             vault = RemoteVault(client, project_id)
 
             if direction == "push":
-                entries = run_async(vault.decrypt_all(run_async(vault.load_state(environment))))
+                state = run_async(vault.load_state(environment))
+                entries = run_async(vault.decrypt_all(state))
+                kinds = {blob["key_id"]: blob.get("kind") for blob in state.blobs}
                 if not entries:
                     click.echo(f"No secrets in environment '{environment}'; nothing to push.")
                     return
@@ -288,7 +290,10 @@ def integrations_sync(
                     integration["id"],
                     direction="push",
                     environment=provider_env,
-                    secrets=[{"key": key, "value": value} for key, value in entries.items()],
+                    secrets=[
+                        {"key": key, "value": value, **({"kind": kinds[key]} if kinds.get(key) else {})}
+                        for key, value in entries.items()
+                    ],
                 ))
             else:
                 click.echo(f"Pulling secrets from {provider} ({provider_env})...")
@@ -301,6 +306,8 @@ def integrations_sync(
 
             if direction == "push":
                 click.echo(f"✓ Pushed {result.get('synced_count', len(entries))} secret(s) to {provider}")
+                if result.get("recreated"):
+                    click.echo(f"  Recreated in {provider} with the new type: {', '.join(result['recreated'])}")
                 return
 
             pulled = [(item["key"], item["value"]) for item in result.get("secrets") or []]

@@ -106,6 +106,9 @@ export interface EnvironmentListResponse {
   total?: number;
 }
 
+/** How a variable reaches providers that tell readable config from write-only secrets (Vercel). */
+export type SecretKind = "config" | "secret";
+
 export interface VaultBlob {
   id: string;
   project_id: string;
@@ -116,6 +119,8 @@ export interface VaultBlob {
   auth_tag: string;
   version: number;
   checksum: string;
+  /** null: never chosen (variable from before kinds existed); shown as config, synced without a kind. */
+  kind: SecretKind | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -127,6 +132,8 @@ export interface VaultBlobPush {
   auth_tag: string;
   checksum: string;
   version: number;
+  /** Omitted: the server keeps the kind this key already had (config when new). */
+  kind?: SecretKind;
 }
 
 export interface VaultPushRequest {
@@ -461,7 +468,7 @@ export interface IntegrationSyncRequest {
   /** Provider environment: Vercel target (production, preview, development); ignored by Render and Cloudflare. */
   environment: string;
   /** Push only: plaintext secrets decrypted in the browser. */
-  secrets?: { key: string; value: string }[];
+  secrets?: { key: string; value: string; kind?: SecretKind }[];
 }
 
 export interface IntegrationSyncResponse {
@@ -470,6 +477,8 @@ export interface IntegrationSyncResponse {
   synced_count: number | null;
   /** Pull only: provider values to encrypt client-side before they reach the vault. */
   secrets: { key: string; value: string }[] | null;
+  /** Push only: keys removed from Vercel and created again with the other kind. */
+  recreated?: string[] | null;
 }
 
 export interface CreateIntegrationRequest {

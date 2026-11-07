@@ -252,6 +252,8 @@ class RemoteVault:
             "auth_tag": blob["auth_tag"],
             "version": int(blob.get("version", 1)),
             "checksum": blob["checksum"],
+            # Omitted: the server keeps the kind this key already had (config when new).
+            **({"kind": blob["kind"]} if blob.get("kind") else {}),
         }
 
     async def push_state(

@@ -17,6 +17,9 @@ class VaultBlob(Base):
     auth_tag = Column(String, nullable=False)
     version = Column(Integer, nullable=False, default=1)
     checksum = Column(String(64), nullable=False)
+    # How the variable reaches providers that tell readable config from write-only secrets (Vercel).
+    # NULL: never chosen (rows from before 0016) — synced as before, never converted on the provider.
+    kind = Column(String(16), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 

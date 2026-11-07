@@ -223,13 +223,14 @@ class IntegrationService:
             integration_id: Integration UUID
             project_id: Owning project UUID (mandatory tenant scope)
             direction: "push" (criptenv -> provider) or "pull" (provider -> criptenv)
-            secrets: For push, list of {key, value} dicts. For pull, ignored.
+            secrets: For push, list of {key, value, kind?} dicts. For pull, ignored.
             environment: Target/source environment in the provider
 
         Returns:
-            (success, error_message, secrets) where ``secrets`` holds the
-            plaintext values read from the provider on pull (empty on push).
-            The caller encrypts them client-side before they reach the vault.
+            (success, error_message, result). On pull, ``result`` holds the
+            plaintext values read from the provider; the caller encrypts them
+            client-side before they reach the vault. On push, it lists the keys
+            the provider removed and created again with another kind.
         """
         integration = await self.get_integration(
             integration_id, project_id=project_id
@@ -253,7 +254,7 @@ class IntegrationService:
             if direction == "push":
                 if await provider.push_secrets(secrets, config, environment) is False:
                     raise ProviderError("Sync failed: push")
-                pulled: list[dict] = []
+                pulled: list = list(provider.recreated_keys)
             else:
                 pulled = await provider.pull_secrets(config, environment)
         except Exception as e:

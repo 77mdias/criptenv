@@ -28,6 +28,30 @@ describe("SecretRow", () => {
     expect(screen.queryByText(secret.value)).not.toBeInTheDocument()
   })
 
+  it("labels the variable with its kind and still reveals a Secret", async () => {
+    render(
+      <SecretRow
+        secret={{ ...secret, kind: "secret" }}
+        environmentName="Production"
+        onCopy={jest.fn()}
+        onEdit={jest.fn()}
+        onDelete={jest.fn()}
+      />
+    )
+
+    expect(screen.getByText("Secret")).toBeInTheDocument()
+    await userEvent.click(screen.getByRole("button", { name: "Revelar secret" }))
+    expect(screen.getByText(secret.value)).toBeInTheDocument()
+  })
+
+  it("labels a variable without kind as Config", () => {
+    render(
+      <SecretRow secret={secret} environmentName="Production" onCopy={jest.fn()} onEdit={jest.fn()} onDelete={jest.fn()} />
+    )
+
+    expect(screen.getByText("Config")).toBeInTheDocument()
+  })
+
   it("fires copy, edit, and delete callbacks", async () => {
     const onCopy = jest.fn()
     const onEdit = jest.fn()

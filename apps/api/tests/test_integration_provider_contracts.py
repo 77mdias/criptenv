@@ -74,6 +74,245 @@ class TestVercelContract:
         ]
 
     @pytest.mark.asyncio
+    async def test_push_without_kind_keeps_todays_payload_and_lists_nothing(self, http):
+        calls, routes = http
+        routes[("POST", "/v10/projects/prj_1/env")] = httpx.Response(201, json={"created": [], "failed": []})
+
+        provider = VercelProvider()
+        await provider.push_secrets(SECRETS, VERCEL, "production")
+
+        assert [(c.method, c.url.path) for c in calls] == [("POST", "/v10/projects/prj_1/env")]
+        assert provider.recreated_keys == ()
+
+    @pytest.mark.asyncio
+    async def test_push_sends_type_and_visibility_per_kind(self, http):
+        calls, routes = http
+        routes[("GET", "/v10/projects/prj_1/env")] = httpx.Response(200, json={"envs": []})
+        routes[("POST", "/v10/projects/prj_1/env")] = httpx.Response(201, json={"created": [], "failed": []})
+
+        await VercelProvider().push_secrets(
+            [{"key": "A", "value": "1", "kind": "secret"}, {"key": "B", "value": "2", "kind": "config"}],
+            VERCEL,
+            "development",
+        )
+
+        assert json.loads(calls[-1].content) == [
+            {"key": "A", "value": "1", "type": "sensitive", "visibility": "secret", "target": ["development"]},
+            {"key": "B", "value": "2", "type": "encrypted", "visibility": "config", "target": ["development"]},
+        ]
+
+    @staticmethod
+    def _mismatch_routes(routes, envs, *, patch=None, delete=None, post=None):
+        routes[("GET", "/v10/projects/prj_1/env")] = httpx.Response(200, json={"envs": envs})
+        routes[("POST", "/v10/projects/prj_1/env")] = post or httpx.Response(201, json={"created": [], "failed": []})
+        for env in envs:
+            path = f"/v9/projects/prj_1/env/{env['id']}"
+            routes[("PATCH", path)] = patch or httpx.Response(200, json={})
+            routes[("DELETE", path)] = delete or httpx.Response(200, json={})
+
+    @staticmethod
+    def _mutations(calls):
+        return [(c.method, c.url.path) for c in calls if c.method in ("PATCH", "DELETE", "POST")]
+
+    @pytest.mark.asyncio
+    async def test_config_over_single_target_secret_deletes_then_creates(self, http):
+        calls, routes = http
+        self._mismatch_routes(routes, [{"id": "env_1", "key": "B", "type": "sensitive", "target": ["production"]}])
+
+        provider = VercelProvider()
+        await provider.push_secrets([{"key": "B", "value": "2", "kind": "config"}], VERCEL, "production")
+
+        assert [(c.method, c.url.path) for c in calls] == [
+            ("GET", "/v10/projects/prj_1/env"),
+            ("DELETE", "/v9/projects/prj_1/env/env_1"),
+            ("POST", "/v10/projects/prj_1/env"),
+        ]
+        assert provider.recreated_keys == ("B",)
+
+    @pytest.mark.asyncio
+    async def test_secret_over_single_target_config_deletes_then_creates(self, http):
+        calls, routes = http
+        self._mismatch_routes(routes, [{"id": "env_1", "key": "B", "type": "encrypted", "target": ["production"]}])
+
+        provider = VercelProvider()
+        await provider.push_secrets([{"key": "B", "value": "2", "kind": "secret"}], VERCEL, "production")
+
+        assert self._mutations(calls) == [
+            ("DELETE", "/v9/projects/prj_1/env/env_1"),
+            ("POST", "/v10/projects/prj_1/env"),
+        ]
+        assert provider.recreated_keys == ("B",)
+
+    @pytest.mark.asyncio
+    async def test_mismatch_on_multi_target_record_patches_out_only_this_target(self, http):
+        calls, routes = http
+        self._mismatch_routes(
+            routes, [{"id": "env_1", "key": "B", "type": "sensitive", "target": ["production", "preview"]}]
+        )
+
+        await VercelProvider().push_secrets([{"key": "B", "value": "2", "kind": "config"}], VERCEL, "production")
+
+        assert self._mutations(calls) == [
+            ("PATCH", "/v9/projects/prj_1/env/env_1"),
+            ("POST", "/v10/projects/prj_1/env"),
+        ]
+        patch_call = next(c for c in calls if c.method == "PATCH")
+        assert json.loads(patch_call.content) == {"target": ["preview"]}
+
+    @pytest.mark.asyncio
+    async def test_matching_kind_does_not_touch_record(self, http):
+        calls, routes = http
+        self._mismatch_routes(routes, [{"id": "env_1", "key": "B", "type": "sensitive", "target": ["production"]}])
+
+        provider = VercelProvider()
+        await provider.push_secrets([{"key": "B", "value": "2", "kind": "secret"}], VERCEL, "production")
+
+        assert self._mutations(calls) == [("POST", "/v10/projects/prj_1/env")]
+        assert provider.recreated_keys == ()
+
+    @pytest.mark.asyncio
+    async def test_record_with_git_branch_is_ignored(self, http):
+        calls, routes = http
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_1", "key": "B", "type": "sensitive", "target": ["production"], "gitBranch": "feat"}],
+        )
+
+        await VercelProvider().push_secrets([{"key": "B", "value": "2", "kind": "config"}], VERCEL, "production")
+
+        assert self._mutations(calls) == [("POST", "/v10/projects/prj_1/env")]
+
+    @pytest.mark.asyncio
+    async def test_record_target_as_string(self, http):
+        calls, routes = http
+        self._mismatch_routes(routes, [{"id": "env_1", "key": "B", "type": "sensitive", "target": "production"}])
+
+        await VercelProvider().push_secrets([{"key": "B", "value": "2", "kind": "config"}], VERCEL, "production")
+
+        assert self._mutations(calls) == [
+            ("DELETE", "/v9/projects/prj_1/env/env_1"),
+            ("POST", "/v10/projects/prj_1/env"),
+        ]
+
+    @pytest.mark.asyncio
+    async def test_other_target_record_untouched(self, http):
+        calls, routes = http
+        self._mismatch_routes(
+            routes,
+            [
+                {"id": "env_1", "key": "B", "type": "sensitive", "target": ["preview"]},
+                {"id": "env_2", "key": "B", "type": "encrypted", "target": ["production"]},
+            ],
+        )
+
+        await VercelProvider().push_secrets([{"key": "B", "value": "2", "kind": "config"}], VERCEL, "production")
+
+        assert self._mutations(calls) == [("POST", "/v10/projects/prj_1/env")]
+
+    @pytest.mark.asyncio
+    async def test_refused_conversion_leaves_that_key_alone_and_syncs_the_rest(self, http):
+        calls, routes = http
+        self._mismatch_routes(
+            routes,
+            [
+                {"id": "env_b", "key": "B", "type": "sensitive", "target": ["production", "preview"]},
+                {"id": "env_c", "key": "C", "type": "sensitive", "target": ["production", "development"]},
+            ],
+        )
+        routes[("PATCH", "/v9/projects/prj_1/env/env_c")] = httpx.Response(
+            403, json={"error": {"message": "team policy"}}
+        )
+
+        with pytest.raises(ProviderError) as excinfo:
+            await VercelProvider().push_secrets(
+                [{"key": "B", "value": "2", "kind": "config"}, {"key": "C", "value": "3", "kind": "config"}],
+                VERCEL,
+                "production",
+            )
+
+        message = str(excinfo.value)
+        assert "C" in message and "team policy" in message
+        assert "not recreated" not in message
+        # B was detached and is created again; C was not touched and is not sent.
+        post = next(c for c in calls if c.method == "POST")
+        assert [item["key"] for item in json.loads(post.content)] == ["B"]
+
+    @pytest.mark.asyncio
+    async def test_refused_delete_leaves_that_key_alone(self, http):
+        calls, routes = http
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            delete=httpx.Response(403, json={"error": {"message": "locked"}}),
+        )
+
+        with pytest.raises(ProviderError, match="locked"):
+            await VercelProvider().push_secrets(
+                [{"key": "A", "value": "1", "kind": "config"}, {"key": "C", "value": "3", "kind": "config"}],
+                VERCEL,
+                "production",
+            )
+
+        post = next(c for c in calls if c.method == "POST")
+        assert [item["key"] for item in json.loads(post.content)] == ["A"]
+
+    @pytest.mark.asyncio
+    async def test_transport_error_after_removal_names_missing_keys(self, http):
+        _, routes = http
+
+        def timeout(request):
+            raise httpx.ReadTimeout("")
+
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            post=timeout,
+        )
+
+        with pytest.raises(ProviderError, match="Removed from Vercel production and not recreated: C"):
+            await VercelProvider().push_secrets([{"key": "C", "value": "3", "kind": "config"}], VERCEL, "production")
+
+    @pytest.mark.asyncio
+    async def test_transport_error_during_removal_names_the_key_in_flight(self, http):
+        _, routes = http
+
+        def timeout(request):
+            raise httpx.ReadTimeout("")
+
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            delete=timeout,
+        )
+
+        with pytest.raises(ProviderError, match="not recreated: C"):
+            await VercelProvider().push_secrets([{"key": "C", "value": "3", "kind": "config"}], VERCEL, "production")
+
+    @pytest.mark.asyncio
+    async def test_create_failure_after_removal_names_missing_keys(self, http):
+        _, routes = http
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            post=httpx.Response(201, json={"created": [], "failed": [{"error": {"envVarKey": "C", "message": "bad"}}]}),
+        )
+
+        with pytest.raises(ProviderError, match="Removed from Vercel production and not recreated: C"):
+            await VercelProvider().push_secrets([{"key": "C", "value": "3", "kind": "config"}], VERCEL, "production")
+
+    @pytest.mark.asyncio
+    async def test_create_http_error_after_removal_names_missing_keys(self, http):
+        _, routes = http
+        self._mismatch_routes(
+            routes,
+            [{"id": "env_c", "key": "C", "type": "sensitive", "target": ["production"]}],
+            post=httpx.Response(500, json={"error": {"message": "down"}}),
+        )
+
+        with pytest.raises(ProviderError, match="Removed from Vercel production and not recreated: C"):
+            await VercelProvider().push_secrets([{"key": "C", "value": "3", "kind": "config"}], VERCEL, "production")
+
+    @pytest.mark.asyncio
     async def test_push_without_team_sends_no_team_param(self, http):
         calls, routes = http
         routes[("POST", "/v10/projects/prj_1/env")] = httpx.Response(201, json={"created": [], "failed": []})
@@ -348,6 +587,28 @@ class TestIntegrationServiceProviders:
         assert integration.last_sync_at is not None
 
     @pytest.mark.asyncio
+    async def test_push_returns_keys_vercel_recreated(self, http):
+        _, routes = http
+        routes[("GET", "/v10/projects/prj_1/env")] = httpx.Response(
+            200, json={"envs": [{"id": "env_1", "key": "B", "type": "sensitive", "target": ["production"]}]}
+        )
+        routes[("DELETE", "/v9/projects/prj_1/env/env_1")] = httpx.Response(200, json={})
+        routes[("POST", "/v10/projects/prj_1/env")] = httpx.Response(201, json={"created": [], "failed": []})
+        service = _service()
+        integration = _integration("vercel", VERCEL)
+
+        with patch.object(service, "get_integration", new=AsyncMock(return_value=integration)):
+            result = await service.sync_integration(
+                integration.id,
+                project_id=uuid4(),
+                direction="push",
+                secrets=[{"key": "B", "value": "2", "kind": "config"}],
+                environment="production",
+            )
+
+        assert result == (True, None, ["B"])
+
+    @pytest.mark.asyncio
     async def test_pull_on_push_only_provider_fails_without_flagging_integration(self, http):
         calls, _ = http
         service = _service()
@@ -417,6 +678,22 @@ class TestIntegrationServiceProviders:
 
 
 class TestSyncSchemas:
+    def test_sync_secret_kind_is_optional_and_validated(self):
+        from pydantic import ValidationError
+
+        from app.routers.integrations import SyncSecret
+
+        assert SyncSecret(key="A", value="1").kind is None
+        assert SyncSecret(key="A", value="1", kind="secret").kind == "secret"
+        with pytest.raises(ValidationError):
+            SyncSecret(key="A", value="1", kind="public")
+
+    def test_sync_response_recreated_defaults_to_none(self):
+        from app.routers.integrations import SyncResponse
+
+        assert SyncResponse(success=True).recreated is None
+        assert SyncResponse(success=True, recreated=["B"]).recreated == ["B"]
+
     def test_sync_request_requires_key_and_value(self):
         from pydantic import ValidationError
 

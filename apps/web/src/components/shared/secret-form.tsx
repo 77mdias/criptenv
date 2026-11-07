@@ -13,11 +13,16 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import type { SecretKind } from "@/lib/api"
 import { createSecretSchema } from "@/lib/validators/schemas"
+
+const KINDS: SecretKind[] = ["config", "secret"]
 
 export interface SecretFormValue {
   key: string
   value: string
+  /** Absent: an existing variable whose kind was never chosen and the type was not picked now. */
+  kind?: SecretKind
 }
 
 interface SecretFormProps {
@@ -59,10 +64,14 @@ function SecretFormDialog({
   onSubmit,
 }: Omit<SecretFormProps, "open">) {
   const t = useTranslations("secrets.form")
+  const tKinds = useTranslations("secrets.kinds")
   const secretSchema = useMemo(() => createSecretSchema(t), [t])
   const [keyName, setKeyName] = useState(initialValue?.key ?? "")
   const [value, setValue] = useState(initialValue?.value ?? "")
   const [showValue, setShowValue] = useState(false)
+  const [kind, setKind] = useState<SecretKind>(initialValue?.kind ?? "config")
+  // Saving an old variable without picking a type must not turn it into an explicit Config.
+  const [kindPicked, setKindPicked] = useState(!initialValue || Boolean(initialValue.kind))
   const [error, setError] = useState<string | null>(null)
 
   const submit = async (event: FormEvent<HTMLFormElement>) => {
@@ -74,7 +83,7 @@ function SecretFormDialog({
     }
 
     setError(null)
-    await onSubmit(parsed.data)
+    await onSubmit({ ...parsed.data, ...(kindPicked ? { kind } : {}) })
   }
 
   return (
@@ -113,6 +122,37 @@ function SecretFormDialog({
               </button>
             }
           />
+          <fieldset className="space-y-2">
+            <legend className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+              {tKinds("label")}
+            </legend>
+            <div className="grid gap-2 sm:grid-cols-2">
+              {KINDS.map((option) => (
+                <label
+                  key={option}
+                  className="flex cursor-pointer items-start gap-2 rounded-lg border border-[var(--border)] px-3 py-2 has-[:checked]:border-[var(--accent)]"
+                >
+                  <input
+                    type="radio"
+                    name="secret-kind"
+                    value={option}
+                    checked={kind === option}
+                    onChange={() => {
+                      setKind(option)
+                      setKindPicked(true)
+                    }}
+                    className="mt-0.5 accent-[var(--accent)]"
+                  />
+                  <span>
+                    <span className="block text-sm font-semibold text-[var(--text-primary)]">{tKinds(option)}</span>
+                    <span className="block font-mono text-xs text-[var(--text-muted)]">
+                      {tKinds(option === "config" ? "configHint" : "secretHint")}
+                    </span>
+                  </span>
+                </label>
+              ))}
+            </div>
+          </fieldset>
           {error && <p className="font-mono text-xs text-red-600">{error}</p>}
           <DialogFooter>
             <Button type="button" variant="secondary" onClick={() => onOpenChange(false)}>

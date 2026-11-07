@@ -14,6 +14,7 @@ export async function decryptVault(
     blobs.map(async (blob) => ({
       key: blob.key_id,
       value: await decrypt(blob.ciphertext, key, blob.iv, blob.auth_tag),
+      kind: blob.kind ?? undefined,
       updatedAt: blob.updated_at || blob.created_at,
     }))
   )
@@ -40,6 +41,7 @@ export async function encryptVault(
         auth_tag: encrypted.authTag,
         checksum: digest,
         version,
+        ...(secret.kind ? { kind: secret.kind } : {}),
       }
     })
   )

@@ -1269,7 +1269,8 @@
           "params": {
             "0": "Chave e valor do segredo",
             "1": "Ambiente de destino",
-            "2": "Projeto de destino"
+            "2": "Projeto de destino",
+            "3": "Tipo na Vercel: Secret (ninguém lê depois de salvo) ou Config. Sem flag, mantém o tipo atual; variável nova vira Config"
           }
         },
         "get": {

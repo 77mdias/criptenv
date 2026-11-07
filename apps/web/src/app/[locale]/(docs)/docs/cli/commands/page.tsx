@@ -52,9 +52,10 @@ CRIPTENV_API_KEY=cek_xxx criptenv login`,
       {
         key: 'set',
         name: 'criptenv set',
-        params: [['KEY=value', 'string', true], ['--env, -e', 'string', false], ['--project, -p', 'string', false]],
+        params: [['KEY=value', 'string', true], ['--env, -e', 'string', false], ['--project, -p', 'string', false], ['--secret / --config', 'boolean', false]],
         code: `criptenv set DATABASE_URL=postgres://user:pass@host/db
-criptenv set API_KEY=your_api_key_here -e staging`,
+criptenv set API_KEY=your_api_key_here -e staging
+criptenv set STRIPE_SECRET_KEY=sk_live_xxx --secret`,
       },
       {
         key: 'get',

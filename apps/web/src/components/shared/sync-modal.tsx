@@ -100,7 +100,7 @@ function SyncModalBody({
         direction: effectiveDirection,
         environment: integration.provider === "vercel" ? target : "production",
         ...(effectiveDirection === "push"
-          ? { secrets: secrets.map(({ key, value }) => ({ key, value })) }
+          ? { secrets: secrets.map(({ key, value, kind }) => ({ key, value, ...(kind ? { kind } : {}) })) }
           : {}),
       })
       if (!response.success) {
@@ -108,7 +108,9 @@ function SyncModalBody({
         return
       }
       if (effectiveDirection === "push") {
-        setResult({ ok: true, message: t("pushed", { count: response.synced_count ?? secrets.length }) })
+        const pushed = t("pushed", { count: response.synced_count ?? secrets.length })
+        const recreated = response.recreated?.length ? ` ${t("recreated", { keys: response.recreated.join(", ") })}` : ""
+        setResult({ ok: true, message: pushed + recreated })
         return
       }
 

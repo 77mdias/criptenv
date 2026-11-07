@@ -6,11 +6,13 @@ import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2, RotateCcw, Clock } fr
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatRelativeTime } from "@/lib/utils"
+import type { SecretKind } from "@/lib/api"
 import { ExpirationBadge } from "./expiration-badge"
 
 export interface DecryptedSecret {
   key: string
   value: string
+  kind?: SecretKind
   updatedAt?: string | null
   expiresAt?: string | null
   daysUntilExpiration?: number | null
@@ -50,6 +52,7 @@ export function SecretRow({
 }: SecretRowProps) {
   const [revealed, setRevealed] = useState(false)
   const t = useTranslations("secrets.row")
+  const tKinds = useTranslations("secrets.kinds")
   const locale = useLocale()
   const masked = "••••••••••••••••"
 
@@ -98,6 +101,9 @@ export function SecretRow({
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="px-2 py-0 text-[10px]">
             {environmentName}
+          </Badge>
+          <Badge variant="outline" className="px-2 py-0 text-[10px]">
+            {tKinds(secret.kind ?? "config")}
           </Badge>
           {secret.updatedAt && (
             <span className="font-mono text-xs text-[var(--text-muted)]">

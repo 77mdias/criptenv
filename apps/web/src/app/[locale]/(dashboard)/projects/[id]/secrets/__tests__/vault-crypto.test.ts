@@ -28,6 +28,7 @@ function vaultBlob(overrides: Partial<VaultBlob>): VaultBlob {
     auth_tag: "auth-tag",
     version: 1,
     checksum: "checksum",
+    kind: "config",
     created_at: "2026-05-01T00:00:00.000Z",
     updated_at: null,
     ...overrides,
@@ -54,11 +55,13 @@ describe("vault crypto helpers", () => {
       {
         key: "API_KEY",
         value: "plain:a",
+        kind: "config",
         updatedAt: "2026-05-01T00:00:00.000Z",
       },
       {
         key: "Z_TOKEN",
         value: "plain:z",
+        kind: "config",
         updatedAt: "2026-05-02T00:00:00.000Z",
       },
     ])
@@ -94,6 +97,34 @@ describe("vault crypto helpers", () => {
       },
     ])
     expect(mockedEncrypt).toHaveBeenCalledWith("a-value", key)
+  })
+
+  it("carries each blob's kind into the decrypted secret", async () => {
+    const secrets = await decryptVault([vaultBlob({ key_id: "TOKEN", kind: "secret" })], {} as CryptoKey)
+
+    expect(secrets[0].kind).toBe("secret")
+  })
+
+  it("leaves kind out for a variable whose kind was never chosen", async () => {
+    const [secret] = await decryptVault([vaultBlob({ key_id: "OLD", kind: null })], {} as CryptoKey)
+    const [blob] = await encryptVault([secret], {} as CryptoKey, 2)
+
+    expect(secret.kind).toBeUndefined()
+    expect("kind" in blob).toBe(false)
+  })
+
+  it("sends kind only for secrets that have one", async () => {
+    const blobs = await encryptVault(
+      [
+        { key: "A_TOKEN", value: "a", kind: "secret" },
+        { key: "B_URL", value: "b" },
+      ],
+      {} as CryptoKey,
+      2
+    )
+
+    expect(blobs[0].kind).toBe("secret")
+    expect("kind" in blobs[1]).toBe(false)
   })
 
   it("computes checksums from the canonical key, iv, ciphertext, and auth tag shape", async () => {

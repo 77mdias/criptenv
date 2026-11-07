@@ -16,6 +16,7 @@ from app.middleware.ci_auth import (
     require_ci_session_scope,
 )
 from app.models.user import User
+from app.schemas.vault import SecretKind
 from app.crypto.integration_config import IntegrationConfigEncryptionError
 from app.services.integration_service import IntegrationConfigError, IntegrationService
 from app.services.project_service import ProjectService
@@ -74,6 +75,8 @@ class IntegrationListResponse(BaseModel):
 class SyncSecret(BaseModel):
     key: str = Field(..., min_length=1, max_length=256)
     value: str = Field(..., max_length=65536)
+    # None keeps the provider's pre-kind behaviour (Vercel: encrypted, no conversion).
+    kind: Optional[SecretKind] = None
 
 
 class SyncRequest(BaseModel):
@@ -88,6 +91,8 @@ class SyncResponse(BaseModel):
     synced_count: Optional[int] = None
     # Pull only: plaintext values read from the provider, for the client to encrypt into the vault.
     secrets: Optional[list[SyncSecret]] = None
+    # Push only: keys removed from Vercel and created again with the other kind.
+    recreated: Optional[list[str]] = None
 
 
 def _force_load_integration(i):
@@ -407,6 +412,7 @@ async def sync_integration(
         environment=payload.environment
     )
     synced_count = len(pulled) if payload.direction == "pull" else len(pushed)
+    recreated = (pulled or None) if payload.direction == "push" else None
 
     if success:
         await audit_service.log(
@@ -419,6 +425,7 @@ async def sync_integration(
                 "direction": payload.direction,
                 "environment": payload.environment,
                 "synced_count": synced_count,
+                "recreated": recreated,
                 "auth_type": "ci_session" if ci_session else "session",
                 "ci_session_id": ci_session.get("session_id") if ci_session else None,
                 "ci_token_id": ci_session.get("ci_token_id") if ci_session else None,
@@ -432,6 +439,7 @@ async def sync_integration(
             message=f"Successfully synced {payload.direction} ({payload.environment})",
             synced_count=synced_count,
             secrets=pulled if payload.direction == "pull" else None,
+            recreated=recreated,
         )
     else:
         return SyncResponse(
