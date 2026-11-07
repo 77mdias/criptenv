@@ -108,4 +108,28 @@ describe("personal vault", () => {
       .its("status")
       .should("eq", 403)
   })
+
+  it("shows a login's site icon and stops asking for it when turned off", () => {
+    cy.intercept("GET", "**/api/v1/icons/github.com/icon.png", {
+      fixture: "site-icon.png",
+      headers: { "content-type": "image/png" },
+    }).as("icon")
+    createVault()
+
+    cy.contains("button", "Novo item", { timeout: 15000 }).click()
+    inputByLabel("Título").type("GitHub")
+    inputByLabel("URL").type("https://github.com/login")
+    inputByLabel(/^Senha$/).type("s3nh@-gh")
+    cy.contains("button", "Salvar").click()
+
+    cy.get('img[src*="/api/v1/icons/github.com/icon.png"]', { timeout: CRYPTO_TIMEOUT })
+      .should("be.visible")
+      .and(($img) => expect(($img[0] as HTMLImageElement).naturalWidth).to.be.greaterThan(0))
+
+    cy.contains("button", "Configurações").click()
+    cy.contains("label", "Mostrar ícones de sites").click()
+    cy.get("body").type("{esc}")
+    cy.get('img[src*="/api/v1/icons/"]').should("not.exist")
+    cy.get("@icon.all").should("have.length", 1)
+  })
 })

@@ -33,7 +33,7 @@ senha extra ───PBKDF2-SHA256 600k──▶ KEK_extra ──embrulha──�
 - Por item: os envelopes `summary` e `body` (`{iv, ciphertext, auth_tag}`), a flag `protected`, a `version` e as datas.
 - Ele também consegue inferir a quantidade de itens e o tamanho aproximado de cada um.
 
-O servidor **não vê** senhas, a chave de recuperação, títulos, usuários, URLs, senhas guardadas, notas ou conteúdo.
+O servidor **não vê** senhas, a chave de recuperação, títulos, usuários, URLs (com uma exceção: ver "Ícones de sites"), senhas guardadas, notas ou conteúdo.
 
 ## O que o servidor garante
 
@@ -49,6 +49,14 @@ O servidor **não vê** senhas, a chave de recuperação, títulos, usuários, U
 - **Trava por inatividade.** O cofre tranca sozinho após 10 minutos sem interação. Ao trancar, os componentes com dados decifrados são desmontados.
 - **Senha extra a cada "revelar".** A PK não é guardada entre aberturas.
 - **Nada é gravado antes da confirmação.** Na criação, as chaves são geradas localmente e só são gravadas depois que o usuário confirma "Guardei a chave de recuperação".
+
+## Ícones de sites
+
+- **O que vaza.** Com a opção "Mostrar ícones de sites" ligada (o padrão), o navegador pede `GET /api/v1/icons/{domínio}/icon.png` para cada login com URL. O servidor vê o domínio (não a URL inteira, nem o usuário ou a senha), junto com o cookie de sessão, que o navegador manda sozinho.
+- **O que o CriptEnv faz com isso.** Nada é guardado nem registrado: o domínio sai como `[oculto]` no log de acesso, no log de requisições, no log do `httpx` durante a busca, no Sentry e nos logs do Worker; os logs automáticos do Worker na Cloudflare (`invocation_logs`) estão desligados. Quem opera o servidor ainda poderia mudar o código e passar a registrar. A Cloudflare, que fica na frente de todo o tráfego, também vê o pedido.
+- **Como não mandar nada.** Desligar "Mostrar ícones de sites" nas configurações do cofre. Vale para o navegador onde foi desligado (fica no `localStorage`). Desligada, o navegador não faz nenhum pedido de ícone.
+- **No navegador.** Só pede ícone para `http(s)` com domínio público: IP, `localhost` e nomes como `.local`, `.lan`, `.internal`, `.home.arpa`, `.onion` e `.i2p` nunca saem do navegador.
+- **Na busca (`app/services/site_icon_service.py`).** Só sessão web, só HTTPS na porta 443. O DNS é resolvido uma vez, IP interno ou privado é recusado e a conexão vai para o IP conferido (`app/services/outbound_target.py`, o mesmo do webhook). No máximo 2 redirecionamentos, cada um conferido de novo; 5 s por conexão e 10 s no total; página até 512 KB e imagem até 200 KB. Só sai PNG, ICO ou JPEG conferido pelos bytes, com `nosniff`. Cache em memória por 24 h, inclusive de "não achei".
 
 ## Riscos conhecidos
 
