@@ -17,8 +17,6 @@ from app.schemas.personal_vault import (
     PersonalVaultItemUpdate,
 )
 
-MAX_PERSONAL_VAULT_ITEMS = 1000
-
 _CONFIG_FIELDS = tuple(PersonalVaultConfigCreate.model_fields)
 
 
@@ -80,15 +78,19 @@ class PersonalVaultService:
         )
         return list(result.scalars())
 
-    async def create_item(self, user_id: UUID, data: PersonalVaultItemCreate) -> PersonalVaultItem:
+    async def create_item(
+        self, user_id: UUID, data: PersonalVaultItemCreate, limit: int | None
+    ) -> PersonalVaultItem:
+        """`limit` comes from the user's plan (app/plans.py); None = no limit."""
         if await self.get_config(user_id) is None:
             raise PersonalVaultNotFound("Personal vault not set up")
         # shortcut: count+insert can exceed the limit by one under concurrent creates; add a DB constraint if it matters
-        count = await self.db.scalar(
-            select(func.count()).select_from(PersonalVaultItem).where(PersonalVaultItem.user_id == user_id)
-        )
-        if count >= MAX_PERSONAL_VAULT_ITEMS:
-            raise PersonalVaultLimitReached("Item limit reached")
+        if limit is not None:
+            count = await self.db.scalar(
+                select(func.count()).select_from(PersonalVaultItem).where(PersonalVaultItem.user_id == user_id)
+            )
+            if count >= limit:
+                raise PersonalVaultLimitReached("Plan limit reached")
         item = PersonalVaultItem(user_id=user_id, version=1, **{**data.model_dump(), "id": UUID(data.id)})
         try:
             # Savepoint: a duplicate client id must not poison the request's transaction.

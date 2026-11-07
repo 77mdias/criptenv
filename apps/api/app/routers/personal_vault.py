@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.database import get_db
 from app.middleware.auth import get_current_web_user
 from app.models.user import User
+from app.plans import PERSONAL_VAULT_ITEMS, plan_for
 from app.schemas.personal_vault import (
     PersonalVaultConfigCreate,
     PersonalVaultConfigResponse,
@@ -25,12 +26,17 @@ from app.services.personal_vault_service import (
 router = APIRouter(prefix="/api/v1/personal-vault", tags=["Personal Vault"])
 
 
+_STATUS = {
+    PersonalVaultNotFound: status.HTTP_404_NOT_FOUND,
+    PersonalVaultConflict: status.HTTP_409_CONFLICT,
+    # 402: the web tells a plan limit apart from a version conflict by status alone.
+    PersonalVaultLimitReached: status.HTTP_402_PAYMENT_REQUIRED,
+}
+_ERRORS = tuple(_STATUS)
+
+
 def _http(exc: Exception) -> HTTPException:
-    code = status.HTTP_404_NOT_FOUND if isinstance(exc, PersonalVaultNotFound) else status.HTTP_409_CONFLICT
-    return HTTPException(status_code=code, detail=str(exc))
-
-
-_ERRORS = (PersonalVaultNotFound, PersonalVaultConflict, PersonalVaultLimitReached)
+    return HTTPException(status_code=_STATUS[type(exc)], detail=str(exc))
 
 
 @router.get("/config", response_model=PersonalVaultConfigResponse)
@@ -77,7 +83,8 @@ async def create_item(
     db: AsyncSession = Depends(get_db),
 ):
     try:
-        return await PersonalVaultService(db).create_item(user.id, data)
+        limit = plan_for(user.plan).limits[PERSONAL_VAULT_ITEMS]
+        return await PersonalVaultService(db).create_item(user.id, data, limit)
     except _ERRORS as exc:
         raise _http(exc)
 

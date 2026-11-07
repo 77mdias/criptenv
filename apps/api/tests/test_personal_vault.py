@@ -343,13 +343,42 @@ async def test_items_are_isolated(client, setup_vault, as_user):
     assert len((await client.get("/api/v1/personal-vault/items")).json()) == 1
 
 
+from app import plans  # noqa: E402
+from app.config import settings  # noqa: E402
+
+
+def _plan(monkeypatch, **limits):
+    """Shrink the free plan's limits for one test (the real ones are 120 items, 10 folders)."""
+    free = plans.PLANS["free"]
+    monkeypatch.setitem(plans.PLANS, "free", plans.Plan("free", {**free.limits, **limits}))
+    monkeypatch.setattr(settings, "DEFAULT_PLAN", "free")
+
+
 @pytest.mark.asyncio
-async def test_item_limit(client, setup_vault, monkeypatch):
-    monkeypatch.setattr(personal_vault_service, "MAX_PERSONAL_VAULT_ITEMS", 2)
+async def test_item_limit_comes_from_plan(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_items=2)
     for _ in range(2):
         assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 201
     r = await client.post("/api/v1/personal-vault/items", json=_item())
-    assert r.status_code == 409 and r.json()["detail"] == "Item limit reached"
+    assert r.status_code == 402 and r.json()["detail"] == "Plan limit reached"
+
+
+@pytest.mark.asyncio
+async def test_unlimited_plan_has_no_item_limit(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_items=1)
+    monkeypatch.setattr(settings, "DEFAULT_PLAN", "unlimited")
+    for _ in range(3):
+        assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 201
+
+
+@pytest.mark.asyncio
+async def test_over_limit_user_can_still_edit_and_delete(client, setup_vault, monkeypatch):
+    _plan(monkeypatch, personal_vault_items=3)
+    ids = [(await client.post("/api/v1/personal-vault/items", json=_item())).json()["id"] for _ in range(3)]
+    _plan(monkeypatch, personal_vault_items=2)
+    assert (await client.put(f"/api/v1/personal-vault/items/{ids[0]}", json=_update())).status_code == 200
+    assert (await client.delete(f"/api/v1/personal-vault/items/{ids[1]}")).status_code == 204
+    assert (await client.post("/api/v1/personal-vault/items", json=_item())).status_code == 402
 
 
 @pytest.mark.asyncio
