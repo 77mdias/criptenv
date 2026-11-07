@@ -400,3 +400,37 @@ describe("vault items", () => {
     expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(1)
   })
 })
+
+describe("site icons", () => {
+  beforeEach(() => localStorage.clear())
+
+  it("shows the site icon for logins with a URL, not for notes", async () => {
+    await renderItems()
+    await screen.findByText("Wi-Fi")
+    expect(document.querySelector('img[src$="/api/v1/icons/instagram.com/icon.png"]')).not.toBeNull()
+    expect(document.querySelectorAll("img")).toHaveLength(2)
+  })
+
+  it("falls back to the key icon when the image fails", async () => {
+    await renderItems()
+    const img = document.querySelector('img[src$="/api/v1/icons/github.com/icon.png"]')!
+    const row = img.closest("li")!
+    fireEvent.error(img)
+    expect(row.querySelector("img")).toBeNull()
+    expect(row.querySelector(".lucide-key-round")).not.toBeNull()
+  })
+
+  it("turning icons off in settings hides them at once and remembers it", async () => {
+    await renderItems()
+    fireEvent.click(screen.getByRole("button", { name: "Configurações" }))
+    fireEvent.click(await screen.findByRole("checkbox", { name: "Mostrar ícones de sites" }))
+    expect(document.querySelector("img")).toBeNull()
+    expect(localStorage.getItem("criptenv:vault:site-icons")).toBe("off")
+  })
+
+  it("starts with icons off when this browser saved off", async () => {
+    localStorage.setItem("criptenv:vault:site-icons", "off")
+    await renderItems()
+    expect(document.querySelector("img")).toBeNull()
+  })
+})
