@@ -9,7 +9,7 @@ from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.environment import EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse, EnvironmentListResponse
 from app.middleware.auth import get_current_user, get_current_auth_context, AuthContext
-from app.middleware.api_key_auth import require_api_key_environment
+from app.middleware.api_key_auth import require_api_key_environment, require_api_key_project
 from app.models.user import User
 from app.models.environment import Environment
 
@@ -115,6 +115,9 @@ async def list_environments(
             detail="Invalid project ID"
         )
 
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        require_api_key_project(auth_context.api_key, project_uuid)
+
     member = await project_service.check_user_access(auth_context.user.id, project_uuid)
     if not member:
         raise HTTPException(
@@ -158,6 +161,9 @@ async def get_environment(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail="Invalid ID"
         )
+
+    if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
+        require_api_key_project(auth_context.api_key, project_uuid)
 
     member = await project_service.check_user_access(auth_context.user.id, project_uuid)
     if not member:
