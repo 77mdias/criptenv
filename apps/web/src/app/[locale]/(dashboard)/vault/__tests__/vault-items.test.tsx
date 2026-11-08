@@ -223,6 +223,33 @@ describe("vault items", () => {
     await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
   })
 
+  it("mobile menu holds the item actions", async () => {
+    mocked(vaultCrypto.decryptItem).mockResolvedValue({ ...SUMMARIES.i2, password: "x", notes: "" } as vaultCrypto.PersonalVaultItemPlain)
+    await renderItems()
+
+    fireEvent.keyDown(screen.getByRole("button", { name: "Ações de GitHub" }), { key: "Enter" })
+    const menu = await screen.findByRole("menu")
+    expect(within(menu).getAllByRole("menuitem").map((item) => item.textContent)).toEqual([
+      "Copiar usuário",
+      "Revelar",
+      "Mover para pasta",
+      "Editar",
+      "Apagar",
+    ])
+
+    fireEvent.click(within(menu).getByRole("menuitem", { name: "Editar" }))
+    const dialog = await screen.findByRole("dialog")
+    await waitFor(() => expect(within(dialog).getByLabelText("Título")).toHaveValue("GitHub"))
+  })
+
+  it("mobile menu of a note has no copy username", async () => {
+    await renderItems()
+    fireEvent.keyDown(screen.getByRole("button", { name: "Ações de Wi-Fi" }), { key: "Enter" })
+    const menu = await screen.findByRole("menu")
+    expect(within(menu).queryByRole("menuitem", { name: "Copiar usuário" })).not.toBeInTheDocument()
+    expect(within(menu).getByRole("menuitem", { name: "Apagar" })).toBeInTheDocument()
+  })
+
   it("change master password sends the rewrapped config with the current version", async () => {
     mocked(vaultCrypto.unlockProtectedKey).mockRejectedValue(new CryptoError("no", "WRONG_PASSWORD"))
     const next = { ...SAVED, master_salt: "N".repeat(44) }
