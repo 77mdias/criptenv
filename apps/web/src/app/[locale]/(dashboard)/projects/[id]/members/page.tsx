@@ -11,7 +11,10 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PermissionDialog } from "@/components/shared/permission-dialog";
 import { RolePicker } from "@/components/shared/role-picker";
-import { membersApi, peekCached } from "@/lib/api";
+import { isPlanFull, PlanUsage } from "@/components/shared/plan-usage";
+import { membersApi, peekCached, projectsApi } from "@/lib/api";
+import { isPlanLimitError } from "@/lib/api/client";
+import type { Plan } from "@/lib/api/me";
 import {
   canInviteProjectMembers,
   canManageProject,
@@ -170,6 +173,18 @@ export default function MembersPage() {
     useState<(typeof roles)[number]>("developer");
   const [inviting, setInviting] = useState(false);
   const [permissionOpen, setPermissionOpen] = useState(false);
+  // The plan of the project's owner. null = unknown: no usage shown, nothing disabled; the API still enforces.
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [limitHit, setLimitHit] = useState(false);
+
+  const loadPlan = useCallback(() => {
+    projectsApi
+      .plan(projectId)
+      .then(setPlan)
+      .catch(() => setPlan(null));
+  }, [projectId]);
+
+  useEffect(loadPlan, [loadPlan]);
 
   const currentMember = useMemo(
     () => members.find((member) => member.user_id === user?.id) ?? null,
@@ -226,7 +241,8 @@ export default function MembersPage() {
     ]);
     setMembers(membersData.members);
     setInvites(invitesData.invites);
-  }, [projectId]);
+    loadPlan();
+  }, [projectId, loadPlan]);
 
   const pendingInvites = useMemo(
     () => invites.filter((invite) => inviteState(invite) === "pending"),
@@ -246,6 +262,7 @@ export default function MembersPage() {
     setInviting(true);
     setError(null);
     setNotice(null);
+    setLimitHit(false);
     try {
       await membersApi.inviteMember(projectId, parsed.data);
       setInviteOpen(false);
@@ -254,7 +271,8 @@ export default function MembersPage() {
       await refreshData();
       setNotice(t("invite.sentNotice", { email: parsed.data.email }));
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.send"));
+      if (isPlanLimitError(err)) setLimitHit(true);
+      else setError(err instanceof Error ? err.message : t("errors.send"));
     } finally {
       setInviting(false);
     }
@@ -294,6 +312,8 @@ export default function MembersPage() {
     try {
       await membersApi.remove(projectId, member.id);
       setMembers((current) => current.filter((item) => item.id !== member.id));
+      setLimitHit(false);
+      loadPlan();
       setNotice(t("notices.memberRemoved"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.remove"));
@@ -316,6 +336,8 @@ export default function MembersPage() {
     try {
       await membersApi.revokeInvite(projectId, invite.id);
       setInvites((current) => current.filter((item) => item.id !== invite.id));
+      setLimitHit(false);
+      loadPlan();
       setNotice(t("notices.inviteRevoked"));
     } catch (err) {
       setError(err instanceof Error ? err.message : t("errors.revoke"));
@@ -364,6 +386,9 @@ export default function MembersPage() {
               invites: pendingInvites.length,
             })}
           </p>
+          <div className="mt-2">
+            <PlanUsage plan={plan} limitKey="members_per_project" limitHit={limitHit} />
+          </div>
         </div>
         <Button icon={Plus} onClick={openInviteDialog}>
           {t("invite.button")}
@@ -428,7 +453,11 @@ export default function MembersPage() {
             <Button variant="secondary" onClick={() => setInviteOpen(false)}>
               {t("invite.cancel")}
             </Button>
-            <Button loading={inviting} onClick={handleInvite}>
+            <Button
+              loading={inviting}
+              onClick={handleInvite}
+              disabled={isPlanFull(plan, "members_per_project")}
+            >
               {t("invite.submit")}
             </Button>
           </div>

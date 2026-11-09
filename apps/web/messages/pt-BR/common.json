@@ -88,10 +88,6 @@
       "usage": "{used} de {max} projetos",
       "reached": "Você chegou ao limite de {max} projetos do seu plano. Apague um projeto para criar outro."
     },
-    "environments_per_project": {
-      "usage": "{used} de {max} ambientes",
-      "reached": "Este projeto chegou ao limite de {max} ambientes do plano do dono."
-    },
     "members_per_project": {
       "usage": "{used} de {max} membros",
       "reached": "Este projeto chegou ao limite de {max} membros do plano do dono. Convites pendentes também contam."

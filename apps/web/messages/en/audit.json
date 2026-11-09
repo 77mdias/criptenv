@@ -4,7 +4,8 @@
     "subtitle": "{total} events recorded for this project",
     "exportCsv": "Export CSV",
     "exportJson": "Export JSON",
-    "loadMore": "Load more"
+    "loadMore": "Load more",
+    "retention": "Showing the last {days} days, according to the project owner's plan."
   },
   "filters": {
     "title": "Filters",

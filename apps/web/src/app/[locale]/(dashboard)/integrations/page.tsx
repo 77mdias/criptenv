@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useMemo, useState } from "react";
+import { FormEvent, useCallback, useEffect, useMemo, useState } from "react";
 import { useLocale, useTranslations } from "next-intl";
 import { ArrowLeftRight, CheckCircle2, Plug, RefreshCw, Trash2 } from "lucide-react";
 import { Link } from "@/i18n/navigation";
@@ -10,7 +10,10 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { isPlanFull, PlanUsage } from "@/components/shared/plan-usage";
 import { integrationsApi, projectsApi } from "@/lib/api";
+import { isPlanLimitError } from "@/lib/api/client";
+import type { Plan } from "@/lib/api/me";
 import type { Integration, IntegrationProvider, Project } from "@/lib/api";
 
 const PROVIDERS = ["vercel", "render", "cloudflare"] as const;
@@ -56,6 +59,25 @@ export default function IntegrationsPage() {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState(() => emptyForm("vercel"));
+  // The plan of the selected project's owner. null = unknown: no usage shown, nothing disabled; the API still enforces.
+  const [plan, setPlan] = useState<Plan | null>(null);
+  const [limitHit, setLimitHit] = useState(false);
+
+  // Bumped to load the plan again after a connection is created or removed.
+  const [planVersion, setPlanVersion] = useState(0);
+  const loadPlan = useCallback(() => setPlanVersion((version) => version + 1), []);
+
+  useEffect(() => {
+    if (!selectedProjectId) return;
+    let cancelled = false;
+    projectsApi
+      .plan(selectedProjectId)
+      .then((value) => !cancelled && setPlan(value))
+      .catch(() => !cancelled && setPlan(null));
+    return () => {
+      cancelled = true;
+    };
+  }, [selectedProjectId, planVersion]);
 
   const selectedProject = useMemo(
     () => projects.find((project) => project.id === selectedProjectId) ?? null,
@@ -122,6 +144,7 @@ export default function IntegrationsPage() {
     if (!selectedProjectId) return;
     const data = await integrationsApi.list(selectedProjectId);
     setIntegrations(data.integrations);
+    loadPlan();
   };
 
   const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
@@ -130,6 +153,7 @@ export default function IntegrationsPage() {
 
     setSaving(true);
     setError(null);
+    setLimitHit(false);
     try {
       const config: { api_token: string } & Record<string, string> = {
         api_token: form.apiToken,
@@ -146,7 +170,8 @@ export default function IntegrationsPage() {
       setForm(emptyForm(form.provider));
       await refreshIntegrations();
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("errors.create"));
+      if (isPlanLimitError(err)) setLimitHit(true);
+      else setError(err instanceof Error ? err.message : t("errors.create"));
     } finally {
       setSaving(false);
     }
@@ -186,6 +211,8 @@ export default function IntegrationsPage() {
       setIntegrations((current) =>
         current.filter((item) => item.id !== integration.id),
       );
+      setLimitHit(false);
+      loadPlan();
     } catch (err) {
       setError(
         err instanceof Error ? err.message : t("errors.remove"),
@@ -207,7 +234,12 @@ export default function IntegrationsPage() {
         {projects.length > 0 && (
           <select
             value={selectedProjectId}
-            onChange={(event) => setSelectedProjectId(event.target.value)}
+            onChange={(event) => {
+              setSelectedProjectId(event.target.value);
+              // The other project has its own owner and plan.
+              setPlan(null);
+              setLimitHit(false);
+            }}
             aria-label={t("selectProject")}
             className="h-10 rounded-lg border border-(--border) bg-(--surface) px-3 font-mono text-sm text-(--text-primary)"
           >
@@ -391,11 +423,12 @@ export default function IntegrationsPage() {
                   required={!optional}
                 />
               ))}
+              <PlanUsage plan={plan} limitKey="integrations_per_project" limitHit={limitHit} />
               <Button
                 type="submit"
                 fullWidth
                 loading={saving}
-                disabled={!selectedProjectId}
+                disabled={!selectedProjectId || isPlanFull(plan, "integrations_per_project")}
               >
                 {t("form.submit", { provider: PROVIDER_LABELS[form.provider] })}
               </Button>

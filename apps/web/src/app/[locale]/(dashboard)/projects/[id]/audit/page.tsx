@@ -8,7 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { AuditTimeline } from "@/components/shared/audit-timeline";
-import { auditApi, peekCached } from "@/lib/api";
+import { auditApi, peekCached, projectsApi } from "@/lib/api";
 import type { AuditLog, AuditLogListResponse } from "@/lib/api";
 
 // Stable protocol values (API action / resource_type identifiers) — the
@@ -50,6 +50,19 @@ export default function AuditPage() {
   const [loading, setLoading] = useState(!cachedInitialLogs);
   const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  // How far back the owner's plan shows history. null = everything, or not known yet.
+  const [retentionDays, setRetentionDays] = useState<number | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    projectsApi
+      .plan(projectId)
+      .then((plan) => !cancelled && setRetentionDays(plan.limits.audit_retention_days))
+      .catch(() => undefined);
+    return () => {
+      cancelled = true;
+    };
+  }, [projectId]);
 
   const loadLogs = useCallback(
     async (nextPage: number, append = false, showLoading = true) => {
@@ -143,6 +156,11 @@ export default function AuditPage() {
           <p className="mt-1 font-mono text-sm text-(--text-tertiary)">
             {t("page.subtitle", { total })}
           </p>
+          {retentionDays !== null && (
+            <p className="mt-1 text-sm text-(--text-secondary)">
+              {t("page.retention", { days: retentionDays })}
+            </p>
+          )}
         </div>
         <div className="flex gap-2">
           <Button

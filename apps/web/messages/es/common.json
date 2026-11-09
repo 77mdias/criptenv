@@ -88,10 +88,6 @@
       "usage": "{used} de {max} proyectos",
       "reached": "Has llegado al límite de {max} proyectos de tu plan. Elimina un proyecto para crear otro."
     },
-    "environments_per_project": {
-      "usage": "{used} de {max} entornos",
-      "reached": "Este proyecto ha llegado al límite de {max} entornos del plan de su propietario."
-    },
     "members_per_project": {
       "usage": "{used} de {max} miembros",
       "reached": "Este proyecto ha llegado al límite de {max} miembros del plan de su propietario. Las invitaciones pendientes también cuentan."

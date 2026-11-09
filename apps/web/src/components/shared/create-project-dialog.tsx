@@ -1,6 +1,6 @@
 "use client"
 
-import { useId, useMemo, useState } from "react"
+import { useEffect, useId, useMemo, useState } from "react"
 import { useTranslations } from "next-intl"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { useForm } from "react-hook-form"
@@ -17,6 +17,9 @@ import {
 import { Input } from "@/components/ui/input"
 import { createProjectSchema, type CreateProjectInput } from "@/lib/validators/schemas"
 import { projectsApi } from "@/lib/api"
+import { isPlanLimitError } from "@/lib/api/client"
+import { meApi, type Plan } from "@/lib/api/me"
+import { isPlanFull, PlanUsage } from "@/components/shared/plan-usage"
 import { buildProjectVaultConfig } from "@/lib/crypto"
 
 interface CreateProjectDialogProps {
@@ -31,6 +34,21 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
   const descriptionId = useId()
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  // null = unknown (not loaded or failed): no usage shown and nothing disabled; the API still enforces the limit.
+  const [plan, setPlan] = useState<Plan | null>(null)
+  const [limitHit, setLimitHit] = useState(false)
+
+  useEffect(() => {
+    if (!open) return
+    let cancelled = false
+    meApi
+      .plan()
+      .then((value) => !cancelled && setPlan(value))
+      .catch(() => !cancelled && setPlan(null))
+    return () => {
+      cancelled = true
+    }
+  }, [open])
 
   const {
     register,
@@ -45,6 +63,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
   const onSubmit = async (data: CreateProjectInput) => {
     setLoading(true)
     setError(null)
+    setLimitHit(false)
     try {
       const { vaultConfig, vaultProof } = await buildProjectVaultConfig(data.vaultPassword)
       await projectsApi.create({
@@ -57,7 +76,8 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
       onOpenChange(false)
       onSuccess()
     } catch (err) {
-      setError(err instanceof Error ? err.message : t("error"))
+      if (isPlanLimitError(err)) setLimitHit(true)
+      else setError(err instanceof Error ? err.message : t("error"))
     } finally {
       setLoading(false)
     }
@@ -124,6 +144,8 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
             <p className="text-xs text-red-600 font-mono">{error}</p>
           )}
 
+          <PlanUsage plan={plan} limitKey="projects" limitHit={limitHit} />
+
           <DialogFooter>
             <Button
               type="button"
@@ -132,7 +154,7 @@ export function CreateProjectDialog({ open, onOpenChange, onSuccess }: CreatePro
             >
               {t("cancel")}
             </Button>
-            <Button type="submit" loading={loading} icon={FolderPlus}>
+            <Button type="submit" loading={loading} icon={FolderPlus} disabled={isPlanFull(plan, "projects")}>
               {t("submit")}
             </Button>
           </DialogFooter>
