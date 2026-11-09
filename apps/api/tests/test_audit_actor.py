@@ -83,7 +83,8 @@ async def test_audit_logs_include_actor_and_auth_type(engine, seeded):
 
     @event.listens_for(engine.sync_engine, "before_cursor_execute")
     def _count(conn, cursor, statement, params, context, executemany):
-        if "FROM users" in statement:
+        # The owner's plan lookup (history window) also reads `users`, once per request; it is not an actor query.
+        if "FROM users" in statement and "JOIN projects" not in statement:
             users_queries.append(statement)
 
     async def _get_db():
