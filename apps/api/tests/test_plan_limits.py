@@ -337,3 +337,40 @@ async def test_member_of_max_owner_is_not_limited_by_own_free_plan(client, seed)
     _as(bia)
     r = await client.post(f"/api/v1/projects/{project.id}/environments", json={"name": "sandbox"})
     assert r.status_code == 201
+
+
+# ─── Audit history: the plan's window hides older rows, it never deletes them ─
+
+
+def _log(project, days_ago):
+    return AuditLog(id=uuid4(), project_id=project.id, user_id=project.owner_id, action="secret.updated",
+                    resource_type="secret", created_at=datetime.now(timezone.utc) - timedelta(days=days_ago))
+
+
+async def test_audit_list_hides_rows_outside_the_plan_window_without_deleting(client, seed, count, factory):
+    ana = _user()
+    project, rows = _project_with_envs(ana)
+    await seed(ana, rows, *[_log(project, days) for days in (1, 6, 8, 40)])
+    _as(ana)
+    url = f"/api/v1/projects/{project.id}/audit"
+
+    async def set_plan(plan):
+        async with factory() as db:
+            (await db.get(User, ana.id)).plan = plan
+            await db.commit()
+
+    body = (await client.get(url)).json()
+    assert (body["total"], len(body["logs"])) == (2, 2)
+    # `total` counts the window, so the last page is never empty.
+    page2 = (await client.get(url, params={"page": 2, "per_page": 1})).json()
+    assert (page2["total"], len(page2["logs"])) == (2, 1)
+
+    await set_plan("pro")
+    assert (await client.get(url)).json()["total"] == 3
+    await set_plan("max")
+    assert (await client.get(url)).json()["total"] == 4
+    await set_plan("unlimited")
+    assert (await client.get(url)).json()["total"] == 4
+    await set_plan(None)
+    assert (await client.get(url)).json()["total"] == 2
+    assert await count(AuditLog, AuditLog.project_id == project.id) == 4

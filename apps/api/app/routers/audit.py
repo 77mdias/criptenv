@@ -4,6 +4,7 @@ from uuid import UUID
 from typing import Optional
 
 from app.database import get_db
+from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.audit import AuditActor, AuditLogResponse, AuditLogListResponse
@@ -74,7 +75,8 @@ async def list_audit_logs(
         page=page,
         per_page=per_page,
         action=action,
-        resource_type=resource_type
+        resource_type=resource_type,
+        since=await PlanLimits(db).audit_since(project_uuid),
     )
 
     actors = await audit_service.get_actors({log.user_id for log in logs if log.user_id})
