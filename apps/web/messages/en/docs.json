@@ -1940,7 +1940,7 @@
       },
       "apiKeys": {
         "title": "API keys",
-        "body": "API keys start with <code>cek_</code> and last until revoked (or until their optional expiration). They suit server-to-server integrations that read projects, environments and encrypted vault blobs through the public API.",
+        "body": "API keys start with <code>cek_</code> and last until revoked (or until their optional expiration). They suit server-to-server integrations that read projects, environments and encrypted vault blobs through the public API. Each key is bound to the project it was created in: <code>GET /api/v1/projects</code> lists only that project, and any other project answers 404, even one you are a member of.",
         "scopesTitle": "Scopes",
         "scopesBody": "Today the public API enforces <code>read:secrets</code> for vault reads and honors <code>environment_scope</code>, which must name an existing environment. Write scopes are reserved for future public endpoints.",
         "scope": "Scope",

@@ -19,8 +19,11 @@ from app.middleware.auth import get_current_user_or_api_key, get_current_auth_co
 
 
 @contextmanager
-def override_dual_auth(user):
-    """Override dual auth dependency to return mock user."""
+def override_dual_auth(user, project_id=None):
+    """Override dual auth dependency to return mock user.
+
+    ``project_id`` is the project the mocked API key was created for.
+    """
     async def _get_dual_auth():
         return user
 
@@ -28,6 +31,7 @@ def override_dual_auth(user):
         api_key = MagicMock()
         api_key.scopes = ["read:secrets"]
         api_key.environment_scope = None
+        api_key.project_id = project_id
         return AuthContext(user=user, auth_type="api_key", api_key=api_key)
 
     app.dependency_overrides[get_current_user_or_api_key] = _get_dual_auth
@@ -103,7 +107,7 @@ async def test_vault_pull_with_api_key(transport, mock_user, mock_project, mock_
         yield mock_session
 
     app.dependency_overrides[get_db] = _mock_get_db
-    with override_dual_auth(mock_user):
+    with override_dual_auth(mock_user, mock_project.id):
         with patch('app.services.project_service.ProjectService.check_user_access', new_callable=AsyncMock) as mock_access:
             mock_access.return_value = MagicMock(role="developer")
             
@@ -139,7 +143,7 @@ async def test_vault_version_with_api_key(transport, mock_user, mock_project, mo
         yield mock_session
 
     app.dependency_overrides[get_db] = _mock_get_db
-    with override_dual_auth(mock_user):
+    with override_dual_auth(mock_user, mock_project.id):
         with patch('app.services.project_service.ProjectService.check_user_access', new_callable=AsyncMock) as mock_access:
             mock_access.return_value = MagicMock(role="developer")
             
@@ -208,7 +212,7 @@ async def test_projects_list_with_api_key(transport, mock_user):
 @pytest.mark.asyncio
 async def test_projects_get_with_api_key(transport, mock_user, mock_project):
     """GET /api/v1/projects/:id must accept API key."""
-    with override_dual_auth(mock_user):
+    with override_dual_auth(mock_user, mock_project.id):
         with patch('app.services.project_service.ProjectService.check_user_access', new_callable=AsyncMock) as mock_access:
             mock_access.return_value = MagicMock(role="developer")
             
@@ -242,7 +246,7 @@ async def test_environments_list_with_api_key(transport, mock_user, mock_project
     
     app.dependency_overrides[get_db] = _mock_get_db
     
-    with override_dual_auth(mock_user):
+    with override_dual_auth(mock_user, mock_project.id):
         with patch('app.services.project_service.ProjectService.check_user_access', new_callable=AsyncMock) as mock_access:
             mock_access.return_value = MagicMock(role="developer")
             

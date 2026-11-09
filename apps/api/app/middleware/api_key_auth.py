@@ -7,6 +7,7 @@ These keys are created by users and have limited scopes.
 from dataclasses import dataclass
 from typing import Optional
 from datetime import datetime, timezone
+from uuid import UUID
 
 from fastapi import HTTPException, Request, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -179,6 +180,21 @@ def require_api_key_scope(api_key: APIKey, required_scope: str) -> None:
                 "message": f"API key requires {required_scope} scope",
                 "required_scope": required_scope,
             },
+        )
+
+
+def require_api_key_project(api_key: APIKey, project_id: UUID) -> None:
+    """Raise 404 when an API key is used on a project other than its own.
+
+    An API key authenticates as the user who created it, so a membership check
+    alone would let a key minted for one project reach every project that user
+    belongs to. Answer 404, like a project the caller is not a member of, so
+    the key does not learn which other projects exist.
+    """
+    if str(api_key.project_id) != str(project_id):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found",
         )
 
 

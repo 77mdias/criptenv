@@ -76,7 +76,15 @@
     "usage": "{used} of {max} items",
     "usageUnlimited": "{used, plural, one {# item} other {# items}}",
     "limitReached": "You reached the free plan's item limit.",
-    "move": "Move {title}"
+    "move": "Move {title}",
+    "actions": "Actions for {title}",
+    "menu": {
+      "copyUsername": "Copy username",
+      "reveal": "Reveal",
+      "move": "Move to folder",
+      "edit": "Edit",
+      "delete": "Delete"
+    }
   },
   "folders": {
     "title": "Folders",

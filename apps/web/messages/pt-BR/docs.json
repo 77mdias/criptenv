@@ -1940,7 +1940,7 @@
       },
       "apiKeys": {
         "title": "API Keys",
-        "body": "API Keys têm prefixo <code>cek_</code> e valem até serem revogadas (ou até a expiração opcional). São ideais para integrações server-to-server que leem projetos, ambientes e vault blobs criptografados pela API pública.",
+        "body": "API Keys têm prefixo <code>cek_</code> e valem até serem revogadas (ou até a expiração opcional). São ideais para integrações server-to-server que leem projetos, ambientes e vault blobs criptografados pela API pública. Cada chave fica presa ao projeto em que foi criada: <code>GET /api/v1/projects</code> lista só esse projeto, e qualquer outro projeto responde 404, mesmo que você seja membro dele.",
         "scopesTitle": "Escopos",
         "scopesBody": "Hoje a API pública aplica <code>read:secrets</code> para leitura de vault e respeita <code>environment_scope</code>, que precisa ser um ambiente existente. Escopos de escrita ficam reservados para endpoints públicos futuros.",
         "scope": "Escopo",

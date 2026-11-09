@@ -23,7 +23,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from main import app
 from app.database import Base, get_db
-from app.middleware.auth import get_current_user_or_api_key
+from app.middleware.auth import AuthContext, get_current_auth_context
 from app.models.environment import Environment
 from app.models.member import ProjectMember
 from app.models.project import Project
@@ -74,20 +74,25 @@ async def world():
     await engine.dispose()
 
 
-async def _get(factory, user, project_id):
+async def _get(factory, user, project_id, api_key=None):
     async def _get_db():
         async with factory() as db:
             yield db
 
+    if api_key is None:
+        context = AuthContext(user=MagicMock(id=user.id), auth_type="session")
+    else:
+        context = AuthContext(user=MagicMock(id=user.id), auth_type="api_key", api_key=api_key)
+
     app.dependency_overrides[get_db] = _get_db
-    app.dependency_overrides[get_current_user_or_api_key] = lambda: MagicMock(id=user.id)
+    app.dependency_overrides[get_current_auth_context] = lambda: context
     try:
         async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as client:
             return await client.get(f"/api/v1/projects/{project_id}/secrets/matrix",
                                     headers={"Authorization": "Bearer test"})
     finally:
         app.dependency_overrides.pop(get_db, None)
-        app.dependency_overrides.pop(get_current_user_or_api_key, None)
+        app.dependency_overrides.pop(get_current_auth_context, None)
 
 
 @pytest.mark.asyncio
@@ -118,3 +123,27 @@ async def test_matrix_never_returns_encrypted_material(world):
 async def test_matrix_hidden_from_non_members(world):
     factory, _, stranger, project, *_ = world
     assert (await _get(factory, stranger, project.id)).status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_matrix_rejects_api_key_of_another_project(world):
+    factory, owner, _, project, *_ = world
+    other_project_key = MagicMock(project_id=uuid4(), environment_scope=None, scopes=["read:secrets"])
+    response = await _get(factory, owner, project.id, api_key=other_project_key)
+    assert response.status_code == 404
+
+
+@pytest.mark.asyncio
+async def test_matrix_limited_to_api_key_environment_scope(world):
+    factory, owner, _, project, prod, dev = world
+    dev_key = MagicMock(project_id=project.id, environment_scope="development", scopes=["read:secrets"])
+    response = await _get(factory, owner, project.id, api_key=dev_key)
+    assert response.status_code == 200, response.text
+    data = response.json()
+
+    assert [e["name"] for e in data["environments"]] == ["development"]
+    # STRIPE_KEY only exists in production, so a development key must not learn its name.
+    assert [k["key_id"] for k in data["keys"]] == ["DATABASE_URL"]
+    cells = data["keys"][0]["cells"]
+    assert set(cells) == {str(dev.id)}
+    assert cells[str(dev.id)]["version"] == 1

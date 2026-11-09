@@ -128,7 +128,7 @@ async def test_valid_scope_is_stored_and_whitespace_normalized(session_factory):
     [("development", ["development"]), (None, ["production", "development"])],
 )
 async def test_env_list_respects_api_key_scope(session_factory, scope, expected):
-    api_key = MagicMock(environment_scope=scope, scopes=["read:secrets"])
+    api_key = MagicMock(environment_scope=scope, scopes=["read:secrets"], project_id=PROJECT_ID)
     ctx = AuthContext(user=MagicMock(id=uuid4()), auth_type="api_key", api_key=api_key)
     with app_overrides(session_factory, auth_context=ctx):
         response = await _get(f"/api/v1/projects/{PROJECT_ID}/environments")
