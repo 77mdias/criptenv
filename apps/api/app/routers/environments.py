@@ -5,6 +5,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID, uuid4
 
 from app.database import get_db
+from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.environment import EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse, EnvironmentListResponse
@@ -71,6 +72,8 @@ async def create_environment(
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Environment '{payload.name}' already exists"
         )
+
+    await PlanLimits(db).check_environments(project_uuid)
 
     environment = Environment(
         id=uuid4(),

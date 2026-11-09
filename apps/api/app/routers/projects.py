@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from app.schemas.overview import SecretMatrixResponse
 from app.services.overview_service import OverviewService
+from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.project import (
@@ -30,6 +31,8 @@ async def create_project(
 ):
     project_service = ProjectService(db)
     audit_service = AuditService(db)
+
+    await PlanLimits(db).check_projects(current_user)
 
     try:
         project = await project_service.create_project(

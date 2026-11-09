@@ -3,6 +3,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID, uuid4
 
 from app.database import get_db
+from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.schemas.member import MemberAdd, MemberUpdate, MemberResponse, MemberListResponse
@@ -68,6 +69,8 @@ async def add_member(
             status_code=status.HTTP_409_CONFLICT,
             detail="User is already a member"
         )
+
+    await PlanLimits(db).check_members(project_uuid)
 
     new_member = ProjectMember(
         id=uuid4(),

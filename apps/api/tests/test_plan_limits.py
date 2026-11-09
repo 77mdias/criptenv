@@ -182,3 +182,158 @@ async def test_usage(db_session):
     assert await limits.project_usage(project.id) == {
         "environments_per_project": 3, "members_per_project": 2, "integrations_per_project": 1,
     }
+
+
+# ─── Routes: creating is blocked at the limit, nothing else is ───────────────
+
+import pytest_asyncio  # noqa: E402
+from sqlalchemy import func, select  # noqa: E402
+
+from app.middleware.auth import get_current_user, get_current_user_or_api_key  # noqa: E402
+from app.routers import invites as invites_router  # noqa: E402
+from main import app  # noqa: E402
+
+_PROJECT_BODY = {
+    "vault_config": {"salt": "s", "proof_salt": "p", "verifier_iv": "i",
+                     "verifier_ciphertext": "c", "verifier_auth_tag": "t"},
+    "vault_proof": "proof",
+}
+_DEFAULT_ENVS = ("production", "staging", "development")
+
+
+@pytest_asyncio.fixture
+async def seed(factory):
+    async def _seed(*rows):
+        async with factory() as db:
+            await _save(db, *rows)
+            await db.commit()
+    return _seed
+
+
+@pytest_asyncio.fixture
+async def count(factory):
+    async def _count(model, *where):
+        async with factory() as db:
+            return await db.scalar(select(func.count()).select_from(model).where(*where))
+    return _count
+
+
+@pytest.fixture(autouse=True)
+def _drop_api_key_override():
+    yield
+    app.dependency_overrides.pop(get_current_user_or_api_key, None)
+
+
+def _as(user):
+    app.dependency_overrides[get_current_user] = lambda: user
+    app.dependency_overrides[get_current_user_or_api_key] = lambda: user
+
+
+def _project_with_envs(owner):
+    project, membership = _project(owner)
+    return project, (project, membership, *[_env(project, name) for name in _DEFAULT_ENVS])
+
+
+async def test_fourth_project_is_402_on_free(client, seed):
+    ana = _user()
+    await seed(ana)
+    _as(ana)
+    for n in range(3):
+        assert (await client.post("/api/v1/projects", json={"name": f"app {n}", **_PROJECT_BODY})).status_code == 201
+    r = await client.post("/api/v1/projects", json={"name": "app 3", **_PROJECT_BODY})
+    assert r.status_code == 402
+    assert r.json() == {"detail": "Plan limit reached: projects (3)"}
+
+
+async def test_over_limit_account_keeps_read_edit_delete(client, seed):
+    ana = _user()
+    projects = [_project(ana) for _ in range(4)]
+    await seed(ana, *projects)
+    _as(ana)
+    ids = [str(p.id) for p, _ in projects]
+
+    assert (await client.get("/api/v1/projects")).json()["total"] == 4
+    assert (await client.get(f"/api/v1/projects/{ids[0]}")).status_code == 200
+    assert (await client.patch(f"/api/v1/projects/{ids[0]}", json={"description": "still mine"})).status_code == 200
+    assert (await client.delete(f"/api/v1/projects/{ids[3]}")).status_code == 204
+    # Back at the limit, not under it.
+    assert (await client.post("/api/v1/projects", json={"name": "new", **_PROJECT_BODY})).status_code == 402
+    assert (await client.delete(f"/api/v1/projects/{ids[2]}")).status_code == 204
+    assert (await client.post("/api/v1/projects", json={"name": "new", **_PROJECT_BODY})).status_code == 201
+
+
+async def test_fourth_environment_is_402_and_retry_of_existing_name_is_409(client, seed):
+    ana = _user()
+    project, rows = _project_with_envs(ana)
+    await seed(ana, rows)
+    _as(ana)
+    url = f"/api/v1/projects/{project.id}/environments"
+    r = await client.post(url, json={"name": "qa"})
+    assert (r.status_code, r.json()) == (402, {"detail": "Plan limit reached: environments_per_project (3)"})
+    # A retry of a create that already happened is a duplicate, not a limit.
+    assert (await client.post(url, json={"name": "staging"})).status_code == 409
+
+
+async def test_archiving_an_environment_frees_a_slot(client, seed):
+    ana = _user()
+    project, rows = _project_with_envs(ana)
+    await seed(ana, rows)
+    _as(ana)
+    url = f"/api/v1/projects/{project.id}/environments"
+    development = rows[-1]
+    assert (await client.delete(f"{url}/{development.id}")).status_code == 204
+    assert (await client.post(url, json={"name": "qa"})).status_code == 201
+
+
+async def test_invite_and_add_member_share_the_members_limit(client, seed, monkeypatch):
+    monkeypatch.setattr(invites_router.EmailService, "send_project_invite", lambda self, **kwargs: None)
+    ana, bia, carla = _user(), _user(), _user()
+    project, rows = _project_with_envs(ana)
+    pending = _invite(project)
+    await seed(ana, bia, carla, rows, _member(project, bia), pending)
+    _as(ana)
+    base = f"/api/v1/projects/{project.id}"
+
+    r = await client.post(f"{base}/invites", json={"email": "new@example.com", "role": "developer"})
+    assert (r.status_code, r.json()) == (402, {"detail": "Plan limit reached: members_per_project (3)"})
+    r = await client.post(f"{base}/members", json={"user_id": str(carla.id), "role": "developer"})
+    assert r.status_code == 402
+    # Re-sending the invite that is already pending stays a duplicate.
+    r = await client.post(f"{base}/invites", json={"email": pending.email, "role": "developer"})
+    assert r.status_code == 409
+
+
+async def test_accept_invite_over_limit_is_402_and_invite_stays_pending(client, seed, count):
+    ana, bia, carla, dani = _user(), _user(), _user(), _user()
+    project, rows = _project_with_envs(ana)
+    invite = _invite(project)
+    invite.email = dani.email
+    # 3 members plus a pending invite: where an owner lands after going back to free.
+    await seed(ana, bia, carla, dani, rows, _member(project, bia), _member(project, carla), invite)
+    _as(dani)
+
+    r = await client.post(f"/api/v1/projects/{project.id}/invites/{invite.id}/accept")
+    assert r.status_code == 402
+    assert await count(ProjectInvite, ProjectInvite.id == invite.id, ProjectInvite.accepted_at.is_(None)) == 1
+    assert await count(ProjectMember, ProjectMember.user_id == dani.id) == 0
+
+
+@pytest.mark.parametrize("plan,second", [(None, 402), ("pro", 201)])
+async def test_second_integration_follows_the_owner_plan(client, seed, plan, second):
+    ana = _user(plan=plan)
+    project, rows = _project_with_envs(ana)
+    await seed(ana, rows)
+    _as(ana)
+    url = f"/api/v1/projects/{project.id}/integrations"
+    body = {"provider": "vercel", "name": "Production", "config": {"api_token": "tok", "project_id": "prj"}}
+    assert (await client.post(url, json=body)).status_code == 201
+    assert (await client.post(url, json={**body, "name": "Preview"})).status_code == second
+
+
+async def test_member_of_max_owner_is_not_limited_by_own_free_plan(client, seed):
+    ana, bia = _user(plan="max"), _user()
+    project, rows = _project_with_envs(ana)
+    await seed(ana, bia, rows, _env(project, "qa"), _env(project, "demo"), _member(project, bia, role="admin"))
+    _as(bia)
+    r = await client.post(f"/api/v1/projects/{project.id}/environments", json={"name": "sandbox"})
+    assert r.status_code == 201
