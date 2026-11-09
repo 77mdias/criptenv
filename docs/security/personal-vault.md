@@ -42,7 +42,7 @@ O servidor **não vê** senhas, a chave de recuperação, títulos, usuários, U
 - **Isolamento.** Todo acesso é filtrado pelo usuário da sessão. Um item de outro usuário responde 404.
 - **Concorrência otimista.** Todo PUT leva `expected_version`, e o UPDATE é condicional. Uma aba com versão velha recebe 409 e recarrega, sem sobrescrever.
 - **Limites de tamanho.** KDF fixo `PBKDF2-SHA256` com 600.000 a 10.000.000 iterações; `iv` com 16 e `auth_tag` com 24 caracteres; resumo e chaves até 4.096 caracteres; corpo até 65.536; nome de pasta até 1.024.
-- **Limites por plano** (`apps/api/app/plans.py`). O plano gratuito permite 120 itens e 10 pastas; o plano `unlimited` não tem limite. Quem não tem plano próprio (`users.plan` vazio) fica no `DEFAULT_PLAN` do servidor, que por padrão é `free`. Um valor desconhecido em `users.plan` vale como `free`. Passar do limite ao criar responde 402. Baixar um limite não apaga nada: quem já tem mais continua lendo, editando e apagando.
+- **Limites por plano** (`apps/api/app/plans.py`). O plano gratuito permite 120 itens e 10 pastas; os planos `pro`, `max` e `unlimited` não têm limite no cofre. Quem não tem plano próprio (`users.plan` vazio) fica no `DEFAULT_PLAN` do servidor, que por padrão é `free`. Um valor desconhecido em `users.plan` vale como `free`. Passar do limite ao criar responde 402. Baixar um limite não apaga nada: quem já tem mais continua lendo, editando e apagando.
 - **Apagar a conta apaga o cofre** (`AuthService.delete_account`).
 
 ## No navegador

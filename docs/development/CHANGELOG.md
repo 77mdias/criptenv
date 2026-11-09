@@ -7,6 +7,31 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Planos Pro e Max e limites por plano — 2026-11-09
+
+Primeira de três entregas dos planos de assinatura (`docs/superpowers/specs/2026-11-09-subscription-plans-design.md`). Nada é vendido ainda: `users.plan` é alterado à mão.
+
+- Planos `pro` e `max` em `apps/api/app/plans.py`, ao lado de `free` e `unlimited`.
+
+  | Limite | free | pro | max | unlimited |
+  |---|---|---|---|---|
+  | Projetos (de que o usuário é dono) | 3 | sem limite | sem limite | sem limite |
+  | Ambientes por projeto | 3 | sem limite | sem limite | sem limite |
+  | Membros por projeto | 3 | 10 | 25 | sem limite |
+  | Conexões com hospedagem por projeto | 1 | sem limite | sem limite | sem limite |
+  | Histórico de auditoria visível | 7 dias | 30 dias | 90 dias | tudo |
+  | Cofre pessoal | 120 itens, 10 pastas | sem limite | sem limite | sem limite |
+
+- Tudo que é por projeto segue o plano do **dono do projeto**, não de quem está agindo. Convites pendentes ocupam vaga de membro; vencidos e revogados não. Ambientes arquivados não contam; projetos arquivados contam.
+- Criar além do limite responde **402** (`Plan limit reached: <chave> (<limite>)`): projeto, ambiente, membro, convite (criar e aceitar) e conexão. **Ler, editar, exportar e apagar nunca são bloqueados** e nada é apagado quando uma conta fica acima do limite.
+- Um projeto novo já nasce com 3 ambientes, então no plano gratuito não cabe ambiente extra.
+- Auditoria: a listagem (e a exportação, que usa a listagem) mostra só a janela do plano. As linhas mais antigas continuam no banco e voltam a aparecer se o plano subir.
+- `GET /api/v1/me/plan` passa a trazer `usage.projects`. Rota nova `GET /api/v1/projects/{id}/plan`: o plano do dono com o uso do projeto, para qualquer membro.
+- Web: uso ("2 de 3 projetos") e aviso de limite ao criar projeto, convidar membro e conectar hospedagem; nota da janela na auditoria. Os avisos ainda não oferecem upgrade.
+- Web: aviso de **sincronização de mão única** na página de integrações, no modal de sincronização e nas docs: o CriptEnv envia para a hospedagem, mas não recebe de volta o que for criado ou alterado lá.
+- Os recursos `auto_sync`, `sync_redeploy` e `ci_sync` estão declarados nos planos `max` e `unlimited`, mas ainda não mudam nenhum comportamento (entrega 2).
+- Sem migration.
+
 ### Pastas no cofre pessoal e limites por plano — 2026-11-07
 
 - Cofre pessoal: cada usuário cria as próprias pastas (um nível), escolhe a pasta de cada item no formulário e move itens com "Mover para pasta". Coluna de pastas à esquerda, com "Todas", "Sem pasta" e a contagem de itens; no celular, vira uma linha no topo. Os filtros Todos, Logins e Notas e a busca valem dentro da pasta escolhida.
