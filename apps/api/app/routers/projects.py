@@ -5,6 +5,7 @@ from sqlalchemy.exc import IntegrityError
 from app.database import get_db
 from app.schemas.overview import SecretMatrixResponse
 from app.services.overview_service import OverviewService
+from app.schemas.plan import PlanResponse
 from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
@@ -103,6 +104,37 @@ async def list_projects(
             for project, role in project_rows
         ],
         total=len(project_rows)
+    )
+
+
+@router.get("/{project_id}/plan", response_model=PlanResponse)
+async def get_project_plan(
+    project_id: str,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """The plan that applies to this project (its owner's), with the project's usage of each limit."""
+    from uuid import UUID
+
+    try:
+        project_uuid = UUID(project_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid project ID"
+        )
+
+    if not await ProjectService(db).check_user_access(current_user.id, project_uuid):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found"
+        )
+
+    limits = PlanLimits(db)
+    plan = await limits.owner_plan(project_uuid)
+    return PlanResponse(
+        id=plan.id, limits=dict(plan.limits), features=sorted(plan.features),
+        usage=await limits.project_usage(project_uuid),
     )
 
 

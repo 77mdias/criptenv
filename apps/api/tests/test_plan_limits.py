@@ -374,3 +374,36 @@ async def test_audit_list_hides_rows_outside_the_plan_window_without_deleting(cl
     await set_plan(None)
     assert (await client.get(url)).json()["total"] == 2
     assert await count(AuditLog, AuditLog.project_id == project.id) == 4
+
+
+# ─── Limits and usage for the web ────────────────────────────────────────────
+
+
+async def test_me_plan_reports_owned_projects(client, seed):
+    ana, bia = _user(), _user()
+    theirs = _project(bia)
+    await seed(ana, bia, _project(ana), _project(ana), theirs, _member(theirs[0], ana))
+    _as(ana)
+    body = (await client.get("/api/v1/me/plan")).json()
+    assert (body["id"], body["limits"]["projects"], body["usage"]) == ("free", 3, {"projects": 2})
+
+
+async def test_project_plan_is_the_owner_plan_with_project_usage(client, seed):
+    ana, bia = _user(plan="max"), _user()
+    project, rows = _project_with_envs(ana)
+    await seed(ana, bia, rows, _member(project, bia, role="viewer"))
+    _as(bia)
+    r = await client.get(f"/api/v1/projects/{project.id}/plan")
+    assert r.status_code == 200
+    body = r.json()
+    assert (body["id"], body["limits"]["members_per_project"], body["limits"]["audit_retention_days"]) == ("max", 25, 90)
+    assert body["usage"] == {"environments_per_project": 3, "members_per_project": 2, "integrations_per_project": 0}
+
+
+async def test_project_plan_is_404_for_non_members(client, seed):
+    ana, bia = _user(), _user()
+    project, rows = _project_with_envs(ana)
+    await seed(ana, bia, rows)
+    _as(bia)
+    r = await client.get(f"/api/v1/projects/{project.id}/plan")
+    assert (r.status_code, r.json()) == (404, {"detail": "Project not found"})

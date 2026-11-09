@@ -68,16 +68,12 @@ def test_default_plan_setting_rejects_unknown():
     ("unlimited", "free", {"id": "unlimited", "limits": LIMITS["unlimited"], "features": SYNC_FEATURES}),
     (None, "unlimited", {"id": "unlimited", "limits": LIMITS["unlimited"], "features": SYNC_FEATURES}),
 ])
-async def test_me_plan_route(monkeypatch, user_plan, default, expected):
+async def test_me_plan_route(monkeypatch, client, user_plan, default, expected):
     monkeypatch.setattr(settings, "DEFAULT_PLAN", default)
     app.dependency_overrides[get_current_user] = lambda: _user(user_plan)
-    try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-            r = await c.get("/api/v1/me/plan")
-    finally:
-        app.dependency_overrides.pop(get_current_user, None)
+    r = await client.get("/api/v1/me/plan")
     assert r.status_code == 200
-    assert r.json() == expected
+    assert r.json() == {**expected, "usage": {"projects": 0}}
 
 
 @pytest.mark.asyncio
