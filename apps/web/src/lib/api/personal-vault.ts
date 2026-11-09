@@ -68,10 +68,7 @@ export function deletePersonalVaultItem(id: string): Promise<void> {
   return request("DELETE", `${BASE}/items/${encodeURIComponent(id)}`)
 }
 
-/** The plan limit was reached (items or folders): the server answers 402, never 409. */
-export function isPlanLimitError(error: unknown): boolean {
-  return error instanceof ApiError && error.status === 402
-}
+export { isPlanLimitError } from "./client"
 
 // ─── Folders: the name is an envelope; which items are in a folder lives in each item's summary.
 

@@ -82,5 +82,24 @@
       "message": "{actor} invited you to join project ''{project}'' as {role}.",
       "someone": "Someone"
     }
+  },
+  "planLimits": {
+    "projects": {
+      "usage": "{used} of {max} projects",
+      "reached": "You have reached your plan's limit of {max} projects. Delete a project to create another."
+    },
+    "environments_per_project": {
+      "usage": "{used} of {max} environments",
+      "reached": "This project has reached the limit of {max} environments on its owner's plan."
+    },
+    "members_per_project": {
+      "usage": "{used} of {max} members",
+      "reached": "This project has reached the limit of {max} members on its owner's plan. Pending invites count too."
+    },
+    "integrations_per_project": {
+      "usage": "{used} of {max} connections",
+      "reached": "This project has reached the limit of {max} hosting connections on its owner's plan."
+    },
+    "reachedUnknown": "The plan limit has been reached."
   }
 }

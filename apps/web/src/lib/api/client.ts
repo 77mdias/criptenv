@@ -32,6 +32,11 @@ export class ApiError extends Error {
   }
 }
 
+/** A create passed a plan limit: the server answers 402 for that and nothing else. */
+export function isPlanLimitError(error: unknown): boolean {
+  return error instanceof ApiError && error.status === 402;
+}
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface User {

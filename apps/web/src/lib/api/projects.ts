@@ -1,4 +1,5 @@
 import { request } from './client';
+import type { Plan } from './me';
 import type {
   Project,
   ProjectListResponse,
@@ -29,6 +30,11 @@ export const projectsApi = {
 
   secretMatrix(id: string): Promise<SecretMatrixResponse> {
     return request('GET', `/api/v1/projects/${id}/secrets/matrix`);
+  },
+
+  /** The plan that applies to this project: its owner's, whoever is asking. */
+  plan(id: string): Promise<Plan> {
+    return request('GET', `/api/v1/projects/${id}/plan`);
   },
 
   create(body: CreateProjectRequest): Promise<Project> {

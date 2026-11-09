@@ -82,5 +82,24 @@
       "message": "{actor} convidou você para participar do projeto ''{project}'' como {role}.",
       "someone": "Alguém"
     }
+  },
+  "planLimits": {
+    "projects": {
+      "usage": "{used} de {max} projetos",
+      "reached": "Você chegou ao limite de {max} projetos do seu plano. Apague um projeto para criar outro."
+    },
+    "environments_per_project": {
+      "usage": "{used} de {max} ambientes",
+      "reached": "Este projeto chegou ao limite de {max} ambientes do plano do dono."
+    },
+    "members_per_project": {
+      "usage": "{used} de {max} membros",
+      "reached": "Este projeto chegou ao limite de {max} membros do plano do dono. Convites pendentes também contam."
+    },
+    "integrations_per_project": {
+      "usage": "{used} de {max} conexões",
+      "reached": "Este projeto chegou ao limite de {max} conexões com hospedagem do plano do dono."
+    },
+    "reachedUnknown": "O limite do plano foi atingido."
   }
 }
