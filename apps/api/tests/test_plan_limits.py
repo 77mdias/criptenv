@@ -407,3 +407,17 @@ async def test_project_plan_is_404_for_non_members(client, seed):
     _as(bia)
     r = await client.get(f"/api/v1/projects/{project.id}/plan")
     assert (r.status_code, r.json()) == (404, {"detail": "Project not found"})
+
+
+async def test_accept_by_emailed_token_over_limit_is_402_and_invite_stays_pending(client, seed, count):
+    ana, bia, carla, dani = _user(), _user(), _user(), _user()
+    project, rows = _project_with_envs(ana)
+    invite = _invite(project)
+    invite.email = dani.email
+    await seed(ana, bia, carla, dani, rows, _member(project, bia), _member(project, carla), invite)
+    _as(dani)
+
+    r = await client.post("/api/auth/invites/accept", params={"token": invite.token})
+    assert (r.status_code, r.json()) == (402, {"detail": "Plan limit reached: members_per_project (3)"})
+    assert await count(ProjectInvite, ProjectInvite.id == invite.id, ProjectInvite.accepted_at.is_(None)) == 1
+    assert await count(ProjectMember, ProjectMember.user_id == dani.id) == 0

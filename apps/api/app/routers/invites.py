@@ -276,9 +276,6 @@ async def accept_invite(
             detail="Invite not found"
         )
 
-    # The pending invite already holds its seat; this only refuses when the owner's plan shrank since.
-    await PlanLimits(db).check_members(project_uuid, adding=0)
-
     try:
         invite = await AcceptInviteStrategy().execute(
             db=db,

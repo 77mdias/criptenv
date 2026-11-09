@@ -11,6 +11,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 Primeira de três entregas dos planos de assinatura (`docs/superpowers/specs/2026-11-09-subscription-plans-design.md`). Nada é vendido ainda: `users.plan` é alterado à mão.
 
+- **Instalação própria (self-host): defina `DEFAULT_PLAN=unlimited` antes de atualizar.** Sem a variável, o padrão continua `free`, e a partir desta versão ele limita também projetos, ambientes, membros, conexões e a auditoria visível. Nada é apagado se você esquecer: basta definir a variável e reiniciar a API.
 - Planos `pro` e `max` em `apps/api/app/plans.py`, ao lado de `free` e `unlimited`.
 
   | Limite | free | pro | max | unlimited |
