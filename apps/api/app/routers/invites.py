@@ -5,6 +5,7 @@ from datetime import datetime, timedelta, timezone
 import secrets
 
 from app.database import get_db
+from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 from app.services.email_service import EmailService
@@ -113,6 +114,8 @@ async def create_invite(
             status_code=status.HTTP_409_CONFLICT,
             detail="Pending invite already exists for this email"
         )
+
+    await PlanLimits(db).check_members(project_uuid)
 
     invite = ProjectInvite(
         id=uuid4(),

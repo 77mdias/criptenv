@@ -8,6 +8,7 @@ from app.plans import plan_for
 from app.schemas.overview import ActivityDay, OverviewResponse
 from app.schemas.plan import PlanResponse
 from app.services.overview_service import OverviewService
+from app.services.plan_limits import PlanLimits
 
 router = APIRouter(prefix="/api/v1/me", tags=["Me"])
 
@@ -32,7 +33,13 @@ async def get_activity_stats(
 
 
 @router.get("/plan", response_model=PlanResponse)
-async def get_plan(current_user: User = Depends(get_current_user)):
-    """The user's plan: its limits (null = no limit) and the features it unlocks."""
+async def get_plan(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """The user's plan: its limits (null = no limit), the features it unlocks and the projects they own."""
     plan = plan_for(current_user.plan)
-    return PlanResponse(id=plan.id, limits=dict(plan.limits), features=sorted(plan.features))
+    return PlanResponse(
+        id=plan.id, limits=dict(plan.limits), features=sorted(plan.features),
+        usage=await PlanLimits(db).user_usage(current_user.id),
+    )

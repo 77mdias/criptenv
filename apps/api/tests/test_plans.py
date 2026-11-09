@@ -8,12 +8,38 @@ from pydantic import ValidationError
 from app.config import Settings, settings
 from app.middleware.auth import get_current_user
 from app.models.user import User
-from app.plans import plan_for
+from app.plans import AUTO_SYNC, CI_SYNC, PLANS, SYNC_REDEPLOY, plan_for
 from main import app
+
+_KEYS = [
+    "projects", "environments_per_project", "members_per_project", "integrations_per_project",
+    "audit_retention_days", "personal_vault_items", "personal_vault_folders",
+]
+# The table in docs/superpowers/specs/2026-11-09-subscription-plans-design.md.
+LIMITS = {
+    "free": dict(zip(_KEYS, [3, 3, 3, 1, 7, 120, 10])),
+    "pro": dict(zip(_KEYS, [None, None, 10, None, 30, None, None])),
+    "max": dict(zip(_KEYS, [None, None, 25, None, 90, None, None])),
+    "unlimited": dict.fromkeys(_KEYS),
+}
+SYNC_FEATURES = sorted([AUTO_SYNC, SYNC_REDEPLOY, CI_SYNC])
 
 
 def _user(plan=None):
     return User(id=uuid4(), email="ana@example.com", name="Ana", password_hash="", plan=plan)
+
+
+def test_plans_match_the_spec_table():
+    assert {plan_id: dict(plan.limits) for plan_id, plan in PLANS.items()} == LIMITS
+
+
+def test_every_plan_has_every_limit_key():
+    assert all(set(plan.limits) == set(_KEYS) for plan in PLANS.values())
+
+
+def test_only_max_and_unlimited_have_sync_features():
+    assert PLANS["free"].features == PLANS["pro"].features == frozenset()
+    assert sorted(PLANS["max"].features) == sorted(PLANS["unlimited"].features) == SYNC_FEATURES
 
 
 def test_plan_for_prefers_user_plan_then_default(monkeypatch):
@@ -37,22 +63,17 @@ def test_default_plan_setting_rejects_unknown():
 
 @pytest.mark.asyncio
 @pytest.mark.parametrize("user_plan,default,expected", [
-    (None, "free", {"id": "free", "limits": {"personal_vault_items": 120, "personal_vault_folders": 10}, "features": []}),
-    ("unlimited", "free",
-     {"id": "unlimited", "limits": {"personal_vault_items": None, "personal_vault_folders": None}, "features": []}),
-    (None, "unlimited",
-     {"id": "unlimited", "limits": {"personal_vault_items": None, "personal_vault_folders": None}, "features": []}),
+    (None, "free", {"id": "free", "limits": LIMITS["free"], "features": []}),
+    ("max", "free", {"id": "max", "limits": LIMITS["max"], "features": SYNC_FEATURES}),
+    ("unlimited", "free", {"id": "unlimited", "limits": LIMITS["unlimited"], "features": SYNC_FEATURES}),
+    (None, "unlimited", {"id": "unlimited", "limits": LIMITS["unlimited"], "features": SYNC_FEATURES}),
 ])
-async def test_me_plan_route(monkeypatch, user_plan, default, expected):
+async def test_me_plan_route(monkeypatch, client, user_plan, default, expected):
     monkeypatch.setattr(settings, "DEFAULT_PLAN", default)
     app.dependency_overrides[get_current_user] = lambda: _user(user_plan)
-    try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-            r = await c.get("/api/v1/me/plan")
-    finally:
-        app.dependency_overrides.pop(get_current_user, None)
+    r = await client.get("/api/v1/me/plan")
     assert r.status_code == 200
-    assert r.json() == expected
+    assert r.json() == {**expected, "usage": {"projects": 0}}
 
 
 @pytest.mark.asyncio

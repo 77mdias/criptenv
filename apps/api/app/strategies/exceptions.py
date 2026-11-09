@@ -28,3 +28,12 @@ class VaultConflict(DomainError):
             status_code=409,
         )
 
+
+
+class PlanLimitReached(DomainError):
+    """402: a create would pass a limit of the plan (app/plans.py). main.py turns it into the response."""
+
+    def __init__(self, key: str, limit: int):
+        self.key = key
+        self.limit = limit
+        super().__init__(f"Plan limit reached: {key} ({limit})", status_code=402)

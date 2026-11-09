@@ -14,26 +14,12 @@ import pytest_asyncio
 pytest.importorskip("aiosqlite")
 
 from pydantic import ValidationError
-from sqlalchemy.dialects.postgresql import CITEXT, JSONB
-from sqlalchemy.ext.asyncio import async_sessionmaker, create_async_engine
-from sqlalchemy.ext.compiler import compiles
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from app.database import Base
 from app.models.personal_vault import PersonalVaultItem
 from app.models.user import User
 from app.schemas.personal_vault import EncryptedBody, EncryptedSummary, PersonalVaultConfigCreate
-
-
-@compiles(CITEXT, "sqlite")
-def _compile_citext_sqlite(element, compiler, **kw):
-    return "TEXT"
-
-
-@compiles(JSONB, "sqlite")
-def _compile_jsonb_sqlite(element, compiler, **kw):
-    return "JSON"
 
 
 def _user(name):
@@ -51,21 +37,6 @@ def _config(**over):
             "master_wrapped_vault_key": _envelope(), "recovery_wrapped_vault_key": _envelope(),
             "extra_wrapped_protected_key": _envelope(), "recovery_wrapped_protected_key": _envelope()}
     return {**base, **over}
-
-
-@pytest_asyncio.fixture
-async def factory():
-    engine = create_async_engine("sqlite+aiosqlite://")
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
-    yield async_sessionmaker(engine, expire_on_commit=False)
-    await engine.dispose()
-
-
-@pytest_asyncio.fixture
-async def db_session(factory):
-    async with factory() as db:
-        yield db
 
 
 @pytest_asyncio.fixture
@@ -160,30 +131,8 @@ async def test_web_user_keeps_email_verification_rule(monkeypatch):
 
 # ─── Tasks 3-4: HTTP routes ─────────────────────────────────────────────────
 
-from httpx import ASGITransport, AsyncClient  # noqa: E402
 
 from main import app  # noqa: E402
-from app.database import get_db  # noqa: E402
-
-
-@pytest_asyncio.fixture
-async def client(factory):
-    async def _get_db():
-        async with factory() as db:
-            try:
-                yield db
-                await db.commit()
-            except Exception:
-                await db.rollback()
-                raise
-
-    app.dependency_overrides[get_db] = _get_db
-    try:
-        async with AsyncClient(transport=ASGITransport(app=app), base_url="http://test") as c:
-            yield c
-    finally:
-        app.dependency_overrides.pop(get_db, None)
-        app.dependency_overrides.pop(get_current_web_user, None)
 
 
 @pytest_asyncio.fixture

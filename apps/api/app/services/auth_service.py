@@ -309,7 +309,7 @@ class AuthService:
     async def accept_invite_by_token(self, token: str, user: User) -> Optional[ProjectInvite]:
         """Accept an invite using its token."""
         from app.strategies.invite_transitions import AcceptInviteStrategy
-        from app.strategies.exceptions import DomainError
+        from app.strategies.exceptions import DomainError, PlanLimitReached
 
         invite = await self.get_invite_by_token(token)
         if not invite:
@@ -322,6 +322,9 @@ class AuthService:
                 project_id=invite.project_id,
                 current_user=user
             )
+        except PlanLimitReached:
+            # A full project is a 402 the invitee can act on, not an "invalid invite".
+            raise
         except DomainError:
             return None
 

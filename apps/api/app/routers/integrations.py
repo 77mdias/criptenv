@@ -19,6 +19,7 @@ from app.models.user import User
 from app.schemas.vault import SecretKind
 from app.crypto.integration_config import IntegrationConfigEncryptionError
 from app.services.integration_service import IntegrationConfigError, IntegrationService
+from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
 
@@ -198,6 +199,8 @@ async def create_integration(
             detail="Project not found or insufficient permissions"
         )
     
+    await PlanLimits(db).check_integrations(project_uuid)
+
     # Create integration
     try:
         integration = await integration_service.create_integration(

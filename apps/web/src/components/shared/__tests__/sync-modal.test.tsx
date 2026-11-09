@@ -52,6 +52,14 @@ beforeEach(() => {
 })
 
 describe("SyncModal", () => {
+  it("warns that sync is one-way", async () => {
+    renderModal()
+
+    const note = await screen.findByRole("note")
+    expect(note).toHaveTextContent("Sincronização de mão única")
+    expect(note).toHaveTextContent("Edite sempre no CriptEnv")
+  })
+
   it("pushes the decrypted environment to the Vercel target", async () => {
     mocked.sync.mockResolvedValue({ success: true, message: null, synced_count: 2, secrets: null })
     renderModal()

@@ -2,6 +2,7 @@
 
 import { useTranslations } from 'next-intl';
 import { Breadcrumb, DocCard, CardGrid } from '@/components/docs';
+import { OneWaySyncNotice } from '@/components/shared/one-way-sync-notice';
 import { Cloud, GitBranch, Server, Triangle, TrainFront } from 'lucide-react';
 
 export default function IntegrationsPage() {
@@ -20,6 +21,10 @@ export default function IntegrationsPage() {
       <p className="text-muted-foreground mb-8">
         {t('description')}
       </p>
+
+      <div className="mb-8">
+        <OneWaySyncNotice />
+      </div>
 
       <CardGrid>
         <DocCard

@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.member import ProjectInvite, ProjectMember
 from app.models.user import User
+from app.services.plan_limits import PlanLimits
 from app.strategies.exceptions import InvalidInviteTransition, InviteConflict, PermissionDenied
 
 
@@ -29,6 +30,10 @@ class AcceptInviteStrategy:
         project_id: UUID,
         current_user: User,
     ) -> ProjectInvite:
+        # Here, not in a router: both ways of accepting (project route and e-mailed token) pass through.
+        # The pending invite already holds its seat; this only refuses when the owner's plan shrank since.
+        await PlanLimits(db).check_members(project_id, adding=0)
+
         if invite.accepted_at:
             raise InvalidInviteTransition("Invite already accepted")
         if invite.revoked_at:

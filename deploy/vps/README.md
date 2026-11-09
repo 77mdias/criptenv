@@ -37,7 +37,7 @@ docker compose up -d
 docker compose ps
 ```
 
-**Plano dos usuários.** `DEFAULT_PLAN` define o plano de quem não tem um plano próprio. O padrão é `free` (120 itens e 10 pastas no cofre pessoal). Em uma instalação própria, use `DEFAULT_PLAN=unlimited` para tirar os limites. A troca vale também para usuários antigos. Um valor desconhecido impede a API de subir.
+**Plano dos usuários.** `DEFAULT_PLAN` define o plano de quem não tem um plano próprio. O padrão é `free`: 3 projetos por dono, 3 ambientes, 3 membros e 1 conexão com hospedagem por projeto, 7 dias de auditoria visível, 120 itens e 10 pastas no cofre pessoal. Os outros valores são `pro`, `max` e `unlimited` (tabela em `docs/development/CHANGELOG.md`). Em uma instalação própria, use `DEFAULT_PLAN=unlimited` para tirar os limites. Quem fica acima de um limite não perde nada: só não cria mais. A troca vale também para usuários antigos. Um valor desconhecido impede a API de subir.
 
 O repositório não contém instalador automático de Docker, gerador de senha ou job de backup. Esses itens devem ser configurados pela operação da VPS.
 

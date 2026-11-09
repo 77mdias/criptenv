@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
@@ -46,13 +47,18 @@ class AuditService:
         page: int = 1,
         per_page: int = 50,
         action: Optional[str] = None,
-        resource_type: Optional[str] = None
+        resource_type: Optional[str] = None,
+        since: Optional[datetime] = None,
     ) -> tuple[list[AuditLog], int]:
+        """`since` is the plan's history window (PlanLimits.audit_since): older rows are hidden, not deleted."""
         filters = build_audit_filter_strategies(action, resource_type)
-        query = select(AuditLog).where(AuditLog.project_id == project_id)
+        in_window = [AuditLog.project_id == project_id]
+        if since is not None:
+            in_window.append(AuditLog.created_at >= since)
+        query = select(AuditLog).where(*in_window)
         query = apply_audit_filters(query, filters)
 
-        count_query = select(func.count(AuditLog.id)).where(AuditLog.project_id == project_id)
+        count_query = select(func.count(AuditLog.id)).where(*in_window)
         count_query = apply_audit_filters(count_query, filters)
 
         total_result = await self.db.execute(count_query)

@@ -44,5 +44,9 @@
       "render": "Crea la clave en Render → Account Settings → API Keys. Las variables se escriben en el servicio.",
       "cloudflare": "Usa un token de API con el permiso Workers Scripts: Edit. Solo push: Cloudflare nunca devuelve el valor de los secrets."
     }
+  },
+  "oneWay": {
+    "title": "Sincronización en un solo sentido",
+    "body": "CriptEnv envía las variables al hosting, pero no se entera de lo que se cree o cambie directamente allí: Vercel no devuelve variables sensibles y Cloudflare no devuelve secretos. Edita siempre en CriptEnv. El próximo envío puede sobrescribir lo que se cambió en el hosting."
   }
 }

@@ -128,3 +128,66 @@ def test_revoke_invite_rejects_already_revoked():
     with pytest.raises(InvalidInviteTransition, match="Invite already revoked"):
         run(RevokeInviteStrategy().execute(db, invite, invite.project_id, user))
 
+
+
+# ─── Plan limit: accepting must not pass the owner's members limit ───────────
+
+from app.services.auth_service import AuthService  # noqa: E402
+from app.strategies import invite_transitions  # noqa: E402
+from app.strategies.exceptions import PlanLimitReached  # noqa: E402
+
+
+@pytest.fixture(autouse=True)
+def members_check(monkeypatch):
+    """FakeDb cannot count rows: stand in for PlanLimits.check_members and record how it is called."""
+    calls = []
+
+    async def check_members(self, project_id, adding=1):
+        calls.append((project_id, adding))
+        if check_members.over_limit:
+            raise PlanLimitReached("members_per_project", 3)
+
+    check_members.over_limit = False
+    check_members.calls = calls
+    monkeypatch.setattr(invite_transitions.PlanLimits, "check_members", check_members)
+    return check_members
+
+
+def test_accept_invite_checks_the_members_limit_without_adding_a_seat(members_check):
+    db = FakeDb()
+    user = SimpleNamespace(id=uuid4(), email="dev@example.com")
+    invite = make_invite()
+
+    run(AcceptInviteStrategy().execute(db, invite, invite.project_id, user))
+
+    # adding=0: the pending invite already holds its seat.
+    assert members_check.calls == [(invite.project_id, 0)]
+
+
+def test_accept_invite_over_the_limit_leaves_the_invite_pending(members_check):
+    members_check.over_limit = True
+    db = FakeDb()
+    user = SimpleNamespace(id=uuid4(), email="dev@example.com")
+    invite = make_invite()
+
+    with pytest.raises(PlanLimitReached):
+        run(AcceptInviteStrategy().execute(db, invite, invite.project_id, user))
+
+    assert invite.accepted_at is None
+    assert db.added == []
+
+
+def test_accept_by_token_lets_the_plan_limit_through(members_check, monkeypatch):
+    """The e-mail link path: a full project is a 402, not "invalid invite"."""
+    members_check.over_limit = True
+    invite = make_invite()
+
+    async def pending_invite(self, token):
+        return invite
+
+    monkeypatch.setattr(AuthService, "get_invite_by_token", pending_invite)
+    user = SimpleNamespace(id=uuid4(), email="dev@example.com")
+
+    with pytest.raises(PlanLimitReached):
+        run(AuthService(FakeDb()).accept_invite_by_token("token", user))
+    assert invite.accepted_at is None

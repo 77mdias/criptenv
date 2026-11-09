@@ -71,11 +71,23 @@ export interface ActivityDay {
   other: number;
 }
 
-/** null = no limit on this plan. */
+export type PlanLimitKey =
+  | "projects"
+  | "environments_per_project"
+  | "members_per_project"
+  | "integrations_per_project"
+  | "audit_retention_days"
+  | "personal_vault_items"
+  | "personal_vault_folders";
+
+/** A user's own plan (meApi.plan) or the plan of a project's owner (projectsApi.plan). */
 export interface Plan {
   id: string;
-  limits: { personal_vault_items: number | null; personal_vault_folders: number | null };
+  /** null = no limit on this plan. */
+  limits: Record<PlanLimitKey, number | null>;
   features: string[];
+  /** Only the limits that apply to the scope asked for (the user, or one project). */
+  usage: Partial<Record<PlanLimitKey, number>>;
 }
 
 export const meApi = {
