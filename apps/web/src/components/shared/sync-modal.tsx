@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react"
 import { useTranslations } from "next-intl"
+import { OneWaySyncNotice } from "@/components/shared/one-way-sync-notice"
 import { ArrowDownToLine, ArrowUpFromLine } from "lucide-react"
 import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
@@ -137,6 +138,8 @@ function SyncModalBody({
           <DialogTitle>{t("title")}</DialogTitle>
           <DialogDescription>{t("description", { environment: environmentName })}</DialogDescription>
         </DialogHeader>
+
+        <OneWaySyncNotice />
 
         {integrations === null ? (
           <p className="font-mono text-sm text-[var(--text-muted)]">{t("loading")}</p>

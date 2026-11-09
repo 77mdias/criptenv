@@ -10,6 +10,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
+import { OneWaySyncNotice } from "@/components/shared/one-way-sync-notice";
 import { isPlanFull, PlanUsage } from "@/components/shared/plan-usage";
 import { integrationsApi, projectsApi } from "@/lib/api";
 import { isPlanLimitError } from "@/lib/api/client";
@@ -251,6 +252,8 @@ export default function IntegrationsPage() {
           </select>
         )}
       </div>
+
+      <OneWaySyncNotice />
 
       {error && (
         <Card className="border-red-500/50 p-4">
