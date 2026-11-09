@@ -189,7 +189,12 @@ async def test_usage(db_session):
 import pytest_asyncio  # noqa: E402
 from sqlalchemy import func, select  # noqa: E402
 
-from app.middleware.auth import get_current_user, get_current_user_or_api_key  # noqa: E402
+from app.middleware.auth import (  # noqa: E402
+    AuthContext,
+    get_current_auth_context,
+    get_current_user,
+    get_current_user_or_api_key,
+)
 from app.routers import invites as invites_router  # noqa: E402
 from main import app  # noqa: E402
 
@@ -222,11 +227,13 @@ async def count(factory):
 def _drop_api_key_override():
     yield
     app.dependency_overrides.pop(get_current_user_or_api_key, None)
+    app.dependency_overrides.pop(get_current_auth_context, None)
 
 
 def _as(user):
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_current_user_or_api_key] = lambda: user
+    app.dependency_overrides[get_current_auth_context] = lambda: AuthContext(user=user, auth_type="session")
 
 
 def _project_with_envs(owner):
