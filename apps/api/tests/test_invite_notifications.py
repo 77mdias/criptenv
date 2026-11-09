@@ -11,6 +11,15 @@ from app.models.member import ProjectInvite
 from app.schemas.member import InviteCreate
 
 
+@pytest.fixture(autouse=True)
+def _no_plan_limit(monkeypatch):
+    """The fake DB below cannot count rows; the members limit is covered in test_plan_limits.py."""
+    async def under_the_limit(self, project_id, adding=1):
+        return None
+
+    monkeypatch.setattr(invites_router.PlanLimits, "check_members", under_the_limit)
+
+
 class _ScalarResult:
     def __init__(self, value):
         self.value = value
