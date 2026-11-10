@@ -7,6 +7,28 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Cobrança: assinatura dos planos Pro e Max pelo Mercado Pago — 2026-11-10
+
+Terceira e última entrega dos planos de assinatura (`docs/superpowers/specs/2026-11-09-subscription-plans-design.md`, plano em `docs/superpowers/plans/2026-11-10-billing.md`).
+
+- **A cobrança entra desligada.** `BILLING_ENABLED=false` é o padrão: sem ligar, nenhuma rota, tela, job ou tópico de webhook de cobrança age, e instalações próprias (self-host) não mudam em nada. Para ligar, veja "Ativar a cobrança" em `deploy/vps/README.md`. Variáveis novas: `BILLING_ENABLED` e `BILLING_NOTIFY_EMAIL`.
+- **Nenhuma chamada real ao Mercado Pago foi feita nos testes.** A integração segue a documentação publicada (lida em 2026-11-10) e tem testes de contrato; o roteiro manual do README precisa passar antes de ligar em produção.
+- Preços: Pro R$ 29,00 por mês ou R$ 290,00 por ano; Max R$ 69,00 por mês ou R$ 690,00 por ano.
+- **Assinar.** `POST /api/v1/billing/checkout` cria a assinatura no Mercado Pago e devolve onde pagar. O plano só vale com pagamento aprovado, lido da API deles com o nosso token (por webhook, pelo botão "Já paguei" ou pelo job de hora em hora). Nenhum dado de cartão passa pelo CriptEnv.
+- **`users.plan` passa a ser escrito pelo serviço de assinatura** para quem assina. Contas com o plano posto à mão continuam como estão enquanto não assinarem.
+- **Subir de plano** vale na hora: a assinatura antiga é encerrada e o que não foi usado dela é devolvido, proporcional ao tempo. **Descer de plano ou trocar mensal ↔ anual**: o cliente paga agora e o plano novo passa a valer quando o período já pago termina.
+- **Cancelar** mantém o plano até o fim do período pago. Em até 7 dias da primeira cobrança de uma assinatura nova, o valor é devolvido automaticamente e a conta volta ao Free na hora, uma vez por conta; da segunda vez, o pedido chega por e-mail a `BILLING_NOTIFY_EMAIL`.
+- **Pagamento recusado ou ausente**: o plano vale por mais 7 dias, com e-mail e faixa no painel; depois a conta volta ao Free. Nada é apagado nem escondido: valem as regras de conta acima do limite.
+- **Excluir a conta cancela a assinatura no Mercado Pago antes**, sem reembolso. Se o Mercado Pago não responder, a exclusão falha (502) e nada é apagado.
+- A cada pagamento aprovado, `BILLING_NOTIFY_EMAIL` recebe os dados para emitir a nota (plano, valor, CPF ou CNPJ, nome e endereço). O mesmo endereço recebe reembolsos que falharam e cancelamentos que precisam ser feitos à mão.
+- Rotas novas, todas 404 com a cobrança desligada: `GET /api/v1/billing`, `POST /api/v1/billing/checkout`, `POST /api/v1/billing/cancel`, `POST /api/v1/billing/sync`, `PATCH /api/v1/billing/tax-info`. `GET /api/v1/me/plan` e `GET /api/v1/projects/{id}/plan` ganham `can_upgrade` e `grace_until`.
+- Webhook `POST /webhooks/mercadopago`: passa a tratar os tópicos `subscription_preapproval` e `subscription_authorized_payment`. Nesses tópicos, falha ao falar com o Mercado Pago responde 500 para eles entregarem de novo; o tópico `payment` do Pix de contribuição não mudou.
+- Job novo `billing_cycle`, de hora em hora, no serviço `scheduler`: fim do período pago, tolerância de 7 dias, checkout abandonado (48 h) e pagamentos cujo webhook não chegou.
+- Web: tela **Assinatura** em `/account/billing`, cartão "Plano" na conta, atalho "Ver planos" onde o limite é atingido (só para o dono do plano) e a seção de preços da landing com Free, Pro e Max, mensal e anual.
+- E-mails: assinatura confirmada, pagamento recusado, cancelamento e volta ao Free.
+- Migração `20261110_0020` (tabelas `subscriptions` e `subscription_payments`, coluna `users.refund_used_at`). Auditoria: `subscription.activated`, `.renewed`, `.upgraded`, `.scheduled`, `.past_due`, `.canceled`, `.refunded`, `.ended`.
+- Limites conhecidos: não dá para impor "só cartão" (a tela de pagamento é do Mercado Pago); estorno contestado no cartão (chargeback) não é tratado; a validação de CPF ou CNPJ é só de formato.
+
 ### O que o Max promete: envio automático, deploy e sync por CI — 2026-11-10
 
 Segunda de três entregas dos planos de assinatura (`docs/superpowers/specs/2026-11-09-subscription-plans-design.md`, plano em `docs/superpowers/plans/2026-11-10-max-sync-features.md`). Nada é vendido ainda: `users.plan` é alterado à mão.
