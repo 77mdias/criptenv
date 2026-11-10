@@ -48,5 +48,16 @@
   "oneWay": {
     "title": "Sincronización en un solo sentido",
     "body": "CriptEnv envía las variables al hosting, pero no se entera de lo que se cree o cambie directamente allí: Vercel no devuelve variables sensibles y Cloudflare no devuelve secretos. Edita siempre en CriptEnv. El próximo envío puede sobrescribir lo que se cambió en el hosting."
+  },
+  "autoSync": {
+    "title": "Envío automático",
+    "description": "Al guardar o eliminar una variable con la bóveda abierta, CriptEnv envía el entorno a este hosting.",
+    "none": "No enviar",
+    "redeploy": "Lanzar un nuevo deploy después del envío",
+    "redeployHint": "Varios guardados seguidos se convierten en un solo deploy, aproximadamente 1 minuto después del último.",
+    "vercelProductionOnly": "En Vercel, solo se vuelve a desplegar production. Preview recibe las variables en el próximo push.",
+    "cloudflareDeploys": "Cloudflare ya publica una nueva versión del Worker en cada envío.",
+    "maxOnly": "Disponible en el plan Max.",
+    "saveFailed": "No se pudo guardar esta opción."
   }
 }
