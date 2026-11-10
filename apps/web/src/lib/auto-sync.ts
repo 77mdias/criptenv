@@ -9,6 +9,8 @@ export interface AutoSyncResult {
   /** The provider's or the API's error when `ok` is false. */
   message: string | null
   deployScheduled: boolean
+  /** Keys this send asked the provider to remove; still there when `ok` is false. */
+  deleteKeys: string[]
 }
 
 /** Connections that receive this environment. Empty when the owner's plan lacks "auto_sync". */
@@ -38,6 +40,8 @@ export async function runAutoSync(
   environmentId: string,
   secrets: DecryptedSecret[],
   removedKeys: string[],
+  /** Removals an earlier failed send still owes a connection. */
+  owedDeletes: (integrationId: string) => string[] = () => [],
 ): Promise<AutoSyncResult[]> {
   let targets: ReturnType<typeof autoSyncTargets>
   try {
@@ -47,14 +51,19 @@ export async function runAutoSync(
     return []
   }
 
+  const present = new Set(secrets.map((secret) => secret.key))
   return Promise.all(
     targets.map(async ({ integration, target }): Promise<AutoSyncResult> => {
+      // A key that exists again is not removed, even if an earlier removal of it is still owed.
+      const deleteKeys = [...new Set([...owedDeletes(integration.id), ...removedKeys])].filter(
+        (key) => !present.has(key),
+      )
       try {
         const response = await integrationsApi.sync(projectId, integration.id, {
           direction: "push",
           environment: target,
           secrets: secrets.map(({ key, value, kind }) => ({ key, value, ...(kind ? { kind } : {}) })),
-          ...(removedKeys.length > 0 ? { delete_keys: removedKeys } : {}),
+          ...(deleteKeys.length > 0 ? { delete_keys: deleteKeys } : {}),
         })
         return {
           integration,
@@ -62,11 +71,49 @@ export async function runAutoSync(
           ok: response.success,
           message: response.success ? null : response.message,
           deployScheduled: Boolean(response.deploy_scheduled),
+          deleteKeys,
         }
       } catch (err) {
         const message = err instanceof Error ? err.message : null
-        return { integration, target, ok: false, message, deployScheduled: false }
+        return { integration, target, ok: false, message, deployScheduled: false, deleteKeys }
       }
     }),
   )
+}
+
+/**
+ * The automatic send of one project, for the lifetime of a page:
+ * - one send at a time, in the order of the saves (an older push answering last would leave an
+ *   older value at the host, or remove a key the next save created again);
+ * - a removal the host did not get is kept and sent again with the next save or resend, so a
+ *   variable deleted in CriptEnv does not stay live there after a failure.
+ */
+export function createAutoSyncRunner(projectId: string) {
+  let tail: Promise<unknown> = Promise.resolve()
+  const owed = new Map<string, string[]>()
+  const slot = (environmentId: string, integrationId: string) => `${environmentId}:${integrationId}`
+
+  return function run(
+    environmentId: string,
+    secrets: DecryptedSecret[],
+    removedKeys: string[],
+  ): Promise<AutoSyncResult[]> {
+    const next = tail.then(async () => {
+      const results = await runAutoSync(
+        projectId,
+        environmentId,
+        secrets,
+        removedKeys,
+        (integrationId) => owed.get(slot(environmentId, integrationId)) ?? [],
+      )
+      for (const result of results) {
+        const key = slot(environmentId, result.integration.id)
+        if (result.ok || result.deleteKeys.length === 0) owed.delete(key)
+        else owed.set(key, result.deleteKeys)
+      }
+      return results
+    })
+    tail = next.catch(() => undefined)
+    return next
+  }
 }

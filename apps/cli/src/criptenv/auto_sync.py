@@ -65,10 +65,13 @@ async def auto_sync(
             failure = str(e) or type(e).__name__
 
         if failure:
+            # The retry must carry the removals too, or a deleted secret would stay live at the host.
+            not_removed = f" Not removed at {name}: {', '.join(removed_keys)}." if removed_keys else ""
+            delete_flags = "".join(f" --delete {key}" for key in removed_keys)
             click.echo(
-                f"⚠ Could not send to {name}: {failure}. Your secrets are saved. Retry with: "
+                f"⚠ Could not send to {name}: {failure}. Your secrets are saved.{not_removed} Retry with: "
                 f"criptenv integrations sync --provider {integration.get('provider')} "
-                f"--integration {integration['id']} --env {state.environment.name} --target {target}",
+                f"--integration {integration['id']} --env {state.environment.name} --target {target}{delete_flags}",
                 err=True,
             )
         else:

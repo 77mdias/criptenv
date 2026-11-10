@@ -1,7 +1,7 @@
 import { integrationsApi } from "@/lib/api"
 import { ApiError } from "@/lib/api/client"
 import type { Integration, IntegrationListResponse } from "@/lib/api"
-import { autoSyncTargets, removedKeys, runAutoSync } from "@/lib/auto-sync"
+import { autoSyncTargets, createAutoSyncRunner, removedKeys, runAutoSync } from "@/lib/auto-sync"
 
 jest.mock("@/lib/api", () => ({
   integrationsApi: { list: jest.fn(), sync: jest.fn() },
@@ -146,5 +146,84 @@ describe("removedKeys", () => {
 
   it("is empty when keys were only added or edited", () => {
     expect(removedKeys([{ key: "A", value: "1" }], [{ key: "A", value: "2" }, { key: "B", value: "3" }])).toEqual([])
+  })
+})
+
+describe("createAutoSyncRunner", () => {
+  const bound = () => listing([integration("i1", { [ENV]: "production" })])
+  const failed = { success: false, message: "boom", synced_count: null, secrets: null }
+  const sentBodies = () => mockedSync.mock.calls.map(([, , body]) => body)
+
+  it("sends consecutive saves one at a time, in the order they were made", async () => {
+    mockedList.mockResolvedValue(bound())
+    const releases: Array<() => void> = []
+    mockedSync.mockImplementation(() => new Promise((resolve) => releases.push(() => resolve(ok))))
+    const run = createAutoSyncRunner("p1")
+
+    const first = run(ENV, [{ key: "A", value: "old" }], [])
+    const second = run(ENV, [{ key: "A", value: "new" }], [])
+    await new Promise((resolve) => setTimeout(resolve, 0))
+
+    // The newer save waits: an older push answering last would leave the old value at the host.
+    expect(sentBodies().map((body) => body.secrets?.[0].value)).toEqual(["old"])
+    releases[0]()
+    await first
+    await new Promise((resolve) => setTimeout(resolve, 0))
+    expect(sentBodies().map((body) => body.secrets?.[0].value)).toEqual(["old", "new"])
+    releases[1]()
+    await second
+  })
+
+  it("keeps a removal the host did not get and sends it again with the next save", async () => {
+    mockedList.mockResolvedValue(bound())
+    mockedSync.mockResolvedValueOnce(failed).mockResolvedValue(ok)
+    const run = createAutoSyncRunner("p1")
+
+    const [lost] = await run(ENV, [{ key: "B", value: "2" }], ["A"])
+    expect(lost).toMatchObject({ ok: false, deleteKeys: ["A"] })
+
+    await run(ENV, [{ key: "B", value: "3" }], [])
+    expect(sentBodies()[1].delete_keys).toEqual(["A"])
+
+    // Delivered: nothing is owed any more.
+    await run(ENV, [{ key: "B", value: "4" }], [])
+    expect(sentBodies()[2]).not.toHaveProperty("delete_keys")
+  })
+
+  it("does not remove a key that was created again before the retry", async () => {
+    mockedList.mockResolvedValue(bound())
+    mockedSync.mockResolvedValueOnce(failed).mockResolvedValue(ok)
+    const run = createAutoSyncRunner("p1")
+
+    await run(ENV, [], ["A"])
+    await run(ENV, [{ key: "A", value: "back" }], [])
+
+    expect(sentBodies()[1]).not.toHaveProperty("delete_keys")
+  })
+
+  it("keeps what is owed apart per environment", async () => {
+    mockedList.mockResolvedValue(
+      listing([integration("i1", { [ENV]: "production", "env-staging": "preview" })]),
+    )
+    mockedSync.mockResolvedValueOnce(failed).mockResolvedValue(ok)
+    const run = createAutoSyncRunner("p1")
+
+    await run(ENV, [], ["A"])
+    await run("env-staging", [{ key: "B", value: "1" }], [])
+
+    expect(sentBodies()[1]).not.toHaveProperty("delete_keys")
+  })
+
+  it("keeps going after a run that threw", async () => {
+    mockedList.mockResolvedValue(bound())
+    mockedSync.mockImplementationOnce(() => {
+      throw new Error("sync blew up")
+    })
+    const run = createAutoSyncRunner("p1")
+
+    const [broken] = await run(ENV, SECRETS, [])
+    const [fine] = await run(ENV, SECRETS, [])
+
+    expect([broken.ok, fine.ok]).toEqual([false, true])
   })
 })

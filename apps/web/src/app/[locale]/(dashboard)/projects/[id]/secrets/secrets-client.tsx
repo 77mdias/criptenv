@@ -48,8 +48,6 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
   // `?sync=<integration-id>` comes from the Sync button on the integrations page.
   const syncParam = searchParams.get("sync")
   const [syncOpen, setSyncOpen] = useState(false)
-  // Connection to preselect when the manual sync opens from a failed automatic send.
-  const [resendIntegrationId, setResendIntegrationId] = useState<string | null>(null)
 
   // The open secret lives in the URL (`?key=NAME`) so the attention card and the key matrix can deep link to it.
   const replaceParams = (update: (params: URLSearchParams) => void) => {
@@ -83,14 +81,8 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
     }
     setSyncOpen(true)
   }
-  const resendSync = (integrationId: string) => {
-    setResendIntegrationId(integrationId)
-    actions.dismissAutoSync()
-    guardedSync()
-  }
   const closeSync = () => {
     setSyncOpen(false)
-    setResendIntegrationId(null)
     if (syncParam) replaceParams((params) => params.delete("sync"))
   }
 
@@ -193,7 +185,7 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
 
       <AutoSyncNotice
         results={state.autoSyncResults}
-        onResend={resendSync}
+        onResend={actions.resendAutoSync}
         onDismiss={actions.dismissAutoSync}
       />
 
@@ -338,7 +330,7 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         secrets={state.secrets}
         // What was just pulled from the provider is not sent straight back to it.
         onImport={(pulled) => actions.importSecrets(pulled, { autoSync: false })}
-        initialIntegrationId={syncParam ?? resendIntegrationId}
+        initialIntegrationId={syncParam}
       />
       <ExportModal
         open={state.exportOpen}

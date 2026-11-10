@@ -20,7 +20,9 @@ function result(overrides: Partial<AutoSyncResult> = {}): AutoSyncResult {
     auto_sync_targets: { e1: "production" },
     redeploy: true,
   }
-  return { integration, target: "production", ok: true, message: null, deployScheduled: false, ...overrides }
+  return {
+    integration, target: "production", ok: true, message: null, deployScheduled: false, deleteKeys: [], ...overrides,
+  }
 }
 
 function renderNotice(results: AutoSyncResult[] | null) {
@@ -56,7 +58,17 @@ describe("AutoSyncNotice", () => {
     expect(alert).toHaveTextContent("Vercel API returned 403: forbidden")
 
     await userEvent.click(screen.getByRole("button", { name: "Reenviar" }))
-    expect(onResend).toHaveBeenCalledWith("i1")
+    expect(onResend).toHaveBeenCalledTimes(1)
+  })
+
+  it("names the variables that were not removed at the host", () => {
+    renderNotice([result({ ok: false, message: "boom", deleteKeys: ["OLD_KEY", "OTHER"] })])
+    expect(screen.getByRole("alert")).toHaveTextContent("Ainda não removidas na hospedagem: OLD_KEY, OTHER.")
+  })
+
+  it("says nothing about removals when the failed send had none", () => {
+    renderNotice([result({ ok: false, message: "boom" })])
+    expect(screen.getByRole("alert")).not.toHaveTextContent("Ainda não removidas")
   })
 
   it("lists one line per connection, failures as alerts", () => {

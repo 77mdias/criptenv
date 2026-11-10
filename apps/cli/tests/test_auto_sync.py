@@ -151,6 +151,57 @@ def test_provider_failure_warns_and_exits_zero(hosted):
     assert hosted.blobs and hosted.blobs[0]["key_id"] == "A"
 
 
+def test_failed_removal_names_the_keys_and_gives_a_retry_that_removes_them(hosted):
+    run(hosted, "set", "A=1", "-p", PROJECT)
+    run(hosted, "set", "B=2", "-p", PROJECT)
+    hosted.sync_result = {"success": False, "message": "boom"}
+
+    result = run(hosted, "delete", "A", "--force", "-p", PROJECT)
+
+    assert result.exit_code == 0, result.output
+    assert "✓ Deleted A" in result.output
+    assert "Not removed at Site: A." in result.output
+    assert (
+        "criptenv integrations sync --provider vercel --integration int_1 --env production --target preview --delete A"
+        in result.output
+    )
+
+
+def test_manual_sync_can_remove_keys_at_the_provider(hosted):
+    run(hosted, "set", "B=2", "-p", PROJECT)
+    hosted.sync_calls.clear()
+
+    result = run(
+        hosted, "integrations", "sync", "--provider", "vercel", "--target", "preview",
+        "--delete", "A", "--delete", "OLD", "--project", PROJECT,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert hosted.sync_calls[-1]["delete_keys"] == ["A", "OLD"]
+    assert hosted.sync_calls[-1]["secrets"] == [{"key": "B", "value": "2"}]
+    assert "Removed 2 key(s)" in result.output
+
+
+def test_manual_sync_removes_keys_even_when_the_environment_is_empty(hosted):
+    result = run(
+        hosted, "integrations", "sync", "--provider", "vercel", "--delete", "A", "--project", PROJECT,
+    )
+
+    assert result.exit_code == 0, result.output
+    assert (hosted.sync_calls[-1]["secrets"], hosted.sync_calls[-1]["delete_keys"]) == ([], ["A"])
+
+
+def test_manual_sync_refuses_delete_on_pull(hosted):
+    result = run(
+        hosted, "integrations", "sync", "--provider", "vercel", "--direction", "pull",
+        "--delete", "A", "--project", PROJECT,
+    )
+
+    assert result.exit_code == 1
+    assert "--delete only works with --direction push" in result.output
+    assert hosted.sync_calls == []
+
+
 @pytest.mark.parametrize("error", [
     CriptEnvAPIError(402, "Plan feature required: auto_sync"),
     ConnectionError("network down"),

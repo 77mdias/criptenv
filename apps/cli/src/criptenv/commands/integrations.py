@@ -247,6 +247,11 @@ def pick_integration(items: list[dict], provider: str, integration_id: Optional[
 @click.option("--direction", type=click.Choice(["push", "pull"]), default="push", help="push: CriptEnv → provider, pull: provider → CriptEnv")
 @click.option("--integration", "integration_id", default=None, help="Integration ID (when a provider has several)")
 @click.option("--overwrite", is_flag=True, help="On pull, overwrite secrets that already exist in CriptEnv")
+@click.option(
+    "--delete", "delete_keys", multiple=True,
+    help="On push, also remove this key from the provider (repeatable; needs the Max plan). "
+         "A key that still exists in the environment is kept.",
+)
 @click.option("--project", "project_id_arg", default=None, help="Project ID")
 def integrations_sync(
     provider: str,
@@ -255,6 +260,7 @@ def integrations_sync(
     direction: str,
     integration_id: Optional[str],
     overwrite: bool,
+    delete_keys: tuple[str, ...],
     project_id_arg: Optional[str],
 ):
     """Sync secrets with a connected provider.
@@ -267,9 +273,12 @@ def integrations_sync(
         criptenv integrations sync --provider vercel --env production
         criptenv integrations sync --provider vercel --env staging --target preview
         criptenv integrations sync --provider render --env production --direction pull
+        criptenv integrations sync --provider vercel --env production --delete OLD_KEY
     """
     provider_env = target or environment
     try:
+        if delete_keys and direction != "push":
+            raise click.ClickException("--delete only works with --direction push.")
         with cli_context(require_auth=True) as (db, _master_key, client):
             project_id = resolve_project_id(db, project_id_arg, client)
             integration = pick_integration(
@@ -281,7 +290,7 @@ def integrations_sync(
                 state = run_async(vault.load_state(environment))
                 entries = run_async(vault.decrypt_all(state))
                 kinds = {blob["key_id"]: blob.get("kind") for blob in state.blobs}
-                if not entries:
+                if not entries and not delete_keys:
                     click.echo(f"No secrets in environment '{environment}'; nothing to push.")
                     return
                 click.echo(f"Pushing {len(entries)} secret(s) from '{environment}' to {provider} ({provider_env})...")
@@ -294,6 +303,7 @@ def integrations_sync(
                         {"key": key, "value": value, **({"kind": kinds[key]} if kinds.get(key) else {})}
                         for key, value in entries.items()
                     ],
+                    **({"delete_keys": list(delete_keys)} if delete_keys else {}),
                 ))
             else:
                 click.echo(f"Pulling secrets from {provider} ({provider_env})...")
@@ -306,6 +316,8 @@ def integrations_sync(
 
             if direction == "push":
                 click.echo(f"✓ Pushed {result.get('synced_count', len(entries))} secret(s) to {provider}")
+                if delete_keys:
+                    click.echo(f"  Removed {len(delete_keys)} key(s) from {provider}: {', '.join(delete_keys)}")
                 if result.get("recreated"):
                     click.echo(f"  Recreated in {provider} with the new type: {', '.join(result['recreated'])}")
                 return
