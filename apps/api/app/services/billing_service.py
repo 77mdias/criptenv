@@ -231,6 +231,11 @@ class BillingService:
         await self.sync(subscription)
         return True
 
+    async def sync_user(self, user: User) -> None:
+        """Sync everything of one user that can still change (the "I already paid" button)."""
+        for subscription in await self._subscriptions(user.id, "pending", "scheduled", *LIVE_STATUSES):
+            await self.sync(subscription)
+
     async def sync(self, subscription: Subscription, now: datetime | None = None) -> None:
         """Bring one subscription in line with Mercado Pago. Safe to call any number of times."""
         now = now or datetime.now(timezone.utc)
@@ -381,6 +386,8 @@ class BillingService:
     async def cancel(self, user: User, now: datetime | None = None) -> CancelResult:
         """Stop the charges. Within 7 days of the first charge the money goes back, once per account."""
         now = now or datetime.now(timezone.utc)
+        # The session's own row: the caller's object may not belong to this session.
+        user = await self.db.get(User, user.id)
         target = await self._cancel_target(user)
         if target is None or target.cancel_at_period_end:
             raise BillingConflict("There is no subscription to cancel")
@@ -431,6 +438,81 @@ class BillingService:
             except MercadoPagoError as e:
                 raise BillingProviderError() from e
 
+    # ─── What depends on the clock (hourly job) ───────────────────────────────
+
+    async def run_cycle(self, now: datetime | None = None) -> int:
+        """One pass over every subscription that can change. Commits each on its own: Mercado Pago is
+        called in between, and one that fails must not undo or stop the others. Returns how many changed."""
+        now = now or datetime.now(timezone.utc)
+        ids = list(await self.db.scalars(
+            select(Subscription.id).where(Subscription.status.in_(("pending", *LIVE_STATUSES)))
+        ))
+        changed = 0
+        for subscription_id in ids:
+            try:
+                changed += await self._cycle_one(subscription_id, now)
+                await self.db.commit()
+            except Exception:
+                await self.db.rollback()
+                logger.exception("Billing cycle failed for subscription %s", subscription_id)
+        return changed
+
+    async def _cycle_one(self, subscription_id: UUID, now: datetime) -> bool:
+        subscription = await self.db.get(Subscription, subscription_id, populate_existing=True)
+
+        def snapshot():
+            return (subscription.status, subscription.current_period_end, subscription.cancel_at_period_end)
+
+        before = snapshot()
+
+        if subscription.status == "pending":
+            if subscription.created_at + PENDING_TTL < now:
+                self._end(subscription, now)
+                await self._cancel_remote_quietly(subscription)
+                await self._log("subscription.ended", subscription, reason="abandoned")
+            else:
+                await self.sync(subscription, now)  # a first payment whose webhook never arrived
+            return snapshot() != before
+
+        if not subscription.cancel_at_period_end and subscription.current_period_end < now:
+            # The paid time is over and nothing told us why: ask (a renewal, a refusal, a cancel on their side).
+            await self.sync(subscription, now)
+            if (
+                subscription.status == "active" and not subscription.cancel_at_period_end
+                and subscription.current_period_end + RENEWAL_SLACK < now
+            ):
+                subscription.status = "past_due"
+                subscription.grace_until = subscription.current_period_end + GRACE
+                await self._log("subscription.past_due", subscription, reason="no_payment")
+                user = await self.db.get(User, subscription.user_id)
+                self._mail(
+                    "send_payment_failed", user.email, plan=subscription.plan, grace_until=subscription.grace_until,
+                )
+
+        if subscription.status in LIVE_STATUSES:
+            if subscription.cancel_at_period_end and subscription.current_period_end <= now:
+                await self._finish(subscription, now, "canceled")
+            elif subscription.status == "past_due" and subscription.grace_until <= now:
+                await self._cancel_remote_quietly(subscription)
+                await self._finish(subscription, now, "unpaid")
+        return snapshot() != before
+
+    async def _finish(self, subscription: Subscription, now: datetime, reason: str) -> None:
+        """The plan in force ends: a scheduled change takes over, or the account goes back to Free."""
+        self._end(subscription, now)
+        await self._log("subscription.ended", subscription, reason=reason)
+        await self.db.flush()  # leaves "live" before a scheduled one enters (unique index)
+        user = await self.db.get(User, subscription.user_id)
+        following = await self._one(user.id, "scheduled")
+        if following is not None:
+            following.status = "active"
+            user.plan = following.plan
+            await self._log("subscription.activated", following)
+        else:
+            user.plan = None
+            self._mail("send_back_to_free", user.email, plan=subscription.plan)
+        await self.db.flush()
+
     # ─── Invoice data and what the screen reads ───────────────────────────────
 
     async def update_tax_info(self, user: User, *, tax_id: str, legal_name: str, address: str) -> None:
@@ -446,6 +528,7 @@ class BillingService:
 
     async def state(self, user: User, now: datetime | None = None) -> dict:
         now = now or datetime.now(timezone.utc)
+        user = await self.db.get(User, user.id)
         target = await self._cancel_target(user)
         return {
             "prices": {

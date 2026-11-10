@@ -18,8 +18,10 @@ from app.routers.alert_settings import router as alert_settings_router
 from app.routers.me import router as me_router
 from app.routers.personal_vault import router as personal_vault_router
 from app.routers.icons import router as icons_router
+from app.routers.billing import router as billing_router
 
 __all__ = [
+    "billing_router",
     "auth_router",
     "oauth_router",
     "projects_router",
