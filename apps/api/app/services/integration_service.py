@@ -352,6 +352,10 @@ class IntegrationService:
         The claim is one UPDATE ... RETURNING, so two schedulers never fire the
         same deploy. A failed deploy is recorded on the integration and not retried:
         the next push schedules a new one.
+
+        Scheduler-only: it commits the claim before calling any provider and then
+        once per integration, so no row stays locked while a provider answers and
+        a later failure cannot roll a fired deploy back into the queue.
         """
         now = now or datetime.now(timezone.utc)
         claimed = (
@@ -362,6 +366,9 @@ class IntegrationService:
                 .returning(Integration.id)
             )
         ).scalars().all()
+        if not claimed:
+            return 0
+        await self.db.commit()
 
         fired = 0
         for integration_id in claimed:
@@ -374,15 +381,16 @@ class IntegrationService:
                 await provider.trigger_deploy(config)
             except Exception as e:
                 await self._record_failure(integration, e, prefix="Deploy failed: ")
-                continue
-            fired += 1
-            await AuditService(self.db).log(
-                action="integration.deploy_triggered",
-                resource_type="integration",
-                resource_id=integration.id,
-                project_id=integration.project_id,
-                metadata={"provider": integration.provider},
-            )
+            else:
+                fired += 1
+                await AuditService(self.db).log(
+                    action="integration.deploy_triggered",
+                    resource_type="integration",
+                    resource_id=integration.id,
+                    project_id=integration.project_id,
+                    metadata={"provider": integration.provider},
+                )
+            await self.db.commit()
         return fired
 
     def get_available_providers(self) -> list[str]:

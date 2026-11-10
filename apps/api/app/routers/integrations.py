@@ -379,13 +379,23 @@ async def update_integration(
             detail="Project not found or insufficient permissions"
         )
 
+    current = await integration_service.get_integration(integration_uuid, project_id=project_uuid)
+    if not current:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Integration not found"
+        )
+
+    # Only what this request turns ON needs the feature: a binding that is new or points
+    # somewhere else, or redeploy going from off to on. Removing or keeping never checks the plan.
+    targets = payload.auto_sync_targets
+    stored = current.auto_sync_targets or {}
     limits = PlanLimits(db)
-    if payload.auto_sync_targets:
+    if any(stored.get(str(key)) != value for key, value in (targets or {}).items()):
         await limits.require_feature(project_uuid, AUTO_SYNC)
-    if payload.redeploy:
+    if payload.redeploy and not current.redeploy:
         await limits.require_feature(project_uuid, SYNC_REDEPLOY)
 
-    targets = payload.auto_sync_targets
     try:
         integration = await integration_service.update_settings(
             integration_uuid,

@@ -16,8 +16,8 @@ def create_session_scoped_scheduler_job(session_factory):
     async def run_due_deploys():
         async with session_factory() as db:
             try:
+                # run_due_deploys commits the claim and then each deploy on its own.
                 fired = await IntegrationService(db).run_due_deploys()
-                await db.commit()
             except Exception as e:
                 await db.rollback()
                 logger.error(f"Due deploys job failed: {e}")

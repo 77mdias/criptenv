@@ -160,13 +160,17 @@ class VercelProvider(IntegrationProvider):
         return environment == "production"
 
     async def trigger_deploy(self, config: dict) -> None:
-        """Redeploy the latest ready production deployment (createDeployment with deploymentId)."""
+        """Redeploy the newest production deployment (createDeployment with deploymentId).
+
+        Only when that newest one is READY: redeploying an older ready deployment
+        over a build that is in flight or failed would put older code in production.
+        """
         project_id = self._require(config)
         async with self._client(config) as client:
             page = ensure_ok(
                 await client.get(
                     "/v7/deployments",
-                    params={"projectId": project_id, "target": "production", "state": "READY", "limit": 1},
+                    params={"projectId": project_id, "target": "production", "limit": 1},
                 ),
                 "Vercel",
             ).json()
@@ -174,6 +178,12 @@ class VercelProvider(IntegrationProvider):
             if not deployments:
                 raise ProviderError("Vercel has no production deployment to redeploy")
             latest = deployments[0]
+            state = latest.get("readyState") or latest.get("state")
+            if state != "READY":
+                raise ProviderError(
+                    f"Vercel's newest production deployment is {state}, so it was not redeployed; "
+                    "the variables take effect on the next deploy"
+                )
             ensure_ok(
                 await client.post(
                     "/v13/deployments",

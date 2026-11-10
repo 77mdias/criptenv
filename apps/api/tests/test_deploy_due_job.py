@@ -144,3 +144,43 @@ async def test_scheduler_job_commits_what_it_fired(factory, provider):
     assert provider.deployed == ["prj_1"]
     async with factory() as db:
         assert await db.scalar(select(Integration.deploy_due_at).where(Integration.id == integration.id)) is None
+
+
+def _record_order(db_session, provider, monkeypatch):
+    """Record, in order, each commit and each provider call."""
+    events: list[str] = []
+    real_commit, real_trigger = db_session.commit, provider.trigger_deploy
+
+    async def commit():
+        events.append("commit")
+        await real_commit()
+
+    async def trigger(config):
+        events.append(f"deploy {config['project_id']}")
+        await real_trigger(config)
+
+    monkeypatch.setattr(db_session, "commit", commit)
+    provider.trigger_deploy = trigger
+    return events
+
+
+async def test_claim_is_committed_before_the_provider_is_called(db_session, provider, monkeypatch):
+    """No row stays locked, and no claim is lost to a rollback, while a provider answers."""
+    await _integration(db_session, due_in=timedelta(seconds=-1))
+    events = _record_order(db_session, provider, monkeypatch)
+
+    await IntegrationService(db_session).run_due_deploys()
+
+    assert events == ["commit", "deploy prj_1", "commit"]
+
+
+async def test_each_deploy_is_committed_on_its_own_even_after_a_failure(db_session, provider, monkeypatch):
+    await _integration(db_session, "prj_broken", due_in=timedelta(seconds=-2))
+    await _integration(db_session, "prj_ok", due_in=timedelta(seconds=-1))
+    provider.fail_for["prj_broken"] = "boom"
+    events = _record_order(db_session, provider, monkeypatch)
+
+    await IntegrationService(db_session).run_due_deploys()
+
+    assert sorted(events[1::2]) == ["deploy prj_broken", "deploy prj_ok"]
+    assert events[0::2] == ["commit", "commit", "commit"]

@@ -149,6 +149,38 @@ async def test_patch_turning_things_off_never_checks_plan(client, world, db):
     assert (r.status_code, r.json()["auto_sync_targets"], r.json()["redeploy"]) == (200, {}, False)
 
 
+async def test_downgraded_account_can_unbind_one_of_several_but_not_add_or_change(client, world, db):
+    owner, project, envs = await world("max")
+    conn = await _connect(client, project)
+    both = {envs["production"]: "production", envs["staging"]: "preview"}
+    await client.patch(_url(project, conn), json={"auto_sync_targets": both})
+    await _set_plan(db, owner, None)
+
+    changed = await client.patch(
+        _url(project, conn), json={"auto_sync_targets": {**both, envs["staging"]: "development"}}
+    )
+    unbound = await client.patch(
+        _url(project, conn), json={"auto_sync_targets": {envs["production"]: "production"}}
+    )
+    rebound = await client.patch(_url(project, conn), json={"auto_sync_targets": both})
+
+    assert (changed.status_code, changed.json()) == (402, {"detail": "Plan feature required: auto_sync"})
+    assert (unbound.status_code, unbound.json()["auto_sync_targets"]) == (200, {envs["production"]: "production"})
+    assert rebound.status_code == 402
+
+
+async def test_downgraded_account_can_resend_the_redeploy_it_already_has(client, world, db):
+    owner, project, _ = await world("max")
+    conn = await _connect(client, project)  # redeploy on
+    await _set_plan(db, owner, None)
+
+    kept = await client.patch(_url(project, conn), json={"redeploy": True})
+    await client.patch(_url(project, conn), json={"redeploy": False})
+    back_on = await client.patch(_url(project, conn), json={"redeploy": True})
+
+    assert (kept.status_code, back_on.status_code) == (200, 402)
+
+
 async def test_downgrade_keeps_the_binding_stored(client, world, db):
     owner, project, envs = await world("max")
     conn = await _connect(client, project)

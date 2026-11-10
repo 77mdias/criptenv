@@ -816,18 +816,19 @@ class TestDeleteAndDeployContracts:
         with pytest.raises(ProviderError, match="Cloudflare API returned 403: forbidden"):
             await CloudflareWorkersProvider().delete_secrets(["A"], CLOUDFLARE, "production")
 
-    async def test_vercel_deploy_redeploys_the_latest_ready_production_deployment(self, http):
+    async def test_vercel_deploy_redeploys_the_newest_production_deployment_when_it_is_ready(self, http):
         calls, routes = http
         routes[("GET", "/v7/deployments")] = httpx.Response(
-            200, json={"deployments": [{"uid": "dpl_1", "name": "my-app"}]}
+            200, json={"deployments": [{"uid": "dpl_1", "name": "my-app", "readyState": "READY"}]}
         )
         routes[("POST", "/v13/deployments")] = httpx.Response(200, json={"id": "dpl_2"})
 
         await VercelProvider().trigger_deploy(VERCEL)
 
         listing, create = calls
+        # No state filter: the newest deployment decides, whatever its state.
         assert dict(listing.url.params) == {
-            "teamId": "team_1", "projectId": "prj_1", "target": "production", "state": "READY", "limit": "1",
+            "teamId": "team_1", "projectId": "prj_1", "target": "production", "limit": "1",
         }
         assert create.url.params["teamId"] == "team_1"
         assert json.loads(create.content) == {"name": "my-app", "deploymentId": "dpl_1", "target": "production"}
@@ -841,9 +842,24 @@ class TestDeleteAndDeployContracts:
 
         assert self._writes(calls) == []
 
+    @pytest.mark.parametrize("state", ["BUILDING", "QUEUED", "INITIALIZING", "ERROR", "CANCELED"])
+    async def test_vercel_never_redeploys_older_code_over_a_newer_deployment(self, http, state):
+        """A newer build in flight (or failed) must not be replaced by a redeploy of the previous one."""
+        calls, routes = http
+        routes[("GET", "/v7/deployments")] = httpx.Response(
+            200, json={"deployments": [{"uid": "dpl_new", "name": "my-app", "readyState": state}]}
+        )
+
+        with pytest.raises(ProviderError, match=f"newest production deployment is {state}"):
+            await VercelProvider().trigger_deploy(VERCEL)
+
+        assert self._writes(calls) == []
+
     async def test_vercel_deploy_reports_a_refusal(self, http):
         _, routes = http
-        routes[("GET", "/v7/deployments")] = httpx.Response(200, json={"deployments": [{"uid": "d", "name": "n"}]})
+        routes[("GET", "/v7/deployments")] = httpx.Response(
+            200, json={"deployments": [{"uid": "d", "name": "n", "readyState": "READY"}]}
+        )
         routes[("POST", "/v13/deployments")] = httpx.Response(402, json={"error": {"message": "payment required"}})
 
         with pytest.raises(ProviderError, match="Vercel API returned 402: payment required"):
