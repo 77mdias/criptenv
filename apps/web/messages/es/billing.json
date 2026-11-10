@@ -3,6 +3,10 @@
   "subtitle": "Tu plan, el próximo cobro y los datos de facturación.",
   "loading": "Cargando suscripción…",
   "back": "Volver a la cuenta",
+  "card": {
+    "title": "Plan",
+    "manage": "Gestionar suscripción"
+  },
   "planNames": {
     "free": "Free",
     "pro": "Pro",

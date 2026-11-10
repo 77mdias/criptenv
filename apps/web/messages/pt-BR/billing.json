@@ -3,6 +3,10 @@
   "subtitle": "Seu plano, a próxima cobrança e os dados para nota.",
   "loading": "Carregando assinatura…",
   "back": "Voltar para a conta",
+  "card": {
+    "title": "Plano",
+    "manage": "Gerenciar assinatura"
+  },
   "planNames": {
     "free": "Free",
     "pro": "Pro",

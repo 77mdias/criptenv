@@ -96,6 +96,11 @@
       "usage": "{used} of {max} connections",
       "reached": "This project has reached the limit of {max} hosting connections on its owner's plan."
     },
-    "reachedUnknown": "The plan limit has been reached."
+    "reachedUnknown": "The plan limit has been reached.",
+    "seePlans": "See plans"
+  },
+  "billingNotice": {
+    "text": "We could not charge your subscription. Your plan holds until {date}.",
+    "action": "Fix it"
   }
 }

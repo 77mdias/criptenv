@@ -3,6 +3,10 @@
   "subtitle": "Your plan, the next charge and your invoice data.",
   "loading": "Loading subscription…",
   "back": "Back to account",
+  "card": {
+    "title": "Plan",
+    "manage": "Manage subscription"
+  },
   "planNames": {
     "free": "Free",
     "pro": "Pro",

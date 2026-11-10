@@ -96,6 +96,11 @@
       "usage": "{used} de {max} conexiones",
       "reached": "Este proyecto ha llegado al límite de {max} conexiones de hosting del plan de su propietario."
     },
-    "reachedUnknown": "Se alcanzó el límite del plan."
+    "reachedUnknown": "Se alcanzó el límite del plan.",
+    "seePlans": "Ver planes"
+  },
+  "billingNotice": {
+    "text": "No pudimos cobrar tu suscripción. Tu plan sigue hasta el {date}.",
+    "action": "Resolver"
   }
 }

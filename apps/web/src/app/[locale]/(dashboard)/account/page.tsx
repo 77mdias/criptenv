@@ -21,6 +21,7 @@ import { AvatarUpload } from "@/components/shared/avatar-upload"
 import { RowIcon, SectionHeader, formatDate } from "./_components/account-ui"
 import { LinkedAccountsCard, type ProviderKey } from "./_components/linked-accounts-card"
 import { SessionsCard } from "./_components/sessions-card"
+import { PlanCard } from "./_components/plan-card"
 
 // ─── Local helpers ────────────────────────────────────────────────────────────
 
@@ -827,6 +828,7 @@ export default function AccountPage() {
             sessionsCount={sessions.length}
             linkedCount={oauthAccounts.length}
           />
+          <PlanCard />
           <SecuritySummaryCard
             emailVerified={!!currentUser?.email_verified}
             twoFactorEnabled={!!currentUser?.two_factor_enabled}
