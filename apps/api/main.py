@@ -103,6 +103,19 @@ async def lifespan(app: FastAPI):
                 misfire_grace_time=300,
             )
             logger.info("Added session cleanup job (interval: 1h)")
+
+            # Fire the provider deploys that pushes asked for (integrations.deploy_due_at)
+            from app.jobs.deploy_due import create_session_scoped_scheduler_job as create_deploy_due_job
+            scheduler_manager.scheduler.add_job(
+                create_deploy_due_job(async_session_factory),
+                trigger=IntervalTrigger(seconds=30),
+                id="deploy_due",
+                name="Due Provider Deploys",
+                replace_existing=True,
+                max_instances=1,
+                misfire_grace_time=30,
+            )
+            logger.info("Added deploy_due job (interval: 30s)")
             
             scheduler_manager.start()
             logger.info("Scheduler started")

@@ -9,7 +9,7 @@ from datetime import datetime, timedelta, timezone
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.config import settings
 from app.crypto.integration_config import (
@@ -18,6 +18,7 @@ from app.crypto.integration_config import (
 )
 from app.models.environment import Environment
 from app.models.integration import Integration
+from app.services.audit_service import AuditService
 from app.strategies.integrations.base import ProviderError, get_provider, list_providers
 
 
@@ -205,7 +206,7 @@ class IntegrationService:
         await self.db.delete(integration)
         return True
 
-    async def _record_failure(self, integration: Integration, error: Exception) -> str:
+    async def _record_failure(self, integration: Integration, error: Exception, prefix: str = "") -> str:
         """Persist a redacted error on the integration and return it."""
         if isinstance(error, IntegrationConfigEncryptionError):
             message = str(error)
@@ -221,6 +222,7 @@ class IntegrationService:
             except IntegrationConfigEncryptionError:
                 config = None
             message = self._sanitize_error(str(error) or type(error).__name__, config)
+        message = (prefix + message)[:1000]
         integration.status = "error"
         integration.last_error = message
         await self.db.flush()
@@ -343,6 +345,45 @@ class IntegrationService:
         integration.deploy_due_at = datetime.now(timezone.utc) + DEPLOY_DEBOUNCE
         await self.db.flush()
         return True
+
+    async def run_due_deploys(self, now: Optional[datetime] = None) -> int:
+        """Trigger every deploy that is due and return how many were triggered.
+
+        The claim is one UPDATE ... RETURNING, so two schedulers never fire the
+        same deploy. A failed deploy is recorded on the integration and not retried:
+        the next push schedules a new one.
+        """
+        now = now or datetime.now(timezone.utc)
+        claimed = (
+            await self.db.execute(
+                update(Integration)
+                .where(Integration.deploy_due_at <= now)
+                .values(deploy_due_at=None)
+                .returning(Integration.id)
+            )
+        ).scalars().all()
+
+        fired = 0
+        for integration_id in claimed:
+            integration = await self.db.get(Integration, integration_id)
+            try:
+                provider = self._get_provider(integration.provider)
+                if not provider:
+                    raise ProviderError(f"Unknown provider: {integration.provider}")
+                config, _ = self._decrypt_config_for_use(integration)
+                await provider.trigger_deploy(config)
+            except Exception as e:
+                await self._record_failure(integration, e, prefix="Deploy failed: ")
+                continue
+            fired += 1
+            await AuditService(self.db).log(
+                action="integration.deploy_triggered",
+                resource_type="integration",
+                resource_id=integration.id,
+                project_id=integration.project_id,
+                metadata={"provider": integration.provider},
+            )
+        return fired
 
     def get_available_providers(self) -> list[str]:
         """Get list of registered provider names."""
