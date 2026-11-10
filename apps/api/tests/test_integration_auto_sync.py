@@ -3,7 +3,7 @@
 Real SQLite DB and the real app (fixtures in conftest.py). Providers never make
 an HTTP call here: sync tests swap the provider for a recording double.
 """
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import pytest
 import pytest_asyncio
@@ -237,3 +237,271 @@ async def test_patch_is_audited_without_environment_ids(client, world, factory):
 async def test_new_connection_redeploys_by_default_only_with_the_feature(client, world, plan, expected):
     _, project, _ = await world(plan)
     assert (await _connect(client, project))["redeploy"] is expected
+
+
+# ─── Sync: deleting at the provider, scheduling the deploy, CI sessions ──────
+
+from datetime import datetime, timedelta, timezone  # noqa: E402
+
+from app.services.integration_service import IntegrationService  # noqa: E402
+from app.strategies.integrations.base import ProviderError  # noqa: E402
+
+CI_HEADERS = {"Authorization": "Bearer ci_s_" + "x" * 32}
+
+
+class FakeProvider:
+    """Records what the service asks of a provider; never touches the network."""
+
+    provider_name = "vercel"
+    required_config = ()
+    supports_pull = True
+    recreated_keys = ()
+
+    def __init__(self):
+        self.pushed: list[tuple[str, list[str]]] = []
+        self.deleted: list[tuple[str, list[str]]] = []
+        self.fail: str | None = None
+        self.deploys = True
+
+    async def push_secrets(self, secrets, config, environment):
+        if self.fail:
+            raise ProviderError(self.fail)
+        self.pushed.append((environment, [secret["key"] for secret in secrets]))
+        return True
+
+    async def delete_secrets(self, keys, config, environment):
+        if self.fail:
+            raise ProviderError(self.fail)
+        self.deleted.append((environment, list(keys)))
+
+    async def pull_secrets(self, config, environment):
+        return [{"key": "FROM_PROVIDER", "value": "1"}]
+
+    def deploys_on(self, environment):
+        return self.deploys and environment == "production"
+
+    def get_environments(self, config):
+        return ["production", "preview", "development"]
+
+
+@pytest.fixture
+def provider(monkeypatch):
+    fake = FakeProvider()
+    monkeypatch.setattr(IntegrationService, "_get_provider", lambda self, name: fake)
+    return fake
+
+
+@pytest.fixture
+def ci(monkeypatch):
+    """Requests carrying CI_HEADERS are a CI session with the write:integrations scope."""
+    async def _session(token, project_id):
+        return {"scopes": ["write:integrations"], "permissions": ["write:integrations"],
+                "session_id": "sess", "ci_token_id": "tok", "environment_scope": None}
+
+    monkeypatch.setattr(integrations_router, "validate_ci_session", _session)
+
+
+def _push(*keys, delete=None, environment="production"):
+    body = {"direction": "push", "environment": environment,
+            "secrets": [{"key": key, "value": "v"} for key in keys]}
+    if delete is not None:
+        body["delete_keys"] = delete
+    return body
+
+
+async def _due(factory, conn):
+    async with factory() as session:
+        due = await session.scalar(select(Integration.deploy_due_at).where(Integration.id == UUID(conn["id"])))
+    return due.replace(tzinfo=timezone.utc) if due and due.tzinfo is None else due
+
+
+async def test_deleting_the_last_variable_syncs_with_no_secrets(client, world, provider):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push(delete=["A"]))
+
+    assert (r.status_code, r.json()["success"]) == (200, True)
+    assert (provider.pushed, provider.deleted) == ([], [("production", ["A"])])
+
+
+async def test_push_with_nothing_to_send_or_delete_still_fails(client, world, provider):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push(delete=[]))
+
+    assert (r.json()["success"], r.json()["message"]) == (False, "No secrets provided for push")
+
+
+async def test_a_key_being_pushed_is_never_deleted(client, world, provider):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+
+    await client.post(_url(project, conn, "/sync"), json=_push("A", delete=["A", "B"]))
+
+    assert (provider.pushed, provider.deleted) == ([("production", ["A"])], [("production", ["B"])])
+
+
+@pytest.mark.parametrize("plan", [None, "pro"])
+async def test_delete_keys_needs_max(client, world, provider, plan):
+    _, project, _ = await world(plan)
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A", delete=["B"]))
+
+    assert (r.status_code, r.json()) == (402, {"detail": "Plan feature required: auto_sync"})
+    assert (provider.pushed, provider.deleted) == ([], [])
+
+
+async def test_manual_push_still_works_on_free(client, world, provider, factory):
+    _, project, _ = await world(None)
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A"))
+
+    assert (r.status_code, r.json()["success"], r.json()["deploy_scheduled"]) == (200, True, False)
+    assert provider.pushed == [("production", ["A"])]
+    assert await _due(factory, conn) is None
+
+
+async def test_delete_keys_with_pull_is_422(client, world, provider):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+
+    r = await client.post(
+        _url(project, conn, "/sync"), json={"direction": "pull", "environment": "production", "delete_keys": ["A"]}
+    )
+
+    assert r.status_code == 422
+
+
+async def test_push_schedules_a_deploy_about_a_minute_out(client, world, provider, factory):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+    before = datetime.now(timezone.utc)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A"))
+
+    assert r.json()["deploy_scheduled"] is True
+    due = await _due(factory, conn)
+    assert before + timedelta(seconds=55) <= due <= datetime.now(timezone.utc) + timedelta(seconds=65)
+
+
+async def test_second_push_moves_the_deploy_instead_of_adding_one(client, world, provider, factory, db):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+    await client.post(_url(project, conn, "/sync"), json=_push("A"))
+    early = datetime.now(timezone.utc) - timedelta(seconds=30)
+    await db(stmt=update(Integration).values(deploy_due_at=early))
+
+    await client.post(_url(project, conn, "/sync"), json=_push("A"))
+
+    assert await _due(factory, conn) > datetime.now(timezone.utc) + timedelta(seconds=50)
+
+
+async def test_deleting_alone_also_schedules_the_deploy(client, world, provider, factory):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push(delete=["A"]))
+
+    assert r.json()["deploy_scheduled"] is True
+    assert await _due(factory, conn) is not None
+
+
+async def test_no_deploy_when_the_option_is_off(client, world, provider, factory):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+    await client.patch(_url(project, conn), json={"redeploy": False})
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A"))
+
+    assert (r.json()["success"], r.json()["deploy_scheduled"], await _due(factory, conn)) == (True, False, None)
+
+
+async def test_no_deploy_for_a_target_that_does_not_deploy(client, world, provider, factory):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A", environment="preview"))
+
+    assert (r.json()["success"], r.json()["deploy_scheduled"], await _due(factory, conn)) == (True, False, None)
+
+
+async def test_no_deploy_when_the_push_failed(client, world, provider, factory):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+    provider.fail = "boom"
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A"))
+
+    assert (r.json()["success"], r.json()["message"]) == (False, "boom")
+    assert r.json()["deploy_scheduled"] is False
+    assert await _due(factory, conn) is None
+
+
+async def test_no_deploy_scheduled_without_the_feature(client, world, provider, factory, db):
+    owner, project, _ = await world("max")
+    conn = await _connect(client, project)  # redeploy stored on
+    await _set_plan(db, owner, "pro")
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A"))
+
+    assert (r.json()["success"], r.json()["deploy_scheduled"], await _due(factory, conn)) == (True, False, None)
+
+
+async def test_pull_never_schedules_a_deploy(client, world, provider, factory):
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json={"direction": "pull", "environment": "production"})
+
+    assert (r.json()["success"], r.json()["deploy_scheduled"], await _due(factory, conn)) == (True, False, None)
+
+
+@pytest.mark.parametrize("plan", [None, "pro"])
+@pytest.mark.parametrize("direction", ["push", "pull"])
+async def test_ci_session_sync_needs_max(client, world, provider, ci, plan, direction):
+    _, project, _ = await world(plan)
+    conn = await _connect(client, project)
+    body = _push("A") if direction == "push" else {"direction": "pull", "environment": "production"}
+
+    r = await client.post(_url(project, conn, "/sync"), json=body, headers=CI_HEADERS)
+
+    assert (r.status_code, r.json()) == (402, {"detail": "Plan feature required: ci_sync"})
+    assert provider.pushed == []
+
+
+@pytest.mark.parametrize("plan", ["max", "unlimited"])
+async def test_ci_session_sync_works_with_the_feature(client, world, provider, ci, plan):
+    _, project, _ = await world(plan)
+    conn = await _connect(client, project)
+
+    r = await client.post(_url(project, conn, "/sync"), json=_push("A"), headers=CI_HEADERS)
+
+    assert (r.status_code, r.json()["success"]) == (200, True)
+    assert provider.pushed == [("production", ["A"])]
+
+
+async def test_ci_session_can_still_list_integrations_on_free(client, world, provider, ci):
+    _, project, _ = await world(None)
+    await _connect(client, project)
+
+    r = await client.get(_url(project), headers=CI_HEADERS)
+
+    assert (r.status_code, r.json()["total"]) == (200, 1)
+
+
+async def test_sync_audit_records_deletes_and_deploy(client, world, provider, factory):
+    from app.models.audit import AuditLog
+
+    _, project, _ = await world("max")
+    conn = await _connect(client, project)
+    await client.post(_url(project, conn, "/sync"), json=_push("A", delete=["B", "C"]))
+
+    async with factory() as session:
+        log = (await session.execute(
+            select(AuditLog).where(AuditLog.action == "integration.synced.push")
+        )).scalar_one()
+    assert (log.meta["synced_count"], log.meta["deleted_count"], log.meta["deploy_scheduled"]) == (1, 2, True)

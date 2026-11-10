@@ -5,7 +5,7 @@ from uuid import UUID
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, model_validator
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -16,7 +16,7 @@ from app.middleware.ci_auth import (
     require_ci_session_scope,
 )
 from app.models.user import User
-from app.plans import AUTO_SYNC, SYNC_REDEPLOY
+from app.plans import AUTO_SYNC, CI_SYNC, SYNC_REDEPLOY
 from app.schemas.vault import SecretKind
 from app.crypto.integration_config import IntegrationConfigEncryptionError
 from app.services.integration_service import IntegrationConfigError, IntegrationService
@@ -99,6 +99,16 @@ class SyncRequest(BaseModel):
     direction: str = Field(..., pattern=r'^(push|pull)$')
     environment: str = Field(default="production", min_length=1, max_length=64)
     secrets: Optional[list[SyncSecret]] = Field(default=None, max_length=1000)
+    # Push only: keys to remove from the provider (the ones the user deleted in CriptEnv). Needs `auto_sync`.
+    delete_keys: Optional[list[Annotated[str, Field(min_length=1, max_length=256)]]] = Field(
+        default=None, max_length=1000
+    )
+
+    @model_validator(mode="after")
+    def _delete_only_on_push(self):
+        if self.delete_keys and self.direction != "push":
+            raise ValueError("delete_keys is only valid with direction 'push'")
+        return self
 
 
 class SyncResponse(BaseModel):
@@ -109,6 +119,8 @@ class SyncResponse(BaseModel):
     secrets: Optional[list[SyncSecret]] = None
     # Push only: keys removed from Vercel and created again with the other kind.
     recreated: Optional[list[str]] = None
+    # Push only: the provider will get a new deploy about a minute after the last push.
+    deploy_scheduled: bool = False
 
 
 def _force_load_integration(i):
@@ -166,6 +178,8 @@ async def _authenticate_integration_sync_or_ci(
     if token and token.startswith(CI_SESSION_PREFIX):
         ci_session = await validate_ci_session(token, project_uuid)
         require_ci_session_scope(ci_session, "write:integrations")
+        # Without this, any plan could automate the manual sync with a script.
+        await PlanLimits(db).require_feature(project_uuid, CI_SYNC)
         return None, ci_session
 
     current_user = await get_current_user(request, db)
@@ -506,18 +520,31 @@ async def sync_integration(
         project_uuid,
     )
     
+    limits = PlanLimits(db)
+    if payload.delete_keys:
+        await limits.require_feature(project_uuid, AUTO_SYNC)
+
     pushed = [secret.model_dump() for secret in payload.secrets or []]
     success, error, pulled = await integration_service.sync_integration(
         integration_id=integration_uuid,
         project_id=project_uuid,
         direction=payload.direction,
         secrets=pushed,
-        environment=payload.environment
+        environment=payload.environment,
+        delete_keys=payload.delete_keys,
     )
     synced_count = len(pulled) if payload.direction == "pull" else len(pushed)
     recreated = (pulled or None) if payload.direction == "push" else None
 
     if success:
+        # The server cannot tell an automatic push from a manual one: any successful push deploys.
+        deploy_scheduled = (
+            payload.direction == "push"
+            and await limits.has_feature(project_uuid, SYNC_REDEPLOY)
+            and await integration_service.schedule_deploy(
+                integration_uuid, project_id=project_uuid, environment=payload.environment
+            )
+        )
         await audit_service.log(
             action=f"integration.synced.{payload.direction}",
             resource_type="integration",
@@ -529,6 +556,8 @@ async def sync_integration(
                 "environment": payload.environment,
                 "synced_count": synced_count,
                 "recreated": recreated,
+                "deleted_count": len(integration_service.keys_to_delete(pushed, payload.delete_keys)),
+                "deploy_scheduled": deploy_scheduled,
                 "auth_type": "ci_session" if ci_session else "session",
                 "ci_session_id": ci_session.get("session_id") if ci_session else None,
                 "ci_token_id": ci_session.get("ci_token_id") if ci_session else None,
@@ -543,6 +572,7 @@ async def sync_integration(
             synced_count=synced_count,
             secrets=pulled if payload.direction == "pull" else None,
             recreated=recreated,
+            deploy_scheduled=deploy_scheduled,
         )
     else:
         return SyncResponse(
