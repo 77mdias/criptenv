@@ -7,6 +7,7 @@ import { MobileSidebarNav } from "./mobile-sidebar-nav";
 import { TopNav } from "./top-nav";
 import { CommandPalette } from "@/components/shared/command-palette";
 import { DashboardFloatingBar } from "./dashboard-floating-bar";
+import { BillingNotice } from "./billing-notice";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -31,6 +32,7 @@ function AppShell({ children, breadcrumbs }: AppShellProps) {
         )}
       >
         <TopNav breadcrumbs={breadcrumbs} />
+        <BillingNotice />
         <main className={cn("p-6", !desktopSidebarOpen && "lg:pl-24")}>
           <div className="mx-auto max-w-6xl">{children}</div>
         </main>

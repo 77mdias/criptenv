@@ -19,6 +19,7 @@ from app.middleware.auth import get_current_user, get_current_user_or_api_key
 from app.models.user import User
 from app.services.audit_service import AuditService
 from app.services.avatar_service import AvatarService
+from app.strategies.exceptions import BillingProviderError
 import logging
 
 router = APIRouter(prefix="/api/auth", tags=["Authentication"])
@@ -592,11 +593,16 @@ async def delete_account(
 
     auth_service = AuthService(db)
     email_service = EmailService()
+    email = str(current_user.email)
 
-    # Send notification before deletion
-    email_service.send_account_deleted(str(current_user.email))
+    try:
+        await auth_service.delete_account(current_user)
+    except BillingProviderError as e:
+        # The subscription could not be stopped at Mercado Pago: the account stays, nothing was deleted.
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
 
-    await auth_service.delete_account(current_user)
+    # Only once the account is really gone.
+    email_service.send_account_deleted(email)
     return MessageResponse(message="Account deleted successfully.")
 
 

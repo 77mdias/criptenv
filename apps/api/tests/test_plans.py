@@ -1,4 +1,5 @@
 """Plans: where the limits of each user come from (free, unlimited, DEFAULT_PLAN)."""
+from decimal import Decimal
 from uuid import uuid4
 
 import pytest
@@ -8,7 +9,7 @@ from pydantic import ValidationError
 from app.config import Settings, settings
 from app.middleware.auth import get_current_user
 from app.models.user import User
-from app.plans import AUTO_SYNC, CI_SYNC, PLANS, SYNC_REDEPLOY, plan_for
+from app.plans import AUTO_SYNC, CI_SYNC, INTERVAL_MONTHS, PLAN_RANK, PLANS, PRICES, SYNC_REDEPLOY, plan_for
 from main import app
 
 _KEYS = [
@@ -42,6 +43,15 @@ def test_only_max_and_unlimited_have_sync_features():
     assert sorted(PLANS["max"].features) == sorted(PLANS["unlimited"].features) == SYNC_FEATURES
 
 
+def test_prices_match_the_spec():
+    assert PRICES == {
+        ("pro", "month"): Decimal("29.00"), ("pro", "year"): Decimal("290.00"),
+        ("max", "month"): Decimal("69.00"), ("max", "year"): Decimal("690.00"),
+    }
+    assert PLAN_RANK == {"pro": 1, "max": 2}
+    assert INTERVAL_MONTHS == {"month": 1, "year": 12}
+
+
 def test_plan_for_prefers_user_plan_then_default(monkeypatch):
     monkeypatch.setattr(settings, "DEFAULT_PLAN", "unlimited")
     assert plan_for(None).id == "unlimited"
@@ -73,7 +83,7 @@ async def test_me_plan_route(monkeypatch, client, user_plan, default, expected):
     app.dependency_overrides[get_current_user] = lambda: _user(user_plan)
     r = await client.get("/api/v1/me/plan")
     assert r.status_code == 200
-    assert r.json() == {**expected, "usage": {"projects": 0}}
+    assert r.json() == {**expected, "usage": {"projects": 0}, "can_upgrade": False, "grace_until": None}
 
 
 @pytest.mark.asyncio

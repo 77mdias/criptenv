@@ -13,6 +13,8 @@ import bcrypt
 
 from app.models.member import ProjectInvite
 from app.models.personal_vault import PersonalVault, PersonalVaultFolder, PersonalVaultItem
+from app.models.subscription import Subscription, SubscriptionPayment
+from app.services.billing_service import BillingService, billing_enabled
 from app.models.user import (
     User,
     Session,
@@ -491,6 +493,13 @@ class AuthService:
 
     async def delete_account(self, user: User) -> bool:
         """Permanently delete user account and all associated data."""
+        # First, and before anything is deleted: a subscription must not keep charging a deleted account.
+        # Raises (502) when Mercado Pago cannot be reached; the account stays.
+        if billing_enabled():
+            await BillingService(self.db).cancel_for_account_deletion(user)
+        subscriptions = select(Subscription.id).where(Subscription.user_id == user.id)
+        await self.db.execute(delete(SubscriptionPayment).where(SubscriptionPayment.subscription_id.in_(subscriptions)))
+        await self.db.execute(delete(Subscription).where(Subscription.user_id == user.id))
         # Delete all sessions
         await self.db.execute(delete(Session).where(Session.user_id == user.id))
         # Delete all password reset tokens

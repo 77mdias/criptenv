@@ -15,6 +15,7 @@ export const NAMESPACES = [
   // touching the same catalogue file
   "dashboard",
   "account",
+  "billing",
   "members",
   "audit",
   "settings",

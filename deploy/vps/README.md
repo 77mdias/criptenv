@@ -240,6 +240,53 @@ docker compose down
 
 ---
 
+## Ativar a cobrança
+
+A assinatura dos planos Pro e Max vem desligada (`BILLING_ENABLED=false`). Instalação própria não precisa de nada disto: deixe desligada e defina o plano de todos com `DEFAULT_PLAN`.
+
+### 1. Webhook no Mercado Pago
+
+No painel de desenvolvedor do Mercado Pago, na aplicação cujas credenciais estão no `.env`, o webhook que já aponta para `https://<sua-api>/webhooks/mercadopago` precisa ter ligados os eventos **Pagamentos** e **Planos e assinaturas**. O segredo é o mesmo `MERCADO_PAGO_WEBHOOK_SECRET`.
+
+### 2. Variáveis no `.env`
+
+```bash
+BILLING_NOTIFY_EMAIL=<e-mail que recebe os dados para nota e os avisos de reembolso>
+BILLING_ENABLED=true
+```
+
+`FRONTEND_URL` precisa ser o endereço público do site, em https: é para lá que o Mercado Pago devolve o cliente depois do pagamento.
+
+### 3. Reiniciar a API e o agendador
+
+```bash
+docker compose up -d api scheduler
+docker compose logs scheduler | grep billing_cycle
+```
+
+O job `billing_cycle` roda de hora em hora no serviço `scheduler`. Sem ele, o plano pago não termina no fim do período, a tolerância de 7 dias não vence e um pagamento cujo webhook se perdeu só é visto quando o cliente abre a tela de assinatura.
+
+### 4. Teste manual antes de vender
+
+Nenhuma chamada real ao Mercado Pago foi feita no desenvolvimento. Faça este roteiro com **contas de teste** do Mercado Pago (uma de vendedor e uma de compradora, do mesmo país; a aplicação fica dentro da conta de vendedor de teste e a API usa as credenciais dela). Pagamento feito com credencial `TEST-` não envia notificação.
+
+1. Assinar o Pro mensal com um cartão de teste. Conferir: o plano muda depois do pagamento (não antes), chegam o e-mail de assinatura confirmada e o e-mail com os dados para nota.
+2. Subir para o Max. Conferir: vale na hora, a assinatura do Pro aparece cancelada no Mercado Pago e a devolução proporcional aparece no pagamento do Pro.
+3. Cancelar em menos de 7 dias. Conferir: o reembolso integral aparece no Mercado Pago, a conta volta ao Free e a assinatura fica cancelada lá.
+4. Assinar um plano anual. Conferir a data da próxima cobrança no Mercado Pago (12 meses).
+5. Cancelar uma assinatura pela conta da compradora no Mercado Pago, não pelo CriptEnv. Conferir: o plano continua até o fim do período pago.
+
+Anote o que a documentação deles não confirma e o código assume:
+
+- a cobrança a cada 12 meses (`frequency: 12`) é aceita;
+- o cancelamento com `status: "cancelled"` é aceito;
+- as notificações de assinatura chegam com `type` igual a `subscription_preapproval` ou `subscription_authorized_payment` e o identificador em `data.id`;
+- quais meios de pagamento a tela deles oferece (o Pix não renova sozinho).
+
+Se algum desses pontos falhar, desligue com `BILLING_ENABLED=false` e reinicie: nenhum plano muda e nada é apagado. O Mercado Pago continua cobrando as assinaturas que já existem; se for desligar de vez, cancele-as no painel deles.
+
+---
+
 ## Segurança
 
 - ✅ PostgreSQL só escuta em `127.0.0.1:5432` (não está exposto à internet)

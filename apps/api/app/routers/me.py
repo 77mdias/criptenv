@@ -8,6 +8,7 @@ from app.plans import plan_for
 from app.schemas.overview import ActivityDay, OverviewResponse
 from app.schemas.plan import PlanResponse
 from app.services.overview_service import OverviewService
+from app.services.billing_service import billing_enabled, grace_until_for
 from app.services.plan_limits import PlanLimits
 
 router = APIRouter(prefix="/api/v1/me", tags=["Me"])
@@ -39,7 +40,10 @@ async def get_plan(
 ):
     """The user's plan: its limits (null = no limit), the features it unlocks and the projects they own."""
     plan = plan_for(current_user.plan)
+    billing = billing_enabled()
     return PlanResponse(
         id=plan.id, limits=dict(plan.limits), features=sorted(plan.features),
         usage=await PlanLimits(db).user_usage(current_user.id),
+        can_upgrade=billing,
+        grace_until=await grace_until_for(db, current_user.id) if billing else None,
     )

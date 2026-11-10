@@ -3,9 +3,11 @@
 import { useState } from "react"
 import { useTranslations } from "next-intl"
 
+import { UpgradeLink } from "@/components/shared/upgrade-link"
 import { Checkbox } from "@/components/ui/checkbox"
 import { integrationsApi } from "@/lib/api"
 import type { Environment, Integration, UpdateIntegrationRequest } from "@/lib/api"
+import type { Plan } from "@/lib/api/me"
 
 // Targets each provider accepts (the API's get_environments). Unknown providers fall back to production.
 const PROVIDER_TARGETS: Record<string, readonly string[]> = {
@@ -26,6 +28,8 @@ interface AutoSyncSettingsProps {
   environments: Environment[]
   /** Sync features of the plan of the project's owner. */
   features: string[]
+  /** The plan of the project's owner: its `can_upgrade` decides whether the way to the plans is shown. */
+  plan?: Plan | null
   onSaved: (integration: Integration) => void
 }
 
@@ -33,7 +37,9 @@ interface AutoSyncSettingsProps {
  * Per connection: which CriptEnv environment feeds which provider target on save, and whether
  * a deploy follows. Shown to every plan; turning things on needs Max, turning them off never does.
  */
-export function AutoSyncSettings({ projectId, integration, environments, features, onSaved }: AutoSyncSettingsProps) {
+export function AutoSyncSettings({
+  projectId, integration, environments, features, plan, onSaved,
+}: AutoSyncSettingsProps) {
   const t = useTranslations("integrations.autoSync")
   const [saving, setSaving] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -70,7 +76,9 @@ export function AutoSyncSettings({ projectId, integration, environments, feature
         <h3 className="text-sm font-medium text-(--text-primary)">{t("title")}</h3>
         <p className="text-sm text-(--text-secondary)">{t("description")}</p>
         {(!canAutoSync || !canRedeploy) && (
-          <p className="text-sm font-medium text-(--text-secondary)">{t("maxOnly")}</p>
+          <p className="text-sm font-medium text-(--text-secondary)">
+            {t("maxOnly")} <UpgradeLink plan={plan} />
+          </p>
         )}
       </div>
 

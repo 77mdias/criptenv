@@ -1,0 +1,83 @@
+{
+  "title": "Assinatura",
+  "subtitle": "Seu plano, a próxima cobrança e os dados para nota.",
+  "loading": "Carregando assinatura…",
+  "back": "Voltar para a conta",
+  "card": {
+    "title": "Plano",
+    "manage": "Gerenciar assinatura"
+  },
+  "planNames": {
+    "free": "Free",
+    "pro": "Pro",
+    "max": "Max",
+    "unlimited": "Ilimitado"
+  },
+  "intervals": {
+    "month": "mensal",
+    "year": "anual"
+  },
+  "perInterval": {
+    "month": "{price} por mês",
+    "year": "{price} por ano"
+  },
+  "current": {
+    "title": "Plano atual",
+    "noSubscription": "Você não tem uma assinatura.",
+    "nextCharge": "Próxima cobrança em {date}: {price}.",
+    "validUntil": "Vale até {date}. Não haverá novas cobranças.",
+    "grace": "Não conseguimos cobrar sua assinatura. O plano vale até {date}; depois a conta volta ao Free. Nada é apagado.",
+    "scheduled": "Troca agendada: {plan} {interval} a partir de {date}.",
+    "pending": "Pagamento pendente do plano {plan} ({interval}).",
+    "continuePayment": "Continuar pagamento",
+    "alreadyPaid": "Já paguei"
+  },
+  "choose": {
+    "title": "Escolher plano",
+    "interval": "Periodicidade",
+    "yearlyHint": "2 meses grátis",
+    "select": "Escolher {plan}",
+    "selected": "{plan} escolhido",
+    "currentPlan": "Seu plano atual",
+    "availableFrom": "Disponível a partir de {date}. Essa troca só pode ser feita no último mês do período já pago.",
+    "scheduledBlocks": "Já existe uma troca agendada. Cancele a troca para escolher outro plano.",
+    "effect": {
+      "new": "Vale assim que o pagamento for confirmado.",
+      "upgrade": "Vale na hora. O que você não usou do plano atual é devolvido.",
+      "later": "Você paga agora e o plano passa a valer em {date}, quando o atual termina."
+    }
+  },
+  "tax": {
+    "title": "Dados para nota",
+    "description": "Emitimos nota fiscal de toda assinatura.",
+    "taxId": "CPF ou CNPJ (só números)",
+    "legalName": "Nome ou razão social",
+    "address": "Endereço completo",
+    "payerEmail": "E-mail da sua conta no Mercado Pago",
+    "payerEmailHint": "Precisa ser o mesmo e-mail da conta que vai pagar; senão o Mercado Pago recusa.",
+    "pay": "Ir para o pagamento",
+    "payHint": "Você paga no Mercado Pago; o CriptEnv não vê os dados do seu cartão. A cobrança se repete a cada ciclo até você cancelar.",
+    "edit": "Editar dados",
+    "save": "Salvar dados",
+    "saved": "Dados para nota atualizados."
+  },
+  "cancel": {
+    "action": "Cancelar assinatura",
+    "title": "Cancelar a assinatura?",
+    "refund": "O valor pago é devolvido e a conta volta ao Free agora. Esse reembolso automático vale uma vez por conta.",
+    "untilEnd": "Não haverá novas cobranças e o plano vale até {date}. Depois a conta volta ao Free. Nada é apagado.",
+    "refundScheduled": "O valor pago pela troca é devolvido. O plano atual continua até o fim do período já pago; para mantê-lo depois disso, assine de novo.",
+    "scheduledNote": "O cancelamento vale para a troca agendada. O plano atual termina no fim do período já pago.",
+    "confirm": "Cancelar assinatura",
+    "keep": "Manter assinatura",
+    "doneRefunded": "Assinatura cancelada. O valor pago foi devolvido.",
+    "doneUntil": "Assinatura cancelada. O plano vale até {date}."
+  },
+  "errors": {
+    "load": "Não foi possível carregar a assinatura.",
+    "conflict": "Essa ação não é possível no estado atual da assinatura.",
+    "invalid": "Confira os dados para nota: CPF com 11 dígitos ou CNPJ com 14, só números.",
+    "provider": "O Mercado Pago não respondeu. Nada foi alterado; tente de novo em alguns minutos.",
+    "generic": "Algo deu errado. Tente de novo."
+  }
+}

@@ -88,6 +88,10 @@ export interface Plan {
   features: string[];
   /** Only the limits that apply to the scope asked for (the user, or one project). */
   usage: Partial<Record<PlanLimitKey, number>>;
+  /** Billing is on and this plan is the caller's own to change (false for a member of someone else's project). */
+  can_upgrade?: boolean;
+  /** Set while a charge is overdue: the plan holds until this date. Only on the caller's own plan. */
+  grace_until?: string | null;
 }
 
 export const meApi = {

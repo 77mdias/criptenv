@@ -7,6 +7,7 @@ hard-code a limit. Per-project limits follow the plan of the project's owner
 """
 from collections.abc import Mapping
 from dataclasses import dataclass, field
+from decimal import Decimal
 
 PROJECTS = "projects"
 ENVIRONMENTS_PER_PROJECT = "environments_per_project"
@@ -46,6 +47,15 @@ PLANS: dict[str, Plan] = {
     # For self-hosted installs (DEFAULT_PLAN=unlimited).
     "unlimited": Plan("unlimited", _limits(*[None] * len(_LIMIT_KEYS)), _SYNC_FEATURES),
 }
+
+# What billing charges, in BRL: (plan, interval) -> price of one cycle.
+PRICES: dict[tuple[str, str], Decimal] = {
+    ("pro", "month"): Decimal("29.00"), ("pro", "year"): Decimal("290.00"),
+    ("max", "month"): Decimal("69.00"), ("max", "year"): Decimal("690.00"),
+}
+# Higher rank = upgrade.
+PLAN_RANK = {"pro": 1, "max": 2}
+INTERVAL_MONTHS = {"month": 1, "year": 12}
 
 
 def plan_for(user_plan: str | None) -> Plan:

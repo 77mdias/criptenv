@@ -31,6 +31,7 @@ from app.routers import (
     me_router,
     personal_vault_router,
     icons_router,
+    billing_router,
 )
 from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
@@ -116,7 +117,22 @@ async def lifespan(app: FastAPI):
                 misfire_grace_time=30,
             )
             logger.info("Added deploy_due job (interval: 30s)")
-            
+
+            # Billing: paid periods that ended, grace after a refused charge, lost webhooks.
+            from app.services.billing_service import billing_enabled
+            if billing_enabled():
+                from app.jobs.billing_cycle import create_session_scoped_scheduler_job as create_billing_cycle_job
+                scheduler_manager.scheduler.add_job(
+                    create_billing_cycle_job(async_session_factory),
+                    trigger=IntervalTrigger(hours=1),
+                    id="billing_cycle",
+                    name="Billing Cycle",
+                    replace_existing=True,
+                    max_instances=1,
+                    misfire_grace_time=300,
+                )
+                logger.info("Added billing_cycle job (interval: 1h)")
+
             scheduler_manager.start()
             logger.info("Scheduler started")
         except ImportError:
@@ -295,6 +311,7 @@ app.include_router(alert_settings_router)
 app.include_router(me_router)
 app.include_router(personal_vault_router)
 app.include_router(icons_router)
+app.include_router(billing_router)
 
 
 # Custom OpenAPI schema with dual security schemes

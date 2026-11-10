@@ -240,7 +240,90 @@ class MercadoPagoClient:
         except httpx.RequestError as e:
             logger.error("Mercado Pago request error: %s", e)
             raise MercadoPagoError(f"Request to Mercado Pago failed: {e}")
-    
+
+    # ─── Subscriptions (preapproval) and refunds ──────────────────────────────
+
+    async def _request(self, method: str, path: str, **kwargs) -> dict:
+        """One call for the subscription endpoints; every failure becomes MercadoPagoError."""
+        client = await self._get_client()
+        try:
+            response = await client.request(method, path, **kwargs)
+            response.raise_for_status()
+            return response.json()
+        except httpx.HTTPStatusError as e:
+            try:
+                error_body = e.response.json()
+            except Exception:
+                error_body = e.response.text
+            logger.error("Mercado Pago %s %s error: status=%s", method, path, e.response.status_code)
+            raise MercadoPagoError(
+                f"Mercado Pago {method} {path} failed: {e.response.status_code}",
+                status_code=e.response.status_code,
+                response_body=error_body,
+            )
+        except httpx.RequestError as e:
+            logger.error("Mercado Pago request error: %s", e)
+            raise MercadoPagoError(f"Request to Mercado Pago failed: {e}")
+
+    async def create_preapproval(
+        self, *, reason: str, external_reference: str, payer_email: str,
+        amount: Decimal, months: int, back_url: str,
+    ) -> dict:
+        """A subscription without an associated plan, born `pending`: the buyer pays at `init_point`."""
+        return await self._request("POST", "/preapproval", json={
+            "reason": reason,
+            "external_reference": external_reference,
+            "payer_email": payer_email,
+            "back_url": back_url,
+            "status": "pending",
+            "auto_recurring": {
+                "frequency": months,
+                "frequency_type": "months",
+                "transaction_amount": float(amount),
+                "currency_id": "BRL",
+            },
+        })
+
+    async def get_preapproval(self, preapproval_id: str) -> dict:
+        return await self._request("GET", f"/preapproval/{preapproval_id}")
+
+    async def cancel_preapproval(self, preapproval_id: str) -> dict:
+        """Stops every future charge. Irreversible at Mercado Pago."""
+        return await self._request("PUT", f"/preapproval/{preapproval_id}", json={"status": "cancelled"})
+
+    async def get_authorized_payment(self, authorized_payment_id: str) -> dict:
+        """An invoice of a subscription (the resource of `subscription_authorized_payment` notifications)."""
+        return await self._request("GET", f"/authorized_payments/{authorized_payment_id}")
+
+    async def search_authorized_payments(self, preapproval_id: str) -> list[dict]:
+        """Every invoice of a subscription, each with its `payment.id` and `payment.status`."""
+        invoices: list[dict] = []
+        while True:
+            page = await self._request(
+                "GET", "/authorized_payments/search",
+                params={"preapproval_id": preapproval_id, "offset": len(invoices)},
+            )
+            results = page.get("results") or []
+            invoices.extend(results)
+            # A page that brings nothing ends the loop whatever `total` says.
+            if not results or len(invoices) >= (page.get("paging") or {}).get("total", 0):
+                return invoices
+
+    async def refund_payment(
+        self, payment_id: str, *, idempotency_key: str, amount: Optional[Decimal] = None,
+    ) -> dict:
+        """Refund a payment: the whole of it without `amount`. The key makes a retry refund once."""
+        return await self._request(
+            "POST", f"/v1/payments/{payment_id}/refunds",
+            json={} if amount is None else {"amount": float(amount)},
+            headers={"X-Idempotency-Key": idempotency_key},
+        )
+
+    @staticmethod
+    def is_cancelled(status: Optional[str]) -> bool:
+        """The docs spell it `canceled`, the live API is reported to answer `cancelled`."""
+        return status in ("cancelled", "canceled")
+
     @staticmethod
     def map_mp_status_to_local(mp_status: Optional[str], mp_status_detail: Optional[str] = None) -> str:
         """Map Mercado Pago payment status to local contribution status.

@@ -96,6 +96,11 @@
       "usage": "{used} de {max} conexões",
       "reached": "Este projeto chegou ao limite de {max} conexões com hospedagem do plano do dono."
     },
-    "reachedUnknown": "O limite do plano foi atingido."
+    "reachedUnknown": "O limite do plano foi atingido.",
+    "seePlans": "Ver planos"
+  },
+  "billingNotice": {
+    "text": "Não conseguimos cobrar sua assinatura. Seu plano vale até {date}.",
+    "action": "Resolver"
   }
 }

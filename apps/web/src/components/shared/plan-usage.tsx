@@ -4,6 +4,8 @@ import { useTranslations } from "next-intl"
 
 import type { Plan } from "@/lib/api/me"
 
+import { UpgradeLink } from "./upgrade-link"
+
 // Kept in this file and exported: the i18n auditor resolves `t(`${key}.usage`)` only from a literal array here.
 export const PLAN_USAGE_KEYS = [
   "projects",
@@ -44,7 +46,12 @@ export function PlanUsage({ plan, limitKey, limitHit = false }: PlanUsageProps) 
   return (
     <div className="space-y-1 text-sm text-(--text-secondary)">
       <p>{t(`${limitKey}.usage`, { used, max })}</p>
-      {(limitHit || used >= max) && <p role="status">{t(`${limitKey}.reached`, { max })}</p>}
+      {(limitHit || used >= max) && (
+        <>
+          <p role="status">{t(`${limitKey}.reached`, { max })}</p>
+          <UpgradeLink plan={plan} />
+        </>
+      )}
     </div>
   )
 }

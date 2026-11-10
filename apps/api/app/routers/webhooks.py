@@ -11,18 +11,24 @@ from fastapi import APIRouter, Depends, Request, HTTPException, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.routers.billing import get_billing_service
 from app.schemas.contribution import MercadoPagoWebhookPayload, WebhookResponse
+from app.services.billing_service import BillingService, billing_enabled
 from app.services.contribution_service import ContributionService, PaymentProviderError
+from app.services.mercadopago_client import MercadoPagoError
 from app.services.webhook_security import validate_mercadopago_signature
 
 router = APIRouter(prefix="/webhooks", tags=["Webhooks"])
+
+SUBSCRIPTION_TOPICS = ("subscription_preapproval", "subscription_authorized_payment")
 
 
 @router.post("/mercadopago", response_model=WebhookResponse)
 async def mercadopago_webhook(
     request: Request,
     payload: MercadoPagoWebhookPayload,
-    db: AsyncSession = Depends(get_db)
+    db: AsyncSession = Depends(get_db),
+    billing: BillingService = Depends(get_billing_service),
 ):
     """Receive Mercado Pago webhook notifications.
     
@@ -68,7 +74,21 @@ async def mercadopago_webhook(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid webhook signature"
         )
-    
+
+    # Subscriptions (billing). Unlike a contribution, a failure to reach Mercado Pago answers 500:
+    # they deliver again, and the hourly billing job would catch what is still missed.
+    if (payload.type or "").lower() in SUBSCRIPTION_TOPICS:
+        if billing_enabled() and data_id:
+            try:
+                await billing.process_notification(payload.type.lower(), data_id)
+            except MercadoPagoError as e:
+                logger.error("Subscription webhook could not reach Mercado Pago: %s", e)
+                raise HTTPException(
+                    status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                    detail="Could not process the notification"
+                )
+        return WebhookResponse(received=True)
+
     # Extract payment ID from notification
     payment_id: Optional[int] = None
     external_reference: Optional[str] = None

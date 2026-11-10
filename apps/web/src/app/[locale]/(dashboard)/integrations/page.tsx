@@ -367,6 +367,7 @@ export default function IntegrationsPage() {
                     integration={integration}
                     environments={environments}
                     features={features}
+                    plan={plan}
                     onSaved={(saved) =>
                       setIntegrations((current) =>
                         current.map((item) => (item.id === saved.id ? saved : item)),

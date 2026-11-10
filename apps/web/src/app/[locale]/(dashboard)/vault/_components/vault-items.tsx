@@ -28,6 +28,7 @@ import { usePersonalVaultSession } from "./vault-session"
 import { SiteIcon } from "./site-icon"
 import { ItemActions } from "./item-actions"
 import { readSiteIconsSetting, writeSiteIconsSetting } from "@/lib/personal-vault/site-icons"
+import { UpgradeLink } from "@/components/shared/upgrade-link"
 
 export interface DecryptedEntry {
   item: PersonalVaultItem
@@ -224,6 +225,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
       {(foldersFull || limitHit === "folders") && (
         <p role="status" className="text-sm text-(--text-secondary)">{t("folders.limitReached")}</p>
       )}
+      {(itemsFull || foldersFull || limitHit) && <UpgradeLink plan={plan} />}
 
       <div className="flex flex-col gap-5 md:flex-row">
         <FolderColumn

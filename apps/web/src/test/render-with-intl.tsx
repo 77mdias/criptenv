@@ -5,6 +5,7 @@ import type { ReactElement } from "react"
 import accountPtBR from "../../messages/pt-BR/account.json"
 import auditPtBR from "../../messages/pt-BR/audit.json"
 import authPtBR from "../../messages/pt-BR/auth.json"
+import billingPtBR from "../../messages/pt-BR/billing.json"
 import commonPtBR from "../../messages/pt-BR/common.json"
 import dashboardPtBR from "../../messages/pt-BR/dashboard.json"
 import helpPtBR from "../../messages/pt-BR/help.json"
@@ -29,6 +30,7 @@ const defaultMessages = {
   account: accountPtBR,
   audit: auditPtBR,
   auth: authPtBR,
+  billing: billingPtBR,
   common: commonPtBR,
   dashboard: dashboardPtBR,
   help: helpPtBR,

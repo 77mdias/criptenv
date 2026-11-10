@@ -1,0 +1,83 @@
+{
+  "title": "Suscripción",
+  "subtitle": "Tu plan, el próximo cobro y los datos de facturación.",
+  "loading": "Cargando suscripción…",
+  "back": "Volver a la cuenta",
+  "card": {
+    "title": "Plan",
+    "manage": "Gestionar suscripción"
+  },
+  "planNames": {
+    "free": "Free",
+    "pro": "Pro",
+    "max": "Max",
+    "unlimited": "Ilimitado"
+  },
+  "intervals": {
+    "month": "mensual",
+    "year": "anual"
+  },
+  "perInterval": {
+    "month": "{price} por mes",
+    "year": "{price} por año"
+  },
+  "current": {
+    "title": "Plan actual",
+    "noSubscription": "No tienes una suscripción.",
+    "nextCharge": "Próximo cobro el {date}: {price}.",
+    "validUntil": "Válido hasta el {date}. No habrá nuevos cobros.",
+    "grace": "No pudimos cobrar tu suscripción. El plan sigue hasta el {date}; después la cuenta vuelve a Free. No se borra nada.",
+    "scheduled": "Cambio programado: {plan} {interval} a partir del {date}.",
+    "pending": "Pago pendiente del plan {plan} ({interval}).",
+    "continuePayment": "Continuar el pago",
+    "alreadyPaid": "Ya pagué"
+  },
+  "choose": {
+    "title": "Elegir plan",
+    "interval": "Periodicidad",
+    "yearlyHint": "2 meses gratis",
+    "select": "Elegir {plan}",
+    "selected": "{plan} elegido",
+    "currentPlan": "Tu plan actual",
+    "availableFrom": "Disponible a partir del {date}. Este cambio solo se puede hacer en el último mes del período ya pagado.",
+    "scheduledBlocks": "Ya hay un cambio de plan programado. Cancélalo para elegir otro plan.",
+    "effect": {
+      "new": "Vale en cuanto se confirme el pago.",
+      "upgrade": "Vale de inmediato. Lo que no usaste del plan actual se devuelve.",
+      "later": "Pagas ahora y el plan empieza el {date}, cuando termina el actual."
+    }
+  },
+  "tax": {
+    "title": "Datos de facturación",
+    "description": "Emitimos factura de toda suscripción.",
+    "taxId": "CPF o CNPJ (solo números)",
+    "legalName": "Nombre o razón social",
+    "address": "Dirección completa",
+    "payerEmail": "Correo de tu cuenta de Mercado Pago",
+    "payerEmailHint": "Debe ser el correo de la cuenta que va a pagar; si no, Mercado Pago rechaza el pago.",
+    "pay": "Ir al pago",
+    "payHint": "Pagas en Mercado Pago; CriptEnv no ve los datos de tu tarjeta. El cobro se repite cada ciclo hasta que canceles.",
+    "edit": "Editar datos",
+    "save": "Guardar datos",
+    "saved": "Datos de facturación actualizados."
+  },
+  "cancel": {
+    "action": "Cancelar suscripción",
+    "title": "¿Cancelar la suscripción?",
+    "refund": "El importe pagado se devuelve y la cuenta vuelve a Free ahora. Este reembolso automático vale una vez por cuenta.",
+    "untilEnd": "No habrá nuevos cobros y el plan sigue hasta el {date}. Después la cuenta vuelve a Free. No se borra nada.",
+    "refundScheduled": "El importe pagado por el cambio se devuelve. El plan actual sigue hasta el final del período ya pagado; para mantenerlo después, suscríbete de nuevo.",
+    "scheduledNote": "La cancelación vale para el cambio programado. El plan actual termina al final del período ya pagado.",
+    "confirm": "Cancelar suscripción",
+    "keep": "Mantener suscripción",
+    "doneRefunded": "Suscripción cancelada. El importe pagado fue devuelto.",
+    "doneUntil": "Suscripción cancelada. El plan sigue hasta el {date}."
+  },
+  "errors": {
+    "load": "No se pudo cargar la suscripción.",
+    "conflict": "Esta acción no es posible en el estado actual de la suscripción.",
+    "invalid": "Revisa los datos de facturación: CPF con 11 dígitos o CNPJ con 14, solo números.",
+    "provider": "Mercado Pago no respondió. No se cambió nada; inténtalo de nuevo en unos minutos.",
+    "generic": "Algo salió mal. Inténtalo de nuevo."
+  }
+}

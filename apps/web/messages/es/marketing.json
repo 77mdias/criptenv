@@ -81,7 +81,7 @@
     },
     "pricing": {
       "label": "Precios",
-      "title": "Gratis para usar, abierto para apoyar"
+      "title": "Empieza gratis. Sube de plan cuando lo necesites."
     },
     "cta": {
       "label": "Empezar",
@@ -183,53 +183,107 @@
         }
       }
     },
-    "pricingTrust": {
-      "contribute": {
-        "badge": "apoyo abierto",
-        "kicker": "Sostenido por la comunidad",
-        "title": "Apoya a CriptEnv",
-        "description": "El producto sigue siendo gratis y open source. Tu contribución ayuda a mantener el proyecto vivo, independiente y más confiable para equipos que cuidan secretos todos los días.",
-        "priceNote": "via Pix",
-        "benefits": {
-          "supportPix": "Apoyo vía Pix para mantener el proyecto independiente",
-          "noPaidPlan": "Ningún plan de pago obligatorio para usar el producto",
-          "fundsInfra": "Ayuda a financiar infraestructura, docs y evolución",
-          "sustainable": "Mantiene sostenible la propuesta open source"
-        },
-        "primary": "Contribuir ahora",
-        "secondary": "Ver transparencia"
+    "plans": {
+      "description": "Seguridad completa en los tres planes. Lo que cambia es cuánto organizas y automatizas.",
+      "interval": {
+        "label": "Periodicidad",
+        "month": "Mensual",
+        "year": "Anual",
+        "yearlyHint": "2 meses gratis"
       },
-      "openSource": {
-        "kicker": "Código abierto",
-        "title": "Gratis",
-        "description": "Usa el CLI, el panel y la base actual sin plan de pago. Puede que lleguen planes alojados más adelante, pero el núcleo abierto sigue siendo el punto de partida.",
-        "benefits": {
-          "vault": "Vault Zero-Knowledge para secretos de proyectos",
-          "cliAndDashboard": "CLI y dashboard web disponibles hoy",
-          "teamSync": "Team sync, audit trail y tokens de CI",
-          "mit": "Código MIT para revisar, alojar y evolucionar"
-        },
-        "cta": "Empezar gratis"
+      "per": {
+        "month": "por mes",
+        "year": "por año"
       },
-      "trust": {
-        "mit": {
-          "label": "MIT",
-          "description": "código abierto"
-        },
-        "plaintext": {
-          "label": "0 texto plano",
-          "description": "el servidor ve ciphertext"
-        },
-        "selfHosted": {
-          "label": "autoalojable",
-          "description": "control de la stack"
-        },
-        "roadmap": {
-          "label": "roadmap abierto",
-          "description": "sin promesas ocultas"
+      "names": {
+        "free": "Free",
+        "pro": "Pro",
+        "max": "Max"
+      },
+      "taglines": {
+        "free": "Para empezar y para proyectos personales.",
+        "pro": "Para quien mantiene muchas aplicaciones.",
+        "max": "Para quien puso CriptEnv en medio del deploy."
+      },
+      "cta": {
+        "free": "Empezar gratis",
+        "pro": "Suscribirse a Pro",
+        "max": "Suscribirse a Max"
+      },
+      "table": {
+        "caption": "Qué incluye cada plan",
+        "feature": "Recurso",
+        "rows": {
+          "security": {
+            "label": "Seguridad",
+            "free": "completa",
+            "pro": "completa",
+            "max": "completa"
+          },
+          "projects": {
+            "label": "Proyectos",
+            "free": "3",
+            "pro": "sin límite",
+            "max": "sin límite"
+          },
+          "environments": {
+            "label": "Entornos por proyecto",
+            "free": "3",
+            "pro": "sin límite",
+            "max": "sin límite"
+          },
+          "members": {
+            "label": "Miembros por proyecto",
+            "free": "3",
+            "pro": "10",
+            "max": "25"
+          },
+          "personalVault": {
+            "label": "Bóveda personal",
+            "free": "120 elementos, 10 carpetas",
+            "pro": "sin límite",
+            "max": "sin límite"
+          },
+          "connections": {
+            "label": "Conexiones de hosting por proyecto",
+            "free": "1",
+            "pro": "sin límite",
+            "max": "sin límite"
+          },
+          "sync": {
+            "label": "Envío al hosting",
+            "free": "manual",
+            "pro": "manual",
+            "max": "automático al guardar"
+          },
+          "redeploy": {
+            "label": "Nuevo deploy tras el envío",
+            "free": "no",
+            "pro": "no",
+            "max": "sí"
+          },
+          "ciSync": {
+            "label": "Sincronizar desde CI",
+            "free": "no",
+            "pro": "no",
+            "max": "sí"
+          },
+          "audit": {
+            "label": "Historial de auditoría visible",
+            "free": "7 días",
+            "pro": "30 días",
+            "max": "90 días"
+          },
+          "tokens": {
+            "label": "Tokens de CI y claves de API",
+            "free": "sin límite",
+            "pro": "sin límite",
+            "max": "sin límite"
+          }
         }
       },
-      "footnote": "Sin lock-in comercial: los planes alojados pueden evolucionar en el futuro, pero el self-hosting y la transparencia siguen siendo prioridades."
+      "footnote": "Precios en reales brasileños. Alojar CriptEnv por tu cuenta es gratis y sin límites.",
+      "contribute": "Apoyar el proyecto por Pix"
     }
   },
   "contribute": {
