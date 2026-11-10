@@ -1,6 +1,6 @@
 """Router for external integrations management"""
 
-from typing import Optional
+from typing import Annotated, Optional
 from uuid import UUID
 from datetime import datetime
 
@@ -16,6 +16,7 @@ from app.middleware.ci_auth import (
     require_ci_session_scope,
 )
 from app.models.user import User
+from app.plans import AUTO_SYNC, SYNC_REDEPLOY
 from app.schemas.vault import SecretKind
 from app.crypto.integration_config import IntegrationConfigEncryptionError
 from app.services.integration_service import IntegrationConfigError, IntegrationService
@@ -62,15 +63,29 @@ class IntegrationResponse(BaseModel):
     last_sync_at: Optional[datetime] = None
     last_error: Optional[str] = None
     created_at: datetime
+    # Auto-sync binding: {CriptEnv environment id: provider target}. Stored on any plan; it only
+    # takes effect while the owner's plan has `auto_sync` (see `features` in the list response).
+    auto_sync_targets: dict[str, str] = {}
+    redeploy: bool = False
     
     class Config:
         from_attributes = True
+
+
+class IntegrationUpdate(BaseModel):
+    """Omitted fields stay as they are."""
+    auto_sync_targets: Optional[dict[UUID, Annotated[str, Field(min_length=1, max_length=64)]]] = Field(
+        default=None, max_length=50
+    )
+    redeploy: Optional[bool] = None
 
 
 class IntegrationListResponse(BaseModel):
     integrations: list[IntegrationResponse]
     total: int
     available_providers: list[str]
+    # Sync features of the plan that applies to this project (its owner's): auto_sync, ci_sync, sync_redeploy.
+    features: list[str] = []
 
 
 class SyncSecret(BaseModel):
@@ -107,6 +122,8 @@ def _force_load_integration(i):
     _ = i.last_sync_at
     _ = i.last_error
     _ = i.created_at
+    _ = i.auto_sync_targets
+    _ = i.redeploy
     return i
 
 
@@ -207,7 +224,9 @@ async def create_integration(
             project_id=project_uuid,
             provider=payload.provider,
             name=payload.name,
-            config=payload.config
+            config=payload.config,
+            # On by default where the plan includes it; the user can turn it off per connection.
+            redeploy=await PlanLimits(db).has_feature(project_uuid, SYNC_REDEPLOY),
         )
     except IntegrationConfigError as e:
         raise HTTPException(
@@ -268,7 +287,8 @@ async def list_integrations(
             for i in integrations
         ],
         total=len(integrations),
-        available_providers=providers
+        available_providers=providers,
+        features=sorted((await PlanLimits(db).owner_plan(project_uuid)).features),
     )
 
 
@@ -309,6 +329,86 @@ async def get_integration(
             detail="Integration not found"
         )
     
+    return IntegrationResponse.model_validate(_force_load_integration(integration))
+
+
+@router.patch("/{integration_id}", response_model=IntegrationResponse)
+async def update_integration(
+    project_id: str,
+    integration_id: str,
+    request: Request,
+    payload: IntegrationUpdate,
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db)
+):
+    """Set the auto-sync binding and the deploy option of an integration.
+
+    Turning either on needs the feature in the plan of the project's owner
+    (402 otherwise); turning them off works on any plan.
+    """
+    project_service = ProjectService(db)
+    integration_service = IntegrationService(db)
+
+    try:
+        project_uuid = UUID(project_id)
+        integration_uuid = UUID(integration_id)
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid ID format"
+        )
+
+    member = await project_service.check_user_access(current_user.id, project_uuid, "admin")
+    if not member:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Project not found or insufficient permissions"
+        )
+
+    limits = PlanLimits(db)
+    if payload.auto_sync_targets:
+        await limits.require_feature(project_uuid, AUTO_SYNC)
+    if payload.redeploy:
+        await limits.require_feature(project_uuid, SYNC_REDEPLOY)
+
+    targets = payload.auto_sync_targets
+    try:
+        integration = await integration_service.update_settings(
+            integration_uuid,
+            project_id=project_uuid,
+            auto_sync_targets=None if targets is None else {str(key): value for key, value in targets.items()},
+            redeploy=payload.redeploy,
+        )
+    except IntegrationConfigError as e:
+        raise HTTPException(
+            status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+            detail=str(e),
+        )
+    except IntegrationConfigEncryptionError as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=str(e),
+        )
+    if not integration:
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail="Integration not found"
+        )
+
+    await AuditService(db).log(
+        action="integration.updated",
+        resource_type="integration",
+        resource_id=integration.id,
+        user_id=current_user.id,
+        project_id=project_uuid,
+        metadata={
+            "auto_sync_environments": len(integration.auto_sync_targets or {}),
+            "redeploy": integration.redeploy,
+        },
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent")
+    )
+
     return IntegrationResponse.model_validate(_force_load_integration(integration))
 
 

@@ -16,6 +16,7 @@ from app.crypto.integration_config import (
     IntegrationConfigEncryption,
     IntegrationConfigEncryptionError,
 )
+from app.models.environment import Environment
 from app.models.integration import Integration
 from app.strategies.integrations.base import ProviderError, get_provider, list_providers
 
@@ -89,7 +90,8 @@ class IntegrationService:
         project_id: UUID,
         provider: str,
         name: str,
-        config: dict
+        config: dict,
+        redeploy: bool = False,
     ) -> Integration:
         """Create a new integration.
 
@@ -101,7 +103,8 @@ class IntegrationService:
             provider=provider,
             name=name,
             config=self._encrypt_config(self._clean_config(provider, config)),
-            status="active"
+            status="active",
+            redeploy=redeploy,
         )
 
         self.db.add(integration)
@@ -126,6 +129,51 @@ class IntegrationService:
             )
         )
         return result.scalar_one_or_none()
+
+    async def update_settings(
+        self,
+        integration_id: UUID,
+        *,
+        project_id: UUID,
+        auto_sync_targets: Optional[dict[str, str]] = None,
+        redeploy: Optional[bool] = None,
+    ) -> Optional[Integration]:
+        """Set the auto-sync binding ({environment id: provider target}) and the deploy option.
+
+        ``None`` leaves a field as it is. Plan checks belong to the caller.
+
+        Raises:
+            IntegrationConfigError: a key is not a live environment of the project,
+                or a target is not one the provider accepts.
+        """
+        integration = await self.get_integration(integration_id, project_id=project_id)
+        if not integration:
+            return None
+
+        if auto_sync_targets:
+            provider = self._get_provider(integration.provider)
+            config, _ = self._decrypt_config_for_use(integration)
+            allowed = provider.get_environments(config) if provider else []
+            unknown = sorted(set(auto_sync_targets.values()) - set(allowed))
+            if unknown:
+                raise IntegrationConfigError(
+                    f"{integration.provider} target must be one of {', '.join(allowed)}, got '{unknown[0]}'"
+                )
+            live = await self.db.execute(
+                select(Environment.id).where(
+                    Environment.project_id == project_id, Environment.archived.is_(False)
+                )
+            )
+            live_ids = {str(environment_id) for environment_id in live.scalars()}
+            if not set(auto_sync_targets) <= live_ids:
+                raise IntegrationConfigError("auto_sync_targets must name environments of this project")
+
+        if auto_sync_targets is not None:
+            integration.auto_sync_targets = dict(auto_sync_targets)
+        if redeploy is not None:
+            integration.redeploy = redeploy
+        await self.db.flush()
+        return integration
 
     async def list_integrations(self, project_id: UUID) -> list[Integration]:
         """List all integrations for a project."""
