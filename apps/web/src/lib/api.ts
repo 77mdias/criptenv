@@ -61,6 +61,7 @@ export type {
   IntegrationProvider,
   IntegrationSyncRequest,
   IntegrationSyncResponse,
+  UpdateIntegrationRequest,
 } from './api/client';
 
 // Legacy `api` object — still used by some components
