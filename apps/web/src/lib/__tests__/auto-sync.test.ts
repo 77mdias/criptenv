@@ -1,7 +1,7 @@
 import { integrationsApi } from "@/lib/api"
 import { ApiError } from "@/lib/api/client"
 import type { Integration, IntegrationListResponse } from "@/lib/api"
-import { autoSyncTargets, runAutoSync } from "@/lib/auto-sync"
+import { autoSyncTargets, removedKeys, runAutoSync } from "@/lib/auto-sync"
 
 jest.mock("@/lib/api", () => ({
   integrationsApi: { list: jest.fn(), sync: jest.fn() },
@@ -135,5 +135,16 @@ describe("runAutoSync", () => {
     const [result] = await runAutoSync("p1", ENV, SECRETS, [])
 
     expect(result.deployScheduled).toBe(true)
+  })
+})
+
+describe("removedKeys", () => {
+  it("lists the keys that were saved before and are gone now", () => {
+    const before = [{ key: "A", value: "1" }, { key: "B", value: "2" }, { key: "C", value: "3" }]
+    expect(removedKeys(before, [{ key: "B", value: "changed" }, { key: "D", value: "new" }])).toEqual(["A", "C"])
+  })
+
+  it("is empty when keys were only added or edited", () => {
+    expect(removedKeys([{ key: "A", value: "1" }], [{ key: "A", value: "2" }, { key: "B", value: "3" }])).toEqual([])
   })
 })

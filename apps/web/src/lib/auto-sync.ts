@@ -23,6 +23,12 @@ export function autoSyncTargets(
   })
 }
 
+/** Keys that were in the vault before a save and are gone after it: the ones to remove at the provider. */
+export function removedKeys(previous: DecryptedSecret[], next: DecryptedSecret[]): string[] {
+  const kept = new Set(next.map((secret) => secret.key))
+  return previous.filter((secret) => !kept.has(secret.key)).map((secret) => secret.key)
+}
+
 /**
  * Sends the environment to every connection bound to it, after the vault was saved.
  * Never rejects: the vault write already happened, so a failure here is only reported.
