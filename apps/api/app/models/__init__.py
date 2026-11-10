@@ -19,6 +19,7 @@ from app.models.notification import Notification
 from app.models.secret_expiration import SecretExpiration, SecretRotation
 from app.models.integration import Integration
 from app.models.personal_vault import PersonalVault, PersonalVaultItem
+from app.models.subscription import Subscription, SubscriptionPayment
 
 __all__ = [
     "User",
@@ -45,4 +46,6 @@ __all__ = [
     "Integration",
     "PersonalVault",
     "PersonalVaultItem",
+    "Subscription",
+    "SubscriptionPayment",
 ]

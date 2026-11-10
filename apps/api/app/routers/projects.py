@@ -1,11 +1,14 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Request
+from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.exc import IntegrityError
 
 from app.database import get_db
+from app.models.project import Project
 from app.schemas.overview import SecretMatrixResponse
 from app.services.overview_service import OverviewService
 from app.schemas.plan import PlanResponse
+from app.services.billing_service import billing_enabled
 from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
@@ -143,6 +146,9 @@ async def get_project_plan(
     return PlanResponse(
         id=plan.id, limits=dict(plan.limits), features=sorted(plan.features),
         usage=await limits.project_usage(project_uuid),
+        can_upgrade=billing_enabled() and await db.scalar(
+            select(Project.owner_id).where(Project.id == project_uuid)
+        ) == current_user.id,
     )
 
 

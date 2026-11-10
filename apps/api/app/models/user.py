@@ -26,6 +26,8 @@ class User(Base):
     last_login_at = Column(DateTime(timezone=True))
     # NULL = the server's DEFAULT_PLAN (app/plans.py); paid plans will set it.
     plan = Column(String(32), nullable=True)
+    # When the one automatic 7-day refund of this account was used (billing).
+    refund_used_at = Column(DateTime(timezone=True))
 
     sessions = relationship("Session", back_populates="user", cascade="all, delete-orphan", foreign_keys="Session.user_id")
     projects = relationship("Project", back_populates="owner", foreign_keys="Project.owner_id")
