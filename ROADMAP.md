@@ -256,7 +256,7 @@ GET    /api/v1/ci/secrets                  # CI session auth ✅
 
 Order: UX.1 → (UX.2 ∥ UX.3 ∥ UX.5a) → UX.4 → UX.5b/c/d; UX.6 in parallel after UX.1.
 
-**Subscription plans (Free / Pro / Max):** spec `docs/superpowers/specs/2026-11-09-subscription-plans-design.md`. Delivery 1 (plans and limits, plan `docs/superpowers/plans/2026-11-09-plan-limits.md`) 🔄 in review; delivery 2 (automatic sync, redeploy, CI sync) and delivery 3 (billing) 📋 planned.
+**Subscription plans (Free / Pro / Max):** spec `docs/superpowers/specs/2026-11-09-subscription-plans-design.md`. Delivery 1 (plans and limits, plan `docs/superpowers/plans/2026-11-09-plan-limits.md`) ✅ merged 2026-11-09; delivery 2 (automatic sync, redeploy, CI sync; plan `docs/superpowers/plans/2026-11-10-max-sync-features.md`) 🔄 in review; delivery 3 (billing) 📋 planned.
 
 ---
 

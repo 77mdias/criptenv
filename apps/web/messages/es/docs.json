@@ -522,7 +522,7 @@
       },
       "ci": {
         "title": "Sync desde CI",
-        "body": "Con un token de CI con el scope write:integrations, ci deploy importa el archivo .env en el vault y luego envía el entorno completo a Vercel."
+        "body": "Con un token de CI con el scope write:integrations, ci deploy importa el archivo .env en el vault y luego envía el entorno completo a Vercel. El envío desde una sesión de CI requiere que el dueño del proyecto tenga el plan Max."
       },
       "overwriteWarning": "El push sobrescribe las variables de Vercel con el mismo nombre en el entorno de destino. Las variables que solo existen en Vercel no se modifican. CriptEnv las escribe como variables de tipo Encrypted.",
       "pullNote": "El pull omite las variables Sensitive (Vercel nunca devuelve su valor) y las variables de Preview específicas de una rama."
@@ -1616,7 +1616,7 @@
       },
       "list": {
         "title": "Listar integraciones",
-        "body": "Devuelve las integraciones del proyecto y los proveedores disponibles para conectar."
+        "body": "Devuelve las integraciones del proyecto y los proveedores disponibles para conectar. El campo features trae las funciones de sincronización del plan del dueño del proyecto (auto_sync, ci_sync, sync_redeploy)."
       },
       "get": {
         "title": "Obtener integración",
@@ -1632,12 +1632,22 @@
         "params": {
           "direction": "Dirección: push o pull",
           "environment": "Entorno en el proveedor. Vercel: production, preview o development (por defecto: production). Render y Cloudflare lo ignoran.",
-          "secrets": "Secrets ya descifrados que enviar al proveedor. El servidor nunca descifra el vault, así que un push sin este campo no envía nada."
-        }
+          "secrets": "Secrets ya descifrados que enviar al proveedor. El servidor nunca descifra el vault, así que un push sin este campo no envía nada.",
+          "delete_keys": "Solo en push: claves a eliminar del proveedor (las que se borraron en CriptEnv). Requiere el plan Max del dueño del proyecto."
+        },
+        "plan": "<code>deploy_scheduled</code> indica si se programó un nuevo deploy en el proveedor. Con una sesión de CI (<code>ci_s_</code>), este endpoint requiere el plan Max del dueño del proyecto y responde 402 en los demás."
       },
       "validate": {
         "title": "Validar integración",
         "body": "Comprueba que la conexión con el proveedor funciona con las credenciales guardadas."
+      },
+      "update": {
+        "title": "Actualizar envío automático y deploy",
+        "body": "Define el vínculo de envío automático y la opción de deploy de la integración. Los campos omitidos no cambian. Activar cualquiera de los dos requiere el plan Max del dueño del proyecto (402 <code>Plan feature required</code>); desactivarlos funciona en cualquier plan.",
+        "params": {
+          "auto_sync_targets": "Mapa de id del entorno de CriptEnv al destino en el proveedor (Vercel: production, preview o development; Render y Cloudflare: production). Un mapa vacío desactiva el envío automático.",
+          "redeploy": "Lanza un nuevo deploy en el proveedor aproximadamente 1 minuto después del último envío. En Vercel solo aplica a production; Cloudflare no lo necesita."
+        }
       }
     },
     "environments": {

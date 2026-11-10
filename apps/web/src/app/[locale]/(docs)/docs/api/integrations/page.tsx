@@ -21,7 +21,9 @@ const INTEGRATION = `{
   "status": "active",
   "last_sync_at": "2026-02-01T10:00:00Z",
   "last_error": null,
-  "created_at": "2026-01-31T12:00:00Z"
+  "created_at": "2026-01-31T12:00:00Z",
+  "auto_sync_targets": {},
+  "redeploy": false
 }`;
 
 export default function IntegrationsPage() {
@@ -115,6 +117,38 @@ export default function IntegrationsPage() {
         <ResponseBlock status={200}>{INTEGRATION}</ResponseBlock>
       </section>
 
+      {/* PATCH /integrations/:id */}
+      <section className="mt-10">
+        <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+          <EndpointBadge method="PATCH" /> {t('update.title')}
+        </h2>
+        <p className="text-muted-foreground mb-4">{t.rich('update.body', { code })}</p>
+
+        <ParamTable
+          params={[
+            { name: 'auto_sync_targets', type: 'object', required: false, description: t('update.params.auto_sync_targets') },
+            { name: 'redeploy', type: 'boolean', required: false, description: t('update.params.redeploy') },
+          ]}
+        />
+
+        <CodeBlock
+          language="bash"
+          code={`curl -X PATCH ${API}/{integration_id} \\
+  -H "Authorization: Bearer {token}" \\
+  -H "Content-Type: application/json" \\
+  -d '{"auto_sync_targets": {"{environment_id}": "production"}, "redeploy": true}'`}
+        />
+
+        <ResponseBlock status={200}>{`{
+  "id": "5d6e7f8a-9b0c-4d1e-2f3a-4b5c6d7e8f9a",
+  "provider": "vercel",
+  "name": "Production",
+  "status": "active",
+  "auto_sync_targets": {"{environment_id}": "production"},
+  "redeploy": true
+}`}</ResponseBlock>
+      </section>
+
       {/* DELETE /integrations/:id */}
       <section className="mt-10">
         <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
@@ -143,8 +177,10 @@ export default function IntegrationsPage() {
             { name: 'direction', type: 'string', required: true, description: t('sync.params.direction') },
             { name: 'environment', type: 'string', required: false, description: t('sync.params.environment') },
             { name: 'secrets', type: 'object[]', required: false, description: t('sync.params.secrets') },
+            { name: 'delete_keys', type: 'string[]', required: false, description: t('sync.params.delete_keys') },
           ]}
         />
+        <p className="text-muted-foreground mb-4">{t.rich('sync.plan', { code })}</p>
 
         <CodeBlock
           language="bash"
@@ -159,7 +195,8 @@ export default function IntegrationsPage() {
   "success": true,
   "message": "Successfully synced push (production)",
   "synced_count": 1,
-  "secrets": null
+  "secrets": null,
+  "deploy_scheduled": false
 }`}</ResponseBlock>
 
         <CodeBlock
