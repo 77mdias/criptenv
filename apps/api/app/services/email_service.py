@@ -1,5 +1,6 @@
 """Email service using Resend for transactional emails."""
 
+import logging
 from datetime import datetime, timezone
 from decimal import Decimal
 from typing import Optional
@@ -7,6 +8,8 @@ from typing import Optional
 import resend
 
 from app.config import settings
+
+logger = logging.getLogger(__name__)
 
 
 class EmailService:
@@ -484,6 +487,88 @@ Need help? Visit {settings.FRONTEND_URL}/support
             html,
             text,
         )
+
+    # ─── Emails: Billing ──────────────────────────────────────────────────────
+
+    _PLAN_NAMES = {"pro": "Pro", "max": "Max"}
+    _INTERVALS = {"month": ("mensal", "monthly"), "year": ("anual", "yearly")}
+
+    @staticmethod
+    def _day(when: datetime) -> str:
+        return when.strftime("%d/%m/%Y")
+
+    def _send_billing(self, to: str, subject: str, pt: list[str], en: list[str]) -> Optional[dict]:
+        """A plain bilingual billing e-mail: the Portuguese paragraphs, then the English ones, then the link."""
+        url = settings.FRONTEND_URL.rstrip("/") + "/account/billing"
+        paragraph = '<p style="margin:0 0 16px;font-size:15px;color:#374151;line-height:1.6;">{}</p>'
+        content = (
+            "".join(paragraph.format(line) for line in pt)
+            + '<hr style="border:none;border-top:1px solid #e5e7eb;margin:24px 0;">'
+            + "".join(paragraph.format(line) for line in en)
+            + self._cta_button(url, "Assinatura / Subscription")
+        )
+        text = "\n\n".join([*pt, "—", *en, url])
+        return self._send(to, subject, self._base_template(title=subject, content_html=content), text)
+
+    def send_subscription_confirmed(
+        self, to: str, *, plan: str, interval: str, amount: Decimal, starts_at: datetime, period_end: datetime,
+    ) -> Optional[dict]:
+        name, (cycle_pt, cycle_en), price = self._PLAN_NAMES[plan], self._INTERVALS[interval], self._format_brl(amount)
+        return self._send_billing(
+            to, f"Assinatura do CriptEnv {name} confirmada / CriptEnv {name} subscription confirmed",
+            [f"Recebemos o pagamento de {price} do plano {name} ({cycle_pt}).",
+             f"O plano vale de {self._day(starts_at)} a {self._day(period_end)} e renova sozinho."],
+            [f"We received your payment of {price} for the {name} plan ({cycle_en}).",
+             f"The plan runs from {self._day(starts_at)} to {self._day(period_end)} and renews on its own."],
+        )
+
+    def send_payment_failed(self, to: str, *, plan: str, grace_until: datetime) -> Optional[dict]:
+        name, day = self._PLAN_NAMES[plan], self._day(grace_until)
+        return self._send_billing(
+            to, "Não conseguimos cobrar sua assinatura do CriptEnv / We could not charge your CriptEnv subscription",
+            [f"A cobrança do plano {name} não foi aprovada.",
+             f"Seu plano continua valendo até {day}. Sem pagamento até lá, a conta volta ao Free.",
+             "Nada é apagado: seus segredos continuam acessíveis em qualquer plano."],
+            [f"The charge for the {name} plan was not approved.",
+             f"Your plan holds until {day}. Without a payment by then, the account goes back to Free.",
+             "Nothing is deleted: your secrets stay accessible on any plan."],
+        )
+
+    def send_back_to_free(self, to: str, *, plan: str) -> Optional[dict]:
+        name = self._PLAN_NAMES[plan]
+        return self._send_billing(
+            to, "Sua conta do CriptEnv voltou ao Free / Your CriptEnv account is back on Free",
+            [f"O plano {name} terminou e a conta voltou ao Free.",
+             "Nada foi apagado. O que passa dos limites do Free continua lá; só não dá para criar mais."],
+            [f"The {name} plan ended and the account is back on Free.",
+             "Nothing was deleted. What exceeds the Free limits is still there; you just cannot create more."],
+        )
+
+    def send_subscription_canceled(
+        self, to: str, *, plan: str, ends_at: Optional[datetime], refunded: bool,
+    ) -> Optional[dict]:
+        name = self._PLAN_NAMES[plan]
+        if refunded:
+            pt = "O valor pago foi devolvido e a conta voltou ao Free."
+            en = "The amount paid was refunded and the account is back on Free."
+        else:
+            pt = f"O plano continua valendo até {self._day(ends_at)}; depois a conta volta ao Free."
+            en = f"The plan holds until {self._day(ends_at)}; then the account goes back to Free."
+        return self._send_billing(
+            to, f"Assinatura do CriptEnv {name} cancelada / CriptEnv {name} subscription canceled",
+            [f"Sua assinatura do plano {name} foi cancelada. Não haverá novas cobranças.", pt],
+            [f"Your {name} subscription was canceled. There will be no further charges.", en],
+        )
+
+    def send_billing_admin(self, subject: str, lines: list[str]) -> Optional[dict]:
+        """To whoever runs billing: invoice data of a payment, or a refund that needs a human."""
+        to = settings.BILLING_NOTIFY_EMAIL
+        if not to:
+            logger.warning("Billing notice with no BILLING_NOTIFY_EMAIL: %s | %s", subject, " | ".join(lines))
+            return None
+        subject = f"[CriptEnv cobrança] {subject}"
+        content = "".join(f'<p style="margin:0 0 8px;font-size:14px;color:#374151;">{line}</p>' for line in lines)
+        return self._send(to, subject, self._base_template(title=subject, content_html=content), "\n".join(lines))
 
     # ─── Email: Project Invite ────────────────────────────────────────────────
 
