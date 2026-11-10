@@ -15,9 +15,6 @@ jest.mock("next-intl/server", () => ({
 jest.mock("@/components/marketing/platform-preview-section", () => ({
   PlatformPreviewSection: () => <div data-testid="platform-preview-stub" />,
 }));
-jest.mock("@/components/marketing/pricing-trust-section", () => ({
-  PricingTrustSection: () => <div data-testid="pricing-trust-stub" />,
-}));
 jest.mock("@/components/layout/footer", () => ({
   Footer: () => <div data-testid="footer-stub" />,
 }));
@@ -30,10 +27,6 @@ const {
   PlatformPreviewSection,
 }: typeof import("@/components/marketing/platform-preview-section") =
   jest.requireActual("@/components/marketing/platform-preview-section");
-const {
-  PricingTrustSection,
-}: typeof import("@/components/marketing/pricing-trust-section") =
-  jest.requireActual("@/components/marketing/pricing-trust-section");
 const { Footer }: typeof import("@/components/layout/footer") =
   jest.requireActual("@/components/layout/footer");
 
@@ -46,7 +39,6 @@ async function renderAsyncSection(factory: () => Promise<ReactNode>) {
 describe("LandingPage (smoke de render pós-merge)", () => {
   it("renderiza sem lançar", async () => {
     const realPlatformPreview = await renderAsyncSection(PlatformPreviewSection);
-    const realPricingTrust = await renderAsyncSection(PricingTrustSection);
     const realFooter = await renderAsyncSection(Footer);
 
     const ui = await LandingPage();
@@ -54,12 +46,13 @@ describe("LandingPage (smoke de render pós-merge)", () => {
       <Fragment>
         {ui}
         {realPlatformPreview}
-        {realPricingTrust}
         {realFooter}
       </Fragment>,
     );
 
     // findAllByText também cobre suspensões de seções com lazy loading.
     expect((await screen.findAllByText(/Secrets/i)).length).toBeGreaterThan(0);
+    // A seção de preços (Client Component) renderiza dentro da própria página.
+    expect(screen.getByRole("link", { name: "Assinar o Pro" })).toBeInTheDocument();
   });
 });

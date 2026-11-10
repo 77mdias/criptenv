@@ -20,7 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
-import { PricingTrustSection } from "@/components/marketing/pricing-trust-section";
+import { PricingSection } from "@/components/marketing/pricing-section";
 import { ProblemToVaultSection } from "@/components/marketing/problem-to-vault-section";
 import { SecurityScrollytelling } from "@/components/marketing/security-scrollytelling";
 import { PlatformPreviewSection } from "@/components/marketing/platform-preview-section";
@@ -450,7 +450,7 @@ export default async function LandingPage() {
             </h2>
           </div>
           <div data-motion="reveal">
-            <PricingTrustSection />
+            <PricingSection />
           </div>
         </div>
       </section>

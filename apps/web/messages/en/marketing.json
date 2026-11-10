@@ -81,7 +81,7 @@
     },
     "pricing": {
       "label": "Pricing",
-      "title": "Free to use, open to support"
+      "title": "Start free. Upgrade when you need to."
     },
     "cta": {
       "label": "Get Started",
@@ -183,53 +183,107 @@
         }
       }
     },
-    "pricingTrust": {
-      "contribute": {
-        "badge": "open support",
-        "kicker": "Sustained by the community",
-        "title": "Support CriptEnv",
-        "description": "The product stays free and open source. Your contribution helps keep the project alive, independent and more reliable for teams that look after secrets every day.",
-        "priceNote": "via Pix",
-        "benefits": {
-          "supportPix": "Support via Pix to keep the project independent",
-          "noPaidPlan": "No paid plan required to use the product",
-          "fundsInfra": "Helps fund infrastructure, docs and evolution",
-          "sustainable": "Keeps the open source proposition sustainable"
-        },
-        "primary": "Contribute now",
-        "secondary": "See transparency"
+    "plans": {
+      "description": "Full security on all three plans. What changes is how much you organize and automate.",
+      "interval": {
+        "label": "Billing cycle",
+        "month": "Monthly",
+        "year": "Yearly",
+        "yearlyHint": "2 months free"
       },
-      "openSource": {
-        "kicker": "Open Source",
-        "title": "Free",
-        "description": "Use the CLI, the dashboard and the current base with no paid plan. Hosted plans may come later, but the open core remains the starting point.",
-        "benefits": {
-          "vault": "Zero-Knowledge vault for project secrets",
-          "cliAndDashboard": "CLI and web dashboard available today",
-          "teamSync": "Team sync, audit trail and CI tokens",
-          "mit": "MIT code to review, self-host and evolve"
-        },
-        "cta": "Start free"
+      "per": {
+        "month": "per month",
+        "year": "per year"
       },
-      "trust": {
-        "mit": {
-          "label": "MIT",
-          "description": "open code"
-        },
-        "plaintext": {
-          "label": "0 plaintext",
-          "description": "server sees ciphertext"
-        },
-        "selfHosted": {
-          "label": "self-hostable",
-          "description": "you control the stack"
-        },
-        "roadmap": {
-          "label": "open roadmap",
-          "description": "no hidden promises"
+      "names": {
+        "free": "Free",
+        "pro": "Pro",
+        "max": "Max"
+      },
+      "taglines": {
+        "free": "To get started and for personal projects.",
+        "pro": "For those who maintain many applications.",
+        "max": "For those who put CriptEnv in the middle of the deploy."
+      },
+      "cta": {
+        "free": "Start free",
+        "pro": "Subscribe to Pro",
+        "max": "Subscribe to Max"
+      },
+      "table": {
+        "caption": "What each plan includes",
+        "feature": "Feature",
+        "rows": {
+          "security": {
+            "label": "Security",
+            "free": "full",
+            "pro": "full",
+            "max": "full"
+          },
+          "projects": {
+            "label": "Projects",
+            "free": "3",
+            "pro": "no limit",
+            "max": "no limit"
+          },
+          "environments": {
+            "label": "Environments per project",
+            "free": "3",
+            "pro": "no limit",
+            "max": "no limit"
+          },
+          "members": {
+            "label": "Members per project",
+            "free": "3",
+            "pro": "10",
+            "max": "25"
+          },
+          "personalVault": {
+            "label": "Personal vault",
+            "free": "120 items, 10 folders",
+            "pro": "no limit",
+            "max": "no limit"
+          },
+          "connections": {
+            "label": "Hosting connections per project",
+            "free": "1",
+            "pro": "no limit",
+            "max": "no limit"
+          },
+          "sync": {
+            "label": "Sending to the hosting provider",
+            "free": "manual",
+            "pro": "manual",
+            "max": "automatic on save"
+          },
+          "redeploy": {
+            "label": "New deploy after sending",
+            "free": "no",
+            "pro": "no",
+            "max": "yes"
+          },
+          "ciSync": {
+            "label": "Sync from CI",
+            "free": "no",
+            "pro": "no",
+            "max": "yes"
+          },
+          "audit": {
+            "label": "Visible audit history",
+            "free": "7 days",
+            "pro": "30 days",
+            "max": "90 days"
+          },
+          "tokens": {
+            "label": "CI tokens and API keys",
+            "free": "no limit",
+            "pro": "no limit",
+            "max": "no limit"
+          }
         }
       },
-      "footnote": "No commercial lock-in: hosted plans may evolve in the future, but self-hosting and transparency remain priorities."
+      "footnote": "Prices in Brazilian reais. Self-hosting CriptEnv is free and has no limits.",
+      "contribute": "Support the project with Pix"
     }
   },
   "contribute": {
