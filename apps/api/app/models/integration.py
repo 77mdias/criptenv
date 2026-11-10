@@ -3,7 +3,7 @@
 Stores external service integrations (Vercel, Railway, Render) for secret sync.
 """
 
-from sqlalchemy import Column, String, DateTime, ForeignKey, func, Index
+from sqlalchemy import Boolean, Column, String, DateTime, ForeignKey, func, Index, text
 from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -35,6 +35,12 @@ class Integration(Base):
     status = Column(String(20), default="active")  # active, disconnected, error
     last_sync_at = Column(DateTime(timezone=True), nullable=True)
     last_error = Column(String(1000), nullable=True)
+    # Auto-sync binding: {CriptEnv environment id: provider target}. Empty = auto-sync off.
+    auto_sync_targets = Column(JSONB, nullable=False, default=dict, server_default=text("'{}'"))
+    # Trigger a deploy in the provider after a successful push (owner's plan permitting).
+    redeploy = Column(Boolean, nullable=False, default=False, server_default=text("false"))
+    # When the scheduler should fire that deploy; each push moves it, so a burst of saves is one deploy.
+    deploy_due_at = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
     

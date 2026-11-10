@@ -13,8 +13,9 @@ from app.models.integration import Integration
 from app.models.member import ProjectInvite, ProjectMember
 from app.models.project import Project
 from app.models.user import User
+from app.plans import AUTO_SYNC, CI_SYNC, SYNC_REDEPLOY
 from app.services.plan_limits import PlanLimits
-from app.strategies.exceptions import PlanLimitReached
+from app.strategies.exceptions import PlanFeatureRequired, PlanLimitReached
 
 pytestmark = pytest.mark.asyncio
 
@@ -142,6 +143,46 @@ async def test_second_integration_is_over_the_free_limit(db_session):
     with pytest.raises(PlanLimitReached) as exc:
         await limits.check_integrations(project.id)
     assert _raised(exc) == (402, "integrations_per_project", 1)
+
+
+async def test_feature_follows_the_owner_plan_not_the_actor(db_session):
+    owner, member = _user(plan="max"), _user()  # the member is on Free
+    project, membership = _project(owner)
+    await _save(db_session, owner, member, project, membership, _member(project, member))
+    limits = PlanLimits(db_session)
+    assert await limits.has_feature(project.id, AUTO_SYNC) is True
+    await limits.require_feature(project.id, CI_SYNC)
+
+
+@pytest.mark.parametrize("plan", [None, "free", "pro"])
+async def test_feature_missing_is_402(db_session, plan):
+    ana = _user(plan=plan)
+    project, owner = _project(ana)
+    await _save(db_session, ana, project, owner)
+    limits = PlanLimits(db_session)
+    assert await limits.has_feature(project.id, SYNC_REDEPLOY) is False
+    with pytest.raises(PlanFeatureRequired) as exc:
+        await limits.require_feature(project.id, SYNC_REDEPLOY)
+    assert (exc.value.status_code, exc.value.feature) == (402, "sync_redeploy")
+    assert exc.value.detail == "Plan feature required: sync_redeploy"
+
+
+async def test_unlimited_has_every_sync_feature(db_session):
+    ana = _user(plan="unlimited")
+    project, owner = _project(ana)
+    await _save(db_session, ana, project, owner)
+    limits = PlanLimits(db_session)
+    for feature in (AUTO_SYNC, SYNC_REDEPLOY, CI_SYNC):
+        await limits.require_feature(project.id, feature)
+
+
+async def test_new_integration_has_no_binding_and_no_redeploy(db_session):
+    ana = _user()
+    project, owner = _project(ana)
+    integration = _integration(project)
+    await _save(db_session, ana, project, owner, integration)
+    await db_session.refresh(integration)
+    assert (integration.auto_sync_targets, integration.redeploy, integration.deploy_due_at) == ({}, False, None)
 
 
 async def test_unlimited_plan_never_raises(db_session):

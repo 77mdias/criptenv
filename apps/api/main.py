@@ -36,7 +36,7 @@ from app.routers.v1 import v1_router  # M3.4: API Versioning
 from app.middleware.api_version import APIVersionMiddleware  # M3.4: API Version header
 from app.middleware.rate_limit import RateLimitConfig, RateLimitMiddleware  # M3.4: Rate limiting
 from app.middleware.request_context import RequestContextMiddleware
-from app.strategies.exceptions import PlanLimitReached
+from app.strategies.exceptions import PlanFeatureRequired, PlanLimitReached
 from app.observability import configure_logging, init_error_tracking, install_icon_log_redaction, redact_icon_path
 
 configure_logging()
@@ -205,9 +205,10 @@ async def request_logging_middleware(request: Request, call_next):
     return response
 
 
+@app.exception_handler(PlanFeatureRequired)
 @app.exception_handler(PlanLimitReached)
-async def plan_limit_handler(request: Request, exc: PlanLimitReached):
-    """One place for the 402 of every create that passes a plan limit."""
+async def plan_limit_handler(request: Request, exc: PlanLimitReached | PlanFeatureRequired):
+    """One place for every 402: a create that passes a plan limit, or a feature the plan lacks."""
     return JSONResponse(status_code=exc.status_code, content={"detail": exc.detail})
 
 
