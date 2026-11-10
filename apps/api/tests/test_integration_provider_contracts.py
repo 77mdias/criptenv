@@ -707,3 +707,165 @@ class TestSyncSchemas:
 
         assert {"vercel", "render", "cloudflare"} <= set(list_providers())
         assert "railway" not in list_providers()
+
+
+@pytest.mark.asyncio
+class TestDeleteAndDeployContracts:
+    """delete_secrets removes only the named keys; trigger_deploy asks the provider for a new deploy."""
+
+    @staticmethod
+    def _vercel_envs(routes, envs):
+        routes[("GET", "/v10/projects/prj_1/env")] = httpx.Response(200, json={"envs": envs})
+        for env in envs:
+            routes[("PATCH", f"/v9/projects/prj_1/env/{env['id']}")] = httpx.Response(200, json={})
+            routes[("DELETE", f"/v9/projects/prj_1/env/{env['id']}")] = httpx.Response(200, json={})
+
+    @staticmethod
+    def _writes(calls):
+        return [(c.method, c.url.path) for c in calls if c.method != "GET"]
+
+    async def test_vercel_delete_removes_the_record_of_a_single_target(self, http):
+        calls, routes = http
+        self._vercel_envs(routes, [
+            {"id": "e1", "key": "A", "type": "encrypted", "target": ["production"]},
+            {"id": "e2", "key": "B", "type": "encrypted", "target": ["production"]},
+        ])
+
+        await VercelProvider().delete_secrets(["A"], VERCEL, "production")
+
+        assert self._writes(calls) == [("DELETE", "/v9/projects/prj_1/env/e1")]
+        assert calls[-1].url.params["teamId"] == "team_1"
+
+    async def test_vercel_delete_keeps_the_other_targets_of_a_shared_record(self, http):
+        calls, routes = http
+        self._vercel_envs(routes, [{"id": "e1", "key": "A", "type": "encrypted", "target": ["production", "preview"]}])
+
+        await VercelProvider().delete_secrets(["A"], VERCEL, "production")
+
+        assert self._writes(calls) == [("PATCH", "/v9/projects/prj_1/env/e1")]
+        assert json.loads(calls[-1].content) == {"target": ["preview"]}
+
+    async def test_vercel_delete_leaves_branch_records_and_other_targets_alone(self, http):
+        calls, routes = http
+        self._vercel_envs(routes, [
+            {"id": "e1", "key": "A", "type": "encrypted", "target": ["production"], "gitBranch": "feat"},
+            {"id": "e2", "key": "A", "type": "encrypted", "target": ["preview"]},
+            {"id": "e3", "key": "B", "type": "encrypted", "target": ["production"]},
+        ])
+
+        await VercelProvider().delete_secrets(["A"], VERCEL, "production")
+
+        assert self._writes(calls) == []
+
+    async def test_vercel_delete_reports_a_refusal(self, http):
+        calls, routes = http
+        self._vercel_envs(routes, [{"id": "e1", "key": "A", "type": "encrypted", "target": ["production"]}])
+        routes[("DELETE", "/v9/projects/prj_1/env/e1")] = httpx.Response(403, json={"error": {"message": "nope"}})
+
+        with pytest.raises(ProviderError, match="Vercel API returned 403: nope"):
+            await VercelProvider().delete_secrets(["A"], VERCEL, "production")
+
+    async def test_render_delete_calls_the_single_variable_route_per_key(self, http):
+        calls, routes = http
+        routes[("DELETE", "/v1/services/srv_1/env-vars/A")] = httpx.Response(204)
+        routes[("DELETE", "/v1/services/srv_1/env-vars/B%2FC")] = httpx.Response(204)
+
+        await RenderProvider().delete_secrets(["A", "B/C"], RENDER, "production")
+
+        assert [(c.method, c.url.raw_path.decode()) for c in calls] == [
+            ("DELETE", "/v1/services/srv_1/env-vars/A"),
+            ("DELETE", "/v1/services/srv_1/env-vars/B%2FC"),
+        ]
+        assert calls[0].headers["Authorization"] == "Bearer render-token-123"
+
+    async def test_cloudflare_delete_calls_the_secret_route_per_key(self, http):
+        calls, routes = http
+        routes[("DELETE", "/client/v4/accounts/acc_1/workers/scripts/my-worker/secrets/A")] = httpx.Response(
+            200, json={"success": True}
+        )
+
+        await CloudflareWorkersProvider().delete_secrets(["A"], CLOUDFLARE, "production")
+
+        assert [(c.method, c.url.path) for c in calls] == [
+            ("DELETE", "/client/v4/accounts/acc_1/workers/scripts/my-worker/secrets/A")
+        ]
+
+    async def test_delete_of_a_key_the_provider_does_not_have_is_not_an_error(self, http):
+        calls, routes = http
+        routes[("GET", "/v10/projects/prj_1/env")] = httpx.Response(200, json={"envs": []})
+        # Render and Cloudflare answer 404 (the fixture's default) for a key that is not there.
+
+        await VercelProvider().delete_secrets(["GONE"], VERCEL, "production")
+        await RenderProvider().delete_secrets(["GONE"], RENDER, "production")
+        await CloudflareWorkersProvider().delete_secrets(["GONE"], CLOUDFLARE, "production")
+
+        assert self._writes(calls) == [
+            ("DELETE", "/v1/services/srv_1/env-vars/GONE"),
+            ("DELETE", "/client/v4/accounts/acc_1/workers/scripts/my-worker/secrets/GONE"),
+        ]
+
+    async def test_render_and_cloudflare_delete_report_other_errors(self, http):
+        calls, routes = http
+        routes[("DELETE", "/v1/services/srv_1/env-vars/A")] = httpx.Response(401, json={"message": "bad token"})
+        routes[("DELETE", "/client/v4/accounts/acc_1/workers/scripts/my-worker/secrets/A")] = httpx.Response(
+            403, json={"errors": [{"message": "forbidden"}]}
+        )
+
+        with pytest.raises(ProviderError, match="Render API returned 401: bad token"):
+            await RenderProvider().delete_secrets(["A"], RENDER, "production")
+        with pytest.raises(ProviderError, match="Cloudflare API returned 403: forbidden"):
+            await CloudflareWorkersProvider().delete_secrets(["A"], CLOUDFLARE, "production")
+
+    async def test_vercel_deploy_redeploys_the_latest_ready_production_deployment(self, http):
+        calls, routes = http
+        routes[("GET", "/v7/deployments")] = httpx.Response(
+            200, json={"deployments": [{"uid": "dpl_1", "name": "my-app"}]}
+        )
+        routes[("POST", "/v13/deployments")] = httpx.Response(200, json={"id": "dpl_2"})
+
+        await VercelProvider().trigger_deploy(VERCEL)
+
+        listing, create = calls
+        assert dict(listing.url.params) == {
+            "teamId": "team_1", "projectId": "prj_1", "target": "production", "state": "READY", "limit": "1",
+        }
+        assert create.url.params["teamId"] == "team_1"
+        assert json.loads(create.content) == {"name": "my-app", "deploymentId": "dpl_1", "target": "production"}
+
+    async def test_vercel_deploy_without_a_production_deployment_says_so(self, http):
+        calls, routes = http
+        routes[("GET", "/v7/deployments")] = httpx.Response(200, json={"deployments": []})
+
+        with pytest.raises(ProviderError, match="Vercel has no production deployment to redeploy"):
+            await VercelProvider().trigger_deploy(VERCEL)
+
+        assert self._writes(calls) == []
+
+    async def test_vercel_deploy_reports_a_refusal(self, http):
+        _, routes = http
+        routes[("GET", "/v7/deployments")] = httpx.Response(200, json={"deployments": [{"uid": "d", "name": "n"}]})
+        routes[("POST", "/v13/deployments")] = httpx.Response(402, json={"error": {"message": "payment required"}})
+
+        with pytest.raises(ProviderError, match="Vercel API returned 402: payment required"):
+            await VercelProvider().trigger_deploy(VERCEL)
+
+    async def test_render_deploy_creates_a_deploy(self, http):
+        calls, routes = http
+        routes[("POST", "/v1/services/srv_1/deploys")] = httpx.Response(201, json={"id": "dep_1"})
+
+        await RenderProvider().trigger_deploy(RENDER)
+
+        assert [(c.method, c.url.path) for c in calls] == [("POST", "/v1/services/srv_1/deploys")]
+        assert json.loads(calls[0].content) == {}
+
+    async def test_cloudflare_has_no_deploy_to_trigger(self, http):
+        calls, _ = http
+        with pytest.raises(ProviderError):
+            await CloudflareWorkersProvider().trigger_deploy(CLOUDFLARE)
+        assert calls == []
+
+    async def test_only_vercel_production_and_render_deploy(self):
+        vercel = VercelProvider()
+        assert [vercel.deploys_on(t) for t in ("production", "preview", "development")] == [True, False, False]
+        assert RenderProvider().deploys_on("staging") is True
+        assert CloudflareWorkersProvider().deploys_on("production") is False

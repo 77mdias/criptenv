@@ -2,7 +2,8 @@
 
 Syncs secrets with a Render service's environment variables.
 Contract: https://api-docs.render.com/openapi/render-public-api-1.json
-(update-env-var, get-env-vars-for-service, retrieve-service).
+(update-env-var, delete-env-var, get-env-vars-for-service, retrieve-service,
+create-deploy).
 """
 
 from urllib.parse import quote
@@ -59,6 +60,25 @@ class RenderProvider(IntegrationProvider):
                 )
                 ensure_ok(response, "Render")
         return True
+
+    async def delete_secrets(self, keys: list[str], config: dict, environment: str) -> None:
+        """Delete each variable through the single-variable route; 404 means it is already gone."""
+        service_id = self._require(config)
+        async with self._client(config) as client:
+            for key in keys:
+                response = await client.delete(f"/services/{service_id}/env-vars/{quote(key, safe='')}")
+                if response.status_code != 404:
+                    ensure_ok(response, "Render")
+
+    def deploys_on(self, environment: str) -> bool:
+        """Saving a variable through the API does not deploy; the service is the only target."""
+        return True
+
+    async def trigger_deploy(self, config: dict) -> None:
+        """Create a deploy of the service's current commit (create-deploy)."""
+        service_id = self._require(config)
+        async with self._client(config) as client:
+            ensure_ok(await client.post(f"/services/{service_id}/deploys", json={}), "Render")
 
     async def pull_secrets(
         self,

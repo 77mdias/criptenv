@@ -2,8 +2,10 @@
 
 Pushes secrets to a Worker script as ``secret_text`` bindings.
 Contract: https://github.com/cloudflare/api-schemas (worker-patch-script-secrets-bulk,
-worker-list-script-secrets).
+worker-list-script-secrets, worker-delete-script-secret).
 """
+
+from urllib.parse import quote
 
 import httpx
 
@@ -74,6 +76,18 @@ class CloudflareWorkersProvider(IntegrationProvider):
                 }
                 ensure_ok(await client.patch(f"{path}-bulk", json=body), "Cloudflare")
         return True
+
+    async def delete_secrets(self, keys: list[str], config: dict, environment: str) -> None:
+        """Delete each secret binding; 404 means it is already gone.
+
+        Like a push, each request deploys a new Worker version, so no explicit deploy follows.
+        """
+        path = self._secrets_path(config)
+        async with self._client(config) as client:
+            for key in keys:
+                response = await client.delete(f"{path}/{quote(key, safe='')}")
+                if response.status_code != 404:
+                    ensure_ok(response, "Cloudflare")
 
     async def pull_secrets(
         self,
