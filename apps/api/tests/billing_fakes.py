@@ -17,6 +17,7 @@ def enable_billing(monkeypatch) -> None:
     monkeypatch.setattr(settings, "BILLING_ENABLED", True)
     monkeypatch.setattr(settings, "MERCADO_PAGO_ACCESS_TOKEN", "TEST-access-token")
     monkeypatch.setattr(settings, "MERCADO_PAGO_WEBHOOK_SECRET", "test-webhook-secret")
+    monkeypatch.setattr(settings, "BILLING_NOTIFY_EMAIL", "billing@example.com")
 
 
 def make_user(plan=None) -> User:

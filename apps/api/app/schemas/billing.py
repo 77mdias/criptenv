@@ -56,3 +56,6 @@ class BillingStateResponse(BaseModel):
     pending: SubscriptionResponse | None
     # A cancel now gives the money back (within 7 days of the first charge, once per account).
     refund_eligible: bool
+    # A downgrade or a change of cycle can only be bought from this date (the last month of the
+    # paid period); null when it already can. An upgrade never waits.
+    change_available_from: datetime | None = None

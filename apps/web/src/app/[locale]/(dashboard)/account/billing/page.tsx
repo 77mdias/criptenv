@@ -25,6 +25,14 @@ function asPaidPlan(value: string | null): PaidPlan | null {
   return value === "pro" || value === "max" ? value : null
 }
 
+const RANK: Record<PaidPlan, number> = { pro: 1, max: 2 }
+
+/** A plan chosen through the URL that cannot be bought yet (see PlanPicker): no checkout form for it. */
+function waitsForChange(state: BillingState, plan: PaidPlan): boolean {
+  const live = state.subscription
+  return Boolean(live && state.change_available_from && RANK[plan] <= RANK[live.plan])
+}
+
 export default function BillingPage() {
   const t = useTranslations("billing")
   const locale = useLocale()
@@ -118,9 +126,15 @@ export default function BillingPage() {
 
   const subscription = state?.subscription ?? null
   const target = state?.scheduled ?? subscription
-  const cancelText = state?.refund_eligible
-    ? t("cancel.refund")
-    : t("cancel.untilEnd", { date: day(target?.current_period_end ?? null, locale) })
+  // What the dialog promises must be what the API does: a cancel acts on the scheduled change when there is one.
+  const untilEnd = t("cancel.untilEnd", { date: day(target?.current_period_end ?? null, locale) })
+  const cancelText = state?.scheduled
+    ? state.refund_eligible
+      ? t("cancel.refundScheduled")
+      : `${untilEnd} ${t("cancel.scheduledNote")}`
+    : state?.refund_eligible
+      ? t("cancel.refund")
+      : untilEnd
 
   return (
     <div className="mx-auto max-w-3xl space-y-6">
@@ -163,7 +177,7 @@ export default function BillingPage() {
             onSelect={setSelected}
           />
 
-          {selected && !state.scheduled && (
+          {selected && !state.scheduled && !waitsForChange(state, selected) && (
             <TaxInfoForm
               key={`checkout-${selected}`}
               mode="checkout"
@@ -199,7 +213,7 @@ export default function BillingPage() {
       <ConfirmActionDialog
         open={confirmingCancel}
         title={t("cancel.title")}
-        description={state?.scheduled ? `${cancelText} ${t("cancel.scheduledNote")}` : cancelText}
+        description={cancelText}
         confirmLabel={t("cancel.confirm")}
         cancelLabel={t("cancel.keep")}
         destructive

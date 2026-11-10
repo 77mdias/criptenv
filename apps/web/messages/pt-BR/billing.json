@@ -39,6 +39,7 @@
     "select": "Escolher {plan}",
     "selected": "{plan} escolhido",
     "currentPlan": "Seu plano atual",
+    "availableFrom": "Disponível a partir de {date}. Essa troca só pode ser feita no último mês do período já pago.",
     "scheduledBlocks": "Já existe uma troca agendada. Cancele a troca para escolher outro plano.",
     "effect": {
       "new": "Vale assim que o pagamento for confirmado.",
@@ -65,6 +66,7 @@
     "title": "Cancelar a assinatura?",
     "refund": "O valor pago é devolvido e a conta volta ao Free agora. Esse reembolso automático vale uma vez por conta.",
     "untilEnd": "Não haverá novas cobranças e o plano vale até {date}. Depois a conta volta ao Free. Nada é apagado.",
+    "refundScheduled": "O valor pago pela troca é devolvido. O plano atual continua até o fim do período já pago; para mantê-lo depois disso, assine de novo.",
     "scheduledNote": "O cancelamento vale para a troca agendada. O plano atual termina no fim do período já pago.",
     "confirm": "Cancelar assinatura",
     "keep": "Manter assinatura",

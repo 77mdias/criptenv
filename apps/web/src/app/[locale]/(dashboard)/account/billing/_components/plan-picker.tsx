@@ -27,6 +27,11 @@ export function PlanPicker({ state, interval, selected, onInterval, onSelect }: 
   const locale = useLocale()
   const live = state.subscription
 
+  /** A change that only starts when the paid period ends can be bought in its last month, not before. */
+  function waits(plan: PaidPlan): boolean {
+    return Boolean(live && state.change_available_from && RANK[plan] <= RANK[live.plan])
+  }
+
   function effect(plan: PaidPlan): string {
     if (!live) return t("choose.effect.new")
     if (RANK[plan] > RANK[live.plan]) return t("choose.effect.upgrade")
@@ -87,6 +92,10 @@ export function PlanPicker({ state, interval, selected, onInterval, onSelect }: 
                   </p>
                   {isCurrent ? (
                     <p className="text-sm font-medium text-(--text-secondary)">{t("choose.currentPlan")}</p>
+                  ) : waits(plan) ? (
+                    <p className="text-sm text-(--text-secondary)">
+                      {t("choose.availableFrom", { date: day(state.change_available_from, locale) })}
+                    </p>
                   ) : (
                     <>
                       <p className="text-sm text-(--text-secondary)">{effect(plan)}</p>

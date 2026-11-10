@@ -62,7 +62,15 @@ function subscription(over: Partial<Subscription> = {}): Subscription {
 }
 
 function state(over: Partial<BillingState> = {}): BillingState {
-  return { prices: PRICES, subscription: null, scheduled: null, pending: null, refund_eligible: false, ...over }
+  return {
+    prices: PRICES,
+    subscription: null,
+    scheduled: null,
+    pending: null,
+    refund_eligible: false,
+    change_available_from: null,
+    ...over,
+  }
 }
 
 const mocked = {
@@ -189,6 +197,33 @@ describe("BillingPage", () => {
     await userEvent.click(screen.getByRole("button", { name: "Cancelar assinatura" }))
 
     expect(await screen.findByRole("dialog")).toHaveTextContent("o plano vale até 01/05/2027")
+  })
+
+  it("cancelling a scheduled change says the plan in force stays", async () => {
+    await open("max", state({
+      subscription: subscription({ plan: "max", cancel_at_period_end: true }),
+      scheduled: subscription({ id: "sub-2", status: "scheduled", current_period_start: "2027-05-01T12:00:00Z" }),
+      refund_eligible: true,
+    }))
+
+    await userEvent.click(screen.getByRole("button", { name: "Cancelar assinatura" }))
+
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toHaveTextContent("O valor pago pela troca é devolvido.")
+    expect(dialog).not.toHaveTextContent("volta ao Free agora")
+  })
+
+  it("offers a later change only in the last month of the paid period", async () => {
+    await open("pro", state({
+      subscription: subscription({ interval: "year", amount: "290.00", current_period_end: "2028-04-01T12:00:00Z" }),
+      change_available_from: "2028-03-01T12:00:00Z",
+    }))
+
+    const pro = screen.getByRole("group", { name: "Pro" })
+    expect(within(pro).getByText(/Disponível a partir de 01\/03\/2028/)).toBeInTheDocument()
+    expect(within(pro).queryByRole("button")).not.toBeInTheDocument()
+    // An upgrade never waits.
+    expect(within(screen.getByRole("group", { name: "Max" })).getByRole("button", { name: "Escolher Max" })).toBeEnabled()
   })
 
   it("hides the cancel button once the subscription is already canceled", async () => {

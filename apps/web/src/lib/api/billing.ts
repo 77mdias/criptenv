@@ -46,6 +46,8 @@ export interface BillingState {
   pending: Subscription | null;
   /** A cancel now gives the money back. */
   refund_eligible: boolean;
+  /** A downgrade or a change of cycle can only be bought from this date; null when it already can. */
+  change_available_from: string | null;
 }
 
 export interface CancelResult {

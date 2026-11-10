@@ -37,6 +37,9 @@ REFUND_WINDOW = timedelta(days=7)
 RENEWAL_SLACK = timedelta(days=1)
 # An unpaid checkout older than this is abandoned.
 PENDING_TTL = timedelta(hours=48)
+# A change that only starts when the paid period ends (downgrade, other cycle) can be bought this long
+# before that end, not earlier: its subscription is charged every cycle from the day it is paid.
+CHANGE_WINDOW = timedelta(days=31)
 
 _REASONS = {
     ("pro", "month"): "CriptEnv Pro (mensal)", ("pro", "year"): "CriptEnv Pro (anual)",
@@ -45,9 +48,11 @@ _REASONS = {
 
 
 def billing_enabled() -> bool:
-    """Off unless the operator turned it on and Mercado Pago is configured (self-hosted installs never bill)."""
+    """Off unless the operator turned it on and Mercado Pago is configured (self-hosted installs never bill).
+    The address for notices is required too: a refund that failed must reach a person, not only a log."""
     return bool(
         settings.BILLING_ENABLED and settings.MERCADO_PAGO_ACCESS_TOKEN and settings.MERCADO_PAGO_WEBHOOK_SECRET
+        and settings.BILLING_NOTIFY_EMAIL
     )
 
 
@@ -123,8 +128,8 @@ class BillingService:
 
     async def _cancel_remote_quietly(self, subscription: Subscription) -> None:
         """Stop charges at Mercado Pago where a failure must not stop us; a human is told to do it by hand."""
-        if not subscription.provider_subscription_id:
-            return
+        if not subscription.provider_subscription_id or subscription.cancel_at_period_end:
+            return  # nothing there, or already cancelled there
         try:
             await self.mp.cancel_preapproval(subscription.provider_subscription_id)
         except MercadoPagoError as e:
@@ -161,6 +166,14 @@ class BillingService:
         payment.refunded_amount = value
 
     @staticmethod
+    def _change_available_from(live: Subscription | None, now: datetime) -> datetime | None:
+        """When a downgrade or a change of cycle can be bought; None when it already can."""
+        if live is None or live.current_period_end is None:
+            return None
+        opens = live.current_period_end - CHANGE_WINDOW
+        return opens if opens > now else None
+
+    @staticmethod
     def _end(subscription: Subscription, now: datetime) -> None:
         subscription.status = "ended"
         subscription.ended_at = now
@@ -170,8 +183,10 @@ class BillingService:
 
     async def checkout(
         self, user: User, *, plan: str, interval: str, tax_id: str, legal_name: str, address: str, payer_email: str,
+        now: datetime | None = None,
     ) -> Subscription:
         """A pending subscription and its checkout at Mercado Pago. Nothing changes until a payment is approved."""
+        now = now or datetime.now(timezone.utc)
         if plan not in PLAN_RANK or interval not in INTERVAL_MONTHS:
             raise ValueError("Unknown plan or interval")
         _validate_invoice_data(tax_id, legal_name, address)
@@ -183,6 +198,9 @@ class BillingService:
             raise BillingConflict("You already subscribe to this plan")
         if await self._one(user.id, "scheduled"):
             raise BillingConflict("A plan change is already scheduled")
+        opens = self._change_available_from(live, now)
+        if opens and PLAN_RANK[plan] <= PLAN_RANK[live.plan]:
+            raise BillingConflict(f"This change can be made from {opens:%Y-%m-%d}")
 
         subscription = Subscription(
             id=uuid4(), user_id=user.id, plan=plan, interval=interval, status="pending",
@@ -204,7 +222,6 @@ class BillingService:
         subscription.init_point = preapproval.get("init_point")
 
         # One open checkout per user: an older one must not be paid by mistake later.
-        now = datetime.now(timezone.utc)
         for older in await self._subscriptions(user.id, "pending"):
             self._end(older, now)
             await self._cancel_remote_quietly(older)
@@ -325,7 +342,7 @@ class BillingService:
                 # Downgrade or interval switch: paid now, valid when what is already paid ends.
                 await self._cancel_remote_quietly(live)
                 live.cancel_at_period_end = True
-                start = live.current_period_end
+                start = max(live.current_period_end, paid_at)  # an overdue plan has no paid time left
                 subscription.status = "scheduled"
                 await self._log("subscription.scheduled", subscription, starts_at=start.isoformat())
             else:
@@ -342,7 +359,8 @@ class BillingService:
         else:
             # A renewal counts from where the paid time ended, or from the payment when it came late.
             start = max(subscription.current_period_end, paid_at)
-            subscription.current_period_start = start
+            if subscription.status != "scheduled":  # a scheduled one has not started: its start stays
+                subscription.current_period_start = start
             subscription.current_period_end = add_months(start, months)
             subscription.grace_until = None
             if subscription.status == "past_due":
@@ -368,9 +386,18 @@ class BillingService:
             return
         last = payments[-1]
         share = Decimal((end - at).total_seconds()) / Decimal((end - start).total_seconds())
-        amount = (last.amount * share).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        fair = (last.amount * share).quantize(Decimal("0.01"), rounding=ROUND_DOWN)
+        # A renewal charged early leaves more than one cycle unused; one payment cannot give back more than itself.
+        amount = min(fair, last.amount)
         if amount > 0:
             await self._refund(last, amount, f"prorate-{last.id}", "Subida de plano: devolução do que não foi usado.")
+        if fair > last.amount:
+            self._mail("send_billing_admin", "Reembolso parcial: falta devolver à mão", [
+                "Subida de plano com mais de um ciclo pago adiantado.",
+                f"Assinatura no Mercado Pago: {subscription.provider_subscription_id}",
+                f"Devolvido no pagamento {last.provider_payment_id}: R$ {amount}",
+                f"Falta devolver: R$ {fair - last.amount}",
+            ])
 
     # ─── Cancelling ───────────────────────────────────────────────────────────
 
@@ -431,8 +458,8 @@ class BillingService:
     async def cancel_for_account_deletion(self, user: User) -> None:
         """Before an account is deleted: no subscription may keep charging. No refund."""
         for subscription in await self._subscriptions(user.id, "pending", "scheduled", *LIVE_STATUSES):
-            if not subscription.provider_subscription_id:
-                continue
+            if not subscription.provider_subscription_id or subscription.cancel_at_period_end:
+                continue  # nothing there, or already cancelled there
             try:
                 await self.mp.cancel_preapproval(subscription.provider_subscription_id)
             except MercadoPagoError as e:
@@ -466,12 +493,12 @@ class BillingService:
         before = snapshot()
 
         if subscription.status == "pending":
-            if subscription.created_at + PENDING_TTL < now:
-                self._end(subscription, now)
+            await self.sync(subscription, now)  # a first payment whose webhook never arrived
+            # Abandoned only after Mercado Pago said nothing was paid.
+            if subscription.status == "pending" and subscription.created_at + PENDING_TTL < now:
                 await self._cancel_remote_quietly(subscription)
+                self._end(subscription, now)
                 await self._log("subscription.ended", subscription, reason="abandoned")
-            else:
-                await self.sync(subscription, now)  # a first payment whose webhook never arrived
             return snapshot() != before
 
         if not subscription.cancel_at_period_end and subscription.current_period_end < now:
@@ -494,7 +521,15 @@ class BillingService:
                 await self._finish(subscription, now, "canceled")
             elif subscription.status == "past_due" and subscription.grace_until <= now:
                 await self._cancel_remote_quietly(subscription)
-                await self._finish(subscription, now, "unpaid")
+                if subscription.current_period_end > now:
+                    # Charges can run ahead of the period (a change paid before it started): the refused one
+                    # stops the subscription, but the time already paid is the customer's.
+                    subscription.status = "active"
+                    subscription.grace_until = None
+                    subscription.cancel_at_period_end = True
+                    await self._log("subscription.canceled", subscription, reason="unpaid")
+                else:
+                    await self._finish(subscription, now, "unpaid")
         return snapshot() != before
 
     async def _finish(self, subscription: Subscription, now: datetime, reason: str) -> None:
@@ -530,11 +565,13 @@ class BillingService:
         now = now or datetime.now(timezone.utc)
         user = await self.db.get(User, user.id)
         target = await self._cancel_target(user)
+        live = await self._one(user.id, *LIVE_STATUSES)
         return {
+            "change_available_from": self._change_available_from(live, now),
             "prices": {
                 plan: {interval: PRICES[(plan, interval)] for interval in INTERVAL_MONTHS} for plan in PLAN_RANK
             },
-            "subscription": await self._one(user.id, *LIVE_STATUSES),
+            "subscription": live,
             "scheduled": await self._one(user.id, "scheduled"),
             "pending": await self._one(user.id, "pending"),
             "refund_eligible": bool(

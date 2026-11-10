@@ -39,6 +39,7 @@
     "select": "Choose {plan}",
     "selected": "{plan} chosen",
     "currentPlan": "Your current plan",
+    "availableFrom": "Available from {date}. This change can only be made in the last month of the period already paid.",
     "scheduledBlocks": "A plan change is already scheduled. Cancel it to choose another plan.",
     "effect": {
       "new": "Valid as soon as the payment is confirmed.",
@@ -65,6 +66,7 @@
     "title": "Cancel the subscription?",
     "refund": "The amount paid is refunded and the account goes back to Free now. This automatic refund works once per account.",
     "untilEnd": "There will be no further charges and the plan holds until {date}. Then the account goes back to Free. Nothing is deleted.",
+    "refundScheduled": "The amount paid for the change is refunded. The current plan continues until the end of the period already paid; to keep it after that, subscribe again.",
     "scheduledNote": "The cancellation applies to the scheduled change. The current plan ends when the period already paid is over.",
     "confirm": "Cancel subscription",
     "keep": "Keep subscription",

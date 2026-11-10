@@ -2,6 +2,7 @@
 
 import logging
 from datetime import datetime, timezone
+from html import escape
 from decimal import Decimal
 from typing import Optional
 
@@ -567,7 +568,10 @@ Need help? Visit {settings.FRONTEND_URL}/support
             logger.warning("Billing notice with no BILLING_NOTIFY_EMAIL: %s | %s", subject, " | ".join(lines))
             return None
         subject = f"[CriptEnv cobrança] {subject}"
-        content = "".join(f'<p style="margin:0 0 8px;font-size:14px;color:#374151;">{line}</p>' for line in lines)
+        # The lines carry what users typed (name, address): escaped, so they cannot plant a link in this e-mail.
+        content = "".join(
+            f'<p style="margin:0 0 8px;font-size:14px;color:#374151;">{escape(line)}</p>' for line in lines
+        )
         return self._send(to, subject, self._base_template(title=subject, content_html=content), "\n".join(lines))
 
     # ─── Email: Project Invite ────────────────────────────────────────────────

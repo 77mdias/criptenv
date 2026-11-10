@@ -62,7 +62,7 @@ class Settings(BaseSettings):
     DEFAULT_PLAN: str = "free"
     # Subscriptions (Mercado Pago). Off by default: a self-hosted install never bills.
     BILLING_ENABLED: bool = False
-    # Who gets the invoice data of each payment and the refunds that need a human. Empty = log only.
+    # Who gets the invoice data of each payment and the refunds that need a human. Billing stays off while empty.
     BILLING_NOTIFY_EMAIL: str = ""
     
     # OAuth Provider Credentials

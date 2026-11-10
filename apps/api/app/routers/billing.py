@@ -45,6 +45,7 @@ async def _state(billing: BillingService, user: User) -> BillingStateResponse:
         scheduled=_subscription(state["scheduled"]),
         pending=_subscription(state["pending"]),
         refund_eligible=state["refund_eligible"],
+        change_available_from=state["change_available_from"],
     )
 
 

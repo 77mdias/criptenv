@@ -47,7 +47,7 @@ async def ana(db_session):
 
 async def _subscribe(svc, mp, user, plan="pro", interval="month", when=T0):
     """Checkout, payment approved at `when`, synced. Returns (subscription, payment id)."""
-    sub = await svc.checkout(user, plan=plan, interval=interval, **INFO)
+    sub = await svc.checkout(user, plan=plan, interval=interval, now=when, **INFO)
     payment_id = mp.pay(sub.provider_subscription_id, when=when)
     await svc.sync(sub, now=when)
     return sub, payment_id

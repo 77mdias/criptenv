@@ -297,8 +297,17 @@ class MercadoPagoClient:
 
     async def search_authorized_payments(self, preapproval_id: str) -> list[dict]:
         """Every invoice of a subscription, each with its `payment.id` and `payment.status`."""
-        result = await self._request("GET", "/authorized_payments/search", params={"preapproval_id": preapproval_id})
-        return result.get("results") or []
+        invoices: list[dict] = []
+        while True:
+            page = await self._request(
+                "GET", "/authorized_payments/search",
+                params={"preapproval_id": preapproval_id, "offset": len(invoices)},
+            )
+            results = page.get("results") or []
+            invoices.extend(results)
+            # A page that brings nothing ends the loop whatever `total` says.
+            if not results or len(invoices) >= (page.get("paging") or {}).get("total", 0):
+                return invoices
 
     async def refund_payment(
         self, payment_id: str, *, idempotency_key: str, amount: Optional[Decimal] = None,
