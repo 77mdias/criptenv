@@ -12,10 +12,11 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { EmptyState } from "@/components/shared/empty-state";
 import { OneWaySyncNotice } from "@/components/shared/one-way-sync-notice";
 import { isPlanFull, PlanUsage } from "@/components/shared/plan-usage";
-import { integrationsApi, projectsApi } from "@/lib/api";
+import { environmentsApi, integrationsApi, projectsApi } from "@/lib/api";
 import { isPlanLimitError } from "@/lib/api/client";
 import type { Plan } from "@/lib/api/me";
-import type { Integration, IntegrationProvider, Project } from "@/lib/api";
+import type { Environment, Integration, IntegrationProvider, Project } from "@/lib/api";
+import { AutoSyncSettings } from "./_components/auto-sync-settings";
 
 const PROVIDERS = ["vercel", "render", "cloudflare"] as const;
 const CONFIG_FIELDS = ["project_id", "team_id", "service_id", "account_id", "script_name"] as const;
@@ -54,6 +55,9 @@ export default function IntegrationsPage() {
   const [projects, setProjects] = useState<Project[]>([]);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [integrations, setIntegrations] = useState<Integration[]>([]);
+  // Sync features of the plan of the selected project's owner, and that project's environments.
+  const [features, setFeatures] = useState<string[]>([]);
+  const [environments, setEnvironments] = useState<Environment[]>([]);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [validatingId, setValidatingId] = useState<string | null>(null);
@@ -122,7 +126,9 @@ export default function IntegrationsPage() {
     integrationsApi
       .list(selectedProjectId)
       .then((data) => {
-        if (!cancelled) setIntegrations(data.integrations);
+        if (cancelled) return;
+        setIntegrations(data.integrations);
+        setFeatures(data.features ?? []);
       })
       .catch((err) => {
         if (!cancelled) {
@@ -136,6 +142,16 @@ export default function IntegrationsPage() {
         if (!cancelled) setLoading(false);
       });
 
+    // Only feeds the automatic-sync options: a failure leaves them empty, the list still works.
+    environmentsApi
+      .list(selectedProjectId)
+      .then((data) => {
+        if (!cancelled) setEnvironments(data.environments);
+      })
+      .catch(() => {
+        if (!cancelled) setEnvironments([]);
+      });
+
     return () => {
       cancelled = true;
     };
@@ -145,6 +161,7 @@ export default function IntegrationsPage() {
     if (!selectedProjectId) return;
     const data = await integrationsApi.list(selectedProjectId);
     setIntegrations(data.integrations);
+    setFeatures(data.features ?? []);
     loadPlan();
   };
 
@@ -345,6 +362,17 @@ export default function IntegrationsPage() {
                       </Button>
                     </div>
                   </div>
+                  <AutoSyncSettings
+                    projectId={selectedProjectId}
+                    integration={integration}
+                    environments={environments}
+                    features={features}
+                    onSaved={(saved) =>
+                      setIntegrations((current) =>
+                        current.map((item) => (item.id === saved.id ? saved : item)),
+                      )
+                    }
+                  />
                 </Card>
               ))
             )}

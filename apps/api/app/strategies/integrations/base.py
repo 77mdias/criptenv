@@ -105,6 +105,22 @@ class IntegrationProvider(ABC):
         ...
 
     @abstractmethod
+    async def delete_secrets(self, keys: list[str], config: dict, environment: str) -> None:
+        """Remove only these keys from the provider; a key it does not have is not an error.
+
+        Raises ProviderError when the provider refuses.
+        """
+        ...
+
+    def deploys_on(self, environment: str) -> bool:
+        """Whether a push to this target needs (and can get) an explicit deploy to take effect."""
+        return False
+
+    async def trigger_deploy(self, config: dict) -> None:
+        """Ask the provider for a new deploy; raises ProviderError when it cannot."""
+        raise ProviderError(f"{self.provider_name} does not support triggering a deploy")
+
+    @abstractmethod
     async def validate_connection(self, config: dict) -> bool:
         """Check that the token can reach the configured project/service.
 

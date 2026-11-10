@@ -5,19 +5,25 @@ Business logic for managing external service integrations.
 
 from typing import Optional
 from uuid import UUID
-from datetime import datetime, timezone
+from datetime import datetime, timedelta, timezone
 
 import httpx
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select
+from sqlalchemy import select, update
 
 from app.config import settings
 from app.crypto.integration_config import (
     IntegrationConfigEncryption,
     IntegrationConfigEncryptionError,
 )
+from app.models.environment import Environment
 from app.models.integration import Integration
+from app.services.audit_service import AuditService
 from app.strategies.integrations.base import ProviderError, get_provider, list_providers
+
+
+# A deploy fires this long after the last push, so a burst of saves is one deploy.
+DEPLOY_DEBOUNCE = timedelta(seconds=60)
 
 
 class IntegrationConfigError(ValueError):
@@ -89,7 +95,8 @@ class IntegrationService:
         project_id: UUID,
         provider: str,
         name: str,
-        config: dict
+        config: dict,
+        redeploy: bool = False,
     ) -> Integration:
         """Create a new integration.
 
@@ -101,7 +108,8 @@ class IntegrationService:
             provider=provider,
             name=name,
             config=self._encrypt_config(self._clean_config(provider, config)),
-            status="active"
+            status="active",
+            redeploy=redeploy,
         )
 
         self.db.add(integration)
@@ -126,6 +134,51 @@ class IntegrationService:
             )
         )
         return result.scalar_one_or_none()
+
+    async def update_settings(
+        self,
+        integration_id: UUID,
+        *,
+        project_id: UUID,
+        auto_sync_targets: Optional[dict[str, str]] = None,
+        redeploy: Optional[bool] = None,
+    ) -> Optional[Integration]:
+        """Set the auto-sync binding ({environment id: provider target}) and the deploy option.
+
+        ``None`` leaves a field as it is. Plan checks belong to the caller.
+
+        Raises:
+            IntegrationConfigError: a key is not a live environment of the project,
+                or a target is not one the provider accepts.
+        """
+        integration = await self.get_integration(integration_id, project_id=project_id)
+        if not integration:
+            return None
+
+        if auto_sync_targets:
+            provider = self._get_provider(integration.provider)
+            config, _ = self._decrypt_config_for_use(integration)
+            allowed = provider.get_environments(config) if provider else []
+            unknown = sorted(set(auto_sync_targets.values()) - set(allowed))
+            if unknown:
+                raise IntegrationConfigError(
+                    f"{integration.provider} target must be one of {', '.join(allowed)}, got '{unknown[0]}'"
+                )
+            live = await self.db.execute(
+                select(Environment.id).where(
+                    Environment.project_id == project_id, Environment.archived.is_(False)
+                )
+            )
+            live_ids = {str(environment_id) for environment_id in live.scalars()}
+            if not set(auto_sync_targets) <= live_ids:
+                raise IntegrationConfigError("auto_sync_targets must name environments of this project")
+
+        if auto_sync_targets is not None:
+            integration.auto_sync_targets = dict(auto_sync_targets)
+        if redeploy is not None:
+            integration.redeploy = redeploy
+        await self.db.flush()
+        return integration
 
     async def list_integrations(self, project_id: UUID) -> list[Integration]:
         """List all integrations for a project."""
@@ -153,7 +206,7 @@ class IntegrationService:
         await self.db.delete(integration)
         return True
 
-    async def _record_failure(self, integration: Integration, error: Exception) -> str:
+    async def _record_failure(self, integration: Integration, error: Exception, prefix: str = "") -> str:
         """Persist a redacted error on the integration and return it."""
         if isinstance(error, IntegrationConfigEncryptionError):
             message = str(error)
@@ -169,6 +222,7 @@ class IntegrationService:
             except IntegrationConfigEncryptionError:
                 config = None
             message = self._sanitize_error(str(error) or type(error).__name__, config)
+        message = (prefix + message)[:1000]
         integration.status = "error"
         integration.last_error = message
         await self.db.flush()
@@ -215,7 +269,8 @@ class IntegrationService:
         project_id: UUID,
         direction: str,  # "push" or "pull"
         secrets: Optional[list[dict]] = None,
-        environment: str = "production"
+        environment: str = "production",
+        delete_keys: Optional[list[str]] = None,
     ) -> tuple[bool, Optional[str], list[dict]]:
         """Sync secrets with an integration owned by ``project_id``.
 
@@ -225,6 +280,8 @@ class IntegrationService:
             direction: "push" (criptenv -> provider) or "pull" (provider -> criptenv)
             secrets: For push, list of {key, value, kind?} dicts. For pull, ignored.
             environment: Target/source environment in the provider
+            delete_keys: For push, keys to remove from the provider (never a full
+                mirror: only what the caller names). A key also in ``secrets`` is kept.
 
         Returns:
             (success, error_message, result). On pull, ``result`` holds the
@@ -242,7 +299,8 @@ class IntegrationService:
         if not provider:
             return False, f"Unknown provider: {integration.provider}", []
 
-        if direction == "push" and not secrets:
+        delete_keys = self.keys_to_delete(secrets, delete_keys)
+        if direction == "push" and not secrets and not delete_keys:
             return False, "No secrets provided for push", []
         if direction == "pull" and not provider.supports_pull:
             return False, f"{integration.provider} does not support pull", []
@@ -252,9 +310,11 @@ class IntegrationService:
         try:
             config, _ = self._decrypt_config_for_use(integration)
             if direction == "push":
-                if await provider.push_secrets(secrets, config, environment) is False:
+                if secrets and await provider.push_secrets(secrets, config, environment) is False:
                     raise ProviderError("Sync failed: push")
                 pulled: list = list(provider.recreated_keys)
+                if delete_keys:
+                    await provider.delete_secrets(delete_keys, config, environment)
             else:
                 pulled = await provider.pull_secrets(config, environment)
         except Exception as e:
@@ -265,6 +325,73 @@ class IntegrationService:
         integration.status = "active"
         await self.db.flush()
         return True, None, pulled
+
+    @staticmethod
+    def keys_to_delete(secrets: Optional[list[dict]], delete_keys: Optional[list[str]]) -> list[str]:
+        """The keys a push removes from the provider: a key being pushed is never deleted."""
+        pushed = {secret["key"] for secret in secrets or []}
+        return [key for key in dict.fromkeys(delete_keys or []) if key not in pushed]
+
+    async def schedule_deploy(self, integration_id: UUID, *, project_id: UUID, environment: str) -> bool:
+        """Ask for a deploy DEPLOY_DEBOUNCE from now; a later push moves it instead of adding one.
+
+        False (nothing scheduled) when the integration has the option off or the
+        provider needs no deploy for this target. Plan checks belong to the caller.
+        """
+        integration = await self.get_integration(integration_id, project_id=project_id)
+        provider = self._get_provider(integration.provider) if integration else None
+        if not provider or not integration.redeploy or not provider.deploys_on(environment):
+            return False
+        integration.deploy_due_at = datetime.now(timezone.utc) + DEPLOY_DEBOUNCE
+        await self.db.flush()
+        return True
+
+    async def run_due_deploys(self, now: Optional[datetime] = None) -> int:
+        """Trigger every deploy that is due and return how many were triggered.
+
+        The claim is one UPDATE ... RETURNING, so two schedulers never fire the
+        same deploy. A failed deploy is recorded on the integration and not retried:
+        the next push schedules a new one.
+
+        Scheduler-only: it commits the claim before calling any provider and then
+        once per integration, so no row stays locked while a provider answers and
+        a later failure cannot roll a fired deploy back into the queue.
+        """
+        now = now or datetime.now(timezone.utc)
+        claimed = (
+            await self.db.execute(
+                update(Integration)
+                .where(Integration.deploy_due_at <= now)
+                .values(deploy_due_at=None)
+                .returning(Integration.id)
+            )
+        ).scalars().all()
+        if not claimed:
+            return 0
+        await self.db.commit()
+
+        fired = 0
+        for integration_id in claimed:
+            integration = await self.db.get(Integration, integration_id)
+            try:
+                provider = self._get_provider(integration.provider)
+                if not provider:
+                    raise ProviderError(f"Unknown provider: {integration.provider}")
+                config, _ = self._decrypt_config_for_use(integration)
+                await provider.trigger_deploy(config)
+            except Exception as e:
+                await self._record_failure(integration, e, prefix="Deploy failed: ")
+            else:
+                fired += 1
+                await AuditService(self.db).log(
+                    action="integration.deploy_triggered",
+                    resource_type="integration",
+                    resource_id=integration.id,
+                    project_id=integration.project_id,
+                    metadata={"provider": integration.provider},
+                )
+            await self.db.commit()
+        return fired
 
     def get_available_providers(self) -> list[str]:
         """Get list of registered provider names."""

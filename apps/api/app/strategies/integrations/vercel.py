@@ -2,7 +2,8 @@
 
 Syncs secrets with Vercel project environment variables.
 Contract: https://openapi.vercel.sh/ (createProjectEnv, filterProjectEnvs,
-getProjectEnv, editProjectEnv, removeProjectEnv, getProject).
+getProjectEnv, editProjectEnv, removeProjectEnv, getProject, getDeployments,
+createDeployment).
 """
 
 import httpx
@@ -82,8 +83,7 @@ class VercelProvider(IntegrationProvider):
                     conflicts = self._kind_conflicts(await self._list_envs(client, project_id), explicit, environment)
                     for env, others in conflicts:
                         in_flight = env["key"]
-                        path = f"/v9/projects/{project_id}/env/{env['id']}"
-                        response = await (client.patch(path, json={"target": others}) if others else client.delete(path))
+                        response = await self._remove_from_target(client, project_id, env, others)
                         in_flight = None
                         try:
                             ensure_ok(response, "Vercel")
@@ -133,6 +133,64 @@ class VercelProvider(IntegrationProvider):
             )
         self.recreated_keys = tuple(removed)
         return True
+
+    @staticmethod
+    async def _remove_from_target(
+        client: httpx.AsyncClient, project_id: str, env: dict, others: list[str]
+    ) -> httpx.Response:
+        """Take a record off one target: PATCH when it also covers other targets, DELETE otherwise."""
+        path = f"/v9/projects/{project_id}/env/{env['id']}"
+        return await (client.patch(path, json={"target": others}) if others else client.delete(path))
+
+    async def delete_secrets(self, keys: list[str], config: dict, environment: str) -> None:
+        """Take the keys off one Vercel target; branch-specific records and other targets stay."""
+        project_id = self._require(config)
+        self._check_target(environment)
+        wanted = set(keys)
+        async with self._client(config) as client:
+            for env in await self._list_envs(client, project_id):
+                targets = self._targets(env)
+                if env.get("key") not in wanted or environment not in targets or env.get("gitBranch"):
+                    continue
+                others = [target for target in targets if target != environment]
+                ensure_ok(await self._remove_from_target(client, project_id, env, others), "Vercel")
+
+    def deploys_on(self, environment: str) -> bool:
+        """Only production: preview picks the variables up on the next push, development has no deploy."""
+        return environment == "production"
+
+    async def trigger_deploy(self, config: dict) -> None:
+        """Redeploy the newest production deployment (createDeployment with deploymentId).
+
+        Only when that newest one is READY: redeploying an older ready deployment
+        over a build that is in flight or failed would put older code in production.
+        """
+        project_id = self._require(config)
+        async with self._client(config) as client:
+            page = ensure_ok(
+                await client.get(
+                    "/v7/deployments",
+                    params={"projectId": project_id, "target": "production", "limit": 1},
+                ),
+                "Vercel",
+            ).json()
+            deployments = page.get("deployments") or []
+            if not deployments:
+                raise ProviderError("Vercel has no production deployment to redeploy")
+            latest = deployments[0]
+            state = latest.get("readyState") or latest.get("state")
+            if state != "READY":
+                raise ProviderError(
+                    f"Vercel's newest production deployment is {state}, so it was not redeployed; "
+                    "the variables take effect on the next deploy"
+                )
+            ensure_ok(
+                await client.post(
+                    "/v13/deployments",
+                    json={"name": latest["name"], "deploymentId": latest["uid"], "target": "production"},
+                ),
+                "Vercel",
+            )
 
     @staticmethod
     def _env_payload(secret: dict, environment: str) -> dict:

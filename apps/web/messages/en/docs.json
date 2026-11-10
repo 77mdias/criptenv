@@ -522,7 +522,7 @@
       },
       "ci": {
         "title": "Sync from CI",
-        "body": "With a CI token that has the write:integrations scope, ci deploy imports the env file into the vault and then pushes the whole environment to Vercel."
+        "body": "With a CI token that has the write:integrations scope, ci deploy imports the env file into the vault and then pushes the whole environment to Vercel. Syncing from a CI session needs the project's owner to be on the Max plan."
       },
       "overwriteWarning": "Push overwrites Vercel variables with the same name in the target environment. Variables that exist only in Vercel are left untouched. CriptEnv writes them as Encrypted variables.",
       "pullNote": "Pull skips Sensitive variables (Vercel never returns their values) and branch-specific Preview variables."
@@ -1616,7 +1616,7 @@
       },
       "list": {
         "title": "List integrations",
-        "body": "Returns the project's integrations and the providers available to connect."
+        "body": "Returns the project's integrations and the providers available to connect. The features field lists the sync features of the plan of the project's owner (auto_sync, ci_sync, sync_redeploy)."
       },
       "get": {
         "title": "Get integration",
@@ -1632,12 +1632,22 @@
         "params": {
           "direction": "Direction: push or pull",
           "environment": "Provider environment. Vercel: production, preview or development (default: production). Render and Cloudflare ignore it.",
-          "secrets": "Decrypted secrets to send to the provider. The server never decrypts the vault, so a push without this field sends nothing."
-        }
+          "secrets": "Decrypted secrets to send to the provider. The server never decrypts the vault, so a push without this field sends nothing.",
+          "delete_keys": "Push only: keys to remove from the provider (the ones deleted in CriptEnv). Needs the Max plan of the project's owner."
+        },
+        "plan": "<code>deploy_scheduled</code> tells whether a new deploy was scheduled in the provider. With a CI session (<code>ci_s_</code>), this endpoint needs the Max plan of the project's owner and answers 402 otherwise."
       },
       "validate": {
         "title": "Validate integration",
         "body": "Checks that the connection to the provider works with the stored credentials."
+      },
+      "update": {
+        "title": "Update automatic sync and deploy",
+        "body": "Sets the integration's automatic-sync binding and its deploy option. Omitted fields stay as they are. Turning either on needs the Max plan of the project's owner (402 <code>Plan feature required</code>); turning them off works on any plan.",
+        "params": {
+          "auto_sync_targets": "Map of CriptEnv environment id to the provider target (Vercel: production, preview or development; Render and Cloudflare: production). An empty map turns automatic sync off.",
+          "redeploy": "Triggers a new deploy in the provider about 1 minute after the last sync. On Vercel it applies to production only; Cloudflare does not need it."
+        }
       }
     },
     "environments": {

@@ -7,6 +7,24 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### O que o Max promete: envio automático, deploy e sync por CI — 2026-11-10
+
+Segunda de três entregas dos planos de assinatura (`docs/superpowers/specs/2026-11-09-subscription-plans-design.md`, plano em `docs/superpowers/plans/2026-11-10-max-sync-features.md`). Nada é vendido ainda: `users.plan` é alterado à mão.
+
+- **Mudança que quebra pipelines: sincronizar com a hospedagem por sessão de CI passa a exigir o plano Max do dono do projeto.** `POST /api/v1/projects/{id}/integrations/{id}/sync` com sessão `ci_s_` responde **402** (`Plan feature required: ci_sync`) em projetos de dono Free ou Pro; é o caminho do `criptenv ci deploy --provider`. Listar conexões por CI não muda. Instalação própria com `DEFAULT_PLAN=unlimited` não muda.
+- **Envio automático (Max).** Cada conexão guarda um vínculo ambiente do CriptEnv → destino na hospedagem (`auto_sync_targets`). Ao salvar, apagar, rotacionar ou importar com o cofre aberto, o web e a CLI enviam o ambiente para as conexões vinculadas a ele. O servidor continua sem a senha do cofre: quem envia é o cliente, pelo mesmo `sync` de sempre. Conexões que já existem ficam sem vínculo.
+- **Apagar na hospedagem (Max).** O `sync` aceita `delete_keys` (só no push): remove **apenas** essas chaves do provedor, nunca um espelho completo. Uma chave que também está em `secrets` não é apagada. Sem o recurso `auto_sync`, responde 402. O envio manual continua só criando e atualizando.
+- **Novo deploy depois do envio (Max).** Com a opção `redeploy` ligada na conexão, um push bem-sucedido agenda um deploy para cerca de 1 minuto depois do último envio; vários salvamentos seguidos viram um deploy só. Vercel: refaz o deploy de produção mais novo, só para o destino `production` e só se ele estiver pronto (com um build em andamento ou com falha, nada é refeito, para não pôr código antigo no ar; o motivo fica em `last_error`). Render: cria um deploy do serviço. Cloudflare Workers: não precisa (cada envio já publica uma versão). A opção nasce ligada em conexão nova de projeto com o recurso e desligada nas existentes. A resposta do `sync` ganha `deploy_scheduled`.
+- **O deploy depende do agendador** (`SCHEDULER_ENABLED=true`; no `deploy/vps`, o serviço `scheduler`). Sem ele, o deploy fica agendado e nunca dispara. Falha no deploy fica em `last_error` da conexão (`Deploy failed: ...`) e não é repetida; o próximo envio agenda outro.
+- Rota nova `PATCH /api/v1/projects/{id}/integrations/{id}` (`auto_sync_targets`, `redeploy`), só para admin. Ligar exige o recurso no plano do dono (402); **desligar funciona em qualquer plano**. Voltar ao Free não apaga vínculo nem opção: eles só deixam de valer.
+- `GET .../integrations` passa a trazer `features` (recursos de sincronização do plano do dono) e cada conexão traz `auto_sync_targets` e `redeploy`.
+- Falha no envio automático ou no deploy **nunca desfaz o que foi salvo no cofre**: o web mostra um aviso com "Reenviar"; a CLI avisa em stderr, mostra o comando manual e sai com código 0. Uma remoção que a hospedagem não recebeu não se perde: o web diz quais variáveis ainda estão lá e as manda de novo no "Reenviar" e no próximo salvamento; na CLI, o comando de reenvio já vem com `--delete`.
+- CLI: `criptenv integrations sync --delete CHAVE` (repetível, só no push) remove a chave no provedor.
+- Web: os envios de salvamentos seguidos saem um de cada vez, na ordem em que foram feitos.
+- Web: opções "Envio automático" e "Disparar novo deploy depois do envio" em cada conexão, visíveis para todos e travadas com "Disponível no plano Max." para quem não tem.
+- Migração `20261110_0019` (colunas `auto_sync_targets`, `redeploy`, `deploy_due_at` em `integrations`). Auditoria: `integration.updated`, `integration.deploy_triggered`, e `deleted_count`/`deploy_scheduled` em `integration.synced.push`.
+- Limite conhecido: como o envio parte do cliente e a CLI é aberta, o servidor não distingue um envio automático de um manual repetido. O que ele bloqueia por plano é apagar na hospedagem, o deploy e o sync por CI.
+
 ### Planos Pro e Max e limites por plano — 2026-11-09
 
 Primeira de três entregas dos planos de assinatura (`docs/superpowers/specs/2026-11-09-subscription-plans-design.md`). Nada é vendido ainda: `users.plan` é alterado à mão.

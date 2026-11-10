@@ -5,6 +5,7 @@ import secrets as secret_module
 import base64
 from datetime import datetime, timezone, timedelta
 
+from criptenv.auto_sync import auto_sync
 from criptenv.context import cli_context, run_async, resolve_project_id, resolve_project_id_async
 from criptenv.remote_vault import RemoteVault
 
@@ -58,6 +59,7 @@ def set_command(key_value: str, env_name: str | None, project: str | None, secre
             blobs = [blob for blob in state.blobs if blob["key_id"] != key_id]
             blobs.append(new_blob)
             run_async(vault.push_state(state, blobs))
+            run_async(auto_sync(client, vault, resolved_project_id, env_name))
     except click.ClickException:
         raise
     except Exception as e:
@@ -184,6 +186,7 @@ def delete_command(key: str, env_name: str | None, project: str | None, force: b
             if len(blobs) == len(state.blobs):
                 raise click.ClickException(f"Secret '{key}' not found")
             run_async(vault.push_state(state, blobs))
+            run_async(auto_sync(client, vault, resolved_project_id, env_name, removed_keys=[key]))
     except click.ClickException as e:
         click.echo(f"Error: {e.message}", err=True)
         raise SystemExit(1)
@@ -248,6 +251,7 @@ def rotate_command(key: str, env_name: str | None, project: str | None,
             blobs = [blob for blob in state.blobs if blob["key_id"] != key]
             blobs.append(new_blob)
             run_async(vault.push_state(state, blobs))
+            run_async(auto_sync(client, vault, resolved_project_id, env_name))
             version = old_version + 1
     except click.ClickException as e:
         click.echo(f"Error: {e.message}", err=True)

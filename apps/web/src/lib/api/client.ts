@@ -458,12 +458,24 @@ export interface Integration {
   last_sync_at: string | null;
   last_error: string | null;
   created_at: string;
+  /** Auto-sync binding: CriptEnv environment id → provider target. Only applies while `features` has "auto_sync". */
+  auto_sync_targets: Record<string, string>;
+  /** Trigger a deploy in the provider after a successful push (needs "sync_redeploy"). */
+  redeploy: boolean;
 }
 
 export interface IntegrationListResponse {
   integrations: Integration[];
   total: number;
   available_providers: string[];
+  /** Sync features of the plan of the project's owner: auto_sync, ci_sync, sync_redeploy. */
+  features: string[];
+}
+
+/** Omitted fields stay as they are. */
+export interface UpdateIntegrationRequest {
+  auto_sync_targets?: Record<string, string>;
+  redeploy?: boolean;
 }
 
 export type IntegrationProvider = "vercel" | "render" | "cloudflare";
@@ -474,6 +486,8 @@ export interface IntegrationSyncRequest {
   environment: string;
   /** Push only: plaintext secrets decrypted in the browser. */
   secrets?: { key: string; value: string; kind?: SecretKind }[];
+  /** Push only: keys to remove from the provider (the ones deleted in CriptEnv). Needs "auto_sync". */
+  delete_keys?: string[];
 }
 
 export interface IntegrationSyncResponse {
@@ -484,6 +498,8 @@ export interface IntegrationSyncResponse {
   secrets: { key: string; value: string }[] | null;
   /** Push only: keys removed from Vercel and created again with the other kind. */
   recreated?: string[] | null;
+  /** Push only: the provider gets a new deploy about a minute after the last push. */
+  deploy_scheduled?: boolean;
 }
 
 export interface CreateIntegrationRequest {

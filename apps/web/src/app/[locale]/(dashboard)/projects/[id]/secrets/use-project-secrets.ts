@@ -1,6 +1,8 @@
 "use client"
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+
+import { createAutoSyncRunner, removedKeys, type AutoSyncResult } from "@/lib/auto-sync"
 import { useTranslations } from "next-intl"
 import type { SecretFormValue } from "@/components/shared/secret-form"
 import type { DecryptedSecret } from "@/components/shared/secret-row"
@@ -47,6 +49,8 @@ interface UseProjectSecretsResult {
     copiedKey: string | null
     expirationModalOpen: boolean
     expirationSecret: DecryptedSecret | null
+    /** Outcome of the automatic send to hosting after the last save; null when nothing was sent. */
+    autoSyncResults: AutoSyncResult[] | null
   }
   actions: {
     setActiveEnv: (environment: Environment) => void
@@ -62,7 +66,10 @@ interface UseProjectSecretsResult {
     deleteSecret: (secret: DecryptedSecret) => Promise<void>
     deleteSecrets: (keys: string[]) => Promise<void>
     /** Resolves false when the vault write failed (the error is in `state.error`). */
-    importSecrets: (importedSecrets: DecryptedSecret[]) => Promise<boolean>
+    importSecrets: (importedSecrets: DecryptedSecret[], options?: { autoSync?: boolean }) => Promise<boolean>
+    dismissAutoSync: () => void
+    /** Sends the open environment again to its bound connections, with the removals still owed. */
+    resendAutoSync: () => void
     copySecret: (secret: DecryptedSecret) => Promise<void>
     rotateSecret: (secret: DecryptedSecret) => Promise<void>
     openExpirationModal: (secret: DecryptedSecret) => void
@@ -122,6 +129,11 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [expirationModalOpen, setExpirationModalOpen] = useState(false)
   const [expirationSecret, setExpirationSecret] = useState<DecryptedSecret | null>(null)
+  const [autoSyncResults, setAutoSyncResults] = useState<AutoSyncResult[] | null>(null)
+  // Only the latest save may report: an older send that answers late must not replace it.
+  const autoSyncRunRef = useRef(0)
+  // Sends run one at a time, in save order, and remember the removals a failed send still owes.
+  const autoSync = useMemo(() => createAutoSyncRunner(projectId), [projectId])
 
   const refreshExpirations = useCallback(async () => {
     const data = await rotationApi.listExpiring(projectId, { days: 365, includeExpired: true })
@@ -308,8 +320,16 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     ? (secretCountState.counts[activeEnv.id] ?? secrets.length)
     : secrets.length
 
+  const reportAutoSync = useCallback((sending: Promise<AutoSyncResult[]>) => {
+    const run = ++autoSyncRunRef.current
+    setAutoSyncResults(null)
+    void sending.then((results) => {
+      if (run === autoSyncRunRef.current) setAutoSyncResults(results.length > 0 ? results : null)
+    })
+  }, [])
+
   const pushSecrets = useCallback(
-    async (nextSecrets: DecryptedSecret[]): Promise<boolean> => {
+    async (nextSecrets: DecryptedSecret[], options?: { autoSync?: boolean }): Promise<boolean> => {
       if (!activeEnv || !keyMaterial || !vaultProof) return false
 
       setSaving(true)
@@ -323,6 +343,10 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
           expected_version: vaultVersion,
         })
         await applyVaultPull(activeEnv, data.blobs, data.version)
+        if (options?.autoSync !== false) {
+          // Not awaited: the save is done; hosting is told afterwards and a failure there only shows a notice.
+          reportAutoSync(autoSync(activeEnv.id, nextSecrets, removedKeys(secrets, nextSecrets)))
+        }
         return true
       } catch (err) {
         setError(getErrorMessage(err, t("saveSecrets")))
@@ -331,8 +355,17 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         setSaving(false)
       }
     },
-    [activeEnv, applyVaultPull, keyMaterial, projectId, t, vaultProof, vaultVersion]
+    [activeEnv, applyVaultPull, autoSync, keyMaterial, projectId, reportAutoSync, secrets, t, vaultProof, vaultVersion]
   )
+
+  const dismissAutoSync = useCallback(() => {
+    autoSyncRunRef.current += 1
+    setAutoSyncResults(null)
+  }, [])
+
+  const resendAutoSync = useCallback(() => {
+    if (activeEnv) reportAutoSync(autoSync(activeEnv.id, secrets, []))
+  }, [activeEnv, autoSync, reportAutoSync, secrets])
 
   const openCreateForm = useCallback(() => {
     setEditingSecret(null)
@@ -380,12 +413,12 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   )
 
   const importSecrets = useCallback(
-    async (importedSecrets: DecryptedSecret[]) => {
+    async (importedSecrets: DecryptedSecret[], options?: { autoSync?: boolean }) => {
       const merged = new Map(secrets.map((secret) => [secret.key, secret]))
       for (const secret of importedSecrets) {
         merged.set(secret.key, secret)
       }
-      return pushSecrets(Array.from(merged.values()))
+      return pushSecrets(Array.from(merged.values()), options)
     },
     [pushSecrets, secrets]
   )
@@ -478,7 +511,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   const setActiveEnv = useCallback((environment: Environment) => {
     setVaultLoading(true)
     setActiveEnvState(environment)
-  }, [])
+    dismissAutoSync()
+  }, [dismissAutoSync])
 
   const unlockVault = useCallback(
     (material: { keyMaterial: CryptoKey; vaultProof: string }) => {
@@ -489,8 +523,9 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
 
   const lockVault = useCallback(() => {
     setSecrets([])
+    dismissAutoSync()
     clearSession()
-  }, [clearSession])
+  }, [clearSession, dismissAutoSync])
 
   return {
     state: {
@@ -516,6 +551,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       copiedKey,
       expirationModalOpen,
       expirationSecret,
+      autoSyncResults,
     },
     actions: {
       setActiveEnv,
@@ -531,6 +567,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       deleteSecret,
       deleteSecrets,
       importSecrets,
+      dismissAutoSync,
+      resendAutoSync,
       copySecret,
       rotateSecret,
       openExpirationModal,

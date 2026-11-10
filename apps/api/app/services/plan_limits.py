@@ -24,7 +24,7 @@ from app.plans import (
     Plan,
     plan_for,
 )
-from app.strategies.exceptions import PlanLimitReached
+from app.strategies.exceptions import PlanFeatureRequired, PlanLimitReached
 
 
 class PlanLimits:
@@ -37,6 +37,13 @@ class PlanLimits:
             select(User.plan).join(Project, Project.owner_id == User.id).where(Project.id == project_id)
         )
         return plan_for(owner_plan)
+
+    async def has_feature(self, project_id: UUID, feature: str) -> bool:
+        return feature in (await self.owner_plan(project_id)).features
+
+    async def require_feature(self, project_id: UUID, feature: str) -> None:
+        if not await self.has_feature(project_id, feature):
+            raise PlanFeatureRequired(feature)
 
     async def _count(self, model, *where) -> int:
         return await self.db.scalar(select(func.count()).select_from(model).where(*where)) or 0

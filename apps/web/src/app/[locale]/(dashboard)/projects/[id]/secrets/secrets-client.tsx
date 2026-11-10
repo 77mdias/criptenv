@@ -16,6 +16,7 @@ import { ExpirationModal } from "@/components/shared/expiration-modal"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
 import type { DecryptedSecret } from "@/components/shared/secret-row"
 import { canWriteProjectSecrets } from "@/lib/project-permissions"
+import { AutoSyncNotice } from "./_components/auto-sync-notice"
 import { SecretsEmptyState } from "./_components/secrets-empty-state"
 import { SecretsErrorBanner } from "./_components/secrets-error-banner"
 import { SecretsHeader } from "./_components/secrets-header"
@@ -182,6 +183,12 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
 
       {state.error && <SecretsErrorBanner message={state.error} />}
 
+      <AutoSyncNotice
+        results={state.autoSyncResults}
+        onResend={actions.resendAutoSync}
+        onDismiss={actions.dismissAutoSync}
+      />
+
       <EnvSelector
         environments={state.environments}
         activeEnvironmentId={state.activeEnv?.id ?? null}
@@ -321,7 +328,8 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         projectId={projectId}
         environmentName={state.activeEnv?.name ?? "production"}
         secrets={state.secrets}
-        onImport={actions.importSecrets}
+        // What was just pulled from the provider is not sent straight back to it.
+        onImport={(pulled) => actions.importSecrets(pulled, { autoSync: false })}
         initialIntegrationId={syncParam}
       />
       <ExportModal

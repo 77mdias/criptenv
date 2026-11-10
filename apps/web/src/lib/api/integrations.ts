@@ -5,6 +5,7 @@ import type {
   IntegrationListResponse,
   IntegrationSyncRequest,
   IntegrationSyncResponse,
+  UpdateIntegrationRequest,
 } from "./client";
 
 export const integrationsApi = {
@@ -14,6 +15,11 @@ export const integrationsApi = {
 
   create(projectId: string, body: CreateIntegrationRequest): Promise<Integration> {
     return request("POST", `/api/v1/projects/${projectId}/integrations`, body);
+  },
+
+  /** 402 when turning on something the plan of the project's owner lacks. */
+  update(projectId: string, integrationId: string, body: UpdateIntegrationRequest): Promise<Integration> {
+    return request("PATCH", `/api/v1/projects/${projectId}/integrations/${integrationId}`, body);
   },
 
   validate(projectId: string, integrationId: string): Promise<{ valid: boolean; error?: string | null }> {

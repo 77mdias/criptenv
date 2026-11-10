@@ -37,3 +37,11 @@ class PlanLimitReached(DomainError):
         self.key = key
         self.limit = limit
         super().__init__(f"Plan limit reached: {key} ({limit})", status_code=402)
+
+
+class PlanFeatureRequired(DomainError):
+    """402: the plan of the project's owner lacks a feature (app/plans.py). Same handler as PlanLimitReached."""
+
+    def __init__(self, feature: str):
+        self.feature = feature
+        super().__init__(f"Plan feature required: {feature}", status_code=402)

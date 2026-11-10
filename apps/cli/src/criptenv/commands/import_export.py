@@ -6,6 +6,7 @@ import re
 
 import click
 
+from criptenv.auto_sync import auto_sync
 from criptenv.context import cli_context, run_async, resolve_project_id
 from criptenv.remote_vault import RemoteVault
 
@@ -31,9 +32,11 @@ def import_entries_remote(
     """Import parsed key/value entries into the remote project vault."""
     with cli_context(require_auth=True) as (db, _master_key, client):
         resolved_project_id = resolve_project_id(db, project, client)
-        return import_entries_into_vault(
-            RemoteVault(client, resolved_project_id), entries, env_name, overwrite
-        )
+        vault = RemoteVault(client, resolved_project_id)
+        imported, skipped = import_entries_into_vault(vault, entries, env_name, overwrite)
+        if imported:
+            run_async(auto_sync(client, vault, resolved_project_id, env_name))
+        return imported, skipped
 
 
 def import_entries_into_vault(
