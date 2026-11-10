@@ -60,6 +60,16 @@ export { ciTokensApi } from "./ci-tokens";
 export { rotationApi } from "./rotation";
 export { apiKeysApi } from "./api-keys";
 export { integrationsApi } from "./integrations";
+export { billingApi } from "./billing";
+export type {
+  BillingInterval,
+  BillingState,
+  CancelResult,
+  CheckoutRequest,
+  PaidPlan,
+  Subscription,
+  TaxInfo,
+} from "./billing";
 export { alertSettingsApi } from "./alert-settings";
 export type {
   AlertChannels,

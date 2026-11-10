@@ -11,6 +11,16 @@ export { auditApi } from './api/audit';
 export { ciTokensApi } from './api/ci-tokens';
 export { rotationApi } from './api/rotation';
 export { integrationsApi } from './api/integrations';
+export { billingApi } from './api/billing';
+export type {
+  BillingInterval,
+  BillingState,
+  CancelResult,
+  CheckoutRequest,
+  PaidPlan,
+  Subscription,
+  TaxInfo,
+} from './api/billing';
 export { apiKeysApi } from './api/api-keys';
 export { meApi } from './api/me';
 export type {

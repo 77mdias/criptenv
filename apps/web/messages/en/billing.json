@@ -1,0 +1,77 @@
+{
+  "title": "Subscription",
+  "subtitle": "Your plan, the next charge and your invoice data.",
+  "loading": "Loading subscription…",
+  "back": "Back to account",
+  "planNames": {
+    "free": "Free",
+    "pro": "Pro",
+    "max": "Max",
+    "unlimited": "Unlimited"
+  },
+  "intervals": {
+    "month": "monthly",
+    "year": "yearly"
+  },
+  "perInterval": {
+    "month": "{price} per month",
+    "year": "{price} per year"
+  },
+  "current": {
+    "title": "Current plan",
+    "noSubscription": "You do not have a subscription.",
+    "nextCharge": "Next charge on {date}: {price}.",
+    "validUntil": "Valid until {date}. There will be no further charges.",
+    "grace": "We could not charge your subscription. The plan holds until {date}; then the account goes back to Free. Nothing is deleted.",
+    "scheduled": "Scheduled change: {plan} {interval} from {date}.",
+    "pending": "Payment pending for the {plan} plan ({interval}).",
+    "continuePayment": "Continue payment",
+    "alreadyPaid": "I already paid"
+  },
+  "choose": {
+    "title": "Choose a plan",
+    "interval": "Billing cycle",
+    "yearlyHint": "2 months free",
+    "select": "Choose {plan}",
+    "selected": "{plan} chosen",
+    "currentPlan": "Your current plan",
+    "scheduledBlocks": "A plan change is already scheduled. Cancel it to choose another plan.",
+    "effect": {
+      "new": "Valid as soon as the payment is confirmed.",
+      "upgrade": "Valid right away. What you did not use of the current plan is refunded.",
+      "later": "You pay now and the plan starts on {date}, when the current one ends."
+    }
+  },
+  "tax": {
+    "title": "Invoice data",
+    "description": "We issue an invoice for every subscription.",
+    "taxId": "CPF or CNPJ (digits only)",
+    "legalName": "Name or company name",
+    "address": "Full address",
+    "payerEmail": "E-mail of your Mercado Pago account",
+    "payerEmailHint": "It must be the e-mail of the account that will pay; otherwise Mercado Pago refuses the payment.",
+    "pay": "Go to payment",
+    "payHint": "You pay at Mercado Pago; CriptEnv never sees your card data. The charge repeats every cycle until you cancel.",
+    "edit": "Edit data",
+    "save": "Save data",
+    "saved": "Invoice data updated."
+  },
+  "cancel": {
+    "action": "Cancel subscription",
+    "title": "Cancel the subscription?",
+    "refund": "The amount paid is refunded and the account goes back to Free now. This automatic refund works once per account.",
+    "untilEnd": "There will be no further charges and the plan holds until {date}. Then the account goes back to Free. Nothing is deleted.",
+    "scheduledNote": "The cancellation applies to the scheduled change. The current plan ends when the period already paid is over.",
+    "confirm": "Cancel subscription",
+    "keep": "Keep subscription",
+    "doneRefunded": "Subscription canceled. The amount paid was refunded.",
+    "doneUntil": "Subscription canceled. The plan holds until {date}."
+  },
+  "errors": {
+    "load": "Could not load the subscription.",
+    "conflict": "This action is not possible in the current state of the subscription.",
+    "invalid": "Check the invoice data: a CPF has 11 digits and a CNPJ has 14, digits only.",
+    "provider": "Mercado Pago did not answer. Nothing was changed; try again in a few minutes.",
+    "generic": "Something went wrong. Try again."
+  }
+}
