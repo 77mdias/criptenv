@@ -45,3 +45,17 @@ class PlanFeatureRequired(DomainError):
     def __init__(self, feature: str):
         self.feature = feature
         super().__init__(f"Plan feature required: {feature}", status_code=402)
+
+
+class BillingConflict(DomainError):
+    """409: the subscription is not in a state that allows the action."""
+
+    def __init__(self, detail: str):
+        super().__init__(detail, status_code=409)
+
+
+class BillingProviderError(DomainError):
+    """502: Mercado Pago did not do what billing needed; nothing was changed on our side."""
+
+    def __init__(self, detail: str = "The payment provider is unavailable. Try again in a few minutes."):
+        super().__init__(detail, status_code=502)
