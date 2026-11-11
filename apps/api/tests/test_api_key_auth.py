@@ -241,14 +241,11 @@ async def test_validate_nonexistent_key_raises():
 
 
 def test_scope_check_with_admin():
-    """admin:project scope grants all permissions."""
+    """admin:project was removed from API keys: an old key holding it gets nothing from it."""
     from app.middleware.api_key_auth import check_api_key_scope
-    
-    # Admin scope can do anything
-    assert check_api_key_scope(["admin:project"], "read:secrets") is True
-    assert check_api_key_scope(["admin:project"], "write:secrets") is True
-    assert check_api_key_scope(["admin:project"], "delete:secrets") is True
-    assert check_api_key_scope(["admin:project"], "admin:project") is True
+
+    assert check_api_key_scope(["admin:project"], "read:secrets") is False
+    assert check_api_key_scope(["admin:project"], "admin:project") is False
 
 
 def test_scope_check_specific():
@@ -274,8 +271,9 @@ def test_scope_check_multiple_scopes():
     
     scopes = ["read:secrets", "write:secrets", "read:audit"]
     assert check_api_key_scope(scopes, "read:secrets") is True
-    assert check_api_key_scope(scopes, "write:secrets") is True
-    assert check_api_key_scope(scopes, "delete:secrets") is False
+    assert check_api_key_scope(scopes, "read:audit") is True
+    # A removed scope left on an old key grants nothing.
+    assert check_api_key_scope(scopes, "write:secrets") is False
 
 
 def test_get_request_api_key_identifier():

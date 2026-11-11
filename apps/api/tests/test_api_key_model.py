@@ -85,17 +85,8 @@ def test_valid_scopes():
     """Valid scopes as per M3.4 specification."""
     from app.models.api_key import VALID_API_KEY_SCOPES
     
-    expected_scopes = [
-        "read:secrets",
-        "write:secrets",
-        "delete:secrets",
-        "read:audit",
-        "write:integrations",
-        "admin:project"
-    ]
-    
-    for scope in expected_scopes:
-        assert scope in VALID_API_KEY_SCOPES
+    # API keys are read-only: they sit in containers for months, so they never write or administer.
+    assert VALID_API_KEY_SCOPES == frozenset(["read:secrets", "read:audit"])
 
 
 def test_scope_validator_has_scope():
@@ -110,9 +101,9 @@ def test_scope_validator_has_scope():
     # No match
     assert validator.has_scope(["read:secrets"], "write:secrets") is False
     
-    # Admin grants all
-    assert validator.has_scope(["admin:project"], "write:secrets") is True
-    assert validator.has_scope(["admin:project"], "delete:secrets") is True
+    # admin:project is gone: an old key that holds it gets nothing from it
+    assert validator.has_scope(["admin:project"], "read:secrets") is False
+    assert validator.has_scope(["read:audit"], "read:audit") is True
 
 
 def test_scope_validator_empty_scopes():
@@ -176,12 +167,11 @@ def test_api_key_create_with_scopes():
     from app.schemas.api_key import ApiKeyCreate
     
     schema = ApiKeyCreate(
-        name="CI Pipeline",
-        scopes=["read:secrets", "write:secrets"]
+        name="Monitoring",
+        scopes=["read:secrets", "read:audit"]
     )
     
-    assert "read:secrets" in schema.scopes
-    assert "write:secrets" in schema.scopes
+    assert schema.scopes == ["read:secrets", "read:audit"]
 
 
 def test_api_key_response_schema():
