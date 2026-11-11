@@ -284,6 +284,52 @@
       },
       "footnote": "Precios en reales brasileños. Alojar CriptEnv por tu cuenta es gratis y sin límites.",
       "contribute": "Apoyar el proyecto por Pix"
+    },
+    "access": {
+      "label": "Accesos",
+      "title": "Un acceso para cada lugar",
+      "description": "Cada lugar donde se usan tus secretos tiene su propio tipo de acceso, con solo el poder que necesita.",
+      "docs": "Ver en la documentación",
+      "docsFor": "Ver en la documentación: {name}",
+      "items": {
+        "login": {
+          "name": "Login",
+          "for": "Tú y el equipo, en tu propia máquina",
+          "can": [
+            "Todo lo que tu rol en el proyecto permite",
+            "Leer, escribir y borrar secretos desde la CLI o el panel",
+            "Sesión de hasta 30 días, que termina tras 20 días sin uso"
+          ]
+        },
+        "ciToken": {
+          "name": "Token de CI",
+          "for": "Pipelines: GitHub Actions, despliegues",
+          "can": [
+            "Leer y escribir secretos",
+            "Sincronizar con el hosting",
+            "Una sesión corta en cada ejecución"
+          ]
+        },
+        "apiKey": {
+          "name": "Clave de API",
+          "for": "Contenedores y scripts",
+          "can": [
+            "Leer secretos cifrados",
+            "Leer la auditoría, si lo marcas",
+            "Nunca escribe ni borra"
+          ]
+        },
+        "hosting": {
+          "name": "Integración con el hosting",
+          "for": "Vercel, Render y Cloudflare",
+          "can": [
+            "Enviar las variables de un entorno al hosting",
+            "En Max: envío automático al guardar",
+            "En Max: nuevo deploy tras el envío"
+          ]
+        }
+      },
+      "restricted": "Entorno restringido: solo entran los administradores, y los tokens de CI y las claves de API solo llegan a él cuando se crean para él."
     }
   },
   "contribute": {

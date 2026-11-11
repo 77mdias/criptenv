@@ -20,6 +20,7 @@ import {
   Users,
 } from "lucide-react";
 import { Footer } from "@/components/layout/footer";
+import { AccessTypesSection } from "@/components/marketing/access-types-section";
 import { PricingSection } from "@/components/marketing/pricing-section";
 import { ProblemToVaultSection } from "@/components/marketing/problem-to-vault-section";
 import { SecurityScrollytelling } from "@/components/marketing/security-scrollytelling";
@@ -425,6 +426,10 @@ export default async function LandingPage() {
             </Card>
           </div>
         </div>
+      </section>
+
+      <section id="access" className={`${marketingSectionClass} bg-(--background)`}>
+        <AccessTypesSection />
       </section>
 
       <PlatformPreviewSection />
