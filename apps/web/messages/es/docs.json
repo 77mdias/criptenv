@@ -1922,7 +1922,7 @@
           "session": {
             "name": "Sesión",
             "prefix": "cookie",
-            "ttl": "30 días, o 7 días sin uso",
+            "ttl": "30 días, o 20 días sin uso",
             "use": "Dashboard web"
           },
           "apiKey": {
@@ -1946,7 +1946,7 @@
         "loginTitle": "Flujo de inicio de sesión",
         "twoFactor": "Si la cuenta tiene 2FA y el navegador no está recordado, el inicio de sesión devuelve un desafío temporal y no crea la cookie de sesión hasta validar el segundo factor.",
         "expiryTitle": "Caducidad de la sesión",
-        "expiry": "La sesión caduca 30 días después de iniciar sesión, o antes, tras 7 días sin ninguna petición. No se amplía más allá de 30 días; después hay que volver a iniciar sesión."
+        "expiry": "La sesión caduca 30 días después de iniciar sesión, o antes, tras 20 días sin ninguna petición. No se amplía más allá de 30 días; después hay que volver a iniciar sesión."
       },
       "apiKeys": {
         "title": "API keys",
@@ -2009,7 +2009,7 @@
         "cards": {
           "session": {
             "title": "Sesión",
-            "body": "Cookie HTTP-only creada al iniciar sesión, para el dashboard web. Dura 30 días, o 7 días sin uso."
+            "body": "Cookie HTTP-only creada al iniciar sesión, para el dashboard web. Dura 30 días, o 20 días sin uso."
           },
           "apiKey": {
             "title": "API key",

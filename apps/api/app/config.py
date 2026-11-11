@@ -17,7 +17,8 @@ class Settings(BaseSettings):
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     SESSION_EXPIRE_DAYS: int = 30
     SESSION_MAX_ACTIVE: int = 5
-    SESSION_INACTIVITY_DAYS: int = 7
+    # A login (web or CLI) ends after this many days without a single request. 20 since 2026-11-11.
+    SESSION_INACTIVITY_DAYS: int = 20
     CORS_ORIGINS: str = "http://localhost:3000"
     APP_ENV: str = "development"
     # Version of the Terms of Use / Privacy Policy currently published on the

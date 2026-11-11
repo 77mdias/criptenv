@@ -1922,7 +1922,7 @@
           "session": {
             "name": "Sessão",
             "prefix": "cookie",
-            "ttl": "30 dias, ou 7 dias sem uso",
+            "ttl": "30 dias, ou 20 dias sem uso",
             "use": "Dashboard web"
           },
           "apiKey": {
@@ -1946,7 +1946,7 @@
         "loginTitle": "Fluxo de Login",
         "twoFactor": "Se a conta tiver 2FA ativo e o navegador não estiver lembrado, o login retorna um desafio temporário e não cria cookie de sessão até a validação do segundo fator.",
         "expiryTitle": "Expiração da Sessão",
-        "expiry": "A sessão expira 30 dias após o login, ou antes, após 7 dias sem nenhuma requisição. Ela não é estendida além dos 30 dias; depois disso, é preciso fazer login novamente."
+        "expiry": "A sessão expira 30 dias após o login, ou antes, após 20 dias sem nenhuma requisição. Ela não é estendida além dos 30 dias; depois disso, é preciso fazer login novamente."
       },
       "apiKeys": {
         "title": "API Keys",
@@ -2009,7 +2009,7 @@
         "cards": {
           "session": {
             "title": "Sessão",
-            "body": "Cookie HTTP-only criado no login, para o dashboard web. Dura 30 dias, ou 7 dias sem uso."
+            "body": "Cookie HTTP-only criado no login, para o dashboard web. Dura 30 dias, ou 20 dias sem uso."
           },
           "apiKey": {
             "title": "API Key",

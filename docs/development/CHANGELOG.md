@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Login dura 20 dias sem uso — 2026-11-11
+
+- **`SESSION_INACTIVITY_DAYS` passa de 7 para 20.** Uma sessão (web ou CLI) só cai por falta de uso depois de 20 dias sem nenhuma requisição; o teto de 30 dias desde o login (`SESSION_EXPIRE_DAYS`) não muda. Instalações que definem a variável no próprio `.env` continuam com o valor de lá.
+- Documentação da API atualizada nos três idiomas.
+
 ### Chaves de API só de leitura — 2026-11-11
 
 Decisão do Jean: uma chave de API fica meses dentro de um contêiner ou de um arquivo e funciona sem senha nem segundo fator, então não deve conseguir alterar nem apagar nada. Gravar segredos e sincronizar com a hospedagem continua com o token de CI (sessão curta) e com o login.

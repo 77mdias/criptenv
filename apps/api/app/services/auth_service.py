@@ -201,7 +201,7 @@ class AuthService:
             return None, None
 
         now = datetime.now(timezone.utc)
-        inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
+        inactivity_threshold = now - timedelta(days=settings.SESSION_INACTIVITY_DAYS)
 
         result = await self.db.execute(
             select(Session).where(
@@ -334,7 +334,7 @@ class AuthService:
 
     async def get_user_sessions(self, user_id: UUID) -> list[Session]:
         now = datetime.now(timezone.utc)
-        inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
+        inactivity_threshold = now - timedelta(days=settings.SESSION_INACTIVITY_DAYS)
 
         result = await self.db.execute(
             select(Session)
@@ -352,7 +352,7 @@ class AuthService:
             Number of sessions deleted.
         """
         now = datetime.now(timezone.utc)
-        inactivity_threshold = now - timedelta(days=getattr(settings, 'SESSION_INACTIVITY_DAYS', 7))
+        inactivity_threshold = now - timedelta(days=settings.SESSION_INACTIVITY_DAYS)
 
         result = await self.db.execute(
             delete(Session).where(

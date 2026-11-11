@@ -40,7 +40,7 @@ REDIS_URL=redis://redis:6379/0
 
 # Session lifecycle
 SESSION_MAX_ACTIVE=5
-SESSION_INACTIVITY_DAYS=7
+SESSION_INACTIVITY_DAYS=20
 
 # Webhook retry settings are defined by the webhook service implementation;
 # they are not independent pydantic settings.
