@@ -12,7 +12,7 @@ from app.services.api_key_service import ApiKeyService
 from app.services.project_service import ProjectService
 from app.schemas.api_key import (
     ApiKeyCreate, ApiKeyUpdate, ApiKeyResponse, 
-    ApiKeyListResponse, ApiKeyCreateResponse, ApiKeyRevokeResponse
+    ApiKeyListResponse, ApiKeyCreateResponse, ApiKeyRevokeResponse, refuse_audit_on_environment_key,
 )
 from app.middleware.auth import get_current_user
 from app.models.user import User
@@ -153,7 +153,16 @@ async def update_api_key(
     await _require_project_admin(ProjectService(db), current_user, project_id)
 
     service = ApiKeyService(db, user_id=current_user.id, project_id=project_id)
-    
+
+    if payload.scopes is not None:
+        # The environment of a key does not change here, so the new scopes are checked against the stored one.
+        current = await service.get_api_key(key_id)
+        if current is not None:
+            try:
+                refuse_audit_on_environment_key(payload.scopes, current.environment_scope)
+            except ValueError as e:
+                raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
+
     try:
         key = await service.update_api_key(
             key_id,

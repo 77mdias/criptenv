@@ -1952,15 +1952,14 @@
         "title": "API keys",
         "body": "API keys start with <code>cek_</code> and last until revoked (or until their optional expiration). They suit server-to-server integrations that read projects, environments and encrypted vault blobs through the public API. Each key is bound to the project it was created in: <code>GET /api/v1/projects</code> lists only that project, and any other project answers 404, even one you are a member of.",
         "scopesTitle": "Scopes",
-        "scopesBody": "Today the public API enforces <code>read:secrets</code> for vault reads and honors <code>environment_scope</code>, which must name an existing environment. Write scopes are reserved for future public endpoints.",
+        "scopesBody": "API keys only read. A key sits in a container or a file for months and works without a password or a second factor, so a leaked key must not change or delete anything. To write secrets or sync with hosting providers, use a CI token (short session) or the login. <code>environment_scope</code> must name an existing environment. A key acts as whoever created it: if that person loses access, so does the key.",
         "scope": "Scope",
         "permission": "Permission",
         "scopes": {
           "readSecrets": "Read projects, environments and encrypted vault blobs",
-          "writeSecrets": "Reserved for future writes through the public API",
-          "adminProject": "Reserved for future administration through the public API",
-          "envScope": "Restricts the key to that environment",
-          "envNull": "Allows reads in every environment of the project"
+          "readAudit": "Read the project's audit history. Only on a key without <code>environment_scope</code>",
+          "envScope": "Restricts the key to that environment. It is the only way for a key to reach a restricted environment",
+          "envNull": "Allows reads in every environment of the project, except the restricted ones"
         },
         "createTitle": "Create an API key",
         "keyOnce": "The <code>key</code> field is returned only on creation. Store it somewhere safe; if you lose it, revoke the key and create a new one.",

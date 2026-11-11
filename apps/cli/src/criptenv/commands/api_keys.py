@@ -6,13 +6,10 @@ import click
 
 from criptenv.context import async_cli_context, resolve_project_id_async
 
+# API keys are read-only (they live in containers for months): writing is for CI tokens and the logged-in user.
 VALID_SCOPES = [
     "read:secrets",
-    "write:secrets",
-    "delete:secrets",
     "read:audit",
-    "write:integrations",
-    "admin:project",
 ]
 
 
@@ -81,7 +78,8 @@ def api_keys_list(project_id: str | None):
 @click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--name", "-n", required=True, help="Key name")
 @click.option("--scope", "-s", multiple=True, default=["read:secrets"],
-              type=click.Choice(VALID_SCOPES), help="Scopes (read:secrets is the current public API scope; others are reserved)")
+              type=click.Choice(VALID_SCOPES),
+              help="read:secrets (encrypted secrets) and/or read:audit (project audit history, only for a key of every environment)")
 @click.option("--env", default=None, help="Restrict the key to one environment (name as shown by 'criptenv env list'). Default: all environments")
 @click.option("--expires-days", type=int, default=None, help="Expiration in days (1-365)")
 def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], env: str | None, expires_days: int | None):
@@ -92,19 +90,17 @@ def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], e
     \b
     Examples:
         criptenv api-keys create -p <project-id> -n "CI Key"
-        criptenv api-keys create -p <project-id> -n "Deploy Key" -s read:secrets -s write:secrets --expires-days 90
+        criptenv api-keys create -p <project-id> -n "App container" --env production --expires-days 90
+        criptenv api-keys create -p <project-id> -n "Audit export" -s read:audit
     """
     async def _do_create():
         async with async_cli_context(require_auth=True) as (db, _mk, client):
             resolved_project_id = await resolve_project_id_async(db, project_id, client)
-            reserved_scopes = sorted(set(scope) - {"read:secrets"})
-            if reserved_scopes:
-                click.echo(
-                    "Warning: only read:secrets is currently enforced on public API endpoints. "
-                    f"Reserved scope(s): {', '.join(reserved_scopes)}",
-                    err=True,
-                )
             env_scope = (env or "").strip() or None
+            if env_scope and "read:audit" in scope:
+                raise click.ClickException(
+                    "read:audit covers the whole project: it is only for a key of every environment (drop --env)"
+                )
             if env_scope:
                 env_names = await _environment_names(client, resolved_project_id)
                 if env_scope not in env_names:

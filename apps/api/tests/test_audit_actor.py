@@ -24,7 +24,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
 from main import app
 from app.database import Base, get_db
-from app.middleware.auth import get_current_user
+from app.middleware.auth import AuthContext, get_current_auth_context, get_current_user
 from app.models.audit import AuditLog
 from app.models.user import User
 
@@ -94,6 +94,7 @@ async def test_audit_logs_include_actor_and_auth_type(engine, seeded):
     current = MagicMock(id=user.id)
     app.dependency_overrides[get_db] = _get_db
     app.dependency_overrides[get_current_user] = lambda: current
+    app.dependency_overrides[get_current_auth_context] = lambda: AuthContext(user=current, auth_type="session")
     try:
         with patch(
             "app.services.project_service.ProjectService.check_user_access",
@@ -108,6 +109,7 @@ async def test_audit_logs_include_actor_and_auth_type(engine, seeded):
     finally:
         app.dependency_overrides.pop(get_db, None)
         app.dependency_overrides.pop(get_current_user, None)
+        app.dependency_overrides.pop(get_current_auth_context, None)
 
     assert response.status_code == 200, response.text
     logs = response.json()["logs"]

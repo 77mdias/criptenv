@@ -42,14 +42,13 @@
   "apiKeys": {
     "title": "API Keys",
     "newKey": "Nueva API Key",
-    "description": "Usa API Keys para integraciones server-to-server que necesitan leer datos cifrados de la API pública. Para pipelines que escriben secrets o sincronizan providers, usa CI Tokens.",
+    "description": "Las claves de API solo leen: secretos cifrados (para contenedores y scripts) y, si quieres, el historial de auditoría. Para pipelines que escriben secretos o sincronizan con el hosting, usa tokens de CI.",
     "loadError": "Error al cargar las API keys",
     "createError": "Error al crear la API key",
     "revokeError": "Error al revocar",
     "revokeConfirm": "¿Revocar esta API key? Las aplicaciones que la usen dejarán de funcionar.",
     "createdNotice": "API Key creada — cópiala ahora, ¡no se mostrará de nuevo!",
     "close": "Cerrar",
-    "comingSoon": "(próximamente)",
     "empty": "No hay API keys creadas.",
     "lastUsed": "Último uso: {date}",
     "expires": "Expira: {date}",
@@ -61,32 +60,17 @@
       "allEnvironments": "Todos los entornos",
       "expiresIn": "Expira en (días, opcional)",
       "create": "Crear",
-      "cancel": "Cancelar"
+      "cancel": "Cancelar",
+      "restrictedOption": "{name} (restringido)",
+      "allHint": "La clave llega a todos los entornos, pero no llega a los entornos restringidos. Para un contenedor, prefiere un solo entorno: si la clave se filtra, solo ese queda expuesto.",
+      "auditNeedsAll": "La auditoría es de todo el proyecto: solo una clave para todos los entornos puede leerla."
     },
     "scopes": {
       "readSecrets": {
-        "label": "Read Secrets",
-        "description": "Read encrypted vault blobs from the public API"
-      },
-      "writeSecrets": {
-        "label": "Write Secrets",
-        "description": "Reserved for future public API writes"
-      },
-      "deleteSecrets": {
-        "label": "Delete Secrets",
-        "description": "Reserved for future public API deletes"
+        "label": "Leer secretos"
       },
       "readAudit": {
-        "label": "Read Audit",
-        "description": "Reserved for future audit API access"
-      },
-      "writeIntegrations": {
-        "label": "Manage Integrations",
-        "description": "Use CI Tokens for provider sync automation"
-      },
-      "adminProject": {
-        "label": "Admin Project",
-        "description": "Reserved for future public admin API access"
+        "label": "Leer auditoría"
       }
     }
   },
@@ -127,15 +111,17 @@
       "descriptionPlaceholder": "Descripción opcional",
       "scopes": "Scopes *",
       "envRestriction": "Restricción de entorno",
-      "envPlaceholder": "ej: production (vacío = todos)",
-      "envHint": "Deja vacío para permitir acceso a todos los entornos.",
+      "envHint": "Llega a todos los entornos, pero no llega a los entornos restringidos: para ellos, crea un token solo para ese entorno.",
       "expiration": "Expiración (días)",
       "expirationPlaceholder": "Vacío = sin expiración",
       "nameRequired": "El nombre es obligatorio",
       "scopeRequired": "Selecciona al menos un scope",
       "createError": "Error al crear el token",
       "cancel": "Cancelar",
-      "create": "Crear Token"
+      "create": "Crear Token",
+      "allEnvironments": "Todos los entornos",
+      "restrictedOption": "{name} (restringido)",
+      "envOneHint": "El token solo llega a este entorno."
     },
     "scopes": {
       "readSecrets": {
