@@ -79,12 +79,13 @@ export default function DashboardPage() {
         const [overviewData, stats, recent] = await Promise.all([
           meApi.overview(),
           meApi.activityStats(30),
-          meApi.audit({ per_page: 8 }),
+          // The feed is secondary: if it fails, the rest of the dashboard still shows.
+          meApi.audit({ per_page: 8 }).catch(() => null),
         ])
         if (cancelled) return
         setOverview(overviewData)
         setDays(stats)
-        setAuditLogs(recent.logs)
+        setAuditLogs(recent?.logs ?? [])
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : t("loadError"))
       } finally {
