@@ -192,7 +192,7 @@ Run `criptenv <command> --help` for options and examples, or see the [CLI refere
 
 Set `vault-password` to get usable plaintext values. Without it, each variable holds the encrypted ciphertext (kept for backwards compatibility). See [packages/github-action](packages/github-action/README.md) for every input and output.
 
-**Other pipelines** — `criptenv ci login` with a CI token, or an API key in `CRIPTENV_API_KEY` (optionally restricted to one environment). For non-interactive writes, set `CRIPTENV_VAULT_PASSWORD`.
+**Other pipelines** — `criptenv ci login` with a CI token, or an API key in `CRIPTENV_API_KEY` (read only, optionally restricted to one environment). A pipeline that writes or syncs needs a CI token; set `CRIPTENV_VAULT_PASSWORD` so it runs without a prompt. A restricted environment is reached only by a token or key created for it.
 
 **Cloud providers** — push secrets to **Vercel**, **Render** and **Cloudflare Workers**, or pull existing values from Vercel and Render (`--direction pull`; Cloudflare does not expose secret values):
 

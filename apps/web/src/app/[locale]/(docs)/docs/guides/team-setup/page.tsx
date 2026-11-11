@@ -91,7 +91,7 @@ Projects: my-app, api-gateway`}
             <tr className="border-t">
               <td className="p-3 font-medium">Developer</td>
               <td className="p-3">✅</td>
-              <td className="p-3">✅</td>
+              <td className="p-3">❌</td>
               <td className="p-3">❌</td>
               <td className="p-3">❌</td>
             </tr>
@@ -105,6 +105,7 @@ Projects: my-app, api-gateway`}
           </tbody>
         </table>
       </div>
+      <p className="text-muted-foreground mb-6">{t('roles.restricted')}</p>
 
       <h2 className="text-2xl font-semibold mt-10 mb-4">
         {t('perProject.title')}

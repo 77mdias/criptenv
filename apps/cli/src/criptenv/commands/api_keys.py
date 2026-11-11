@@ -80,7 +80,7 @@ def api_keys_list(project_id: str | None):
 @click.option("--scope", "-s", multiple=True, default=["read:secrets"],
               type=click.Choice(VALID_SCOPES),
               help="read:secrets (encrypted secrets) and/or read:audit (project audit history, only for a key of every environment)")
-@click.option("--env", default=None, help="Restrict the key to one environment (name as shown by 'criptenv env list'). Default: all environments")
+@click.option("--env", default=None, help="Restrict the key to one environment (name as shown by 'criptenv env list'). Default: all environments that are not restricted")
 @click.option("--expires-days", type=int, default=None, help="Expiration in days (1-365)")
 def api_keys_create(project_id: str | None, name: str, scope: tuple[str, ...], env: str | None, expires_days: int | None):
     """Create a new API key.

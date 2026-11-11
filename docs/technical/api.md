@@ -142,15 +142,18 @@ CI tokens are validated differently from session tokens and have their own permi
 | GET | `/api/v1/projects/{id}/environments` | List environments | Session |
 | POST | `/api/v1/projects/{id}/environments` | Create environment | Session |
 | GET | `/api/v1/projects/{id}/environments/{eid}` | Get environment | Session |
-| PUT | `/api/v1/projects/{id}/environments/{eid}` | Update environment | Session |
+| PATCH | `/api/v1/projects/{id}/environments/{eid}` | Update environment | Session |
 | DELETE | `/api/v1/projects/{id}/environments/{eid}` | Delete environment | Session |
 
 **Create Environment Request:**
 ```json
 {
-  "name": "production"
+  "name": "db-admin",
+  "restricted": true
 }
 ```
+
+A project starts with `development`, `staging` and `production`. The owner's plan caps the total (Free 3, Pro 5, Max 7; `402` above it). A `restricted` environment is visible only to the owner and admins (`404` for the other roles) and to CI tokens and API keys created for it. The three initial environments and the default one cannot be restricted (`422`).
 
 ---
 
@@ -271,7 +274,7 @@ CI tokens are validated differently from session tokens and have their own permi
 
 | Method | Path | Description | Auth |
 |--------|------|-------------|------|
-| GET | `/api/v1/projects/{id}/audit` | List audit logs | Session |
+| GET | `/api/v1/projects/{id}/audit` | List audit logs | Session, or API key with `read:audit` and no environment scope |
 | GET | `/api/v1/projects/{id}/audit/export` | Export logs | Session |
 
 **Query Parameters:**

@@ -19,6 +19,7 @@ const ENVIRONMENT = `{
   "name": "staging",
   "display_name": "Staging",
   "is_default": false,
+  "restricted": false,
   "secrets_version": 0,
   "created_at": "2026-01-15T10:30:00Z",
   "updated_at": "2026-01-15T10:30:00Z"
@@ -48,6 +49,11 @@ export default function ApiEnvironmentsPage() {
 
       <CodeBlock language="text">{BASE}</CodeBlock>
 
+      <p className="text-muted-foreground my-4">{t.rich('limits', { code })}</p>
+
+      <h2 className="text-2xl font-semibold mt-10 mb-4">{t('restricted.title')}</h2>
+      <Callout variant="info">{t.rich('restricted.body', { code })}</Callout>
+
       {/* ─── POST ─── */}
       <h2 className="text-2xl font-semibold mt-10 mb-4 flex items-center gap-3">
         <EndpointBadge method="POST" /> {t('create.title')}
@@ -61,6 +67,7 @@ export default function ApiEnvironmentsPage() {
           { name: 'name', type: 'string', required: true, description: t('create.params.name') },
           { name: 'display_name', type: 'string', description: t('create.params.displayName') },
           { name: 'is_default', type: 'boolean', default: 'false', description: t('create.params.isDefault') },
+          { name: 'restricted', type: 'boolean', default: 'false', description: t('create.params.restricted') },
         ]}
       />
 
@@ -143,6 +150,7 @@ export default function ApiEnvironmentsPage() {
           environmentIdParam,
           { name: 'display_name', type: 'string', description: t('update.params.displayName') },
           { name: 'is_default', type: 'boolean', description: t('update.params.isDefault') },
+          { name: 'restricted', type: 'boolean', description: t('update.params.restricted') },
         ]}
       />
 

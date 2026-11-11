@@ -76,8 +76,10 @@ jobs:
 1. Go to your CriptEnv dashboard
 2. Navigate to your project settings
 3. Go to "CI Tokens" section
-4. Click "Create Token"
+4. Click "Create Token" and, if you want, limit it to one environment
 5. Copy the token (shown only once)
+
+A token for every environment does not reach a restricted environment. If the `environment` input names a restricted one, create the token for that environment.
 
 Store these values as GitHub repository or organization secrets:
 

@@ -67,6 +67,7 @@ export default function ApiAuthenticationPage() {
           </tbody>
         </table>
       </div>
+      <p className="text-muted-foreground mt-4">{t("overview.note")}</p>
 
       {/* Session */}
       <h2 className="text-2xl font-semibold mt-10 mb-4">{t("session.title")}</h2>

@@ -435,7 +435,7 @@
         },
         "environments": {
           "title": "Ambientes",
-          "description": "Ambientes separam configurações por estágio, como development, staging e production."
+          "description": "Ambientes separam configurações por estágio, como development, staging e production. Os planos Pro e Max permitem ambientes extras, que podem ser restritos aos administradores."
         },
         "remoteVault": {
           "title": "Vault Remoto",
@@ -583,7 +583,7 @@
     },
     "githubAction": {
       "description": "Use a Action oficial do CriptEnv (<code>@criptenv/action</code>) para descriptografar e injetar suas variáveis de ambiente diretamente nos seus workflows do GitHub Actions.",
-      "tokenCallout": "A GitHub Action do CriptEnv requer um token de API válido. Você pode gerar um em <link>Painel → Tokens</link>.",
+      "tokenCallout": "A GitHub Action do CriptEnv requer um token de API válido. Você pode gerar um em <link>Painel → Tokens</link>. É um token de CI (<code>ci_...</code>); para ler um ambiente restrito, crie o token para esse ambiente.",
       "setup": {
         "title": "Configuração",
         "step1": {
@@ -723,7 +723,8 @@
         "view": "Ver secrets",
         "edit": "Editar secrets",
         "manageTeam": "Gerenciar equipe",
-        "settings": "Configurações"
+        "settings": "Configurações",
+        "restricted": "Ambientes restritos são a exceção: só Owner e Admin os veem e leem. Para criar ou restringir um ambiente, abra Configurações do projeto → Ambientes."
       },
       "perProject": {
         "title": "Permissões por Projeto",
@@ -896,7 +897,7 @@
         },
         "isolation": {
           "title": "Isolamento entre ambientes",
-          "body": "Cada ambiente tem sua própria chave, derivada com HKDF a partir da chave do vault e do ID do ambiente. A chave de um ambiente não decifra os secrets de outro."
+          "body": "Cada ambiente tem sua própria chave, derivada com HKDF a partir da chave do vault e do ID do ambiente. A chave de um ambiente não decifra os secrets de outro. Restringir um ambiente é outra coisa: uma regra de acesso aplicada pelo servidor. Como a senha do vault é uma por projeto, a restrição impede o servidor de entregar os dados, mas não desfaz o que alguém já baixou."
         },
         "bruteForce": {
           "title": "Resistência a Força Bruta",
@@ -1223,7 +1224,7 @@
         "apiUrl": "URL da API. Padrão: https://criptenv-api.77mdevseven.tech",
         "project": "Projeto padrão para comandos que aceitam <code>--project</code>.",
         "vaultPassword": "Vault password do projeto para uso não interativo.",
-        "apiKey": "API key (<code>cek_...</code>) que autentica o processo diretamente, sem login e sem gravar sessão em disco — ideal para CI, containers e HOME somente leitura.",
+        "apiKey": "API key (<code>cek_...</code>) que autentica o processo diretamente, sem login e sem gravar sessão em disco — ideal para CI, containers e HOME somente leitura. É somente leitura: para gravar ou sincronizar em um pipeline, use um token de CI.",
         "warning": "Evite expor <code>CRIPTENV_VAULT_PASSWORD</code> em logs, shells compartilhados ou históricos persistentes. Em CI, use o mecanismo de secrets do provedor."
       },
       "doctor": "Use <code>criptenv doctor</code> para verificar sessão, projeto atual, metadata local e conectividade com a API."
@@ -1358,7 +1359,7 @@
           }
         },
         "envList": {
-          "description": "Lista todos os ambientes do projeto.",
+          "description": "Lista todos os ambientes do projeto. Os restritos aparecem marcados.",
           "params": {
             "0": "Filtrar por projeto"
           }
@@ -1368,7 +1369,8 @@
           "params": {
             "0": "Nome do ambiente (ex: staging)",
             "1": "Projeto ao qual pertence",
-            "2": "Nome legível para humanos"
+            "2": "Nome legível para humanos",
+            "3": "Cria o ambiente restrito ao dono e aos administradores"
           }
         },
         "projectsCreate": {
@@ -1511,6 +1513,26 @@
             "1": "Ambiente",
             "2": "Projeto"
           }
+        },
+        "envUpdate": {
+          "description": "Renomeia um ambiente, o restringe ao dono e aos administradores ou o abre ao time.",
+          "params": {
+            "0": "ID do ambiente",
+            "1": "Projeto ao qual pertence",
+            "2": "Novo nome legível",
+            "3": "Restringe ao dono e aos administradores",
+            "4": "Abre um ambiente restrito ao time"
+          }
+        },
+        "apiKeysCreate": {
+          "description": "Cria uma API key somente leitura para contêineres e scripts. A chave aparece uma única vez.",
+          "params": {
+            "0": "Nome da chave",
+            "1": "read:secrets (padrão) e/ou read:audit",
+            "2": "Limita a chave a um ambiente; sem ele, vale para todos os não restritos",
+            "3": "Expiração em dias (1 a 365)",
+            "4": "Projeto ao qual pertence"
+          }
         }
       }
     }
@@ -1540,7 +1562,8 @@
           "action": "Filtrar por ação, ex.: vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
           "resourceType": "Filtrar por tipo de recurso, ex.: vault, environment, member, invite, integration, ci_token, api_key, project"
         }
-      }
+      },
+      "auth": "Aceita sessão de membro ou API key com o escopo <code>read:audit</code>. Só uma API key de todos os ambientes pode ter esse escopo: com <code>environment_scope</code>, a criação retorna 422 e a leitura, 403. Eventos de ambientes restritos aparecem apenas para o dono e os administradores, e nunca para uma API key."
     },
     "invites": {
       "description": "Gerencie convites por email para adicionar novos membros a um projeto. Convites possuem expiração de 7 dias e são vinculados a um papel específico.",
@@ -1580,7 +1603,7 @@
           "name": "Nome descritivo do token",
           "description": "Descrição opcional",
           "scopes": "Escopos no formato acao:recurso. Padrão: [\"read:secrets\"]",
-          "environmentScope": "Limita o token a um ambiente (ex: production), que precisa existir no projeto. Se omitido, vale para todos.",
+          "environmentScope": "Limita o token a um ambiente (ex: production), que precisa existir no projeto. Se omitido, vale para todos. Ambientes restritos ficam de fora: um ambiente restrito exige um token criado para ele.",
           "expiresAt": "Expiração opcional (ISO 8601)"
         }
       },
@@ -1663,7 +1686,8 @@
         "params": {
           "name": "Nome do ambiente: letras minúsculas, números e hífens (ex: staging). Deve ser único no projeto.",
           "displayName": "Nome legível",
-          "isDefault": "Marca como ambiente padrão do projeto"
+          "isDefault": "Marca como ambiente padrão do projeto",
+          "restricted": "Restringe o ambiente ao dono e aos administradores do projeto"
         },
         "example": "Exemplo — Criar ambiente"
       },
@@ -1679,10 +1703,11 @@
       },
       "update": {
         "title": "Atualizar Ambiente",
-        "body": "Atualiza o nome de exibição ou o indicador de padrão de um ambiente. O <code>name</code> não pode ser alterado. Requer papel de <code>admin</code>.",
+        "body": "Atualiza o nome de exibição ou o indicador de padrão de um ambiente. O <code>name</code> não pode ser alterado. Requer papel de <code>admin</code>. Também aceita <code>restricted</code>, para restringir o ambiente ou abri-lo ao time.",
         "params": {
           "displayName": "Novo nome de exibição",
-          "isDefault": "Torna o ambiente padrão"
+          "isDefault": "Torna o ambiente padrão",
+          "restricted": "true restringe o ambiente; false abre ao time"
         },
         "example": "Exemplo — Atualizar ambiente"
       },
@@ -1692,6 +1717,11 @@
         "callout": "Ambientes arquivados deixam de ser acessíveis pela API e pela CLI. Para continuar usando os secrets, exporte-os antes de arquivar.",
         "response": "Resposta vazia — o ambiente foi arquivado.",
         "example": "Exemplo — Arquivar ambiente"
+      },
+      "limits": "Todo projeto nasce com <code>development</code>, <code>staging</code> e <code>production</code>. O plano do dono define quantos ambientes o projeto pode ter: 3 no Free, 5 no Pro e 7 no Max. Acima do limite, criar retorna <code>402</code>.",
+      "restricted": {
+        "title": "Ambientes restritos",
+        "body": "Um ambiente com <code>restricted: true</code> só existe para o dono e os administradores do projeto: para os outros papéis ele não aparece na lista e seus endpoints retornam 404. Tokens de CI e API keys só o alcançam quando são criados para ele. Os três ambientes iniciais e o ambiente padrão não podem ser restritos (422). A restrição é aplicada pelo servidor e não desfaz o que alguém já baixou."
       }
     },
     "vault": {
@@ -1923,25 +1953,26 @@
             "name": "Sessão",
             "prefix": "cookie",
             "ttl": "30 dias, ou 20 dias sem uso",
-            "use": "Dashboard web"
+            "use": "Dashboard web e CLI (criptenv login)"
           },
           "apiKey": {
             "name": "API Key",
             "prefix": "cek_",
             "ttl": "Até ser revogada ou a expiração opcional",
-            "use": "Integrações, scripts"
+            "use": "Contêineres e scripts, somente leitura"
           },
           "ciToken": {
             "name": "CI Token",
             "prefix": "ci_ → ci_s_",
             "ttl": "Token até ser revogado; cada sessão ci_s_ dura 1 hora",
-            "use": "Pipelines de CI/CD"
+            "use": "Pipelines de CI/CD: lê, grava e sincroniza"
           }
-        }
+        },
+        "note": "A integração com a hospedagem (Vercel, Render, Cloudflare) não é uma credencial: é o CriptEnv enviando as variáveis de um ambiente para o provedor. Um ambiente restrito só é alcançado pelo dono, pelos administradores e por tokens de CI ou API keys criados para ele."
       },
       "session": {
         "title": "Sessão (Cookies)",
-        "body": "Quando você faz login pelo dashboard web, o servidor cria um cookie HTTP-only seguro que o navegador envia automaticamente em todas as requisições seguintes.",
+        "body": "Quando você faz login pelo dashboard web, o servidor cria um cookie HTTP-only seguro que o navegador envia automaticamente em todas as requisições seguintes. A CLI (criptenv login) recebe uma sessão do mesmo tipo, com os mesmos prazos, enviada no cabeçalho Authorization e guardada cifrada em ~/.criptenv.",
         "cookie": "O cookie de sessão é <code>HttpOnly</code>, <code>Secure</code> e usa <code>SameSite=Lax</code>. Ele não pode ser lido via JavaScript, o que o protege contra XSS.",
         "loginTitle": "Fluxo de Login",
         "twoFactor": "Se a conta tiver 2FA ativo e o navegador não estiver lembrado, o login retorna um desafio temporário e não cria cookie de sessão até a validação do segundo fator.",
@@ -1967,7 +1998,7 @@
       },
       "ci": {
         "title": "CI Tokens",
-        "body": "CI Tokens têm prefixo <code>ci_</code> e são projetados para pipelines de CI/CD. O pipeline troca o token por uma sessão temporária <code>ci_s_</code> de 1 hora, com escopos como <code>read:secrets</code>, <code>write:secrets</code> e <code>write:integrations</code>.",
+        "body": "CI Tokens têm prefixo <code>ci_</code> e são projetados para pipelines de CI/CD. O pipeline troca o token por uma sessão temporária <code>ci_s_</code> de 1 hora, com escopos como <code>read:secrets</code>, <code>write:secrets</code> e <code>write:integrations</code>. Sem <code>environment_scope</code>, o token vale para todos os ambientes não restritos; um ambiente restrito exige um token criado para ele.",
         "createTitle": "Gerar um CI Token",
         "actionTitle": "Usar CI Token no GitHub Actions",
         "actionBody": "Guarde o token (<code>ci_...</code>) e a senha do cofre como GitHub Secrets. A Action troca o token por uma sessão <code>ci_s_</code> (<code>POST /api/v1/auth/ci-login</code>), baixa os blobs (<code>GET /api/v1/ci/secrets</code>) e decifra localmente com a senha do cofre."
@@ -2013,7 +2044,7 @@
           },
           "apiKey": {
             "title": "API Key",
-            "body": "Token com prefixo <code>cek_</code> para integrações e scripts. Pode ser restrito a um ambiente."
+            "body": "Token com prefixo <code>cek_</code> para contêineres e scripts, somente leitura. Pode ser restrito a um ambiente."
           },
           "ciToken": {
             "title": "CI Token",

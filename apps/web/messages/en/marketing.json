@@ -284,6 +284,52 @@
       },
       "footnote": "Prices in Brazilian reais. Self-hosting CriptEnv is free and has no limits.",
       "contribute": "Support the project with Pix"
+    },
+    "access": {
+      "label": "Access",
+      "title": "One kind of access for each place",
+      "description": "Every place your secrets are used has its own kind of access, with only the power it needs.",
+      "docs": "See the documentation",
+      "docsFor": "See the documentation: {name}",
+      "items": {
+        "login": {
+          "name": "Login",
+          "for": "You and the team, on your own machine",
+          "can": [
+            "Everything your role in the project allows",
+            "Read, write and delete secrets from the CLI or the dashboard",
+            "A session of up to 30 days, which ends after 20 days without use"
+          ]
+        },
+        "ciToken": {
+          "name": "CI token",
+          "for": "Pipelines: GitHub Actions, deploys",
+          "can": [
+            "Read and write secrets",
+            "Sync with the hosting provider",
+            "A short session on every run"
+          ]
+        },
+        "apiKey": {
+          "name": "API key",
+          "for": "Containers and scripts",
+          "can": [
+            "Read encrypted secrets",
+            "Read the audit history, if you tick it",
+            "Never writes or deletes"
+          ]
+        },
+        "hosting": {
+          "name": "Hosting integration",
+          "for": "Vercel, Render and Cloudflare",
+          "can": [
+            "Send the variables of an environment to the hosting provider",
+            "On Max: automatic on save",
+            "On Max: a new deploy after sending"
+          ]
+        }
+      },
+      "restricted": "Restricted environment: only admins get in, and CI tokens and API keys reach it only when they are created for it."
     }
   },
   "contribute": {

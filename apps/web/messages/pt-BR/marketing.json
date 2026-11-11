@@ -284,6 +284,52 @@
       },
       "footnote": "Preços em reais. Hospedar o CriptEnv por conta própria é gratuito e sem limites.",
       "contribute": "Apoiar o projeto por Pix"
+    },
+    "access": {
+      "label": "Acessos",
+      "title": "Um acesso para cada lugar",
+      "description": "Cada lugar onde seus segredos são usados tem um tipo de acesso próprio, com só o poder de que precisa.",
+      "docs": "Ver na documentação",
+      "docsFor": "Ver na documentação: {name}",
+      "items": {
+        "login": {
+          "name": "Login",
+          "for": "Você e o time, na própria máquina",
+          "can": [
+            "Tudo que o seu papel no projeto permite",
+            "Ler, gravar e apagar segredos pela CLI ou pelo painel",
+            "Sessão de até 30 dias, que cai após 20 dias sem uso"
+          ]
+        },
+        "ciToken": {
+          "name": "Token de CI",
+          "for": "Pipelines: GitHub Actions, deploy",
+          "can": [
+            "Ler e gravar segredos",
+            "Sincronizar com a hospedagem",
+            "Uma sessão curta a cada execução"
+          ]
+        },
+        "apiKey": {
+          "name": "Chave de API",
+          "for": "Contêineres e scripts",
+          "can": [
+            "Ler segredos cifrados",
+            "Ler a auditoria, se você marcar",
+            "Nunca grava nem apaga"
+          ]
+        },
+        "hosting": {
+          "name": "Integração com a hospedagem",
+          "for": "Vercel, Render e Cloudflare",
+          "can": [
+            "Enviar as variáveis de um ambiente para a hospedagem",
+            "No Max: envio automático ao salvar",
+            "No Max: novo deploy depois do envio"
+          ]
+        }
+      },
+      "restricted": "Ambiente restrito: só administradores entram, e tokens de CI e chaves de API só o alcançam quando são criados para ele."
     }
   },
   "contribute": {

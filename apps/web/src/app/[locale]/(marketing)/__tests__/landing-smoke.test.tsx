@@ -54,5 +54,7 @@ describe("LandingPage (smoke de render pós-merge)", () => {
     expect((await screen.findAllByText(/Secrets/i)).length).toBeGreaterThan(0);
     // A seção de preços (Client Component) renderiza dentro da própria página.
     expect(screen.getByRole("link", { name: "Assinar o Pro" })).toBeInTheDocument();
+    // A seção dos quatro acessos também faz parte da página.
+    expect(screen.getByRole("article", { name: "Chave de API" })).toBeInTheDocument();
   });
 });

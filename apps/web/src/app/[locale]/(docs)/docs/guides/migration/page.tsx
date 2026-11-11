@@ -34,9 +34,8 @@ export default function MigrationPage() {
             {t('step1.body')}
           </p>
           <CodeBlock language="bash" title={t('step1.codeTitle')}>
-{`criptenv projects create my-app
-criptenv env create development -p my-app
-criptenv use my-app   # default project for the next commands`}
+{`criptenv projects create my-app   # comes with development, staging and production
+criptenv use my-app               # default project for the next commands`}
           </CodeBlock>
         </Step>
 
