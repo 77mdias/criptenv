@@ -2,7 +2,7 @@
 
 Periodic job that deletes expired or inactive user sessions.
 A session is considered inactive if it hasn't been accessed for
-more than SESSION_INACTIVITY_DAYS (default: 7 days).
+more than SESSION_INACTIVITY_DAYS (default: 20 days).
 """
 
 import logging

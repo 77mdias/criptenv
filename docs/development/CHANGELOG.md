@@ -7,6 +7,11 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Login dura 20 dias sem uso — 2026-11-11
+
+- **`SESSION_INACTIVITY_DAYS` passa de 7 para 20.** Uma sessão (web ou CLI) só cai por falta de uso depois de 20 dias sem nenhuma requisição; o teto de 30 dias desde o login (`SESSION_EXPIRE_DAYS`) não muda. Instalações que definem a variável no próprio `.env` continuam com o valor de lá.
+- Documentação da API atualizada nos três idiomas.
+
 ### Ambientes extras e ambientes restritos — 2026-11-10
 
 Desenho em `docs/superpowers/specs/2026-11-10-restricted-environments-design.md`, plano em `docs/superpowers/plans/2026-11-10-restricted-environments.md`.
