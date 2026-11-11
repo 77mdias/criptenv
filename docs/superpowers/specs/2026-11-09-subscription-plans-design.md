@@ -48,7 +48,7 @@ Decidido pelo Jean, com números propostos pelo Claude e aprovados.
 | Preço anual (2 meses grátis) | | R$ 290 | R$ 690 |
 | Segurança | completa | completa | completa |
 | Projetos | 3 | sem limite | sem limite |
-| Ambientes por projeto | 3 | sem limite | sem limite |
+| Ambientes por projeto | 3 | 5 | 7 |
 | Membros por projeto | 3 | 10 | 25 |
 | Cofre pessoal | 120 itens, 10 pastas | sem limite | sem limite |
 | Conexões com hospedagem por projeto | 1 | sem limite | sem limite |
