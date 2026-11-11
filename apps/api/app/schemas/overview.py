@@ -10,6 +10,8 @@ class OverviewEnvironment(BaseModel):
     name: str
     is_default: bool
     secret_count: int
+    # Secrets of an environment that got no push for 90 days or more (none of them was changed)
+    stale_secret_count: int = 0
     version: int
     updated_at: Optional[datetime] = None
 
@@ -20,6 +22,8 @@ class OverviewProject(BaseModel):
     slug: str
     role: str
     member_count: int
+    # Owner plus admins
+    manager_count: int = 0
     last_activity_at: Optional[datetime] = None
     environments: list[OverviewEnvironment]
 
@@ -98,6 +102,28 @@ class MatrixKey(BaseModel):
 class SecretMatrixResponse(BaseModel):
     environments: list[MatrixEnvironment]
     keys: list[MatrixKey]
+
+
+class CredentialItem(BaseModel):
+    kind: Literal["ci_token", "api_key"]
+    id: UUID
+    project_id: UUID
+    project_name: str
+    name: str
+    scopes: list[str]
+    environment_scope: Optional[str] = None
+    last_used_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    status: Literal["active", "expired", "revoked"]
+    # Only set while the credential still works
+    no_expiry: bool
+    unused: bool
+
+
+class CredentialListResponse(BaseModel):
+    credentials: list[CredentialItem]
 
 
 class ActivityDay(BaseModel):

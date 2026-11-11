@@ -205,6 +205,11 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         <UnlockedVaultPanel
           secrets={state.secretsWithExpiration}
           environmentName={state.activeEnvName}
+          emptyCommand={
+            canManageSecrets && state.activeEnv
+              ? `criptenv set API_URL=https://... -p ${projectId} -e ${state.activeEnv.name}`
+              : undefined
+          }
           copiedKey={state.copiedKey}
           busy={state.vaultLoading || state.saving}
           canManageSecrets={canManageSecrets}

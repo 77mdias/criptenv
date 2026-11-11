@@ -120,6 +120,7 @@ export default function ProjectsPage() {
           icon={FolderOpen}
           title={t("empty.title")}
           description={t("empty.description")}
+          command="criptenv projects create my-app"
           action={{
             label: t("empty.action"),
             onClick: () => setDialogOpen(true),

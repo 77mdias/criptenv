@@ -1,10 +1,13 @@
 import { request } from "./client";
+import type { AuditLogListResponse } from "./client";
 
 export interface OverviewEnvironment {
   id: string;
   name: string;
   is_default: boolean;
   secret_count: number;
+  /** Secrets of this environment when it got no push for 90 days or more. */
+  stale_secret_count: number;
   version: number;
   updated_at: string | null;
 }
@@ -15,6 +18,8 @@ export interface OverviewProject {
   slug: string;
   role: string;
   member_count: number;
+  /** Owner plus admins. */
+  manager_count: number;
   last_activity_at: string | null;
   environments: OverviewEnvironment[];
 }
@@ -107,4 +112,57 @@ export const meApi = {
   activityStats(days = 30): Promise<ActivityDay[]> {
     return request<ActivityDay[]>("GET", "/api/v1/me/activity-stats", undefined, { days });
   },
+
+  /** CI tokens and API keys of the projects the user manages (owner/admin). */
+  credentials(): Promise<CredentialListResponse> {
+    return request<CredentialListResponse>("GET", "/api/v1/me/credentials");
+  },
+
+  /** Audit events of every project the user belongs to, newest first. */
+  audit(params: MyAuditQuery = {}): Promise<AuditLogListResponse> {
+    return request<AuditLogListResponse>(
+      "GET",
+      "/api/v1/me/audit",
+      undefined,
+      params as Record<string, string | number | undefined>,
+    );
+  },
 };
+
+export type AuditOrigin = "session" | "ci_session" | "api_key";
+
+export interface Credential {
+  kind: "ci_token" | "api_key";
+  id: string;
+  project_id: string;
+  project_name: string;
+  name: string;
+  scopes: string[];
+  environment_scope: string | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  revoked_at: string | null;
+  created_at: string | null;
+  status: "active" | "expired" | "revoked";
+  /** Set only while the credential still works. */
+  no_expiry: boolean;
+  /** Not used for 30 days or more (set only while it still works). */
+  unused: boolean;
+}
+
+export interface CredentialListResponse {
+  credentials: Credential[];
+}
+
+export interface MyAuditQuery {
+  page?: number;
+  per_page?: number;
+  project_id?: string;
+  action?: string;
+  auth_type?: AuditOrigin;
+  actor_id?: string;
+  /** ISO date-time; events at or after it. */
+  from?: string;
+  /** ISO date-time; events at or before it. */
+  to?: string;
+}

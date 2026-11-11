@@ -2,7 +2,11 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projects",
+    "activity": "Activity",
     "integrations": "Integrations",
+    "access": "Access",
+    "security": "Security",
+    "highFindings": "{count, plural, one {serious issue} other {serious issues}}",
     "vault": "Vault",
     "help": "Help",
     "account": "Account",
@@ -11,6 +15,163 @@
   },
   "layout": {
     "checkingSession": "Checking session..."
+  },
+  "activityPage": {
+    "title": "Activity",
+    "subtitle": "{total, plural, one {# event across your projects} other {# events across your projects}}",
+    "exportCsv": "Export CSV",
+    "loadMore": "Load more",
+    "loadError": "Could not load the activity.",
+    "retention": "Each project shows the history its owner's plan keeps. The CSV has only what is already loaded on screen.",
+    "filters": {
+      "title": "Filters",
+      "project": "Project",
+      "allProjects": "All projects",
+      "origin": "Origin",
+      "allOrigins": "All origins",
+      "period": "Period",
+      "allTime": "All history",
+      "lastDays": "Last {days} days",
+      "action": "Action",
+      "allActions": "All actions"
+    },
+    "origins": {
+      "session": "People (login)",
+      "ci_session": "CI",
+      "api_key": "API key"
+    },
+    "empty": {
+      "title": "No activity yet",
+      "description": "When someone creates a project, pushes secrets or invites the team, it shows up here.",
+      "filteredTitle": "Nothing matches these filters",
+      "filteredDescription": "Try another project, origin or period."
+    }
+  },
+  "accessPage": {
+    "title": "Access",
+    "subtitle": "CI tokens and API keys of the projects where you are owner or admin.",
+    "loadError": "Could not load the credentials.",
+    "revokeError": "Could not revoke the credential.",
+    "filters": {
+      "title": "Filters",
+      "kind": "Type",
+      "allKinds": "All types",
+      "status": "Status",
+      "allStatuses": "All",
+      "project": "Project",
+      "allProjects": "All projects"
+    },
+    "kinds": {
+      "ci_token": "CI token",
+      "api_key": "API key"
+    },
+    "statuses": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "flags": {
+      "noExpiry": "No expiry",
+      "unused": "Unused for 30 days"
+    },
+    "allEnvironments": "Every non-restricted environment",
+    "lastUsed": "Last used {when}",
+    "neverUsed": "Never used",
+    "expires": "Expires on {when}",
+    "noExpiry": "Never expires",
+    "revoke": "Revoke",
+    "revokeLabel": "Revoke {name}",
+    "confirm": {
+      "title": "Revoke {name}?",
+      "description": "Whatever uses this credential in project {project} loses access right away. This cannot be undone: you will need to create a new one."
+    },
+    "empty": {
+      "title": "No credentials to manage",
+      "description": "CI tokens and API keys of the projects where you are owner or admin show up here. Create one in the project settings or with the CLI, inside the project folder:",
+      "filteredTitle": "No credentials match these filters"
+    }
+  },
+  "comparePage": {
+    "title": "Compare environments",
+    "subtitle": "See which keys are missing in each environment. Names come from the server; values are only compared here in the browser.",
+    "loadError": "Could not load the environments.",
+    "compareError": "Could not decrypt the values. Unlock the vault again and retry.",
+    "envA": "Environment A",
+    "envB": "Environment B",
+    "sameEnv": "Pick two different environments.",
+    "onlyIn": "Only in {env}",
+    "inBoth": "In both",
+    "none": "None",
+    "needTwo": {
+      "title": "You need two environments",
+      "description": "This project has only one environment you can see. Create another to compare."
+    },
+    "values": {
+      "title": "Compare values",
+      "description": "With the vault unlocked, the browser downloads both encrypted environments, decrypts them here and tells whether each value matches. Only a masked preview is shown; no value leaves the browser.",
+      "run": "Compare values",
+      "nothingInBoth": "No key exists in both environments.",
+      "key": "Key",
+      "result": "Result",
+      "same": "Same",
+      "different": "Different"
+    }
+  },
+  "securityPage": {
+    "title": "Security",
+    "subtitle": "How your account and projects are doing, and what to do to improve.",
+    "loadError": "Could not check security right now.",
+    "score": "Score {score} out of 100",
+    "allGood": "Nothing to fix. Keep it up.",
+    "summary": "{count, plural, one {# thing to fix} other {# things to fix}}",
+    "howScored": "Each issue takes points once: serious 30, medium 15, minor 5.",
+    "andMore": "and {count} more",
+    "severity": {
+      "high": "Serious",
+      "medium": "Medium",
+      "low": "Minor"
+    },
+    "empty": {
+      "title": "All in order",
+      "description": "2FA on, credentials that expire and secrets up to date."
+    },
+    "rules": {
+      "twoFactor": {
+        "title": "2FA authentication is off",
+        "body": "Without 2FA, whoever finds out your password gets into the account and every project in it.",
+        "action": "Turn it on in your account"
+      },
+      "expiredSecret": {
+        "title": "{count, plural, one {# expired secret} other {# expired secrets}}",
+        "body": "The rotation date has passed. Change the value and set a new date.",
+        "action": "See secrets"
+      },
+      "credentialNoExpiry": {
+        "title": "{count, plural, one {# credential with no expiry} other {# credentials with no expiry}}",
+        "body": "A token or key that never expires keeps working forever if it leaks.",
+        "action": "See access"
+      },
+      "credentialUnused": {
+        "title": "{count, plural, one {# credential unused for 30 days} other {# credentials unused for 30 days}}",
+        "body": "An idle credential is access nobody watches. Revoke it if it is no longer needed.",
+        "action": "See access"
+      },
+      "notRotated": {
+        "title": "{count, plural, one {# secret unchanged for 90 days} other {# secrets unchanged for 90 days}}",
+        "body": "These environments got no push for 90 days or more, so no value was changed. Rotate the most sensitive ones.",
+        "action": "See projects"
+      },
+      "tooManyManagers": {
+        "title": "{count, plural, one {# project with more than 2 owners or admins} other {# projects with more than 2 owners or admins}}",
+        "body": "Admins see restricted environments and manage credentials. Keep only who needs it.",
+        "action": "See projects"
+      },
+      "failingIntegration": {
+        "title": "{count, plural, one {# failing integration} other {# failing integrations}}",
+        "body": "The hosting is not receiving the variables. Check the provider token.",
+        "action": "See integrations"
+      }
+    }
   },
   "home": {
     "title": "Dashboard",
@@ -144,6 +305,9 @@
       "secrets": {
         "label": "Secrets"
       },
+      "compare": {
+        "label": "Compare"
+      },
       "members": {
         "label": "Team"
       },
@@ -208,7 +372,16 @@
     "audit": "Audit Log",
     "settings": "Settings",
     "close": "Close command palette",
-    "searchPlaceholder": "Search commands...",
-    "empty": "No commands found."
+    "searchPlaceholder": "Search screens, projects, environments and secrets...",
+    "empty": "No commands found.",
+    "title": "Quick search",
+    "results": "Results",
+    "compare": "Compare environments",
+    "copyList": "Copy command: list secrets",
+    "copyRun": "Copy command: run with the secrets",
+    "commandPlaceholder": "<command>",
+    "projectHint": "Project",
+    "environmentHint": "Environment",
+    "secretHint": "Secret in {project}"
   }
 }

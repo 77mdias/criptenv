@@ -14,7 +14,9 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.api_key import APIKey
 from app.models.audit import AuditLog
 from app.models.environment import Environment
-from app.services.environment_access import sees_restricted
+from app.services.environment_access import hidden_ids, sees_restricted
+from app.services.audit_service import visible_audit_condition
+from app.services.plan_limits import PlanLimits
 from app.models.integration import Integration
 from app.models.member import CIToken, ProjectInvite, ProjectMember
 from app.models.secret_expiration import SecretExpiration
@@ -24,6 +26,9 @@ from app.services.project_service import ProjectService
 MANAGER_ROLES = ("owner", "admin")
 EXPIRING_WITHIN = timedelta(days=7)
 STALE_AFTER = timedelta(days=30)
+# A push rewrites every blob of the environment, so a blob older than this means the whole
+# environment got no push for that long: none of its secrets was changed or rotated.
+NOT_ROTATED_AFTER = timedelta(days=90)
 # Actions that change secret material; everything else counts as "other" activity
 CHANGE_ACTIONS = ("vault.pushed", "secret.rotated")
 
@@ -33,6 +38,12 @@ def _utc(value: Optional[datetime]) -> Optional[datetime]:
     if value is None or value.tzinfo is not None:
         return value
     return value.replace(tzinfo=timezone.utc)
+
+
+def _idle(row, now: datetime) -> bool:
+    """No use for STALE_AFTER: counted from the last use or, never used, from creation."""
+    since = _utc(row.last_used_at) or _utc(row.created_at)
+    return since is None or since < now - STALE_AFTER
 
 
 class OverviewService:
@@ -71,16 +82,27 @@ class OverviewService:
                 .group_by(VaultBlob.environment_id)
             )).all()
         }
+        stale_counts = dict((await self.db.execute(
+            select(VaultBlob.environment_id, func.count(VaultBlob.id))
+            .where(VaultBlob.project_id.in_(project_ids), VaultBlob.updated_at < now - NOT_ROTATED_AFTER)
+            .group_by(VaultBlob.environment_id)
+        )).all())
         member_counts = dict((await self.db.execute(
             select(ProjectMember.project_id, func.count(ProjectMember.id))
             .where(ProjectMember.project_id.in_(project_ids))
             .group_by(ProjectMember.project_id)
         )).all())
+        manager_counts = dict((await self.db.execute(
+            select(ProjectMember.project_id, func.count(ProjectMember.id))
+            .where(ProjectMember.project_id.in_(project_ids), ProjectMember.role.in_(MANAGER_ROLES))
+            .group_by(ProjectMember.project_id)
+        )).all())
+        # Same visibility as /me/audit: a push to a hidden environment must not show up as activity.
         last_activity = {
             project_id: _utc(created_at)
             for project_id, created_at in (await self.db.execute(
                 select(AuditLog.project_id, func.max(AuditLog.created_at))
-                .where(AuditLog.project_id.in_(project_ids))
+                .where(visible_audit_condition(await self._scopes(memberships)))
                 .group_by(AuditLog.project_id)
             )).all()
         }
@@ -95,6 +117,7 @@ class OverviewService:
                 "name": env.name,
                 "is_default": bool(env.is_default),
                 "secret_count": count,
+                "stale_secret_count": stale_counts.get(env.id, 0),
                 "version": env.secrets_version or 0,
                 "updated_at": updated_at or _utc(env.updated_at),
             })
@@ -106,6 +129,7 @@ class OverviewService:
                 "slug": project.slug,
                 "role": role,
                 "member_count": member_counts.get(project.id, 0),
+                "manager_count": manager_counts.get(project.id, 0),
                 "last_activity_at": last_activity.get(project.id),
                 "environments": envs_by_project.get(project.id, []),
             }
@@ -181,7 +205,7 @@ class OverviewService:
                     continue  # already unusable
                 if expires_at is None:
                     reason = "no_expiry"
-                elif last_used_at is None or last_used_at < now - STALE_AFTER:
+                elif _idle(row, now):
                     reason = "unused"
                 else:
                     continue
@@ -190,6 +214,38 @@ class OverviewService:
                     "reason": reason, "last_used_at": last_used_at, "expires_at": expires_at,
                 })
         return items
+
+    async def get_credentials(self, user_id: UUID, now: Optional[datetime] = None) -> list[dict]:
+        """Every CI token and API key of the projects the user manages (owner/admin), revoked and
+        expired ones included and marked. Never the hashes."""
+        now = now or datetime.now(timezone.utc)
+        memberships = await ProjectService(self.db).list_user_projects_with_roles(user_id)
+        names = {project.id: project.name for project, role in memberships if role in MANAGER_ROLES}
+        if not names:
+            return []
+        items = []
+        for kind, model in (("ci_token", CIToken), ("api_key", APIKey)):
+            rows = (await self.db.execute(select(model).where(model.project_id.in_(list(names))))).scalars().all()
+            for row in rows:
+                expires_at, last_used_at = _utc(row.expires_at), _utc(row.last_used_at)
+                if row.revoked_at is not None:
+                    status = "revoked"
+                elif expires_at is not None and expires_at <= now:
+                    status = "expired"
+                else:
+                    status = "active"
+                active = status == "active"
+                items.append({
+                    "kind": kind, "id": row.id, "project_id": row.project_id,
+                    "project_name": names[row.project_id], "name": row.name,
+                    "scopes": list(row.scopes or []), "environment_scope": row.environment_scope,
+                    "last_used_at": last_used_at, "expires_at": expires_at,
+                    "revoked_at": _utc(row.revoked_at), "created_at": _utc(row.created_at),
+                    "status": status,
+                    "no_expiry": active and expires_at is None,
+                    "unused": active and _idle(row, now),
+                })
+        return sorted(items, key=lambda item: (item["project_name"], item["name"]))
 
     async def _failing_integrations(self, project_ids: list[UUID]) -> list[dict]:
         rows = (await self.db.execute(
@@ -230,20 +286,36 @@ class OverviewService:
             "keys": [{"key_id": key_id, "cells": cells[key_id]} for key_id in sorted(cells)],
         }
 
+    async def audit_scopes(
+        self, user_id: UUID, project_id: Optional[UUID] = None
+    ) -> list[tuple[UUID, Optional[datetime], set[UUID]]]:
+        """(project, history window, hidden environments) for each project the user belongs to,
+        or only `project_id` when given and the user is a member: what AuditService.get_user_logs reads."""
+        memberships = await ProjectService(self.db).list_user_projects_with_roles(user_id)
+        return await self._scopes(
+            [(project, role) for project, role in memberships if project_id is None or project.id == project_id]
+        )
+
+    async def _scopes(self, memberships) -> list[tuple[UUID, Optional[datetime], set[UUID]]]:
+        limits = PlanLimits(self.db)
+        return [
+            (project.id, await limits.audit_since(project.id), await hidden_ids(self.db, project.id, role))
+            for project, role in memberships
+        ]
+
     async def get_activity_stats(self, user_id: UUID, days: int, now: Optional[datetime] = None) -> list[dict]:
         now = now or datetime.now(timezone.utc)
         today = now.date()
         start_day = today - timedelta(days=days - 1)
-        memberships = await ProjectService(self.db).list_user_projects_with_roles(user_id)
-        project_ids = [project.id for project, _ in memberships]
+        scopes = await self.audit_scopes(user_id)
 
         buckets = {start_day + timedelta(days=i): {"changes": 0, "other": 0} for i in range(days)}
-        if project_ids:
+        if scopes:
             day = func.date(AuditLog.created_at)
             rows = (await self.db.execute(
                 select(day, AuditLog.action, func.count(AuditLog.id))
                 .where(
-                    AuditLog.project_id.in_(project_ids),
+                    visible_audit_condition(scopes),
                     AuditLog.created_at >= datetime.combine(start_day, datetime.min.time(), timezone.utc),
                 )
                 .group_by(day, AuditLog.action)

@@ -2,7 +2,11 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projetos",
+    "activity": "Atividade",
     "integrations": "Integrações",
+    "access": "Acessos",
+    "security": "Segurança",
+    "highFindings": "{count, plural, one {problema grave} other {problemas graves}}",
     "vault": "Cofre",
     "help": "Ajuda",
     "account": "Conta",
@@ -11,6 +15,163 @@
   },
   "layout": {
     "checkingSession": "Verificando sessão..."
+  },
+  "activityPage": {
+    "title": "Atividade",
+    "subtitle": "{total, plural, one {# evento nos seus projetos} other {# eventos nos seus projetos}}",
+    "exportCsv": "Exportar CSV",
+    "loadMore": "Carregar mais",
+    "loadError": "Não foi possível carregar a atividade.",
+    "retention": "Cada projeto mostra o histórico que o plano do dono guarda. O CSV leva só o que já está carregado na tela.",
+    "filters": {
+      "title": "Filtros",
+      "project": "Projeto",
+      "allProjects": "Todos os projetos",
+      "origin": "Origem",
+      "allOrigins": "Todas as origens",
+      "period": "Período",
+      "allTime": "Todo o histórico",
+      "lastDays": "Últimos {days} dias",
+      "action": "Ação",
+      "allActions": "Todas as ações"
+    },
+    "origins": {
+      "session": "Pessoas (login)",
+      "ci_session": "CI",
+      "api_key": "Chave de API"
+    },
+    "empty": {
+      "title": "Nenhuma atividade ainda",
+      "description": "Quando alguém criar um projeto, enviar segredos ou convidar a equipe, aparece aqui.",
+      "filteredTitle": "Nada com esses filtros",
+      "filteredDescription": "Tente outro projeto, origem ou período."
+    }
+  },
+  "accessPage": {
+    "title": "Acessos",
+    "subtitle": "Tokens de CI e chaves de API dos projetos em que você é dono ou admin.",
+    "loadError": "Não foi possível carregar as credenciais.",
+    "revokeError": "Não foi possível revogar a credencial.",
+    "filters": {
+      "title": "Filtros",
+      "kind": "Tipo",
+      "allKinds": "Todos os tipos",
+      "status": "Situação",
+      "allStatuses": "Todas",
+      "project": "Projeto",
+      "allProjects": "Todos os projetos"
+    },
+    "kinds": {
+      "ci_token": "Token de CI",
+      "api_key": "Chave de API"
+    },
+    "statuses": {
+      "active": "Ativa",
+      "expired": "Vencida",
+      "revoked": "Revogada"
+    },
+    "flags": {
+      "noExpiry": "Sem expiração",
+      "unused": "Sem uso há 30 dias"
+    },
+    "allEnvironments": "Todos os ambientes não restritos",
+    "lastUsed": "Último uso {when}",
+    "neverUsed": "Nunca usada",
+    "expires": "Vence em {when}",
+    "noExpiry": "Não vence",
+    "revoke": "Revogar",
+    "revokeLabel": "Revogar {name}",
+    "confirm": {
+      "title": "Revogar {name}?",
+      "description": "Quem usa essa credencial no projeto {project} perde o acesso na hora. Não dá para desfazer: depois é preciso criar outra."
+    },
+    "empty": {
+      "title": "Nenhuma credencial para gerenciar",
+      "description": "Aqui aparecem os tokens de CI e as chaves de API dos projetos em que você é dono ou admin. Crie um nas configurações do projeto ou pela CLI, dentro da pasta do projeto:",
+      "filteredTitle": "Nenhuma credencial com esses filtros"
+    }
+  },
+  "comparePage": {
+    "title": "Comparar ambientes",
+    "subtitle": "Veja quais chaves faltam em cada ambiente. Os nomes vêm do servidor; os valores só são comparados aqui no navegador.",
+    "loadError": "Não foi possível carregar os ambientes.",
+    "compareError": "Não foi possível decifrar os valores. Destrave o cofre de novo e tente outra vez.",
+    "envA": "Ambiente A",
+    "envB": "Ambiente B",
+    "sameEnv": "Escolha dois ambientes diferentes.",
+    "onlyIn": "Só em {env}",
+    "inBoth": "Nos dois",
+    "none": "Nenhuma",
+    "needTwo": {
+      "title": "É preciso ter dois ambientes",
+      "description": "Este projeto tem só um ambiente que você enxerga. Crie outro para comparar."
+    },
+    "values": {
+      "title": "Comparar valores",
+      "description": "Com o cofre destravado, o navegador baixa os dois ambientes cifrados, decifra aqui e diz se cada valor é igual ou diferente. Só aparece uma prévia mascarada; nenhum valor sai do navegador.",
+      "run": "Comparar valores",
+      "nothingInBoth": "Nenhuma chave existe nos dois ambientes.",
+      "key": "Chave",
+      "result": "Resultado",
+      "same": "Igual",
+      "different": "Diferente"
+    }
+  },
+  "securityPage": {
+    "title": "Segurança",
+    "subtitle": "Como estão a sua conta e os seus projetos, e o que fazer para melhorar.",
+    "loadError": "Não foi possível avaliar a segurança agora.",
+    "score": "Nota {score} de 100",
+    "allGood": "Nada a corrigir. Continue assim.",
+    "summary": "{count, plural, one {# ponto para corrigir} other {# pontos para corrigir}}",
+    "howScored": "Cada problema tira pontos uma vez: grave 30, médio 15, leve 5.",
+    "andMore": "e mais {count}",
+    "severity": {
+      "high": "Grave",
+      "medium": "Médio",
+      "low": "Leve"
+    },
+    "empty": {
+      "title": "Tudo em ordem",
+      "description": "2FA ligado, credenciais com prazo e segredos em dia."
+    },
+    "rules": {
+      "twoFactor": {
+        "title": "Autenticação 2FA desligada",
+        "body": "Sem o 2FA, quem descobrir a sua senha entra na conta e alcança todos os seus projetos.",
+        "action": "Ligar na conta"
+      },
+      "expiredSecret": {
+        "title": "{count, plural, one {# segredo vencido} other {# segredos vencidos}}",
+        "body": "A data de troca já passou. Troque o valor e defina um novo prazo.",
+        "action": "Ver segredos"
+      },
+      "credentialNoExpiry": {
+        "title": "{count, plural, one {# credencial sem expiração} other {# credenciais sem expiração}}",
+        "body": "Um token ou chave que não vence continua valendo para sempre se vazar.",
+        "action": "Ver acessos"
+      },
+      "credentialUnused": {
+        "title": "{count, plural, one {# credencial sem uso há 30 dias} other {# credenciais sem uso há 30 dias}}",
+        "body": "Credencial parada é acesso que ninguém vigia. Se não precisa mais, revogue.",
+        "action": "Ver acessos"
+      },
+      "notRotated": {
+        "title": "{count, plural, one {# segredo sem troca há 90 dias} other {# segredos sem troca há 90 dias}}",
+        "body": "Esses ambientes não recebem nenhum envio há 90 dias ou mais, então nenhum valor foi trocado. Troque os mais sensíveis.",
+        "action": "Ver projetos"
+      },
+      "tooManyManagers": {
+        "title": "{count, plural, one {# projeto com mais de 2 donos ou admins} other {# projetos com mais de 2 donos ou admins}}",
+        "body": "Quem é admin vê os ambientes restritos e gerencia credenciais. Deixe só quem precisa.",
+        "action": "Ver projetos"
+      },
+      "failingIntegration": {
+        "title": "{count, plural, one {# integração com erro} other {# integrações com erro}}",
+        "body": "A hospedagem não está recebendo as variáveis. Confira o token do provedor.",
+        "action": "Ver integrações"
+      }
+    }
   },
   "home": {
     "title": "Dashboard",
@@ -144,6 +305,9 @@
       "secrets": {
         "label": "Secrets"
       },
+      "compare": {
+        "label": "Comparar"
+      },
       "members": {
         "label": "Equipe"
       },
@@ -208,7 +372,16 @@
     "audit": "Auditoria",
     "settings": "Configurações",
     "close": "Fechar paleta de comandos",
-    "searchPlaceholder": "Buscar comandos...",
-    "empty": "Nenhum comando encontrado."
+    "searchPlaceholder": "Buscar telas, projetos, ambientes e secrets...",
+    "empty": "Nenhum comando encontrado.",
+    "title": "Busca rápida",
+    "results": "Resultados",
+    "compare": "Comparar ambientes",
+    "copyList": "Copiar comando: listar secrets",
+    "copyRun": "Copiar comando: rodar com os secrets",
+    "commandPlaceholder": "<comando>",
+    "projectHint": "Projeto",
+    "environmentHint": "Ambiente",
+    "secretHint": "Secret em {project}"
   }
 }

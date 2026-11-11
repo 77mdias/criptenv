@@ -2,7 +2,11 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Proyectos",
+    "activity": "Actividad",
     "integrations": "Integraciones",
+    "access": "Accesos",
+    "security": "Seguridad",
+    "highFindings": "{count, plural, one {problema grave} other {problemas graves}}",
     "vault": "Bóveda",
     "help": "Ayuda",
     "account": "Cuenta",
@@ -11,6 +15,163 @@
   },
   "layout": {
     "checkingSession": "Verificando sesión..."
+  },
+  "activityPage": {
+    "title": "Actividad",
+    "subtitle": "{total, plural, one {# evento en tus proyectos} other {# eventos en tus proyectos}}",
+    "exportCsv": "Exportar CSV",
+    "loadMore": "Cargar más",
+    "loadError": "No se pudo cargar la actividad.",
+    "retention": "Cada proyecto muestra el historial que guarda el plan de su dueño. El CSV lleva solo lo que ya está cargado en pantalla.",
+    "filters": {
+      "title": "Filtros",
+      "project": "Proyecto",
+      "allProjects": "Todos los proyectos",
+      "origin": "Origen",
+      "allOrigins": "Todos los orígenes",
+      "period": "Período",
+      "allTime": "Todo el historial",
+      "lastDays": "Últimos {days} días",
+      "action": "Acción",
+      "allActions": "Todas las acciones"
+    },
+    "origins": {
+      "session": "Personas (login)",
+      "ci_session": "CI",
+      "api_key": "Clave de API"
+    },
+    "empty": {
+      "title": "Todavía no hay actividad",
+      "description": "Cuando alguien cree un proyecto, envíe secretos o invite al equipo, aparece aquí.",
+      "filteredTitle": "Nada coincide con estos filtros",
+      "filteredDescription": "Prueba otro proyecto, origen o período."
+    }
+  },
+  "accessPage": {
+    "title": "Accesos",
+    "subtitle": "Tokens de CI y claves de API de los proyectos donde eres dueño o admin.",
+    "loadError": "No se pudieron cargar las credenciales.",
+    "revokeError": "No se pudo revocar la credencial.",
+    "filters": {
+      "title": "Filtros",
+      "kind": "Tipo",
+      "allKinds": "Todos los tipos",
+      "status": "Estado",
+      "allStatuses": "Todos",
+      "project": "Proyecto",
+      "allProjects": "Todos los proyectos"
+    },
+    "kinds": {
+      "ci_token": "Token de CI",
+      "api_key": "Clave de API"
+    },
+    "statuses": {
+      "active": "Activa",
+      "expired": "Vencida",
+      "revoked": "Revocada"
+    },
+    "flags": {
+      "noExpiry": "Sin vencimiento",
+      "unused": "Sin uso hace 30 días"
+    },
+    "allEnvironments": "Todos los entornos no restringidos",
+    "lastUsed": "Último uso {when}",
+    "neverUsed": "Nunca usada",
+    "expires": "Vence el {when}",
+    "noExpiry": "No vence",
+    "revoke": "Revocar",
+    "revokeLabel": "Revocar {name}",
+    "confirm": {
+      "title": "¿Revocar {name}?",
+      "description": "Lo que use esta credencial en el proyecto {project} pierde el acceso al instante. No se puede deshacer: después hay que crear otra."
+    },
+    "empty": {
+      "title": "Ninguna credencial para gestionar",
+      "description": "Aquí aparecen los tokens de CI y las claves de API de los proyectos donde eres dueño o admin. Crea uno en la configuración del proyecto o con la CLI, dentro de la carpeta del proyecto:",
+      "filteredTitle": "Ninguna credencial coincide con estos filtros"
+    }
+  },
+  "comparePage": {
+    "title": "Comparar entornos",
+    "subtitle": "Mira qué claves faltan en cada entorno. Los nombres vienen del servidor; los valores solo se comparan aquí en el navegador.",
+    "loadError": "No se pudieron cargar los entornos.",
+    "compareError": "No se pudieron descifrar los valores. Desbloquea la bóveda de nuevo e inténtalo otra vez.",
+    "envA": "Entorno A",
+    "envB": "Entorno B",
+    "sameEnv": "Elige dos entornos diferentes.",
+    "onlyIn": "Solo en {env}",
+    "inBoth": "En los dos",
+    "none": "Ninguna",
+    "needTwo": {
+      "title": "Hacen falta dos entornos",
+      "description": "Este proyecto tiene solo un entorno que puedes ver. Crea otro para comparar."
+    },
+    "values": {
+      "title": "Comparar valores",
+      "description": "Con la bóveda desbloqueada, el navegador descarga los dos entornos cifrados, los descifra aquí y dice si cada valor es igual o diferente. Solo se muestra una vista enmascarada; ningún valor sale del navegador.",
+      "run": "Comparar valores",
+      "nothingInBoth": "Ninguna clave existe en los dos entornos.",
+      "key": "Clave",
+      "result": "Resultado",
+      "same": "Igual",
+      "different": "Diferente"
+    }
+  },
+  "securityPage": {
+    "title": "Seguridad",
+    "subtitle": "Cómo están tu cuenta y tus proyectos, y qué hacer para mejorar.",
+    "loadError": "No se pudo evaluar la seguridad ahora.",
+    "score": "Nota {score} de 100",
+    "allGood": "Nada que corregir. Sigue así.",
+    "summary": "{count, plural, one {# punto por corregir} other {# puntos por corregir}}",
+    "howScored": "Cada problema resta puntos una vez: grave 30, medio 15, leve 5.",
+    "andMore": "y {count} más",
+    "severity": {
+      "high": "Grave",
+      "medium": "Medio",
+      "low": "Leve"
+    },
+    "empty": {
+      "title": "Todo en orden",
+      "description": "2FA activado, credenciales con vencimiento y secretos al día."
+    },
+    "rules": {
+      "twoFactor": {
+        "title": "Autenticación 2FA desactivada",
+        "body": "Sin el 2FA, quien descubra tu contraseña entra en la cuenta y llega a todos tus proyectos.",
+        "action": "Activarlo en la cuenta"
+      },
+      "expiredSecret": {
+        "title": "{count, plural, one {# secreto vencido} other {# secretos vencidos}}",
+        "body": "La fecha de cambio ya pasó. Cambia el valor y define una nueva fecha.",
+        "action": "Ver secretos"
+      },
+      "credentialNoExpiry": {
+        "title": "{count, plural, one {# credencial sin vencimiento} other {# credenciales sin vencimiento}}",
+        "body": "Un token o clave que no vence sigue valiendo para siempre si se filtra.",
+        "action": "Ver accesos"
+      },
+      "credentialUnused": {
+        "title": "{count, plural, one {# credencial sin uso hace 30 días} other {# credenciales sin uso hace 30 días}}",
+        "body": "Una credencial parada es un acceso que nadie vigila. Si ya no hace falta, revócala.",
+        "action": "Ver accesos"
+      },
+      "notRotated": {
+        "title": "{count, plural, one {# secreto sin cambio hace 90 días} other {# secretos sin cambio hace 90 días}}",
+        "body": "Estos entornos no reciben ningún envío hace 90 días o más, así que ningún valor cambió. Cambia los más sensibles.",
+        "action": "Ver proyectos"
+      },
+      "tooManyManagers": {
+        "title": "{count, plural, one {# proyecto con más de 2 dueños o admins} other {# proyectos con más de 2 dueños o admins}}",
+        "body": "Los admins ven los entornos restringidos y gestionan credenciales. Deja solo a quien lo necesita.",
+        "action": "Ver proyectos"
+      },
+      "failingIntegration": {
+        "title": "{count, plural, one {# integración con error} other {# integraciones con error}}",
+        "body": "El hosting no está recibiendo las variables. Revisa el token del proveedor.",
+        "action": "Ver integraciones"
+      }
+    }
   },
   "home": {
     "title": "Dashboard",
@@ -144,6 +305,9 @@
       "secrets": {
         "label": "Secrets"
       },
+      "compare": {
+        "label": "Comparar"
+      },
       "members": {
         "label": "Equipo"
       },
@@ -208,7 +372,16 @@
     "audit": "Auditoría",
     "settings": "Configuración",
     "close": "Cerrar paleta de comandos",
-    "searchPlaceholder": "Buscar comandos...",
-    "empty": "No se encontraron comandos."
+    "searchPlaceholder": "Buscar pantallas, proyectos, entornos y secrets...",
+    "empty": "No se encontraron comandos.",
+    "title": "Búsqueda rápida",
+    "results": "Resultados",
+    "compare": "Comparar entornos",
+    "copyList": "Copiar comando: listar secrets",
+    "copyRun": "Copiar comando: ejecutar con los secrets",
+    "commandPlaceholder": "<comando>",
+    "projectHint": "Proyecto",
+    "environmentHint": "Entorno",
+    "secretHint": "Secret en {project}"
   }
 }

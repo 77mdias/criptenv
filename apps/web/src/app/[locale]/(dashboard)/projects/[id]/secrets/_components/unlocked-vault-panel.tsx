@@ -9,6 +9,8 @@ import type { DecryptedSecret } from "@/components/shared/secret-row";
 interface UnlockedVaultPanelProps {
   secrets: DecryptedSecret[];
   environmentName: string;
+  /** CLI command shown when the environment has no secrets yet */
+  emptyCommand?: string;
   copiedKey: string | null;
   busy: boolean;
   canManageSecrets: boolean;
@@ -30,6 +32,7 @@ interface UnlockedVaultPanelProps {
 export function UnlockedVaultPanel({
   secrets,
   environmentName,
+  emptyCommand,
   copiedKey,
   busy,
   canManageSecrets,
@@ -76,6 +79,7 @@ export function UnlockedVaultPanel({
         <SecretsTable
           secrets={secrets}
           environmentName={environmentName}
+          emptyCommand={emptyCommand}
           copiedKey={copiedKey}
           canManageSecrets={canManageSecrets}
           selectedKeys={selectedKeys}

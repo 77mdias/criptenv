@@ -11,7 +11,7 @@ import { ActivityChart } from "@/components/dashboard/activity-chart"
 import { AttentionCard } from "@/components/dashboard/attention-card"
 import { OnboardingChecklist } from "@/components/dashboard/onboarding-checklist"
 import { ProjectGrid } from "@/components/dashboard/project-grid"
-import { auditApi, meApi, peekCached } from "@/lib/api"
+import { meApi, peekCached } from "@/lib/api"
 import { useAuditDescriber } from "@/lib/audit/describe"
 import { buildAttentionItems } from "@/lib/dashboard/attention"
 import { onboardingSteps } from "@/lib/dashboard/onboarding"
@@ -76,23 +76,15 @@ export default function DashboardPage() {
 
     async function fetchDashboardData() {
       try {
-        const [overviewData, stats] = await Promise.all([meApi.overview(), meApi.activityStats(30)])
+        const [overviewData, stats, recent] = await Promise.all([
+          meApi.overview(),
+          meApi.activityStats(30),
+          meApi.audit({ per_page: 8 }),
+        ])
         if (cancelled) return
         setOverview(overviewData)
         setDays(stats)
-
-        // shortcut: fan-out over the 10 most active projects; replaced by GET /me/audit in UX.5a
-        const recent = [...overviewData.projects]
-          .sort((a, b) => (b.last_activity_at ?? "").localeCompare(a.last_activity_at ?? ""))
-          .slice(0, 10)
-        const logPages = await Promise.all(recent.map((project) => auditApi.getLogs(project.id, { per_page: 5 })))
-        if (cancelled) return
-        setAuditLogs(
-          logPages
-            .flatMap((page) => page.logs)
-            .sort((a, b) => b.created_at.localeCompare(a.created_at))
-            .slice(0, 8)
-        )
+        setAuditLogs(recent.logs)
       } catch (err) {
         if (!cancelled) setError(err instanceof Error ? err.message : t("loadError"))
       } finally {

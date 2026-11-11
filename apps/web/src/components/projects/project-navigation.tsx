@@ -4,6 +4,7 @@ import { useTranslations } from "next-intl"
 import { Link } from "@/i18n/navigation";
 import { usePathname } from "@/i18n/navigation";
 import {
+  GitCompareArrows,
   KeyRound,
   LayoutGrid,
   ScrollText,
@@ -14,7 +15,7 @@ import {
 import { canManageProject, type ProjectRole } from "@/lib/project-permissions"
 import { cn } from "@/lib/utils"
 
-type ProjectNavKey = "overview" | "secrets" | "members" | "audit" | "settings"
+type ProjectNavKey = "overview" | "secrets" | "compare" | "members" | "audit" | "settings"
 
 interface ProjectNavDefinition {
   key: ProjectNavKey
@@ -36,6 +37,11 @@ const projectNavDefinitions: ProjectNavDefinition[] = [
     key: "secrets",
     icon: KeyRound,
     segment: "secrets",
+  },
+  {
+    key: "compare",
+    icon: GitCompareArrows,
+    segment: "compare",
   },
   {
     key: "members",

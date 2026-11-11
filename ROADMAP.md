@@ -18,7 +18,7 @@
                ✅ DONE
 ```
 
-> **Status**: Phase 1 ✅ COMPLETE (April 2026). Phase 2 ✅ COMPLETE (April 2026). Phase 3 🔄 IN PROGRESS (~60%). Phase 3.5 (Authenticated UX) 📋 PLANNED. Phase 4 📋 PLANNED.
+> **Status**: Phase 1 ✅ COMPLETE (April 2026). Phase 2 ✅ COMPLETE (April 2026). Phase 3 🔄 IN PROGRESS (~60%). Phase 3.5 (Authenticated UX) ✅ COMPLETE (November 2026). Phase 4 📋 PLANNED.
 
 ---
 
@@ -238,7 +238,7 @@ GET    /api/v1/ci/secrets                  # CI session auth ✅
 
 ## Phase 3.5: Authenticated Experience (UX)
 
-**Timeline**: 2026 Q4 (Planned)
+**Timeline**: 2026 Q4 (✅ complete, 2026-11-11)
 **Goal**: Turn the logged-in area into a command center: every screen shows the real state of the user's projects and the next action, reusing data the API already exposes. Zero-knowledge stays intact (metadata only; value comparison client-side).
 
 **Spec:** `docs/superpowers/specs/2026-10-26-authenticated-experience-design.md` · **Plan:** `docs/superpowers/plans/2026-10-26-authenticated-experience-plan.md`
@@ -251,12 +251,14 @@ GET    /api/v1/ci/secrets                  # CI session auth ✅
 | **UX.2**: Command-center dashboard | Attention card, onboarding checklist, project grid, 30-day activity chart | `GET /api/v1/me/overview`, `GET /api/v1/me/activity-stats` | ✅ Implemented |
 | **UX.3**: Project overview | Key × environment matrix, "How to use" snippets, project summary | `GET /projects/{id}/secrets/matrix` | ✅ Implemented |
 | **UX.4**: Secret detail | Side sheet with rotation history, expiration, rotate/copy; `?key=` deep link | — (rotation history endpoint) | ✅ Implemented |
-| **UX.5**: New screens | Activity, Security posture, Access (tokens + API keys), Compare environments | `GET /api/v1/me/audit`, `GET /api/v1/me/credentials` | 📋 Planned |
-| **UX.6**: Polish | Cmd/Ctrl+K palette, empty states, skeletons | — | 📋 Planned |
+| **UX.5**: New screens | Activity, Security posture, Access (tokens + API keys), Compare environments | `GET /api/v1/me/audit`, `GET /api/v1/me/credentials` | ✅ Implemented (plan `docs/superpowers/plans/2026-11-11-ux5-ux6.md`) |
+| **UX.6**: Polish | Cmd/Ctrl+K palette, empty states, skeletons | — | ✅ Implemented |
 
 Order: UX.1 → (UX.2 ∥ UX.3 ∥ UX.5a) → UX.4 → UX.5b/c/d; UX.6 in parallel after UX.1.
 
-**Subscription plans (Free / Pro / Max):** spec `docs/superpowers/specs/2026-11-09-subscription-plans-design.md`. Delivery 1 (plans and limits, plan `docs/superpowers/plans/2026-11-09-plan-limits.md`) ✅ merged 2026-11-09; delivery 2 (automatic sync, redeploy, CI sync; plan `docs/superpowers/plans/2026-11-10-max-sync-features.md`) ✅ merged 2026-11-10; delivery 3 (billing through Mercado Pago, plan `docs/superpowers/plans/2026-11-10-billing.md`) 🔄 in review. Billing ships off (`BILLING_ENABLED=false`) until the manual test in `deploy/vps/README.md` passes.
+**Subscription plans (Free / Pro / Max):** spec `docs/superpowers/specs/2026-11-09-subscription-plans-design.md`. Delivery 1 (plans and limits, plan `docs/superpowers/plans/2026-11-09-plan-limits.md`) ✅ merged 2026-11-09; delivery 2 (automatic sync, redeploy, CI sync; plan `docs/superpowers/plans/2026-11-10-max-sync-features.md`) ✅ merged 2026-11-10; delivery 3 (billing through Mercado Pago, plan `docs/superpowers/plans/2026-11-10-billing.md`) ✅ merged 2026-11-10 (#86). Billing ships off (`BILLING_ENABLED=false`) until the manual test in `deploy/vps/README.md` passes.
+
+**After the plans (2026-11-10/11):** extra and restricted environments, 3/5/7 per plan (#87); read-only API keys (#88); login lasts 20 days without use (#89); landing section "one access per place" and docs refresh (#90).
 
 ---
 
