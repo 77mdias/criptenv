@@ -7,6 +7,21 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Ambientes extras e ambientes restritos — 2026-11-10
+
+Desenho em `docs/superpowers/specs/2026-11-10-restricted-environments-design.md`, plano em `docs/superpowers/plans/2026-11-10-restricted-environments.md`.
+
+- **Limite de ambientes por projeto mudou: Free 3, Pro 5, Max 7.** Antes, Pro e Max eram sem limite. `unlimited` continua sem limite. Ambiente arquivado não conta. Acima do limite nada é apagado: só não dá para criar outro (402).
+- **Criar ambientes pelo web.** Configurações do projeto ganham a seção "Ambientes": criar, restringir, abrir ao time e arquivar, com o uso do plano ("3 de 5 ambientes"). Antes só a API e a CLI criavam.
+- **Ambiente restrito.** Um ambiente extra pode ser marcado como restrito: só o criador do projeto e os administradores o leem, alteram e enxergam. Para desenvolvedores e leitores ele não existe: some das listas e pedir por ele responde 404. `production`, `staging`, `development` e o ambiente padrão do projeto não podem ser restritos (422), e um ambiente restrito não pode virar o padrão.
+- **Onde a restrição vale:** lista e detalhe de ambientes, cofre (baixar e versão), rotação e expiração, lista de segredos expirando, matriz de segredos, visão geral (`/me/overview`), auditoria do projeto, vínculos de envio automático nas integrações e lista de tokens de CI.
+- **Tokens de CI e chaves de API: escopo vazio passa a significar "todos os ambientes não restritos".** Um ambiente restrito só é alcançado por um token ou uma chave presos a ele pelo nome. Uma chave de API continua agindo como quem a criou: se essa pessoa deixa de ser administradora, a chave deixa de alcançar o ambiente.
+- **Sync com a hospedagem:** o sync é endereçado a um destino do provedor, não a um ambiente do CriptEnv. Quando o destino está vinculado (envio automático) a um ambiente restrito, uma sessão de CI só consegue ler ou sobrescrever esse destino se o token foi criado para aquele ambiente (senão 404), e o evento de auditoria desse sync fica escondido de quem não alcança o ambiente. Sem vínculo, o servidor não tem como saber de que ambiente vieram as variáveis enviadas.
+- CLI: `criptenv env create NOME --restricted`, `criptenv env update ID --restricted | --open`, e `criptenv env list` marca os restritos.
+- API: campo `restricted` em criar, alterar e na resposta de ambiente. Migração `20261110_0021` (coluna `environments.restricted`; os ambientes que já existem ficam abertos).
+- Limites conhecidos: restringir um ambiente que estava aberto não tira de ninguém o que já foi baixado (a tela avisa e recomenda rotacionar); a senha do cofre continua uma por projeto, a proteção é o servidor não entregar os dados; o nome do ambiente pode aparecer em eventos de auditoria de tokens e chaves presos a ele; a contagem de atividade do painel soma todos os ambientes.
+- Testes: a suíte da API deixa de depender do `.env` local para saber se a cobrança está ligada.
+
 ### Cobrança: assinatura dos planos Pro e Max pelo Mercado Pago — 2026-11-10
 
 Terceira e última entrega dos planos de assinatura (`docs/superpowers/specs/2026-11-09-subscription-plans-design.md`, plano em `docs/superpowers/plans/2026-11-10-billing.md`).

@@ -23,6 +23,7 @@ from app.middleware.api_key_auth import (
 )
 from app.models.user import User
 from app.models.environment import Environment
+from app.services.environment_access import sees_restricted
 from sqlalchemy import select
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/environments/{environment_id}/vault", tags=["Vault"])
@@ -102,7 +103,7 @@ async def _authenticate_vault_write(
         environment = await _get_environment_or_404(db, project_uuid, env_uuid)
         ci_session = await validate_ci_session(token, project_uuid)
         require_ci_session_scope(ci_session, "write:secrets")
-        require_ci_session_environment(ci_session, environment.name)
+        require_ci_session_environment(ci_session, environment.name, restricted=environment.restricted)
         return None, ci_session, environment
 
     current_user = await _resolve_current_user(request, db)
@@ -126,7 +127,7 @@ async def _authenticate_vault_read(
     environment = await _get_environment_or_404(db, project_uuid, env_uuid)
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
         require_api_key_scope(auth_context.api_key, "read:secrets")
-        require_api_key_environment(auth_context.api_key, environment.name)
+        require_api_key_environment(auth_context.api_key, environment.name, restricted=environment.restricted)
     return auth_context.user, environment
 
 
@@ -251,6 +252,9 @@ async def pull_vault(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
+    if _environment.restricted and not sees_restricted(member.role):
+        # For anyone but the owner and admins a restricted environment does not exist.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environment not found")
 
     try:
         blobs, version = await vault_service.pull_blobs(
@@ -301,6 +305,9 @@ async def get_vault_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
+    if _environment.restricted and not sees_restricted(member.role):
+        # For anyone but the owner and admins a restricted environment does not exist.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environment not found")
 
     try:
         version = await vault_service.get_environment_version(project_uuid, env_uuid)

@@ -339,9 +339,12 @@ def require_ci_session_scope(ci_session: dict, required_scope: str) -> None:
         )
 
 
-def require_ci_session_environment(ci_session: dict, environment: str) -> None:
+def require_ci_session_environment(ci_session: dict, environment: str, restricted: bool = False) -> None:
     """Raise 403 when a CI session is restricted to another environment."""
     environment_scope = ci_session.get("environment_scope")
+    if restricted and environment_scope != environment:
+        # A restricted environment is reached only by a credential scoped to it; for any other it does not exist.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environment not found")
     if environment_scope is None:
         return
     if environment_scope != environment:

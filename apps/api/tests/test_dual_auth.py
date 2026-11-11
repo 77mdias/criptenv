@@ -81,6 +81,7 @@ def mock_environment(mock_project):
     env.is_default = True
     env.secrets_version = 1
     env.archived = False
+    env.restricted = False
     env.archived_at = None
     env.created_at = datetime.now(timezone.utc)
     env.updated_at = datetime.now(timezone.utc)

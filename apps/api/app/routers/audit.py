@@ -1,6 +1,8 @@
 from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.ext.asyncio import AsyncSession
 from uuid import UUID
+
+from app.services.environment_access import hidden_ids
 from typing import Optional
 
 from app.database import get_db
@@ -77,6 +79,7 @@ async def list_audit_logs(
         action=action,
         resource_type=resource_type,
         since=await PlanLimits(db).audit_since(project_uuid),
+        hidden_resource_ids=await hidden_ids(db, project_uuid, member.role),
     )
 
     actors = await audit_service.get_actors({log.user_id for log in logs if log.user_id})

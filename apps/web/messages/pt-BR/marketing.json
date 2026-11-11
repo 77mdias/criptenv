@@ -229,8 +229,8 @@
           "environments": {
             "label": "Ambientes por projeto",
             "free": "3",
-            "pro": "sem limite",
-            "max": "sem limite"
+            "pro": "5",
+            "max": "7"
           },
           "members": {
             "label": "Membros por projeto",

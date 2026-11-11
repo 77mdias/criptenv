@@ -34,11 +34,13 @@ def env_list(project_id: str | None):
         click.echo("No environments found.")
         return
 
-    click.echo(f"{'NAME':<20} {'ID':<38} {'DEFAULT':<10}")
-    click.echo("─" * 68)
+    click.echo(f"{'NAME':<20} {'ID':<38} {'DEFAULT':<10} {'ACCESS':<10}")
+    click.echo("─" * 80)
     for env in environments:
         is_default = "✓" if env.get("is_default") else ""
-        click.echo(f"{env['name']:<20} {env['id']:<38} {is_default:<10}")
+        # Restricted: only the project's owner and admins reach it (and only they see it listed).
+        access = "restricted" if env.get("restricted") else ""
+        click.echo(f"{env['name']:<20} {env['id']:<38} {is_default:<10} {access:<10}")
 
     click.echo("")
     click.echo(f"Total: {len(environments)} environment(s)")
@@ -48,24 +50,31 @@ def env_list(project_id: str | None):
 @click.argument("name")
 @click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--display-name", "-d", default=None, help="Human-readable display name")
-def env_create(name: str, project_id: str | None, display_name: str | None):
+@click.option("--restricted", is_flag=True, help="Only the project's owner and admins can see and read it")
+def env_create(name: str, project_id: str | None, display_name: str | None, restricted: bool):
     """Create a new environment.
 
     \b
     Examples:
         criptenv env create staging -p <project-id>
         criptenv env create production -p <project-id> -d "Production Environment"
+        criptenv env create db-admin --restricted
     """
     with cli_context(require_auth=True) as (db, _master_key, client):
         try:
             resolved_project_id = resolve_project_id(db, project_id, client)
-            result = run_async(client.create_environment(resolved_project_id, name, display_name))
+            result = run_async(
+                client.create_environment(resolved_project_id, name, display_name, restricted=restricted)
+            )
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
             raise SystemExit(1)
 
     click.echo(f"✓ Created environment '{result.get('name', name)}'")
     click.echo(f"  ID: {result.get('id', 'unknown')}")
+    if restricted:
+        click.echo("  Restricted: only the project's owner and admins reach it.")
+        click.echo("  CI tokens and API keys reach it only when created for this environment.")
 
 
 @env_group.command("update")
@@ -73,7 +82,11 @@ def env_create(name: str, project_id: str | None, display_name: str | None):
 @click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--name", "-n", default=None, help="New environment name")
 @click.option("--display-name", "-d", default=None, help="New display name")
-def env_update(env_id: str, project_id: str | None, name: str | None, display_name: str | None):
+@click.option("--restricted", "restrict", is_flag=True, help="Restrict it to the project's owner and admins")
+@click.option("--open", "open_", is_flag=True, help="Open a restricted environment to the whole team")
+def env_update(
+    env_id: str, project_id: str | None, name: str | None, display_name: str | None, restrict: bool, open_: bool,
+):
     """Update an environment.
 
     \b
@@ -81,14 +94,19 @@ def env_update(env_id: str, project_id: str | None, name: str | None, display_na
         criptenv env update <env-id> -p <project-id> --name "new-name"
         criptenv env update <env-id> -p <project-id> -d "New Display Name"
     """
-    if not name and not display_name:
-        click.echo("Error: Provide at least one of --name or --display-name", err=True)
+    if restrict and open_:
+        raise click.UsageError("Use either --restricted or --open, not both")
+    restricted = True if restrict else False if open_ else None
+    if not name and not display_name and restricted is None:
+        click.echo("Error: Provide at least one of --name, --display-name, --restricted or --open", err=True)
         raise SystemExit(1)
 
     with cli_context(require_auth=True) as (db, _master_key, client):
         try:
             resolved_project_id = resolve_project_id(db, project_id, client)
-            result = run_async(client.update_environment(resolved_project_id, env_id, name=name, display_name=display_name))
+            result = run_async(client.update_environment(
+                resolved_project_id, env_id, name=name, display_name=display_name, restricted=restricted,
+            ))
         except Exception as e:
             click.echo(f"Error: {e}", err=True)
             raise SystemExit(1)

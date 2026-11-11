@@ -100,6 +100,8 @@ export interface Environment {
   name: string;
   display_name: string | null;
   is_default?: boolean;
+  /** Only the project's owner and admins reach it; nobody else even sees it listed. */
+  restricted?: boolean;
   secrets_count?: number;
   secrets_version?: number;
   created_at: string;
@@ -263,6 +265,8 @@ export interface VaultRekeyRequest {
 export interface CreateEnvironmentRequest {
   name: string;
   display_name?: string;
+  /** Not for production, staging, development or the project's default environment (422). */
+  restricted?: boolean;
 }
 
 export interface UpdateMemberRequest {

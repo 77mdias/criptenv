@@ -654,6 +654,7 @@ class TestRotationEnvironmentScoping:
 
         environment = MagicMock()
         environment.archived = False
+        environment.restricted = False
         result = MagicMock()
         result.scalar_one_or_none.return_value = environment
         db = MagicMock()

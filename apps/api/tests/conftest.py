@@ -12,6 +12,9 @@ os.environ.setdefault("INTEGRATION_CONFIG_SECRET", "test-integration-config-secr
 os.environ.setdefault("MERCADO_PAGO_ACCESS_TOKEN", "TEST-access-token")
 os.environ.setdefault("MERCADO_PAGO_WEBHOOK_SECRET", "test-webhook-secret")
 os.environ["DEBUG"] = "true"
+# Billing is off in tests unless a test turns it on: a developer's local .env must not decide that.
+os.environ["BILLING_ENABLED"] = "false"
+os.environ["BILLING_NOTIFY_EMAIL"] = ""
 
 
 import pytest  # noqa: E402

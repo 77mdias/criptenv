@@ -279,12 +279,14 @@ class CriptEnvClient:
         return resp.json()
 
     async def create_environment(
-        self, project_id: str, name: str, display_name: str | None = None
+        self, project_id: str, name: str, display_name: str | None = None, restricted: bool = False
     ) -> dict[str, Any]:
-        """POST /api/v1/projects/{id}/environments"""
+        """POST /api/v1/projects/{id}/environments. `restricted`: only the project's owner and admins reach it."""
         payload: dict[str, Any] = {"name": name}
         if display_name:
             payload["display_name"] = display_name
+        if restricted:
+            payload["restricted"] = True
         resp = await self._request(
             "POST", f"/api/v1/projects/{project_id}/environments", json=payload
         )
@@ -756,13 +758,16 @@ class CriptEnvClient:
         env_id: str,
         name: str | None = None,
         display_name: str | None = None,
+        restricted: bool | None = None,
     ) -> dict[str, Any]:
-        """PATCH /api/v1/projects/{id}/environments/{eid}"""
+        """PATCH /api/v1/projects/{id}/environments/{eid}. `restricted`: None leaves it as it is."""
         payload: dict[str, Any] = {}
         if name:
             payload["name"] = name
         if display_name:
             payload["display_name"] = display_name
+        if restricted is not None:
+            payload["restricted"] = restricted
         resp = await self._request(
             "PATCH",
             f"/api/v1/projects/{project_id}/environments/{env_id}",

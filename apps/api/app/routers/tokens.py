@@ -15,6 +15,8 @@ from app.models.member import CIToken
 
 from sqlalchemy import select, or_
 
+from app.services.environment_access import hidden_names
+
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/tokens", tags=["CI Tokens"])
 
@@ -153,7 +155,9 @@ async def list_tokens(
     query = query.order_by(CIToken.created_at.desc())
     
     result = await db.execute(query)
-    tokens = list(result.scalars().all())
+    # A token scoped to a restricted environment names it: hidden from whoever does not reach it.
+    hidden = await hidden_names(db, project_uuid, member.role)
+    tokens = [token for token in result.scalars().all() if token.environment_scope not in hidden]
 
     return CITokenListResponse(
         tokens=[CITokenResponse.model_validate(_force_load_ci_token(t)) for t in tokens],

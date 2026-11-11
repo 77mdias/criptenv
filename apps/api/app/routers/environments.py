@@ -8,6 +8,7 @@ from app.database import get_db
 from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
+from app.services.environment_access import credential_reaches, restriction_error, sees_restricted
 from app.schemas.environment import EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse, EnvironmentListResponse
 from app.middleware.auth import get_current_user, get_current_auth_context, AuthContext
 from app.middleware.api_key_auth import require_api_key_environment, require_api_key_project
@@ -32,7 +33,15 @@ def _force_load_environment(env):
     _ = env.archived_at
     _ = env.created_at
     _ = env.updated_at
+    _ = env.restricted
     return env
+
+
+def _refuse_bad_restriction(name: str, *, is_default: bool, restricted: bool) -> None:
+    """422 when the environment may not be restricted (a seeded one, or the project's default)."""
+    error = restriction_error(name, is_default=is_default, restricted=restricted)
+    if error:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=error)
 
 
 @router.post("", response_model=EnvironmentResponse, status_code=status.HTTP_201_CREATED)
@@ -73,6 +82,8 @@ async def create_environment(
             detail=f"Environment '{payload.name}' already exists"
         )
 
+    _refuse_bad_restriction(payload.name, is_default=payload.is_default, restricted=payload.restricted)
+
     await PlanLimits(db).check_environments(project_uuid)
 
     environment = Environment(
@@ -81,6 +92,7 @@ async def create_environment(
         name=payload.name,
         display_name=payload.display_name,
         is_default=payload.is_default,
+        restricted=payload.restricted,
         secrets_version=0,
         archived=False,
         archived_at=None,
@@ -134,11 +146,14 @@ async def list_environments(
         .order_by(Environment.is_default.desc(), Environment.name)
     )
     environments = [env for env in result.scalars().all() if not getattr(env, "archived", False)]
+    if not sees_restricted(member.role):
+        # For anyone but the owner and admins a restricted environment does not exist.
+        environments = [env for env in environments if not env.restricted]
     environment_scope = None
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
         environment_scope = getattr(auth_context.api_key, "environment_scope", None)
-        if environment_scope is not None:
-            environments = [env for env in environments if env.name == environment_scope]
+        # No scope = every open environment; a restricted one only for a key scoped to it.
+        environments = [env for env in environments if credential_reaches(env, environment_scope)]
 
     return EnvironmentListResponse(
         environments=[EnvironmentResponse.model_validate(_force_load_environment(e)) for e in environments],
@@ -188,13 +203,13 @@ async def get_environment(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found"
         )
-    if getattr(environment, "archived", False):
+    if getattr(environment, "archived", False) or (environment.restricted and not sees_restricted(member.role)):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found"
         )
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
-        require_api_key_environment(auth_context.api_key, environment.name)
+        require_api_key_environment(auth_context.api_key, environment.name, restricted=environment.restricted)
 
     return EnvironmentResponse.model_validate(_force_load_environment(environment))
 
@@ -246,10 +261,16 @@ async def update_environment(
             detail="Environment not found"
         )
 
+    # Checked on what the environment will be after this change, so neither order of the two
+    # fields can leave a restricted default behind.
+    is_default = environment.is_default if payload.is_default is None else payload.is_default
+    restricted = environment.restricted if payload.restricted is None else payload.restricted
+    _refuse_bad_restriction(environment.name, is_default=bool(is_default), restricted=bool(restricted))
+
     if payload.display_name is not None:
         environment.display_name = payload.display_name
-    if payload.is_default is not None:
-        environment.is_default = payload.is_default
+    environment.is_default = is_default
+    environment.restricted = restricted
 
     await db.flush()
     await db.refresh(environment)

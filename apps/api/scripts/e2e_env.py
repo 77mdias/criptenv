@@ -21,6 +21,10 @@ def load_e2e_env() -> Path:
         key, value = line.split("=", 1)
         os.environ[key.strip()] = value.strip().strip("'\"")
 
+    # The E2E stack never bills: without this, a developer's own .env (also read by the settings)
+    # could switch billing on and change what the specs see.
+    os.environ.setdefault("BILLING_ENABLED", "false")
+
     database_url = os.environ.get("DATABASE_URL", "")
     _assert_safe_database_url(database_url)
     return env_path

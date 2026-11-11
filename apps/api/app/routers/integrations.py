@@ -2,6 +2,8 @@
 
 from typing import Annotated, Optional
 from uuid import UUID
+
+from app.services.environment_access import hidden_ids, hidden_ids_for_credential, restricted_ids
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -121,6 +123,24 @@ class SyncResponse(BaseModel):
     recreated: Optional[list[str]] = None
     # Push only: the provider will get a new deploy about a minute after the last push.
     deploy_scheduled: bool = False
+
+
+async def _hidden_environment_ids(db, project_service, project_uuid, user, ci_session) -> set[UUID]:
+    """Restricted environments whose bindings the caller must not see."""
+    if user is not None:
+        member = await project_service.check_user_access(user.id, project_uuid)
+        return await hidden_ids(db, project_uuid, member.role if member else None)
+    # A CI session: every restricted environment, except the one it is scoped to.
+    return await hidden_ids_for_credential(db, project_uuid, (ci_session or {}).get("environment_scope"))
+
+
+def _integration_response(integration, hidden: set[UUID]) -> "IntegrationResponse":
+    """The response without the bindings of environments the caller does not reach."""
+    response = IntegrationResponse.model_validate(_force_load_integration(integration))
+    response.auto_sync_targets = {
+        env_id: target for env_id, target in response.auto_sync_targets.items() if UUID(env_id) not in hidden
+    }
+    return response
 
 
 def _force_load_integration(i):
@@ -290,16 +310,14 @@ async def list_integrations(
             detail="Invalid project ID"
         )
     
-    await _authenticate_integration_read_or_ci(project_service, request, db, project_uuid)
-    
+    user, ci_session = await _authenticate_integration_read_or_ci(project_service, request, db, project_uuid)
+    hidden = await _hidden_environment_ids(db, project_service, project_uuid, user, ci_session)
+
     integrations = await integration_service.list_integrations(project_uuid)
     providers = integration_service.get_available_providers()
-    
+
     return IntegrationListResponse(
-        integrations=[
-            IntegrationResponse.model_validate(_force_load_integration(i))
-            for i in integrations
-        ],
+        integrations=[_integration_response(i, hidden) for i in integrations],
         total=len(integrations),
         available_providers=providers,
         features=sorted((await PlanLimits(db).owner_plan(project_uuid)).features),
@@ -343,7 +361,7 @@ async def get_integration(
             detail="Integration not found"
         )
     
-    return IntegrationResponse.model_validate(_force_load_integration(integration))
+    return _integration_response(integration, await hidden_ids(db, project_uuid, member.role))
 
 
 @router.patch("/{integration_id}", response_model=IntegrationResponse)
@@ -530,6 +548,19 @@ async def sync_integration(
         project_uuid,
     )
     
+    # The sync is addressed to a provider target, not to a CriptEnv environment. What ties the two is the
+    # binding: a target bound to a restricted environment holds that environment's secrets.
+    integration = await integration_service.get_integration(integration_uuid, project_id=project_uuid)
+    bound_restricted = {
+        UUID(env_id) for env_id, target in ((integration.auto_sync_targets or {}) if integration else {}).items()
+        if target == payload.environment
+    } & await restricted_ids(db, project_uuid)
+    if ci_session and bound_restricted & await hidden_ids_for_credential(
+        db, project_uuid, ci_session.get("environment_scope")
+    ):
+        # Only a token created for that environment may read or overwrite its target at the provider.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Integration not found")
+
     limits = PlanLimits(db)
     if payload.delete_keys:
         await limits.require_feature(project_uuid, AUTO_SYNC)
@@ -558,10 +589,13 @@ async def sync_integration(
         await audit_service.log(
             action=f"integration.synced.{payload.direction}",
             resource_type="integration",
-            resource_id=integration_uuid,
+            # Filed under the restricted environment when the target is bound to one, so the audit list
+            # hides it (count and key names) from whoever does not reach that environment.
+            resource_id=next(iter(bound_restricted), integration_uuid),
             user_id=current_user.id if current_user else None,
             project_id=project_uuid,
             metadata={
+                "integration_id": str(integration_uuid),
                 "direction": payload.direction,
                 "environment": payload.environment,
                 "synced_count": synced_count,

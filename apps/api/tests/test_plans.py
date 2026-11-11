@@ -19,8 +19,8 @@ _KEYS = [
 # The table in docs/superpowers/specs/2026-11-09-subscription-plans-design.md.
 LIMITS = {
     "free": dict(zip(_KEYS, [3, 3, 3, 1, 7, 120, 10])),
-    "pro": dict(zip(_KEYS, [None, None, 10, None, 30, None, None])),
-    "max": dict(zip(_KEYS, [None, None, 25, None, 90, None, None])),
+    "pro": dict(zip(_KEYS, [None, 5, 10, None, 30, None, None])),
+    "max": dict(zip(_KEYS, [None, 7, 25, None, 90, None, None])),
     "unlimited": dict.fromkeys(_KEYS),
 }
 SYNC_FEATURES = sorted([AUTO_SYNC, SYNC_REDEPLOY, CI_SYNC])

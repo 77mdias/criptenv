@@ -212,5 +212,36 @@
       "remove": "Remove configuration",
       "removed": "Webhook configuration removed."
     }
+  },
+  "environments": {
+    "title": "Environments",
+    "description": "Separate variables by stage or by risk. A restricted environment is reached only by the project's creator and its admins.",
+    "default": "Default",
+    "restricted": "Restricted to admins",
+    "name": "Name",
+    "nameHint": "Lowercase letters, numbers and hyphens. It cannot be changed later.",
+    "displayName": "Display name",
+    "restrictedHint": "Developers and viewers neither see nor read this environment. CI tokens and API keys only reach it when created for it.",
+    "create": "Create environment",
+    "restrict": "Restrict",
+    "open": "Open to the team",
+    "archive": "Archive",
+    "restrictTitle": "Restrict {name}?",
+    "restrictBody": "Only the project's creator and admins will see and read this environment. What was already downloaded does not come back: if someone outside already read these variables, rotate them. CI tokens and API keys already created for this environment keep their access.",
+    "archiveTitle": "Archive {name}?",
+    "archiveBody": "The variables of this environment stop being accessible and the name cannot be reused. This cannot be undone from the screen.",
+    "errors": {
+      "load": "Could not load the environments.",
+      "name": "Use only lowercase letters, numbers and hyphens in the name.",
+      "limit": "The project has reached the plan's environment limit.",
+      "conflict": "An environment with this name already exists (archived ones count too).",
+      "invalid": "This environment cannot be restricted.",
+      "generic": "Something went wrong. Try again."
+    },
+    "rename": "Rename",
+    "save": "Save",
+    "renameLabel": "Display name of {name}",
+    "openTitle": "Open {name} to the team?",
+    "openBody": "The whole project team will see and read this environment, and CI tokens and API keys with no environment set will reach it."
   }
 }

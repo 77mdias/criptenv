@@ -2,7 +2,7 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID, uuid4
 
-from sqlalchemy import select, func
+from sqlalchemy import select, func, or_
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.audit import AuditLog
@@ -49,12 +49,17 @@ class AuditService:
         action: Optional[str] = None,
         resource_type: Optional[str] = None,
         since: Optional[datetime] = None,
+        hidden_resource_ids: Optional[set[UUID]] = None,
     ) -> tuple[list[AuditLog], int]:
-        """`since` is the plan's history window (PlanLimits.audit_since): older rows are hidden, not deleted."""
+        """`since` is the plan's history window (PlanLimits.audit_since): older rows are hidden, not deleted.
+        `hidden_resource_ids`: restricted environments the caller does not reach; their events are left out
+        in the query itself, so the page count stays right."""
         filters = build_audit_filter_strategies(action, resource_type)
         in_window = [AuditLog.project_id == project_id]
         if since is not None:
             in_window.append(AuditLog.created_at >= since)
+        if hidden_resource_ids:
+            in_window.append(or_(AuditLog.resource_id.is_(None), AuditLog.resource_id.notin_(hidden_resource_ids)))
         query = select(AuditLog).where(*in_window)
         query = apply_audit_filters(query, filters)
 

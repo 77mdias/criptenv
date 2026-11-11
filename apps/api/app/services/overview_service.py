@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.api_key import APIKey
 from app.models.audit import AuditLog
 from app.models.environment import Environment
+from app.services.environment_access import sees_restricted
 from app.models.integration import Integration
 from app.models.member import CIToken, ProjectInvite, ProjectMember
 from app.models.secret_expiration import SecretExpiration
@@ -53,11 +54,14 @@ class OverviewService:
                 "totals": {"projects": 0, "secrets": 0, "members": 0},
             }
 
-        environments = (await self.db.execute(
+        # A restricted environment does not exist for anyone but the project's owner and admins:
+        # it leaves the list here, and its expirations go with it (they are matched by env_names below).
+        roles = {project.id: role for project, role in memberships}
+        environments = [env for env in (await self.db.execute(
             select(Environment)
             .where(Environment.project_id.in_(project_ids), Environment.archived == False)  # noqa: E712
             .order_by(Environment.is_default.desc(), Environment.name)
-        )).scalars().all()
+        )).scalars().all() if not env.restricted or sees_restricted(roles.get(env.project_id))]
 
         blob_stats = {
             env_id: (count, _utc(updated_at))
@@ -197,13 +201,14 @@ class OverviewService:
             for r in rows
         ]
 
-    async def get_secret_matrix(self, project_id: UUID) -> dict:
-        """Key × environment presence from vault metadata (never ciphertext)."""
-        environments = (await self.db.execute(
+    async def get_secret_matrix(self, project_id: UUID, hidden: frozenset[UUID] | set[UUID] = frozenset()) -> dict:
+        """Key × environment presence from vault metadata (never ciphertext).
+        `hidden`: restricted environments the caller does not reach (environment_access.hidden_ids)."""
+        environments = [env for env in (await self.db.execute(
             select(Environment)
             .where(Environment.project_id == project_id, Environment.archived == False)  # noqa: E712
             .order_by(Environment.is_default.desc(), Environment.name)
-        )).scalars().all()
+        )).scalars().all() if env.id not in hidden]
         env_ids = [env.id for env in environments]
 
         rows = (await self.db.execute(
