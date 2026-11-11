@@ -23,6 +23,7 @@ from app.middleware.api_key_auth import (
 )
 from app.models.user import User
 from app.models.environment import Environment
+from app.services.environment_access import sees_restricted
 from sqlalchemy import select
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/environments/{environment_id}/vault", tags=["Vault"])
@@ -251,6 +252,9 @@ async def pull_vault(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
+    if _environment.restricted and not sees_restricted(member.role):
+        # For anyone but the owner and admins a restricted environment does not exist.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environment not found")
 
     try:
         blobs, version = await vault_service.pull_blobs(
@@ -301,6 +305,9 @@ async def get_vault_version(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Project not found"
         )
+    if _environment.restricted and not sees_restricted(member.role):
+        # For anyone but the owner and admins a restricted environment does not exist.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environment not found")
 
     try:
         version = await vault_service.get_environment_version(project_uuid, env_uuid)

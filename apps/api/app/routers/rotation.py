@@ -27,6 +27,7 @@ from app.schemas.secret_expiration import (
 from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.models.environment import Environment
+from app.services.environment_access import hidden_ids, sees_restricted
 
 
 router = APIRouter(
@@ -76,7 +77,11 @@ async def _check_access(
         )
     )
     environment = result.scalar_one_or_none()
-    if not environment or getattr(environment, "archived", False):
+    if (
+        not environment or getattr(environment, "archived", False)
+        # For anyone but the owner and admins a restricted environment does not exist.
+        or (environment.restricted and not sees_restricted(member.role))
+    ):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found",
@@ -296,9 +301,10 @@ async def list_expiring_secrets(
     # Filter by days
     cutoff = datetime.now(timezone.utc) + timedelta(days=days)
     now = datetime.now(timezone.utc)
+    hidden = await hidden_ids(db, project_id, member.role)
     filtered = [
         e for e in expirations
-        if e.expires_at <= cutoff and (include_expired or e.expires_at >= now)
+        if e.environment_id not in hidden and e.expires_at <= cutoff and (include_expired or e.expires_at >= now)
     ]
 
     # Force-load fields

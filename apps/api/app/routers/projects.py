@@ -9,6 +9,7 @@ from app.schemas.overview import SecretMatrixResponse
 from app.services.overview_service import OverviewService
 from app.schemas.plan import PlanResponse
 from app.services.billing_service import billing_enabled
+from app.services.environment_access import hidden_ids
 from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
@@ -208,9 +209,12 @@ async def get_secret_matrix(
     if api_key is not None:
         require_api_key_project(api_key, project_uuid)
 
-    if not await ProjectService(db).check_user_access(auth_context.user.id, project_uuid):
+    member = await ProjectService(db).check_user_access(auth_context.user.id, project_uuid)
+    if not member:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
-    matrix = await OverviewService(db).get_secret_matrix(project_uuid)
+    matrix = await OverviewService(db).get_secret_matrix(
+        project_uuid, hidden=await hidden_ids(db, project_uuid, member.role)
+    )
 
     environment_scope = getattr(api_key, "environment_scope", None) if api_key is not None else None
     if environment_scope is not None:
