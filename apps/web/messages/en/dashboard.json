@@ -91,6 +91,32 @@
       "filteredTitle": "No credentials match these filters"
     }
   },
+  "comparePage": {
+    "title": "Compare environments",
+    "subtitle": "See which keys are missing in each environment. Names come from the server; values are only compared here in the browser.",
+    "loadError": "Could not load the environments.",
+    "compareError": "Could not decrypt the values. Unlock the vault again and retry.",
+    "envA": "Environment A",
+    "envB": "Environment B",
+    "sameEnv": "Pick two different environments.",
+    "onlyIn": "Only in {env}",
+    "inBoth": "In both",
+    "none": "None",
+    "needTwo": {
+      "title": "You need two environments",
+      "description": "This project has only one environment you can see. Create another to compare."
+    },
+    "values": {
+      "title": "Compare values",
+      "description": "With the vault unlocked, the browser downloads both encrypted environments, decrypts them here and tells whether each value matches. Only a masked preview is shown; no value leaves the browser.",
+      "run": "Compare values",
+      "nothingInBoth": "No key exists in both environments.",
+      "key": "Key",
+      "result": "Result",
+      "same": "Same",
+      "different": "Different"
+    }
+  },
   "securityPage": {
     "title": "Security",
     "subtitle": "How your account and projects are doing, and what to do to improve.",
@@ -278,6 +304,9 @@
       },
       "secrets": {
         "label": "Secrets"
+      },
+      "compare": {
+        "label": "Compare"
       },
       "members": {
         "label": "Team"

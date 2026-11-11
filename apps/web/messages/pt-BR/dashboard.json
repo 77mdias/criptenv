@@ -91,6 +91,32 @@
       "filteredTitle": "Nenhuma credencial com esses filtros"
     }
   },
+  "comparePage": {
+    "title": "Comparar ambientes",
+    "subtitle": "Veja quais chaves faltam em cada ambiente. Os nomes vêm do servidor; os valores só são comparados aqui no navegador.",
+    "loadError": "Não foi possível carregar os ambientes.",
+    "compareError": "Não foi possível decifrar os valores. Destrave o cofre de novo e tente outra vez.",
+    "envA": "Ambiente A",
+    "envB": "Ambiente B",
+    "sameEnv": "Escolha dois ambientes diferentes.",
+    "onlyIn": "Só em {env}",
+    "inBoth": "Nos dois",
+    "none": "Nenhuma",
+    "needTwo": {
+      "title": "É preciso ter dois ambientes",
+      "description": "Este projeto tem só um ambiente que você enxerga. Crie outro para comparar."
+    },
+    "values": {
+      "title": "Comparar valores",
+      "description": "Com o cofre destravado, o navegador baixa os dois ambientes cifrados, decifra aqui e diz se cada valor é igual ou diferente. Só aparece uma prévia mascarada; nenhum valor sai do navegador.",
+      "run": "Comparar valores",
+      "nothingInBoth": "Nenhuma chave existe nos dois ambientes.",
+      "key": "Chave",
+      "result": "Resultado",
+      "same": "Igual",
+      "different": "Diferente"
+    }
+  },
   "securityPage": {
     "title": "Segurança",
     "subtitle": "Como estão a sua conta e os seus projetos, e o que fazer para melhorar.",
@@ -278,6 +304,9 @@
       },
       "secrets": {
         "label": "Secrets"
+      },
+      "compare": {
+        "label": "Comparar"
       },
       "members": {
         "label": "Equipe"

@@ -91,6 +91,32 @@
       "filteredTitle": "Ninguna credencial coincide con estos filtros"
     }
   },
+  "comparePage": {
+    "title": "Comparar entornos",
+    "subtitle": "Mira qué claves faltan en cada entorno. Los nombres vienen del servidor; los valores solo se comparan aquí en el navegador.",
+    "loadError": "No se pudieron cargar los entornos.",
+    "compareError": "No se pudieron descifrar los valores. Desbloquea la bóveda de nuevo e inténtalo otra vez.",
+    "envA": "Entorno A",
+    "envB": "Entorno B",
+    "sameEnv": "Elige dos entornos diferentes.",
+    "onlyIn": "Solo en {env}",
+    "inBoth": "En los dos",
+    "none": "Ninguna",
+    "needTwo": {
+      "title": "Hacen falta dos entornos",
+      "description": "Este proyecto tiene solo un entorno que puedes ver. Crea otro para comparar."
+    },
+    "values": {
+      "title": "Comparar valores",
+      "description": "Con la bóveda desbloqueada, el navegador descarga los dos entornos cifrados, los descifra aquí y dice si cada valor es igual o diferente. Solo se muestra una vista enmascarada; ningún valor sale del navegador.",
+      "run": "Comparar valores",
+      "nothingInBoth": "Ninguna clave existe en los dos entornos.",
+      "key": "Clave",
+      "result": "Resultado",
+      "same": "Igual",
+      "different": "Diferente"
+    }
+  },
   "securityPage": {
     "title": "Seguridad",
     "subtitle": "Cómo están tu cuenta y tus proyectos, y qué hacer para mejorar.",
@@ -278,6 +304,9 @@
       },
       "secrets": {
         "label": "Secrets"
+      },
+      "compare": {
+        "label": "Comparar"
       },
       "members": {
         "label": "Equipo"
