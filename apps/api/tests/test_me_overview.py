@@ -104,6 +104,9 @@ async def world():
             APIKey(id=uuid4(), user_id=ana.id, project_id=api.id, name="old", prefix="cek_live_",
                    key_hash="k1", scopes=["read:secrets"], expires_at=NOW + timedelta(days=90),
                    last_used_at=NOW - timedelta(days=45)),
+            # created today and not used yet: not "unused for 30 days"
+            CIToken(id=uuid4(), project_id=api.id, name="brand-new", token_hash="h6", scopes=["read:secrets"],
+                    expires_at=NOW + timedelta(days=30), last_used_at=None, created_at=NOW),
             # unusable ones: listed on /me/credentials with their status, never as attention
             CIToken(id=uuid4(), project_id=api.id, name="gone", token_hash="h5", scopes=["read:secrets"],
                     expires_at=None, revoked_at=NOW - timedelta(days=2)),
@@ -240,7 +243,7 @@ async def test_credentials_only_for_managed_projects(world):
     factory, w = world
     names = {c["name"] for c in (await _get(factory, w["ana"], "/api/v1/me/credentials"))["credentials"]}
     # ana manages `api` only: bo's `web-ci` (she is a viewer there) and cy's token stay out
-    assert names == {"deploy", "fresh", "old", "gone", "lapsed"}
+    assert names == {"deploy", "fresh", "old", "gone", "lapsed", "brand-new"}
     assert [c["name"] for c in (await _get(factory, w["bo"], "/api/v1/me/credentials"))["credentials"]] == ["web-ci"]
 
 
@@ -251,7 +254,10 @@ async def test_credentials_status_and_flags(world):
 
     assert {name: c["status"] for name, c in items.items()} == {
         "deploy": "active", "fresh": "active", "old": "active", "gone": "revoked", "lapsed": "expired",
+        "brand-new": "active",
     }
+    # never used, but created today: the 30 days count from creation
+    assert items["brand-new"]["unused"] is False
     assert items["deploy"]["no_expiry"] is True and items["deploy"]["unused"] is False
     assert items["old"]["unused"] is True and items["old"]["no_expiry"] is False
     assert items["fresh"]["no_expiry"] is False and items["fresh"]["unused"] is False

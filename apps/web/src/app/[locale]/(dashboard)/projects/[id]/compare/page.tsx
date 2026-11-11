@@ -1,6 +1,6 @@
 "use client"
 
-import { useEffect, useMemo, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
 import { useTranslations } from "next-intl"
 import { useParams } from "next/navigation"
 import { GitCompareArrows } from "lucide-react"
@@ -43,8 +43,15 @@ function KeyList({ title, keys, empty }: { title: string; keys: string[]; empty:
 }
 
 export default function CompareEnvironmentsPage() {
-  const t = useTranslations("dashboard.comparePage")
   const projectId = useParams().id as string
+  // Another project is another comparison: start over instead of keeping its environment ids.
+  return <CompareEnvironments key={projectId} projectId={projectId} />
+}
+
+function CompareEnvironments({ projectId }: { projectId: string }) {
+  const t = useTranslations("dashboard.comparePage")
+  // Bumped whenever the environments change: a comparison that finishes later is dropped.
+  const runRef = useRef(0)
   const [project, setProject] = useState<Project | null>(() => peekCached<Project>(`/api/v1/projects/${projectId}`))
   const [matrix, setMatrix] = useState<SecretMatrixResponse | null>(null)
   const [envA, setEnvA] = useState("")
@@ -76,6 +83,8 @@ export default function CompareEnvironmentsPage() {
   const envName = (id: string) => matrix?.environments.find((env) => env.id === id)?.name ?? ""
 
   const choose = (side: "a" | "b", id: string) => {
+    runRef.current += 1
+    setComparing(false)
     setValues(null)
     if (side === "a") setEnvA(id)
     else setEnvB(id)
@@ -83,6 +92,7 @@ export default function CompareEnvironmentsPage() {
 
   const runValueComparison = async () => {
     if (!unlocked || !keyMaterial) return
+    const run = ++runRef.current
     setComparing(true)
     setError(null)
     try {
@@ -93,11 +103,11 @@ export default function CompareEnvironmentsPage() {
         deriveProjectEnvironmentKey(keyMaterial, envB),
       ])
       const [secretsA, secretsB] = await Promise.all([decryptVault(pullA.blobs, keyA), decryptVault(pullB.blobs, keyB)])
-      setValues(compareValues(secretsA, secretsB))
+      if (run === runRef.current) setValues(compareValues(secretsA, secretsB))
     } catch {
-      setError(t("compareError"))
+      if (run === runRef.current) setError(t("compareError"))
     } finally {
-      setComparing(false)
+      if (run === runRef.current) setComparing(false)
     }
   }
 

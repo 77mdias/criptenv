@@ -1,5 +1,9 @@
-import { fireEvent, screen } from "@testing-library/react"
+import { act, fireEvent, screen, waitFor } from "@testing-library/react"
 import { useSearchParams } from "next/navigation"
+import { NextIntlClientProvider } from "next-intl"
+
+import auditMessages from "../../../../../../messages/pt-BR/audit.json"
+import dashboardMessages from "../../../../../../messages/pt-BR/dashboard.json"
 
 import { useRouter } from "@/i18n/navigation"
 import { meApi } from "@/lib/api"
@@ -43,8 +47,9 @@ describe("ActivityPage", () => {
     jest.mocked(meApi.audit).mockResolvedValue({ logs: [log], total: 1, page: 1, per_page: 50 })
     renderWithIntl(<ActivityPage />)
 
-    expect(await screen.findByText("vault.pushed", { exact: false })).toBeInTheDocument()
-    expect(await screen.findAllByText("api")).not.toHaveLength(0)
+    const day = await screen.findByRole("region")
+    expect(day).toHaveTextContent("vault.pushed")
+    expect(day).toHaveTextContent("api")
     expect(screen.getByText("1 evento nos seus projetos")).toBeInTheDocument()
     expect(meApi.audit).toHaveBeenCalledWith({ page: 1, per_page: 50 })
   })
@@ -61,6 +66,31 @@ describe("ActivityPage", () => {
 
     fireEvent.change(screen.getByLabelText("Período"), { target: { value: "30" } })
     expect(useRouter().replace).toHaveBeenCalledWith("/?origin=ci_session&days=30", { scroll: false })
+  })
+
+  it("ignores a slow answer for filters that are no longer on screen", async () => {
+    let releaseOld: (value: Awaited<ReturnType<typeof meApi.audit>>) => void = () => undefined
+    jest.mocked(meApi.audit).mockReturnValueOnce(new Promise((resolve) => (releaseOld = resolve)))
+    const { rerender } = renderWithIntl(<ActivityPage />)
+    await waitFor(() => expect(meApi.audit).toHaveBeenCalledTimes(1))
+
+    jest.mocked(useSearchParams).mockReturnValue(
+      new URLSearchParams("origin=ci_session") as unknown as ReturnType<typeof useSearchParams>,
+    )
+    jest.mocked(meApi.audit).mockResolvedValue({ logs: [], total: 0, page: 1, per_page: 50 })
+    rerender(
+      <NextIntlClientProvider locale="pt-BR" messages={{ dashboard: dashboardMessages, audit: auditMessages }}>
+        <ActivityPage />
+      </NextIntlClientProvider>,
+    )
+    expect(await screen.findByText("Nada com esses filtros")).toBeInTheDocument()
+
+    await act(async () => {
+      releaseOld({ logs: [log], total: 1, page: 1, per_page: 50 })
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+    expect(screen.getByText("Nada com esses filtros")).toBeInTheDocument()
+    expect(screen.queryAllByRole("region")).toHaveLength(0) // no day group: the old events never landed
   })
 
   it("shows the empty state when nothing happened yet", async () => {

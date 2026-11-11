@@ -11,6 +11,21 @@ from app.schemas.audit import AuditActor, AuditLogResponse
 from app.strategies.audit_filters import apply_audit_filters, build_audit_filter_strategies
 
 
+def visible_audit_condition(scopes: list[tuple[UUID, Optional[datetime], set[UUID]]]):
+    """Audit rows a user may see across projects. Each scope is (project_id, since, hidden_resource_ids):
+    the owner's plan window and the restricted environments the user's role does not reach,
+    the same rules get_project_logs applies to one project. Never call it with no scope."""
+    per_project = []
+    for project_id, since, hidden in scopes:
+        conditions = [AuditLog.project_id == project_id]
+        if since is not None:
+            conditions.append(AuditLog.created_at >= since)
+        if hidden:
+            conditions.append(or_(AuditLog.resource_id.is_(None), AuditLog.resource_id.notin_(hidden)))
+        per_project.append(and_(*conditions))
+    return or_(*per_project)
+
+
 def to_audit_response(log: AuditLog, actors: dict) -> AuditLogResponse:
     """One audit row as the API returns it, with the actor resolved from `actors` (get_actors)."""
     response = AuditLogResponse(
@@ -108,17 +123,9 @@ class AuditService:
         build_audit_filter_strategies."""
         if not scopes:
             return [], 0
-        per_project = []
-        for project_id, since, hidden in scopes:
-            conditions = [AuditLog.project_id == project_id]
-            if since is not None:
-                conditions.append(AuditLog.created_at >= since)
-            if hidden:
-                conditions.append(or_(AuditLog.resource_id.is_(None), AuditLog.resource_id.notin_(hidden)))
-            per_project.append(and_(*conditions))
         strategies = build_audit_filter_strategies(filters.pop("action", None), None, **filters)
 
-        visible = or_(*per_project)
+        visible = visible_audit_condition(scopes)
         total = (await self.db.execute(
             apply_audit_filters(select(func.count(AuditLog.id)).where(visible), strategies)
         )).scalar() or 0

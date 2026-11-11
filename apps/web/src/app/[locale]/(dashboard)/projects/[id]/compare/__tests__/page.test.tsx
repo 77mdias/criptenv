@@ -1,4 +1,7 @@
-import { fireEvent, screen, waitFor, within } from "@testing-library/react"
+import { act, fireEvent, screen, waitFor, within } from "@testing-library/react"
+import { NextIntlClientProvider } from "next-intl"
+
+import dashboardMessages from "../../../../../../../../messages/pt-BR/dashboard.json"
 
 import { projectsApi, vaultApi } from "@/lib/api"
 import { useCryptoStore } from "@/stores/crypto"
@@ -7,8 +10,9 @@ import { decryptVault } from "../../secrets/vault-crypto"
 
 import ComparePage from "../page"
 
+let mockProjectId = "p1"
 jest.mock("next/navigation", () => ({
-  useParams: () => ({ id: "p1" }),
+  useParams: () => ({ id: mockProjectId }),
 }))
 
 jest.mock("@/lib/api", () => ({
@@ -49,6 +53,7 @@ beforeEach(() => {
     { key: "PORT", value: "8080" },
   ])
   useCryptoStore.getState().clearSession()
+  mockProjectId = "p1"
 })
 
 describe("CompareEnvironmentsPage", () => {
@@ -67,6 +72,51 @@ describe("CompareEnvironmentsPage", () => {
     expect(await screen.findByText("unlock-panel")).toBeInTheDocument()
     expect(screen.queryByRole("button", { name: "Comparar valores" })).not.toBeInTheDocument()
     expect(vaultApi.pull).not.toHaveBeenCalled()
+  })
+
+  it("starts over with the new project's environments when the project changes", async () => {
+    const { rerender } = renderWithIntl(<ComparePage />)
+    await screen.findByRole("heading", { name: /Só em production/ })
+
+    jest.mocked(projectsApi.secretMatrix).mockResolvedValue({
+      environments: [
+        { id: "qa", name: "qa", is_default: true },
+        { id: "uat", name: "uat", is_default: false },
+      ],
+      keys: [{ key_id: "ONLY_QA", cells: { qa: cell, uat: null } }],
+    })
+    mockProjectId = "p2"
+    rerender(
+      <NextIntlClientProvider locale="pt-BR" messages={{ dashboard: dashboardMessages }}>
+        <ComparePage />
+      </NextIntlClientProvider>,
+    )
+
+    const onlyQa = await screen.findByRole("heading", { name: /Só em qa/ })
+    expect(onlyQa.parentElement).toHaveTextContent("ONLY_QA")
+    expect(screen.getByLabelText("Ambiente B")).toHaveValue("uat")
+  })
+
+  it("drops a value comparison that finishes after the environments changed", async () => {
+    const releases: (() => void)[] = []
+    jest.mocked(vaultApi.pull).mockImplementation(
+      (_p, env) => new Promise((resolve) => releases.push(() => resolve({ blobs: [{ env }], version: 1 } as never))),
+    )
+    useCryptoStore.getState().unlockProject("p1", {} as CryptoKey, "proof")
+    renderWithIntl(<ComparePage />)
+
+    fireEvent.click(await screen.findByRole("button", { name: "Comparar valores" }))
+    await waitFor(() => expect(releases).toHaveLength(2))
+    fireEvent.change(screen.getByLabelText("Ambiente A"), { target: { value: "prod" } })
+    fireEvent.change(screen.getByLabelText("Ambiente B"), { target: { value: "dev" } })
+    await act(async () => {
+      releases.forEach((release) => release())
+      await new Promise((resolve) => setTimeout(resolve, 0))
+    })
+
+    expect(decryptVault).toHaveBeenCalled() // the old request did finish...
+    expect(screen.queryByText("Diferente")).not.toBeInTheDocument() // ...and was ignored
+    expect(screen.getByRole("button", { name: "Comparar valores" })).toBeInTheDocument()
   })
 
   it("compares values in the browser and never sends a decrypted value anywhere", async () => {

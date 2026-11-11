@@ -1,6 +1,6 @@
 "use client"
 
-import { useCallback, useEffect, useMemo, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
 import { useSearchParams } from "next/navigation"
 import { Activity, Download, Filter } from "lucide-react"
@@ -61,6 +61,7 @@ export default function ActivityPage() {
   const [loading, setLoading] = useState(true)
   const [loadingMore, setLoadingMore] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const requestRef = useRef(0)
 
   const projectNames = useMemo(() => new Map(projects.map((p) => [p.id, p.name])), [projects])
 
@@ -73,19 +74,24 @@ export default function ActivityPage() {
 
   const load = useCallback(
     async (nextPage: number, append: boolean) => {
+      // Only the newest request may write: an older one for other filters can answer last.
+      const request = ++requestRef.current
       if (append) setLoadingMore(true)
       else setLoading(true)
       setError(null)
       try {
         const data = await meApi.audit(activityQuery(filters, nextPage))
+        if (request !== requestRef.current) return
         setLogs((current) => (append ? [...current, ...data.logs] : data.logs))
         setTotal(data.total)
         setPage(data.page)
       } catch (err) {
-        setError(err instanceof Error ? err.message : t("loadError"))
+        if (request === requestRef.current) setError(err instanceof Error ? err.message : t("loadError"))
       } finally {
-        setLoading(false)
-        setLoadingMore(false)
+        if (request === requestRef.current) {
+          setLoading(false)
+          setLoadingMore(false)
+        }
       }
     },
     [filters, t]

@@ -184,6 +184,23 @@ async def test_me_audit_paginates_and_resolves_actors(world):
 
 
 @pytest.mark.asyncio
+async def test_dashboard_aggregates_follow_the_same_rules_as_me_audit(world):
+    """The 30-day chart and `last_activity_at` must not reveal a push to a restricted environment
+    (or anything outside the plan window) that /me/audit hides."""
+    factory, w, _ = world
+    days = await _get(factory, w["dan"], "/api/v1/me/activity-stats", {"days": 30})
+    assert sum(d["changes"] + d["other"] for d in days) == 3  # pushed_ops is left out
+
+    overview = await _get(factory, w["dan"], "/api/v1/me/overview")
+    api = next(p for p in overview["projects"] if p["name"] == "api")
+    # newest visible event is pushed_prod (1 day ago), not pushed_ops (2 hours ago)
+    assert datetime.fromisoformat(api["last_activity_at"]) < NOW - timedelta(hours=12)
+
+    bo_days = await _get(factory, w["bo"], "/api/v1/me/activity-stats", {"days": 30})
+    assert sum(d["changes"] + d["other"] for d in bo_days) == 1  # web_created is outside Free's window
+
+
+@pytest.mark.asyncio
 async def test_me_audit_rejects_unknown_auth_type(world):
     factory, w, _ = world
 

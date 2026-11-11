@@ -2,10 +2,10 @@ import type { AuditLog } from "@/lib/api"
 
 const COLUMNS = ["timestamp", "project", "action", "origin", "actor", "resource_type", "resource_id"]
 
-/** Quoted CSV cell. A leading =, +, - or @ is prefixed with ' so a spreadsheet shows it as text. */
+/** Quoted CSV cell. A leading =, +, -, @, tab or CR is prefixed with ' so a spreadsheet shows it as text. */
 function cell(value: string | null | undefined): string {
   let text = value ?? ""
-  if (/^[=+\-@]/.test(text)) text = `'${text}`
+  if (/^[=+\-@\t\r]/.test(text)) text = `'${text}`
   return `"${text.replace(/"/g, '""')}"`
 }
 

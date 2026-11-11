@@ -33,6 +33,12 @@ describe("toAuditCsv", () => {
     expect(csv.split("\n")[1]).toContain('"\'=HYPERLINK(""x"")"')
   })
 
+  it("also neutralises a leading tab or carriage return (OWASP CSV injection list)", () => {
+    const row = (name: string) => toAuditCsv([log({})], new Map([["p1", name]])).split("\n")[1]
+    expect(row("\t=1+1")).toContain('"\'\t=1+1"')
+    expect(row("\r=1+1")).toContain('"\'\r=1+1"')
+  })
+
   it("falls back to the project id when the name is unknown", () => {
     expect(toAuditCsv([log({ project_id: "p9" })], new Map()).split("\n")[1]).toContain('"p9"')
   })
