@@ -4,6 +4,7 @@
     "projects": "Projetos",
     "activity": "Atividade",
     "integrations": "Integrações",
+    "access": "Acessos",
     "vault": "Cofre",
     "help": "Ajuda",
     "account": "Conta",
@@ -42,6 +43,50 @@
       "description": "Quando alguém criar um projeto, enviar segredos ou convidar a equipe, aparece aqui.",
       "filteredTitle": "Nada com esses filtros",
       "filteredDescription": "Tente outro projeto, origem ou período."
+    }
+  },
+  "accessPage": {
+    "title": "Acessos",
+    "subtitle": "Tokens de CI e chaves de API dos projetos em que você é dono ou admin.",
+    "loadError": "Não foi possível carregar as credenciais.",
+    "revokeError": "Não foi possível revogar a credencial.",
+    "filters": {
+      "title": "Filtros",
+      "kind": "Tipo",
+      "allKinds": "Todos os tipos",
+      "status": "Situação",
+      "allStatuses": "Todas",
+      "project": "Projeto",
+      "allProjects": "Todos os projetos"
+    },
+    "kinds": {
+      "ci_token": "Token de CI",
+      "api_key": "Chave de API"
+    },
+    "statuses": {
+      "active": "Ativa",
+      "expired": "Vencida",
+      "revoked": "Revogada"
+    },
+    "flags": {
+      "noExpiry": "Sem expiração",
+      "unused": "Sem uso há 30 dias"
+    },
+    "allEnvironments": "Todos os ambientes não restritos",
+    "lastUsed": "Último uso {when}",
+    "neverUsed": "Nunca usada",
+    "expires": "Vence em {when}",
+    "noExpiry": "Não vence",
+    "revoke": "Revogar",
+    "revokeLabel": "Revogar {name}",
+    "confirm": {
+      "title": "Revogar {name}?",
+      "description": "Quem usa essa credencial no projeto {project} perde o acesso na hora. Não dá para desfazer: depois é preciso criar outra."
+    },
+    "empty": {
+      "title": "Nenhuma credencial para gerenciar",
+      "description": "Aqui aparecem os tokens de CI e as chaves de API dos projetos em que você é dono ou admin. Crie um pelas configurações do projeto ou com criptenv ci tokens create.",
+      "filteredTitle": "Nenhuma credencial com esses filtros"
     }
   },
   "home": {

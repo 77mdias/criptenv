@@ -4,6 +4,7 @@
     "projects": "Projects",
     "activity": "Activity",
     "integrations": "Integrations",
+    "access": "Access",
     "vault": "Vault",
     "help": "Help",
     "account": "Account",
@@ -42,6 +43,50 @@
       "description": "When someone creates a project, pushes secrets or invites the team, it shows up here.",
       "filteredTitle": "Nothing matches these filters",
       "filteredDescription": "Try another project, origin or period."
+    }
+  },
+  "accessPage": {
+    "title": "Access",
+    "subtitle": "CI tokens and API keys of the projects where you are owner or admin.",
+    "loadError": "Could not load the credentials.",
+    "revokeError": "Could not revoke the credential.",
+    "filters": {
+      "title": "Filters",
+      "kind": "Type",
+      "allKinds": "All types",
+      "status": "Status",
+      "allStatuses": "All",
+      "project": "Project",
+      "allProjects": "All projects"
+    },
+    "kinds": {
+      "ci_token": "CI token",
+      "api_key": "API key"
+    },
+    "statuses": {
+      "active": "Active",
+      "expired": "Expired",
+      "revoked": "Revoked"
+    },
+    "flags": {
+      "noExpiry": "No expiry",
+      "unused": "Unused for 30 days"
+    },
+    "allEnvironments": "Every non-restricted environment",
+    "lastUsed": "Last used {when}",
+    "neverUsed": "Never used",
+    "expires": "Expires on {when}",
+    "noExpiry": "Never expires",
+    "revoke": "Revoke",
+    "revokeLabel": "Revoke {name}",
+    "confirm": {
+      "title": "Revoke {name}?",
+      "description": "Whatever uses this credential in project {project} loses access right away. This cannot be undone: you will need to create a new one."
+    },
+    "empty": {
+      "title": "No credentials to manage",
+      "description": "CI tokens and API keys of the projects where you are owner or admin show up here. Create one in the project settings or with criptenv ci tokens create.",
+      "filteredTitle": "No credentials match these filters"
     }
   },
   "home": {

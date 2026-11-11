@@ -192,6 +192,38 @@ class OverviewService:
                 })
         return items
 
+    async def get_credentials(self, user_id: UUID, now: Optional[datetime] = None) -> list[dict]:
+        """Every CI token and API key of the projects the user manages (owner/admin), revoked and
+        expired ones included and marked. Never the hashes."""
+        now = now or datetime.now(timezone.utc)
+        memberships = await ProjectService(self.db).list_user_projects_with_roles(user_id)
+        names = {project.id: project.name for project, role in memberships if role in MANAGER_ROLES}
+        if not names:
+            return []
+        items = []
+        for kind, model in (("ci_token", CIToken), ("api_key", APIKey)):
+            rows = (await self.db.execute(select(model).where(model.project_id.in_(list(names))))).scalars().all()
+            for row in rows:
+                expires_at, last_used_at = _utc(row.expires_at), _utc(row.last_used_at)
+                if row.revoked_at is not None:
+                    status = "revoked"
+                elif expires_at is not None and expires_at <= now:
+                    status = "expired"
+                else:
+                    status = "active"
+                active = status == "active"
+                items.append({
+                    "kind": kind, "id": row.id, "project_id": row.project_id,
+                    "project_name": names[row.project_id], "name": row.name,
+                    "scopes": list(row.scopes or []), "environment_scope": row.environment_scope,
+                    "last_used_at": last_used_at, "expires_at": expires_at,
+                    "revoked_at": _utc(row.revoked_at), "created_at": _utc(row.created_at),
+                    "status": status,
+                    "no_expiry": active and expires_at is None,
+                    "unused": active and (last_used_at is None or last_used_at < now - STALE_AFTER),
+                })
+        return sorted(items, key=lambda item: (item["project_name"], item["name"]))
+
     async def _failing_integrations(self, project_ids: list[UUID]) -> list[dict]:
         rows = (await self.db.execute(
             select(Integration).where(Integration.project_id.in_(project_ids), Integration.status == "error")

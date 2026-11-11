@@ -102,6 +102,12 @@ async def world():
             APIKey(id=uuid4(), user_id=ana.id, project_id=api.id, name="old", prefix="cek_live_",
                    key_hash="k1", scopes=["read:secrets"], expires_at=NOW + timedelta(days=90),
                    last_used_at=NOW - timedelta(days=45)),
+            # unusable ones: listed on /me/credentials with their status, never as attention
+            CIToken(id=uuid4(), project_id=api.id, name="gone", token_hash="h5", scopes=["read:secrets"],
+                    expires_at=None, revoked_at=NOW - timedelta(days=2)),
+            APIKey(id=uuid4(), user_id=ana.id, project_id=api.id, name="lapsed", prefix="cek_live_",
+                   key_hash="k2", scopes=["read:secrets", "read:audit"], environment_scope="production",
+                   expires_at=NOW - timedelta(days=1), last_used_at=NOW - timedelta(days=3)),
             Integration(id=uuid4(), project_id=api.id, provider="vercel", name="vercel-prod",
                         config={}, status="error", last_error="401 from provider"),
             # `web`: ana is only a viewer → its credentials must not leak to her
@@ -199,3 +205,39 @@ async def test_activity_stats_buckets_by_day_with_zero_fill(world):
     assert by_date[NOW.date().isoformat()] == {"date": NOW.date().isoformat(), "changes": 0, "other": 1}
     # cy's push today is not counted for ana
     assert sum(d["changes"] + d["other"] for d in days) == 3
+
+
+@pytest.mark.asyncio
+async def test_credentials_only_for_managed_projects(world):
+    factory, w = world
+    names = {c["name"] for c in (await _get(factory, w["ana"], "/api/v1/me/credentials"))["credentials"]}
+    # ana manages `api` only: bo's `web-ci` (she is a viewer there) and cy's token stay out
+    assert names == {"deploy", "fresh", "old", "gone", "lapsed"}
+    assert [c["name"] for c in (await _get(factory, w["bo"], "/api/v1/me/credentials"))["credentials"]] == ["web-ci"]
+
+
+@pytest.mark.asyncio
+async def test_credentials_status_and_flags(world):
+    factory, w = world
+    items = {c["name"]: c for c in (await _get(factory, w["ana"], "/api/v1/me/credentials"))["credentials"]}
+
+    assert {name: c["status"] for name, c in items.items()} == {
+        "deploy": "active", "fresh": "active", "old": "active", "gone": "revoked", "lapsed": "expired",
+    }
+    assert items["deploy"]["no_expiry"] is True and items["deploy"]["unused"] is False
+    assert items["old"]["unused"] is True and items["old"]["no_expiry"] is False
+    assert items["fresh"]["no_expiry"] is False and items["fresh"]["unused"] is False
+    # flags only matter while the credential still works
+    assert items["gone"]["no_expiry"] is False
+
+
+@pytest.mark.asyncio
+async def test_credentials_lists_both_kinds_with_project_and_scope(world):
+    factory, w = world
+    items = {c["name"]: c for c in (await _get(factory, w["ana"], "/api/v1/me/credentials"))["credentials"]}
+
+    assert items["deploy"]["kind"] == "ci_token" and items["lapsed"]["kind"] == "api_key"
+    assert items["lapsed"]["project_name"] == "api" and items["lapsed"]["project_id"] == str(w["api"].id)
+    assert items["lapsed"]["scopes"] == ["read:secrets", "read:audit"]
+    assert items["lapsed"]["environment_scope"] == "production"
+    assert "token_hash" not in str(items) and "key_hash" not in str(items)

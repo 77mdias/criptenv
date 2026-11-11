@@ -4,6 +4,7 @@
     "projects": "Proyectos",
     "activity": "Actividad",
     "integrations": "Integraciones",
+    "access": "Accesos",
     "vault": "Bóveda",
     "help": "Ayuda",
     "account": "Cuenta",
@@ -42,6 +43,50 @@
       "description": "Cuando alguien cree un proyecto, envíe secretos o invite al equipo, aparece aquí.",
       "filteredTitle": "Nada coincide con estos filtros",
       "filteredDescription": "Prueba otro proyecto, origen o período."
+    }
+  },
+  "accessPage": {
+    "title": "Accesos",
+    "subtitle": "Tokens de CI y claves de API de los proyectos donde eres dueño o admin.",
+    "loadError": "No se pudieron cargar las credenciales.",
+    "revokeError": "No se pudo revocar la credencial.",
+    "filters": {
+      "title": "Filtros",
+      "kind": "Tipo",
+      "allKinds": "Todos los tipos",
+      "status": "Estado",
+      "allStatuses": "Todos",
+      "project": "Proyecto",
+      "allProjects": "Todos los proyectos"
+    },
+    "kinds": {
+      "ci_token": "Token de CI",
+      "api_key": "Clave de API"
+    },
+    "statuses": {
+      "active": "Activa",
+      "expired": "Vencida",
+      "revoked": "Revocada"
+    },
+    "flags": {
+      "noExpiry": "Sin vencimiento",
+      "unused": "Sin uso hace 30 días"
+    },
+    "allEnvironments": "Todos los entornos no restringidos",
+    "lastUsed": "Último uso {when}",
+    "neverUsed": "Nunca usada",
+    "expires": "Vence el {when}",
+    "noExpiry": "No vence",
+    "revoke": "Revocar",
+    "revokeLabel": "Revocar {name}",
+    "confirm": {
+      "title": "¿Revocar {name}?",
+      "description": "Lo que use esta credencial en el proyecto {project} pierde el acceso al instante. No se puede deshacer: después hay que crear otra."
+    },
+    "empty": {
+      "title": "Ninguna credencial para gestionar",
+      "description": "Aquí aparecen los tokens de CI y las claves de API de los proyectos donde eres dueño o admin. Crea uno en la configuración del proyecto o con criptenv ci tokens create.",
+      "filteredTitle": "Ninguna credencial coincide con estos filtros"
     }
   },
   "home": {

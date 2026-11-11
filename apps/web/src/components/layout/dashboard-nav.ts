@@ -3,6 +3,7 @@ import {
   CircleHelp,
   FolderOpen,
   KeyRound,
+  KeySquare,
   LayoutDashboard,
   Plug,
   User,
@@ -31,6 +32,7 @@ export function getDashboardNavGroups(): DashboardNavGroups {
     { icon: Activity, labelKey: "activity", href: "/activity" },
     { icon: KeyRound, labelKey: "vault", href: "/vault", matchMode: "prefix" },
     { icon: Plug, labelKey: "integrations", href: "/integrations", matchMode: "prefix" },
+    { icon: KeySquare, labelKey: "access", href: "/access" },
   ]
 
   const bottomNavItems: DashboardNavItem[] = [

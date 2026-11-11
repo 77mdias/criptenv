@@ -100,6 +100,28 @@ class SecretMatrixResponse(BaseModel):
     keys: list[MatrixKey]
 
 
+class CredentialItem(BaseModel):
+    kind: Literal["ci_token", "api_key"]
+    id: UUID
+    project_id: UUID
+    project_name: str
+    name: str
+    scopes: list[str]
+    environment_scope: Optional[str] = None
+    last_used_at: Optional[datetime] = None
+    expires_at: Optional[datetime] = None
+    revoked_at: Optional[datetime] = None
+    created_at: Optional[datetime] = None
+    status: Literal["active", "expired", "revoked"]
+    # Only set while the credential still works
+    no_expiry: bool
+    unused: bool
+
+
+class CredentialListResponse(BaseModel):
+    credentials: list[CredentialItem]
+
+
 class ActivityDay(BaseModel):
     date: str
     changes: int

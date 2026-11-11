@@ -109,6 +109,11 @@ export const meApi = {
     return request<ActivityDay[]>("GET", "/api/v1/me/activity-stats", undefined, { days });
   },
 
+  /** CI tokens and API keys of the projects the user manages (owner/admin). */
+  credentials(): Promise<CredentialListResponse> {
+    return request<CredentialListResponse>("GET", "/api/v1/me/credentials");
+  },
+
   /** Audit events of every project the user belongs to, newest first. */
   audit(params: MyAuditQuery = {}): Promise<AuditLogListResponse> {
     return request<AuditLogListResponse>(
@@ -121,6 +126,29 @@ export const meApi = {
 };
 
 export type AuditOrigin = "session" | "ci_session" | "api_key";
+
+export interface Credential {
+  kind: "ci_token" | "api_key";
+  id: string;
+  project_id: string;
+  project_name: string;
+  name: string;
+  scopes: string[];
+  environment_scope: string | null;
+  last_used_at: string | null;
+  expires_at: string | null;
+  revoked_at: string | null;
+  created_at: string | null;
+  status: "active" | "expired" | "revoked";
+  /** Set only while the credential still works. */
+  no_expiry: boolean;
+  /** Not used for 30 days or more (set only while it still works). */
+  unused: boolean;
+}
+
+export interface CredentialListResponse {
+  credentials: Credential[];
+}
 
 export interface MyAuditQuery {
   page?: number;

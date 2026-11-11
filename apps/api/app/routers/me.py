@@ -10,7 +10,7 @@ from app.middleware.auth import get_current_user
 from app.models.user import User
 from app.plans import plan_for
 from app.schemas.audit import AuditLogListResponse
-from app.schemas.overview import ActivityDay, OverviewResponse
+from app.schemas.overview import ActivityDay, CredentialListResponse, OverviewResponse
 from app.services.audit_service import AuditService, to_audit_response
 from app.schemas.plan import PlanResponse
 from app.services.overview_service import OverviewService
@@ -37,6 +37,15 @@ async def get_activity_stats(
 ):
     """Audit events per day across the user's projects (secret changes vs other)."""
     return await OverviewService(db).get_activity_stats(current_user.id, days)
+
+
+@router.get("/credentials", response_model=CredentialListResponse)
+async def list_my_credentials(
+    current_user: User = Depends(get_current_user),
+    db: AsyncSession = Depends(get_db),
+):
+    """CI tokens and API keys of every project the user manages (owner/admin); empty otherwise."""
+    return {"credentials": await OverviewService(db).get_credentials(current_user.id)}
 
 
 @router.get("/audit", response_model=AuditLogListResponse)
