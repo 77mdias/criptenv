@@ -153,16 +153,18 @@ SCHEDULER_INTERVAL_HOURS=24
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `.../audit` | List audit logs (paginated) |
+| GET | `.../audit` | List audit logs (paginated); also accepts an API key with `read:audit` |
 | GET | `.../audit/export` | Export audit logs as CSV |
 
-### API Keys `/api/v1/api-keys`
+### API Keys `/api/v1/projects/{project_id}/api-keys`
+
+API keys are read only: the scopes are `read:secrets` and `read:audit`.
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/v1/api-keys` | Create API key |
-| GET | `/api/v1/api-keys` | List API keys |
-| DELETE | `/api/v1/api-keys/{id}` | Revoke API key |
+| POST | `.../api-keys` | Create API key |
+| GET | `.../api-keys` | List API keys |
+| DELETE | `.../api-keys/{id}` | Revoke API key |
 
 ### Integrations `/api/v1/integrations`
 
@@ -175,10 +177,13 @@ SCHEDULER_INTERVAL_HOURS=24
 
 ## Authentication
 
-The API supports dual authentication:
+The API accepts three credentials:
 
-1. **Session Cookie** — HTTP-only `criptenv_session` cookie (web dashboard)
-2. **API Key** — `Authorization: Bearer cek_...` header (public API)
+1. **Session** — HTTP-only `criptenv_session` cookie (web dashboard) or the CLI login session
+2. **API Key** — `Authorization: Bearer cek_...` header (containers and scripts, read only)
+3. **CI Token** — `ci_...`, exchanged for a 1-hour `ci_s_...` session (pipelines: read, write, sync)
+
+A restricted environment is reached only by the project's owner and admins, and by a CI token or API key created for it.
 
 ## Testing
 

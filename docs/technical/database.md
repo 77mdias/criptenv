@@ -74,6 +74,7 @@ postgresql+asyncpg://user:password@host:5432/db
 | id | UUID | Primary key |
 | name | String(255) | Not null |
 | project_id | UUID | Foreign key → projects.id |
+| restricted | Boolean | Not null, default false; only the owner and admins reach it |
 | created_at | DateTime | Server default |
 | updated_at | DateTime | On update |
 
@@ -130,7 +131,7 @@ Temporary CI sessions are created by `POST /api/v1/auth/ci-login` after a valid 
 | ci_token_id | UUID | Foreign key → ci_tokens.id |
 | project_id | UUID | Foreign key → projects.id, indexed |
 | scopes | JSON | Defaults to `["read:secrets"]` |
-| environment_scope | String(255) | Nullable; null means all environments |
+| environment_scope | String(255) | Nullable; null means all environments that are not restricted |
 | expires_at | DateTime | Indexed, not null |
 | created_at | DateTime | Server default |
 | last_used_at | DateTime | Nullable |

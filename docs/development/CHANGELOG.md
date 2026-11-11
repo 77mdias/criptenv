@@ -7,6 +7,12 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Landing e documentação: um acesso para cada lugar — 2026-11-11
+
+- **Landing: nova seção "Um acesso para cada lugar"**, depois de "Como funciona", com quatro cartões: Login (você e o time), Token de CI (pipelines), Chave de API (contêineres e scripts, somente leitura) e Integração com a hospedagem (Vercel, Render, Cloudflare). Cada um diz para quem serve, o que pode fazer, mostra um comando real e aponta para a documentação. Nos três idiomas.
+- **Documentação atualizada** para ambientes restritos e limites por plano (3, 5 e 7), chaves de API somente leitura e o papel de cada credencial: páginas de ambientes, autenticação, auditoria, tokens de CI, comandos da CLI (`env create --restricted`, `env update`, `api-keys create`), guias de equipe e migração, segurança, GitHub Action, READMEs e `docs/technical`.
+- **Correções de texto que já estavam erradas:** o guia de equipe dizia que Developer edita segredos (gravar exige admin); exemplos criavam `development`, `staging` ou `production`, que já nascem com o projeto; o README da API listava o caminho antigo das chaves de API.
+
 ### Login dura 20 dias sem uso — 2026-11-11
 
 - **`SESSION_INACTIVITY_DAYS` passa de 7 para 20.** Uma sessão (web ou CLI) só cai por falta de uso depois de 20 dias sem nenhuma requisição; o teto de 30 dias desde o login (`SESSION_EXPIRE_DAYS`) não muda. Instalações que definem a variável no próprio `.env` continuam com o valor de lá.

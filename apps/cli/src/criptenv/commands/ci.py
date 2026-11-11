@@ -438,7 +438,7 @@ def ci_tokens_list(project_id: Optional[str], include_revoked: bool):
 @click.option("--project", "-p", "project_id", default=None, help="Project ID")
 @click.option("--name", required=True, help="Token name (e.g., 'GitHub Actions Deploy')")
 @click.option("--scopes", default="read:secrets", help="Comma-separated scopes (default: read:secrets)")
-@click.option("--environment", "environment_scope", help="Restrict to environment (e.g., production)")
+@click.option("--environment", "environment_scope", help="Restrict to environment (e.g., production). Default: all environments that are not restricted")
 @click.option("--expires-in", "expires_days", type=int, help="Days until expiration (default: no expiration)")
 def ci_tokens_create(project_id: Optional[str], name: str, scopes: str, environment_scope: Optional[str], expires_days: Optional[int]):
     """Create a new CI token.

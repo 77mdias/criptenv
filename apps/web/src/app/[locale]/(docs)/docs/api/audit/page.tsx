@@ -40,6 +40,9 @@ export default function AuditPage() {
         <p className="text-muted-foreground mb-4">
           {t('list.body')}
         </p>
+        <p className="text-muted-foreground mb-4">
+          {t.rich('auth', { code: (chunks) => <code>{chunks}</code> })}
+        </p>
 
         <h3 className="text-lg font-semibold mt-6 mb-3">Query Parameters</h3>
         <ParamTable

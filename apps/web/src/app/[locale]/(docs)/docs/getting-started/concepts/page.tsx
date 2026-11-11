@@ -69,7 +69,7 @@ export default function ConceptsPage() {
       <CodeBlock
         language="bash"
         code={`criptenv projects create meu-app
-criptenv env create staging -p <project-id>
+criptenv env create backups -p <project-id>   # extra environment (Pro and Max)
 criptenv set DATABASE_URL="postgres://prod/db" -p <project-id> -e production
 criptenv list -p <project-id> -e production`}
       />

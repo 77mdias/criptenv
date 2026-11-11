@@ -33,6 +33,7 @@ export default function GitHubActionPage() {
 
       <Callout variant="info">
         {t.rich('tokenCallout', {
+          code,
           link: (chunks) => (
             <Link href="/dashboard/tokens" className="underline">
               {chunks}

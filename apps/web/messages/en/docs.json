@@ -435,7 +435,7 @@
         },
         "environments": {
           "title": "Environments",
-          "description": "Environments separate configuration by stage, such as development, staging and production."
+          "description": "Environments separate configuration by stage, such as development, staging and production. The Pro and Max plans allow extra environments, which can be restricted to admins."
         },
         "remoteVault": {
           "title": "Remote Vault",
@@ -583,7 +583,7 @@
     },
     "githubAction": {
       "description": "Use CriptEnv's official Action (<code>@criptenv/action</code>) to decrypt and inject your environment variables straight into your GitHub Actions workflows.",
-      "tokenCallout": "The CriptEnv GitHub Action needs a valid API token. You can create one in <link>Dashboard → Tokens</link>.",
+      "tokenCallout": "The CriptEnv GitHub Action needs a valid API token. You can create one in <link>Dashboard → Tokens</link>. It is a CI token (<code>ci_...</code>); to read a restricted environment, create the token for that environment.",
       "setup": {
         "title": "Setup",
         "step1": {
@@ -723,7 +723,8 @@
         "view": "View secrets",
         "edit": "Edit secrets",
         "manageTeam": "Manage team",
-        "settings": "Settings"
+        "settings": "Settings",
+        "restricted": "Restricted environments are the exception: only Owner and Admin see and read them. To create or restrict an environment, open Project settings → Environments."
       },
       "perProject": {
         "title": "Per-project permissions",
@@ -896,7 +897,7 @@
         },
         "isolation": {
           "title": "Environment isolation",
-          "body": "Each environment gets its own key, derived with HKDF from the vault key and the environment ID. A key from one environment cannot decrypt another environment's secrets."
+          "body": "Each environment gets its own key, derived with HKDF from the vault key and the environment ID. A key from one environment cannot decrypt another environment's secrets. Restricting an environment is a different thing: an access rule enforced by the server. Since there is one vault password per project, the restriction stops the server from handing over the data, but does not take back what someone has already downloaded."
         },
         "bruteForce": {
           "title": "Brute-force resistance",
@@ -1223,7 +1224,7 @@
         "apiUrl": "API URL. Default: https://criptenv-api.77mdevseven.tech",
         "project": "Default project for commands that accept <code>--project</code>.",
         "vaultPassword": "Project vault password for non-interactive use.",
-        "apiKey": "API key (<code>cek_...</code>) that authenticates the process directly, with no login and no session written to disk — suited to CI, containers and read-only HOME directories.",
+        "apiKey": "API key (<code>cek_...</code>) that authenticates the process directly, with no login and no session written to disk — suited to CI, containers and read-only HOME directories. It is read only: to write or sync from a pipeline, use a CI token.",
         "warning": "Don't expose <code>CRIPTENV_VAULT_PASSWORD</code> in logs, shared shells or persistent histories. In CI, use the provider's secrets mechanism."
       },
       "doctor": "Use <code>criptenv doctor</code> to check the session, current project, local metadata and API connectivity."
@@ -1358,7 +1359,7 @@
           }
         },
         "envList": {
-          "description": "Lists every environment in the project.",
+          "description": "Lists every environment in the project. Restricted ones are marked.",
           "params": {
             "0": "Filter by project"
           }
@@ -1368,7 +1369,8 @@
           "params": {
             "0": "Environment name (e.g. staging)",
             "1": "Project it belongs to",
-            "2": "Human-readable name"
+            "2": "Human-readable name",
+            "3": "Creates the environment restricted to the owner and admins"
           }
         },
         "projectsCreate": {
@@ -1511,6 +1513,26 @@
             "1": "Environment",
             "2": "Project"
           }
+        },
+        "envUpdate": {
+          "description": "Renames an environment, restricts it to the owner and admins, or opens it to the team.",
+          "params": {
+            "0": "Environment ID",
+            "1": "Project it belongs to",
+            "2": "New human-readable name",
+            "3": "Restricts it to the owner and admins",
+            "4": "Opens a restricted environment to the team"
+          }
+        },
+        "apiKeysCreate": {
+          "description": "Creates a read-only API key for containers and scripts. The key is shown only once.",
+          "params": {
+            "0": "Key name",
+            "1": "read:secrets (default) and/or read:audit",
+            "2": "Limits the key to one environment; without it, the key covers every environment that is not restricted",
+            "3": "Expiration in days (1 to 365)",
+            "4": "Project it belongs to"
+          }
         }
       }
     }
@@ -1540,7 +1562,8 @@
           "action": "Filter by action, e.g. vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created",
           "resourceType": "Filter by resource type, e.g. vault, environment, member, invite, integration, ci_token, api_key, project"
         }
-      }
+      },
+      "auth": "Accepts a member session or an API key with the <code>read:audit</code> scope. Only an API key for every environment can have this scope: with <code>environment_scope</code>, creation returns 422 and reading returns 403. Events from restricted environments are shown only to the owner and admins, and never to an API key."
     },
     "invites": {
       "description": "Manage email invitations to add new members to a project. Invitations expire after 7 days and are tied to a specific role.",
@@ -1580,7 +1603,7 @@
           "name": "Descriptive token name",
           "description": "Optional description",
           "scopes": "Scopes in action:resource format. Default: [\"read:secrets\"]",
-          "environmentScope": "Restricts the token to one environment (e.g. production), which must exist in the project. If omitted, it applies to all.",
+          "environmentScope": "Restricts the token to one environment (e.g. production), which must exist in the project. If omitted, it applies to all. Restricted environments are left out: a restricted environment needs a token created for it.",
           "expiresAt": "Optional expiration (ISO 8601)"
         }
       },
@@ -1663,7 +1686,8 @@
         "params": {
           "name": "Environment name: lowercase letters, digits and hyphens (e.g. staging). Must be unique in the project.",
           "displayName": "Human-readable name",
-          "isDefault": "Mark as the project's default environment"
+          "isDefault": "Mark as the project's default environment",
+          "restricted": "Restricts the environment to the project's owner and admins"
         },
         "example": "Example — create environment"
       },
@@ -1679,10 +1703,11 @@
       },
       "update": {
         "title": "Update environment",
-        "body": "Updates an environment's display name or default flag. The <code>name</code> cannot be changed. Requires the <code>admin</code> role.",
+        "body": "Updates an environment's display name or default flag. The <code>name</code> cannot be changed. Requires the <code>admin</code> role. It also accepts <code>restricted</code>, to restrict the environment or open it to the team.",
         "params": {
           "displayName": "New display name",
-          "isDefault": "Make it the default environment"
+          "isDefault": "Make it the default environment",
+          "restricted": "true restricts the environment; false opens it to the team"
         },
         "example": "Example — update environment"
       },
@@ -1692,6 +1717,11 @@
         "callout": "Archived environments are no longer reachable through the API or the CLI. To keep using their secrets, export them before archiving.",
         "response": "Empty response — the environment was archived.",
         "example": "Example — archive environment"
+      },
+      "limits": "Every project starts with <code>development</code>, <code>staging</code> and <code>production</code>. The owner's plan sets how many environments a project can have: 3 on Free, 5 on Pro and 7 on Max. Above the limit, creating one returns <code>402</code>.",
+      "restricted": {
+        "title": "Restricted environments",
+        "body": "An environment with <code>restricted: true</code> exists only for the project's owner and admins: for the other roles it is not listed and its endpoints return 404. CI tokens and API keys reach it only when they are created for it. The three initial environments and the default environment cannot be restricted (422). The restriction is enforced by the server and does not take back what someone has already downloaded."
       }
     },
     "vault": {
@@ -1923,25 +1953,26 @@
             "name": "Session",
             "prefix": "cookie",
             "ttl": "30 days, or 20 days without use",
-            "use": "Web dashboard"
+            "use": "Web dashboard and CLI (criptenv login)"
           },
           "apiKey": {
             "name": "API key",
             "prefix": "cek_",
             "ttl": "Until revoked or its optional expiration",
-            "use": "Integrations, scripts"
+            "use": "Containers and scripts, read only"
           },
           "ciToken": {
             "name": "CI token",
             "prefix": "ci_ → ci_s_",
             "ttl": "Token until revoked; each ci_s_ session lasts 1 hour",
-            "use": "CI/CD pipelines"
+            "use": "CI/CD pipelines: reads, writes and syncs"
           }
-        }
+        },
+        "note": "The hosting integration (Vercel, Render, Cloudflare) is not a credential: it is CriptEnv sending the variables of an environment to the provider. A restricted environment is reached only by the owner, the admins and CI tokens or API keys created for it."
       },
       "session": {
         "title": "Session (cookies)",
-        "body": "When you sign in on the web dashboard, the server creates a secure HTTP-only cookie that the browser sends automatically on every following request.",
+        "body": "When you sign in on the web dashboard, the server creates a secure HTTP-only cookie that the browser sends automatically on every following request. The CLI (criptenv login) gets a session of the same kind, with the same time limits, sent in the Authorization header and stored encrypted in ~/.criptenv.",
         "cookie": "The session cookie is <code>HttpOnly</code>, <code>Secure</code> and uses <code>SameSite=Lax</code>. JavaScript cannot read it, which protects it against XSS.",
         "loginTitle": "Login flow",
         "twoFactor": "If the account has 2FA and the browser isn't remembered, sign-in returns a temporary challenge and creates no session cookie until the second factor is verified.",
@@ -1967,7 +1998,7 @@
       },
       "ci": {
         "title": "CI tokens",
-        "body": "CI tokens start with <code>ci_</code> and are built for CI/CD pipelines. The pipeline exchanges the token for a temporary 1-hour <code>ci_s_</code> session, with scopes such as <code>read:secrets</code>, <code>write:secrets</code> and <code>write:integrations</code>.",
+        "body": "CI tokens start with <code>ci_</code> and are built for CI/CD pipelines. The pipeline exchanges the token for a temporary 1-hour <code>ci_s_</code> session, with scopes such as <code>read:secrets</code>, <code>write:secrets</code> and <code>write:integrations</code>. Without <code>environment_scope</code>, the token covers every environment that is not restricted; a restricted environment needs a token created for it.",
         "createTitle": "Create a CI token",
         "actionTitle": "Use a CI token in GitHub Actions",
         "actionBody": "Store the token (<code>ci_...</code>) and the vault password as GitHub Secrets. The Action exchanges the token for a <code>ci_s_</code> session (<code>POST /api/v1/auth/ci-login</code>), downloads the blobs (<code>GET /api/v1/ci/secrets</code>) and decrypts locally with the vault password."
@@ -2013,7 +2044,7 @@
           },
           "apiKey": {
             "title": "API key",
-            "body": "Token prefixed <code>cek_</code> for integrations and scripts. Can be restricted to one environment."
+            "body": "Token with the <code>cek_</code> prefix for containers and scripts, read only. Can be restricted to one environment."
           },
           "ciToken": {
             "title": "CI token",

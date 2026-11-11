@@ -39,7 +39,7 @@ COPY --from=ghcr.io/77mdias/criptenv-cli:latest /usr/local/bin/criptenv /usr/loc
 
 ### Containers and CI
 
-- `CRIPTENV_API_KEY` authenticates any command directly; no session is written to disk.
+- `CRIPTENV_API_KEY` authenticates read commands (`pull`, `get`, `list`, `export`, `run`) directly; no session is written to disk. API keys are read only: `set`, `push` and `delete` need a login or a CI token.
 - `CRIPTENV_VAULT_PASSWORD` unlocks the vault. Without it and without a TTY, commands fail instead of waiting for a prompt.
 - `criptenv run -- <cmd>` replaces itself with `<cmd>` (signals reach your app) and strips CriptEnv's own credentials from its environment.
 
@@ -116,6 +116,9 @@ criptenv push .env.production -p <project-id>
 | `ci tokens list` | List CI tokens |
 | `ci tokens create` | Create CI token |
 | `ci tokens revoke` | Revoke CI token |
+| `api-keys list` | List API keys |
+| `api-keys create -n <name> [-s read:secrets\|read:audit] [--env <env>]` | Create a read-only API key |
+| `api-keys revoke` | Revoke API key |
 
 ### Integrations
 

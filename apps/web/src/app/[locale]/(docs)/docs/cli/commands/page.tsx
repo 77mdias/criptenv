@@ -154,9 +154,16 @@ criptenv env list -p <project-id>`,
       {
         key: 'envCreate',
         name: 'criptenv env create',
-        params: [['NAME', 'string', true], ['--project, -p', 'string', false], ['--display-name, -d', 'string', false]],
-        code: `criptenv env create staging -p <project-id>
-criptenv env create production -p <project-id> -d "Production Environment"`,
+        params: [['NAME', 'string', true], ['--project, -p', 'string', false], ['--display-name, -d', 'string', false], ['--restricted', 'boolean', false]],
+        code: `criptenv env create backups -p <project-id> -d "Backups"
+criptenv env create db-admin -p <project-id> --restricted`,
+      },
+      {
+        key: 'envUpdate',
+        name: 'criptenv env update',
+        params: [['ENV_ID', 'string', true], ['--project, -p', 'string', false], ['--display-name, -d', 'string', false], ['--restricted', 'boolean', false], ['--open', 'boolean', false]],
+        code: `criptenv env update <env-id> --restricted
+criptenv env update <env-id> --open`,
       },
     ],
   },
@@ -217,6 +224,13 @@ criptenv ci tokens create --name "Deploy" --scopes read:secrets,write:secrets --
         name: 'criptenv ci tokens revoke',
         params: [['TOKEN_ID', 'string', true]],
         code: 'criptenv ci tokens revoke <token-id>',
+      },
+      {
+        key: 'apiKeysCreate',
+        name: 'criptenv api-keys create',
+        params: [['--name, -n', 'string', true], ['--scope, -s', 'string', false], ['--env', 'string', false], ['--expires-days', 'int', false], ['--project, -p', 'string', false]],
+        code: `criptenv api-keys create -n "worker" --env production
+criptenv api-keys create -n "audit-export" -s read:audit`,
       },
     ],
   },
