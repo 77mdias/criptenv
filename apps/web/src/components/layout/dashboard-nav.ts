@@ -1,4 +1,5 @@
 import {
+  Activity,
   CircleHelp,
   FolderOpen,
   KeyRound,
@@ -27,6 +28,7 @@ export function getDashboardNavGroups(): DashboardNavGroups {
   const mainNavItems: DashboardNavItem[] = [
     { icon: LayoutDashboard, labelKey: "dashboard", href: "/dashboard" },
     { icon: FolderOpen, labelKey: "projects", href: "/projects", matchMode: "prefix" },
+    { icon: Activity, labelKey: "activity", href: "/activity" },
     { icon: KeyRound, labelKey: "vault", href: "/vault", matchMode: "prefix" },
     { icon: Plug, labelKey: "integrations", href: "/integrations", matchMode: "prefix" },
   ]

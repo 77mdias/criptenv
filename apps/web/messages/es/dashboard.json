@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Proyectos",
+    "activity": "Actividad",
     "integrations": "Integraciones",
     "vault": "Bóveda",
     "help": "Ayuda",
@@ -11,6 +12,37 @@
   },
   "layout": {
     "checkingSession": "Verificando sesión..."
+  },
+  "activityPage": {
+    "title": "Actividad",
+    "subtitle": "{total, plural, one {# evento en tus proyectos} other {# eventos en tus proyectos}}",
+    "exportCsv": "Exportar CSV",
+    "loadMore": "Cargar más",
+    "loadError": "No se pudo cargar la actividad.",
+    "retention": "Cada proyecto muestra el historial que guarda el plan de su dueño. El CSV lleva solo lo que ya está cargado en pantalla.",
+    "filters": {
+      "title": "Filtros",
+      "project": "Proyecto",
+      "allProjects": "Todos los proyectos",
+      "origin": "Origen",
+      "allOrigins": "Todos los orígenes",
+      "period": "Período",
+      "allTime": "Todo el historial",
+      "lastDays": "Últimos {days} días",
+      "action": "Acción",
+      "allActions": "Todas las acciones"
+    },
+    "origins": {
+      "session": "Personas (login)",
+      "ci_session": "CI",
+      "api_key": "Clave de API"
+    },
+    "empty": {
+      "title": "Todavía no hay actividad",
+      "description": "Cuando alguien cree un proyecto, envíe secretos o invite al equipo, aparece aquí.",
+      "filteredTitle": "Nada coincide con estos filtros",
+      "filteredDescription": "Prueba otro proyecto, origen o período."
+    }
   },
   "home": {
     "title": "Dashboard",

@@ -14,7 +14,8 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.api_key import APIKey
 from app.models.audit import AuditLog
 from app.models.environment import Environment
-from app.services.environment_access import sees_restricted
+from app.services.environment_access import hidden_ids, sees_restricted
+from app.services.plan_limits import PlanLimits
 from app.models.integration import Integration
 from app.models.member import CIToken, ProjectInvite, ProjectMember
 from app.models.secret_expiration import SecretExpiration
@@ -229,6 +230,19 @@ class OverviewService:
             ],
             "keys": [{"key_id": key_id, "cells": cells[key_id]} for key_id in sorted(cells)],
         }
+
+    async def audit_scopes(
+        self, user_id: UUID, project_id: Optional[UUID] = None
+    ) -> list[tuple[UUID, Optional[datetime], set[UUID]]]:
+        """(project, history window, hidden environments) for each project the user belongs to,
+        or only `project_id` when given and the user is a member: what AuditService.get_user_logs reads."""
+        memberships = await ProjectService(self.db).list_user_projects_with_roles(user_id)
+        limits = PlanLimits(self.db)
+        return [
+            (project.id, await limits.audit_since(project.id), await hidden_ids(self.db, project.id, role))
+            for project, role in memberships
+            if project_id is None or project.id == project_id
+        ]
 
     async def get_activity_stats(self, user_id: UUID, days: int, now: Optional[datetime] = None) -> list[dict]:
         now = now or datetime.now(timezone.utc)

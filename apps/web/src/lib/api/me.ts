@@ -1,4 +1,5 @@
 import { request } from "./client";
+import type { AuditLogListResponse } from "./client";
 
 export interface OverviewEnvironment {
   id: string;
@@ -107,4 +108,29 @@ export const meApi = {
   activityStats(days = 30): Promise<ActivityDay[]> {
     return request<ActivityDay[]>("GET", "/api/v1/me/activity-stats", undefined, { days });
   },
+
+  /** Audit events of every project the user belongs to, newest first. */
+  audit(params: MyAuditQuery = {}): Promise<AuditLogListResponse> {
+    return request<AuditLogListResponse>(
+      "GET",
+      "/api/v1/me/audit",
+      undefined,
+      params as Record<string, string | number | undefined>,
+    );
+  },
 };
+
+export type AuditOrigin = "session" | "ci_session" | "api_key";
+
+export interface MyAuditQuery {
+  page?: number;
+  per_page?: number;
+  project_id?: string;
+  action?: string;
+  auth_type?: AuditOrigin;
+  actor_id?: string;
+  /** ISO date-time; events at or after it. */
+  from?: string;
+  /** ISO date-time; events at or before it. */
+  to?: string;
+}

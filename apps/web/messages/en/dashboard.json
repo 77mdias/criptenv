@@ -2,6 +2,7 @@
   "nav": {
     "dashboard": "Dashboard",
     "projects": "Projects",
+    "activity": "Activity",
     "integrations": "Integrations",
     "vault": "Vault",
     "help": "Help",
@@ -11,6 +12,37 @@
   },
   "layout": {
     "checkingSession": "Checking session..."
+  },
+  "activityPage": {
+    "title": "Activity",
+    "subtitle": "{total, plural, one {# event across your projects} other {# events across your projects}}",
+    "exportCsv": "Export CSV",
+    "loadMore": "Load more",
+    "loadError": "Could not load the activity.",
+    "retention": "Each project shows the history its owner's plan keeps. The CSV has only what is already loaded on screen.",
+    "filters": {
+      "title": "Filters",
+      "project": "Project",
+      "allProjects": "All projects",
+      "origin": "Origin",
+      "allOrigins": "All origins",
+      "period": "Period",
+      "allTime": "All history",
+      "lastDays": "Last {days} days",
+      "action": "Action",
+      "allActions": "All actions"
+    },
+    "origins": {
+      "session": "People (login)",
+      "ci_session": "CI",
+      "api_key": "API key"
+    },
+    "empty": {
+      "title": "No activity yet",
+      "description": "When someone creates a project, pushes secrets or invites the team, it shows up here.",
+      "filteredTitle": "Nothing matches these filters",
+      "filteredDescription": "Try another project, origin or period."
+    }
   },
   "home": {
     "title": "Dashboard",

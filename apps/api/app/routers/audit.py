@@ -8,41 +8,13 @@ from typing import Optional
 from app.database import get_db
 from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
-from app.services.audit_service import AuditService
-from app.schemas.audit import AuditActor, AuditLogResponse, AuditLogListResponse
+from app.services.audit_service import AuditService, to_audit_response
+from app.schemas.audit import AuditLogListResponse
 from app.middleware.api_key_auth import require_api_key_project, require_api_key_scope
 from app.middleware.auth import AuthContext, get_current_auth_context
 from app.services.environment_access import hidden_ids_for_credential
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/audit", tags=["Audit"])
-
-
-def _force_load_audit_log(log):
-    """Force-load all column attributes to avoid async lazy-loading errors."""
-    _ = log.id
-    _ = log.user_id
-    _ = log.project_id
-    _ = log.action
-    _ = log.resource_type
-    _ = log.resource_id
-    _ = log.meta
-    _ = log.ip_address
-    _ = log.user_agent
-    _ = log.created_at
-    return log
-
-
-def _to_response(log, actors: dict) -> AuditLogResponse:
-    response = AuditLogResponse.model_validate(_force_load_audit_log(log))
-    actor = actors.get(log.user_id)
-    if actor is not None:
-        response.actor = AuditActor(
-            id=actor.id, name=actor.name, email=str(actor.email), avatar_url=actor.avatar_url
-        )
-    auth_type = (log.meta or {}).get("auth_type")
-    if auth_type in ("api_key", "ci_session"):
-        response.auth_type = auth_type
-    return response
 
 
 @router.get("", response_model=AuditLogListResponse)
@@ -103,7 +75,7 @@ async def list_audit_logs(
     actors = await audit_service.get_actors({log.user_id for log in logs if log.user_id})
 
     return AuditLogListResponse(
-        logs=[_to_response(log, actors) for log in logs],
+        logs=[to_audit_response(log, actors) for log in logs],
         total=total,
         page=page,
         per_page=per_page
