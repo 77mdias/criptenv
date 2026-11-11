@@ -7,9 +7,15 @@ from datetime import datetime
 from typing import Optional
 from uuid import UUID
 
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, field_validator, model_validator
 
 from app.models.api_key import VALID_API_KEY_SCOPES
+
+
+def refuse_audit_on_environment_key(scopes: Optional[list[str]], environment_scope: Optional[str]) -> None:
+    """The audit history is project-wide: a key limited to one environment must not read it."""
+    if scopes and "read:audit" in scopes and (environment_scope or "").strip():
+        raise ValueError("read:audit is only for a key of every environment (environment_scope must be empty)")
 
 
 class ApiKeyCreate(BaseModel):
@@ -20,6 +26,11 @@ class ApiKeyCreate(BaseModel):
     scopes: list[str] = Field(default=["read:secrets"], description="Permissions for this key")
     environment_scope: Optional[str] = Field(None, description="Limit to specific environment (null = all)")
     expires_in_days: Optional[int] = Field(None, ge=1, le=365, description="Expiration in days (optional)")
+
+    @model_validator(mode="after")
+    def audit_is_project_wide(self):
+        refuse_audit_on_environment_key(self.scopes, self.environment_scope)
+        return self
     
     @field_validator('scopes')
     @classmethod
@@ -72,7 +83,8 @@ class ApiKeyResponse(BaseModel):
     def normalize_scopes(cls, v):
         if v is None:
             return ["read:secrets"]
-        return v
+        # An older key may still hold a scope that was removed: it grants nothing, so it is not shown.
+        return [scope for scope in v if scope in VALID_API_KEY_SCOPES]
     
     model_config = {"from_attributes": True}
 

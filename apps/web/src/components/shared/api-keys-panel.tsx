@@ -20,13 +20,10 @@ import { apiKeysApi, environmentsApi } from "@/lib/api";
 import type { APIKey, APIKeyCreateResponse } from "@/lib/api/client";
 
 // Keys, not copy: this is module scope, so no hook can run here.
+// API keys are read-only: writing belongs to CI tokens (short sessions) and to the logged-in user.
 const AVAILABLE_SCOPES = [
-  { value: "read:secrets", key: "readSecrets", enabled: true },
-  { value: "write:secrets", key: "writeSecrets", enabled: false },
-  { value: "delete:secrets", key: "deleteSecrets", enabled: false },
-  { value: "read:audit", key: "readAudit", enabled: false },
-  { value: "write:integrations", key: "writeIntegrations", enabled: false },
-  { value: "admin:project", key: "adminProject", enabled: false },
+  { value: "read:secrets", key: "readSecrets" },
+  { value: "read:audit", key: "readAudit" },
 ] as const;
 
 interface ApiKeysPanelProps {
@@ -42,7 +39,7 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
   const [newKeyName, setNewKeyName] = useState("");
   const [newKeyScopes, setNewKeyScopes] = useState<string[]>(["read:secrets"]);
   const [newKeyEnv, setNewKeyEnv] = useState("");
-  const [environmentNames, setEnvironmentNames] = useState<string[]>([]);
+  const [environments, setEnvironments] = useState<{ name: string; restricted: boolean }[]>([]);
   const [newKeyExpiresDays, setNewKeyExpiresDays] = useState("");
   const [createdKey, setCreatedKey] = useState<APIKeyCreateResponse | null>(null);
   const [copied, setCopied] = useState(false);
@@ -69,20 +66,30 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
   }, [fetchKeys]);
 
   useEffect(() => {
-    // The scope must name an existing environment, so offer only those (plus "all").
+    // The scope must name an existing environment, so offer only those (plus "all"). Read each time the
+    // form opens: an environment created a moment ago on this same page must be in the list.
+    if (!showCreate) return;
     let active = true;
     void (async () => {
       try {
         const resp = await environmentsApi.list(projectId);
-        if (active) setEnvironmentNames(resp.environments.map((env) => env.name));
+        if (active) {
+          setEnvironments(resp.environments.map((env) => ({ name: env.name, restricted: Boolean(env.restricted) })));
+        }
       } catch {
-        if (active) setEnvironmentNames([]);
+        if (active) setEnvironments([]);
       }
     })();
     return () => {
       active = false;
     };
-  }, [projectId]);
+  }, [projectId, showCreate]);
+
+  // The audit history is project-wide: only a key for every environment may read it.
+  const chooseEnvironment = (value: string) => {
+    setNewKeyEnv(value);
+    if (value) setNewKeyScopes((scopes) => scopes.filter((scope) => scope !== "read:audit"));
+  };
 
   const handleCreate = async () => {
     if (!newKeyName.trim()) return;
@@ -184,14 +191,16 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.scopes")}</label>
             <div className="grid grid-cols-2 gap-2">
-              {AVAILABLE_SCOPES.map((scope) => (
-                <label key={scope.value} className={`flex items-center gap-2 text-sm ${scope.enabled ? "" : "opacity-50"}`}>
+              {AVAILABLE_SCOPES.map((scope) => {
+                const locked = scope.value === "read:audit" && newKeyEnv !== "";
+                return (
+                <label key={scope.value} className={`flex items-center gap-2 text-sm ${locked ? "opacity-50" : ""}`}>
                   <input
                     type="checkbox"
                     checked={newKeyScopes.includes(scope.value)}
-                    disabled={!scope.enabled}
+                    disabled={locked}
                     onChange={(e) => {
-                      if (!scope.enabled) return;
+                      if (locked) return;
                       if (e.target.checked) {
                         setNewKeyScopes([...newKeyScopes, scope.value]);
                       } else {
@@ -199,27 +208,31 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
                       }
                     }}
                   />
-                  <span className="text-[var(--text-secondary)]">
-                    {t(`scopes.${scope.key}.label`)}
-                    {!scope.enabled && ` ${t("comingSoon")}`}
-                  </span>
+                  <span className="text-[var(--text-secondary)]">{t(`scopes.${scope.key}.label`)}</span>
                 </label>
-              ))}
+                );
+              })}
             </div>
+            {newKeyEnv !== "" && (
+              <p className="mt-1 text-xs text-[var(--text-muted)]">{t("form.auditNeedsAll")}</p>
+            )}
           </div>
           <div>
             <label htmlFor="api-key-env-scope" className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.envRestriction")}</label>
             <select
               id="api-key-env-scope"
               value={newKeyEnv}
-              onChange={(e) => setNewKeyEnv(e.target.value)}
+              onChange={(e) => chooseEnvironment(e.target.value)}
               className="w-full px-3 py-2 rounded-md border border-[var(--border)] bg-[var(--background)] text-sm font-mono"
             >
               <option value="">{t("form.allEnvironments")}</option>
-              {environmentNames.map((name) => (
-                <option key={name} value={name}>{name}</option>
+              {environments.map((env) => (
+                <option key={env.name} value={env.name}>
+                  {env.restricted ? t("form.restrictedOption", { name: env.name }) : env.name}
+                </option>
               ))}
             </select>
+            {newKeyEnv === "" && <p className="mt-1 text-xs text-[var(--text-muted)]">{t("form.allHint")}</p>}
           </div>
           <div>
             <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono mb-1">{t("form.expiresIn")}</label>

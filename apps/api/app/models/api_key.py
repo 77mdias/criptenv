@@ -24,13 +24,13 @@ API_KEY_PREFIX = "cek_"
 API_KEY_PREFIX_LENGTH = len(API_KEY_PREFIX)
 
 # Valid scopes as per M3.4 specification
+# API keys are read-only. A key sits in a container or a file for months and works without a password
+# or a second factor: a leaked one must not change or destroy anything. Writing belongs to CI tokens
+# (short sessions) and to the logged-in user. Older rows may still hold removed scopes: they grant nothing.
 VALID_API_KEY_SCOPES = frozenset([
     "read:secrets",
-    "write:secrets",
-    "delete:secrets",
+    # The project's audit history; only on a key for every environment (the history is project-wide).
     "read:audit",
-    "write:integrations",
-    "admin:project"
 ])
 
 
@@ -92,13 +92,10 @@ class ScopeValidator:
         return list(scopes)
     
     def has_scope(self, token_scopes: Optional[list[str]], required_scope: str) -> bool:
-        """Check if token has the required scope or admin:project."""
+        """Check if the key holds the required scope. Removed scopes (admin:project included) grant nothing."""
         if not token_scopes:
             return False
-        # admin:project grants all access
-        if "admin:project" in token_scopes:
-            return True
-        return required_scope in token_scopes
+        return required_scope in self._valid_scopes and required_scope in token_scopes
 
 
 class APIKey(Base):

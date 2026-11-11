@@ -12,14 +12,13 @@ const API = "https://criptenv-api.77mdevseven.tech";
 
 // Literal lists so the i18n auditor can resolve the dynamic lookups below.
 export const TOKEN_TYPES = ["session", "apiKey", "ciToken"] as const;
-export const SCOPES = ["readSecrets", "writeSecrets", "adminProject", "envScope", "envNull"] as const;
+export const SCOPES = ["readSecrets", "readAudit", "envScope", "envNull"] as const;
 export const PROVIDERS = ["github", "google", "discord"] as const;
 export const PRACTICES = ["apiKeys", "ciTokens", "noFrontend", "rotate", "envScope"] as const;
 
 const SCOPE_LABELS: Record<(typeof SCOPES)[number], string> = {
   readSecrets: "read:secrets",
-  writeSecrets: "write:secrets",
-  adminProject: "admin:project",
+  readAudit: "read:audit",
   envScope: 'environment_scope: "production"',
   envNull: "environment_scope: null",
 };
