@@ -261,6 +261,36 @@ class TestApiKeysCommands:
         assert "API key created" in result.output
         assert "cek_live_abc123" in result.output
 
+    @pytest.mark.parametrize("scope", ["write:secrets", "delete:secrets", "write:integrations", "admin:project"])
+    @patch("criptenv.commands.api_keys.async_cli_context")
+    def test_api_keys_create_offers_only_read_scopes(self, mock_ctx, runner, scope):
+        mock_client = AsyncMock()
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
+
+        result = runner.invoke(main, ["api-keys", "create", "-p", "00000000-0000-4000-8000-000000000123", "-n", "K", "-s", scope])
+
+        assert result.exit_code != 0
+        mock_client.create_api_key.assert_not_called()
+
+    @patch("criptenv.commands.api_keys.async_cli_context")
+    def test_api_keys_create_audit_key_needs_every_environment(self, mock_ctx, runner):
+        mock_client = AsyncMock()
+        mock_client.list_environments = AsyncMock(return_value={"environments": [{"id": "e2", "name": "production"}]})
+        mock_client.create_api_key = AsyncMock(return_value={"id": "k", "name": "K", "key": "cek_live_x", "expires_at": None})
+        mock_ctx.return_value.__aenter__ = AsyncMock(return_value=(_make_mock_db(), None, mock_client))
+        mock_ctx.return_value.__aexit__ = AsyncMock(return_value=None)
+        base = ["api-keys", "create", "-p", "00000000-0000-4000-8000-000000000123", "-n", "K", "-s", "read:audit"]
+
+        refused = runner.invoke(main, [*base, "--env", "production"])
+        assert refused.exit_code != 0
+        assert "read:audit" in refused.output and "every environment" in refused.output
+        mock_client.create_api_key.assert_not_called()
+
+        allowed = runner.invoke(main, base)
+        assert allowed.exit_code == 0, allowed.output
+        assert "Reserved" not in allowed.output
+
     @patch("criptenv.commands.api_keys.async_cli_context")
     def test_api_keys_revoke(self, mock_ctx, runner):
         mock_client = AsyncMock()

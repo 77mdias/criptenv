@@ -42,14 +42,13 @@
   "apiKeys": {
     "title": "API Keys",
     "newKey": "New API Key",
-    "description": "Use API Keys for server-to-server integrations that need to read encrypted data from the public API. For pipelines that write secrets or sync providers, use CI Tokens.",
+    "description": "API keys only read: encrypted secrets (for containers and scripts) and, if you want, the audit history. For pipelines that write secrets or sync with hosting providers, use CI tokens.",
     "loadError": "Failed to load API keys",
     "createError": "Failed to create API key",
     "revokeError": "Failed to revoke",
     "revokeConfirm": "Revoke this API key? Applications using it will stop working.",
     "createdNotice": "API Key created — copy it now, it will not be shown again!",
     "close": "Close",
-    "comingSoon": "(coming soon)",
     "empty": "No API keys created yet.",
     "lastUsed": "Last used: {date}",
     "expires": "Expires: {date}",
@@ -61,32 +60,17 @@
       "allEnvironments": "All environments",
       "expiresIn": "Expires in (days, optional)",
       "create": "Create",
-      "cancel": "Cancel"
+      "cancel": "Cancel",
+      "restrictedOption": "{name} (restricted)",
+      "allHint": "The key reaches every environment, but it does not reach the restricted ones. For a container, prefer a single environment: if the key leaks, only that one is exposed.",
+      "auditNeedsAll": "The audit history covers the whole project: only a key for every environment can read it."
     },
     "scopes": {
       "readSecrets": {
-        "label": "Read Secrets",
-        "description": "Read encrypted vault blobs from the public API"
-      },
-      "writeSecrets": {
-        "label": "Write Secrets",
-        "description": "Reserved for future public API writes"
-      },
-      "deleteSecrets": {
-        "label": "Delete Secrets",
-        "description": "Reserved for future public API deletes"
+        "label": "Read secrets"
       },
       "readAudit": {
-        "label": "Read Audit",
-        "description": "Reserved for future audit API access"
-      },
-      "writeIntegrations": {
-        "label": "Manage Integrations",
-        "description": "Use CI Tokens for provider sync automation"
-      },
-      "adminProject": {
-        "label": "Admin Project",
-        "description": "Reserved for future public admin API access"
+        "label": "Read audit"
       }
     }
   },
@@ -127,15 +111,17 @@
       "descriptionPlaceholder": "Optional description",
       "scopes": "Scopes *",
       "envRestriction": "Environment restriction",
-      "envPlaceholder": "e.g. production (empty = all)",
-      "envHint": "Leave empty to allow access to all environments.",
+      "envHint": "Reaches every environment, but does not reach the restricted ones: for those, create a token for that environment only.",
       "expiration": "Expiration (days)",
       "expirationPlaceholder": "Empty = no expiration",
       "nameRequired": "Name is required",
       "scopeRequired": "Select at least one scope",
       "createError": "Failed to create token",
       "cancel": "Cancel",
-      "create": "Create Token"
+      "create": "Create Token",
+      "allEnvironments": "All environments",
+      "restrictedOption": "{name} (restricted)",
+      "envOneHint": "The token only reaches this environment."
     },
     "scopes": {
       "readSecrets": {

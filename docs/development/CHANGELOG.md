@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Chaves de API só de leitura — 2026-11-11
+
+Decisão do Jean: uma chave de API fica meses dentro de um contêiner ou de um arquivo e funciona sem senha nem segundo fator, então não deve conseguir alterar nem apagar nada. Gravar segredos e sincronizar com a hospedagem continua com o token de CI (sessão curta) e com o login.
+
+- **Escopos de chave de API: só `read:secrets` e `read:audit`.** Saem `write:secrets`, `delete:secrets`, `write:integrations` e `admin:project`: criar ou alterar uma chave com eles responde 422, e a tela e a CLI deixam de oferecê-los. Nenhuma rota jamais aceitou chave de API para essas ações, então nenhuma chave perde algo que fazia.
+- **`admin:project` deixa de valer como curinga.** Uma chave antiga criada pela CLI só com `admin:project` lia segredos por tabela e deixa de ler; crie outra com `read:secrets`. Escopos removidos que ficaram em chaves antigas não aparecem mais na lista e não dão acesso a nada.
+- **`read:audit` passa a funcionar:** `GET /api/v1/projects/{id}/audit` aceita chave de API com esse escopo, para mandar o histórico a um painel de monitoramento. Só em chave para todos os ambientes (uma chave presa a um ambiente recebe 422 ao ser criada e 403 ao ler), sem os eventos de ambientes restritos, e com o papel atual de quem criou a chave.
+- **Lista de ambientes na chave de API e no token de CI:** é lida de novo cada vez que o formulário abre (um ambiente criado na mesma página passa a aparecer), mostra os restritos marcados e explica que "Todos os ambientes" não inclui os restritos. No token de CI, o campo de texto livre virou essa mesma lista.
+- Documentação da API (Autenticação) atualizada.
+
 ### Ambientes extras e ambientes restritos — 2026-11-10
 
 Desenho em `docs/superpowers/specs/2026-11-10-restricted-environments-design.md`, plano em `docs/superpowers/plans/2026-11-10-restricted-environments.md`.

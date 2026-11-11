@@ -1952,15 +1952,14 @@
         "title": "API Keys",
         "body": "API Keys têm prefixo <code>cek_</code> e valem até serem revogadas (ou até a expiração opcional). São ideais para integrações server-to-server que leem projetos, ambientes e vault blobs criptografados pela API pública. Cada chave fica presa ao projeto em que foi criada: <code>GET /api/v1/projects</code> lista só esse projeto, e qualquer outro projeto responde 404, mesmo que você seja membro dele.",
         "scopesTitle": "Escopos",
-        "scopesBody": "Hoje a API pública aplica <code>read:secrets</code> para leitura de vault e respeita <code>environment_scope</code>, que precisa ser um ambiente existente. Escopos de escrita ficam reservados para endpoints públicos futuros.",
+        "scopesBody": "API keys só leem. Uma key fica meses dentro de um contêiner ou de um arquivo e funciona sem senha nem segundo fator, então uma key vazada não pode alterar nem apagar nada. Para gravar segredos ou sincronizar com a hospedagem, use um CI token (sessão curta) ou o login. <code>environment_scope</code> precisa ser um ambiente existente. A key age como quem a criou: se essa pessoa perde o acesso, a key perde junto.",
         "scope": "Escopo",
         "permission": "Permissão",
         "scopes": {
           "readSecrets": "Leitura de projetos, ambientes e vault blobs criptografados",
-          "writeSecrets": "Reservado para escrita futura via API pública",
-          "adminProject": "Reservado para administração futura via API pública",
-          "envScope": "Restringe a key ao ambiente informado",
-          "envNull": "Permite leitura em todos os ambientes do projeto"
+          "readAudit": "Leitura do histórico de auditoria do projeto. Só em chave sem <code>environment_scope</code>",
+          "envScope": "Restringe a key ao ambiente informado. É o único jeito de uma key alcançar um ambiente restrito",
+          "envNull": "Permite leitura em todos os ambientes do projeto, menos os restritos"
         },
         "createTitle": "Criar uma API Key",
         "keyOnce": "O campo <code>key</code> é retornado apenas na criação. Guarde-o em um local seguro; se perder, revogue a chave e crie uma nova.",

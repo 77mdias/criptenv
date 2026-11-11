@@ -16,7 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import { ciTokensApi, peekCached } from "@/lib/api";
+import { ciTokensApi, environmentsApi, peekCached } from "@/lib/api";
 import type { CIToken, CITokenListResponse, CITokenWithPlaintext } from "@/lib/api/client";
 
 // Keys, not copy: this is module scope, so no hook can run here.
@@ -351,7 +351,27 @@ function CreateTokenModal({
     "read:secrets",
   ]);
   const [environmentScope, setEnvironmentScope] = useState("");
+  const [environments, setEnvironments] = useState<{ name: string; restricted: boolean }[]>([]);
   const [expiresDays, setExpiresDays] = useState<string>("");
+
+  useEffect(() => {
+    // The scope must name an existing environment: offer the list (read when the modal opens, so an
+    // environment created a moment ago is there) instead of free text.
+    let active = true;
+    environmentsApi
+      .list(projectId)
+      .then((resp) => {
+        if (active) {
+          setEnvironments(resp.environments.map((env) => ({ name: env.name, restricted: Boolean(env.restricted) })));
+        }
+      })
+      .catch(() => {
+        if (active) setEnvironments([]);
+      });
+    return () => {
+      active = false;
+    };
+  }, [projectId]);
   const [creating, setCreating] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -490,22 +510,27 @@ function CreateTokenModal({
 
           {/* Environment Scope */}
           <div className="space-y-1.5">
-            <label className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono">
+            <label
+              htmlFor="ci-token-env-scope"
+              className="block text-xs font-bold text-[var(--text-muted)] uppercase tracking-wider font-mono"
+            >
               {t("ciTokens.modal.envRestriction")}
             </label>
-            <input
-              type="text"
-              className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] placeholder:text-[var(--text-muted)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
+            <select
+              id="ci-token-env-scope"
+              className="flex h-10 w-full rounded-lg border border-[var(--border)] bg-[var(--surface)] px-3 py-2 text-sm text-[var(--text-primary)] font-mono transition-colors focus:outline-none focus:ring-2 focus:ring-[var(--accent)] focus:ring-offset-2"
               value={environmentScope}
-              onChange={(e) =>
-                setEnvironmentScope(
-                  e.target.value.toLowerCase().replace(/\s+/g, "-"),
-                )
-              }
-              placeholder={t("ciTokens.modal.envPlaceholder")}
-            />
+              onChange={(e) => setEnvironmentScope(e.target.value)}
+            >
+              <option value="">{t("ciTokens.modal.allEnvironments")}</option>
+              {environments.map((env) => (
+                <option key={env.name} value={env.name}>
+                  {env.restricted ? t("ciTokens.modal.restrictedOption", { name: env.name }) : env.name}
+                </option>
+              ))}
+            </select>
             <p className="text-xs text-[var(--text-muted)] font-mono">
-              {t("ciTokens.modal.envHint")}
+              {environmentScope === "" ? t("ciTokens.modal.envHint") : t("ciTokens.modal.envOneHint")}
             </p>
           </div>
 
