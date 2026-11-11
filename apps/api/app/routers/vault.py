@@ -103,7 +103,7 @@ async def _authenticate_vault_write(
         environment = await _get_environment_or_404(db, project_uuid, env_uuid)
         ci_session = await validate_ci_session(token, project_uuid)
         require_ci_session_scope(ci_session, "write:secrets")
-        require_ci_session_environment(ci_session, environment.name)
+        require_ci_session_environment(ci_session, environment.name, restricted=environment.restricted)
         return None, ci_session, environment
 
     current_user = await _resolve_current_user(request, db)
@@ -127,7 +127,7 @@ async def _authenticate_vault_read(
     environment = await _get_environment_or_404(db, project_uuid, env_uuid)
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
         require_api_key_scope(auth_context.api_key, "read:secrets")
-        require_api_key_environment(auth_context.api_key, environment.name)
+        require_api_key_environment(auth_context.api_key, environment.name, restricted=environment.restricted)
     return auth_context.user, environment
 
 

@@ -56,6 +56,15 @@ async def hidden_names(db: AsyncSession, project_id: UUID, role: str | None) -> 
     return set(result)
 
 
+async def hidden_ids_for_credential(db: AsyncSession, project_id: UUID, scope: str | None) -> set[UUID]:
+    """The restricted environments a CI token or API key with this scope does not reach."""
+    result = await db.execute(
+        select(Environment.id, Environment.name)
+        .where(Environment.project_id == project_id, Environment.restricted.is_(True))
+    )
+    return {env_id for env_id, name in result.all() if name != scope}
+
+
 def credential_reaches(environment, scope: str | None) -> bool:
     """A CI token or API key with no scope reaches every open environment; a restricted one
     only when the credential is scoped to it by name."""

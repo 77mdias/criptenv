@@ -11,6 +11,8 @@ from uuid import UUID
 from fastapi import APIRouter, Depends, HTTPException, Request, Query, status
 from pydantic import BaseModel, Field
 from sqlalchemy.ext.asyncio import AsyncSession
+
+from app.services.environment_access import credential_reaches
 from sqlalchemy import select
 
 from app.database import get_db
@@ -275,7 +277,8 @@ async def get_ci_secrets(
     )
     env = env_result.scalar_one_or_none()
     
-    if not env:
+    # A restricted environment does not exist for a token that is not scoped to it.
+    if not env or not credential_reaches(env, _ci_session.get("environment_scope")):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={
@@ -346,7 +349,8 @@ async def list_ci_secrets_keys(
     )
     env = env_result.scalar_one_or_none()
     
-    if not env:
+    # A restricted environment does not exist for a token that is not scoped to it.
+    if not env or not credential_reaches(env, _ci_session.get("environment_scope")):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail={

@@ -8,7 +8,7 @@ from app.database import get_db
 from app.services.plan_limits import PlanLimits
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
-from app.services.environment_access import restriction_error, sees_restricted
+from app.services.environment_access import credential_reaches, restriction_error, sees_restricted
 from app.schemas.environment import EnvironmentCreate, EnvironmentUpdate, EnvironmentResponse, EnvironmentListResponse
 from app.middleware.auth import get_current_user, get_current_auth_context, AuthContext
 from app.middleware.api_key_auth import require_api_key_environment, require_api_key_project
@@ -152,8 +152,8 @@ async def list_environments(
     environment_scope = None
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
         environment_scope = getattr(auth_context.api_key, "environment_scope", None)
-        if environment_scope is not None:
-            environments = [env for env in environments if env.name == environment_scope]
+        # No scope = every open environment; a restricted one only for a key scoped to it.
+        environments = [env for env in environments if credential_reaches(env, environment_scope)]
 
     return EnvironmentListResponse(
         environments=[EnvironmentResponse.model_validate(_force_load_environment(e)) for e in environments],
@@ -209,7 +209,7 @@ async def get_environment(
             detail="Environment not found"
         )
     if auth_context.auth_type == "api_key" and auth_context.api_key is not None:
-        require_api_key_environment(auth_context.api_key, environment.name)
+        require_api_key_environment(auth_context.api_key, environment.name, restricted=environment.restricted)
 
     return EnvironmentResponse.model_validate(_force_load_environment(environment))
 

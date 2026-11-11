@@ -3,10 +3,7 @@
 from typing import Annotated, Optional
 from uuid import UUID
 
-from sqlalchemy import select
-
-from app.models.environment import Environment
-from app.services.environment_access import hidden_ids
+from app.services.environment_access import hidden_ids, hidden_ids_for_credential
 from datetime import datetime
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
@@ -134,12 +131,7 @@ async def _hidden_environment_ids(db, project_service, project_uuid, user, ci_se
         member = await project_service.check_user_access(user.id, project_uuid)
         return await hidden_ids(db, project_uuid, member.role if member else None)
     # A CI session: every restricted environment, except the one it is scoped to.
-    scope = (ci_session or {}).get("environment_scope")
-    result = await db.execute(
-        select(Environment.id, Environment.name)
-        .where(Environment.project_id == project_uuid, Environment.restricted.is_(True))
-    )
-    return {env_id for env_id, name in result.all() if name != scope}
+    return await hidden_ids_for_credential(db, project_uuid, (ci_session or {}).get("environment_scope"))
 
 
 def _integration_response(integration, hidden: set[UUID]) -> "IntegrationResponse":

@@ -198,9 +198,12 @@ def require_api_key_project(api_key: APIKey, project_id: UUID) -> None:
         )
 
 
-def require_api_key_environment(api_key: APIKey, environment_name: str) -> None:
+def require_api_key_environment(api_key: APIKey, environment_name: str, restricted: bool = False) -> None:
     """Raise 403 when an API key is restricted to another environment."""
     environment_scope = getattr(api_key, "environment_scope", None)
+    if restricted and environment_scope != environment_name:
+        # A restricted environment is reached only by a credential scoped to it; for any other it does not exist.
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environment not found")
     if environment_scope is None:
         return
     if environment_scope != environment_name:
