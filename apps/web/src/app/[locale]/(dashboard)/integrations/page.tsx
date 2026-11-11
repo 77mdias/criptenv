@@ -297,6 +297,7 @@ export default function IntegrationsPage() {
                 icon={Plug}
                 title={t("emptyIntegrations.title")}
                 description={t("emptyIntegrations.description")}
+                command="criptenv integrations connect vercel"
                 className="py-12"
               />
             ) : (

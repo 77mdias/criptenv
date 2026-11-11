@@ -69,7 +69,8 @@
   "codeBlock": {
     "copy": "Copiar",
     "copied": "¡Copiado!",
-    "copyCode": "Copiar código"
+    "copyCode": "Copiar código",
+    "copyCommand": "Copiar comando"
   },
   "notifications": {
     "title": "Notificaciones",

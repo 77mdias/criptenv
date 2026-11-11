@@ -153,7 +153,12 @@ export default function AccessPage() {
         </Card>
       ) : credentials.length === 0 ? (
         <Card className="p-0">
-          <EmptyState icon={KeySquare} title={t("empty.title")} description={t("empty.description")} />
+          <EmptyState
+            icon={KeySquare}
+            title={t("empty.title")}
+            description={t("empty.description")}
+            command="criptenv ci tokens create --name deploy --expires-in 90"
+          />
         </Card>
       ) : visible.length === 0 ? (
         <Card className="p-0">

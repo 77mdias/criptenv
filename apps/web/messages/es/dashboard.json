@@ -87,7 +87,7 @@
     },
     "empty": {
       "title": "Ninguna credencial para gestionar",
-      "description": "Aquí aparecen los tokens de CI y las claves de API de los proyectos donde eres dueño o admin. Crea uno en la configuración del proyecto o con criptenv ci tokens create.",
+      "description": "Aquí aparecen los tokens de CI y las claves de API de los proyectos donde eres dueño o admin. Crea uno en la configuración del proyecto o con la CLI, dentro de la carpeta del proyecto:",
       "filteredTitle": "Ninguna credencial coincide con estos filtros"
     }
   },
@@ -372,7 +372,16 @@
     "audit": "Auditoría",
     "settings": "Configuración",
     "close": "Cerrar paleta de comandos",
-    "searchPlaceholder": "Buscar comandos...",
-    "empty": "No se encontraron comandos."
+    "searchPlaceholder": "Buscar pantallas, proyectos, entornos y secrets...",
+    "empty": "No se encontraron comandos.",
+    "title": "Búsqueda rápida",
+    "results": "Resultados",
+    "compare": "Comparar entornos",
+    "copyList": "Copiar comando: listar secrets",
+    "copyRun": "Copiar comando: ejecutar con los secrets",
+    "commandPlaceholder": "<comando>",
+    "projectHint": "Proyecto",
+    "environmentHint": "Entorno",
+    "secretHint": "Secret en {project}"
   }
 }

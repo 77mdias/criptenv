@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button"
 interface SecretsTableProps {
   secrets: DecryptedSecret[]
   environmentName: string
+  /** CLI command shown in the empty state */
+  emptyCommand?: string
   copiedKey?: string | null
   canManageSecrets?: boolean
   selectedKeys?: string[]
@@ -59,6 +61,7 @@ function SelectAllCheckbox({
 export function SecretsTable({
   secrets,
   environmentName,
+  emptyCommand,
   copiedKey,
   canManageSecrets = true,
   selectedKeys = [],
@@ -87,6 +90,7 @@ export function SecretsTable({
         icon={Lock}
         title={t("emptyTitle")}
         description={t("emptyDescription")}
+        command={emptyCommand}
         className="py-12"
         action={{
           label: t("createSecret"),

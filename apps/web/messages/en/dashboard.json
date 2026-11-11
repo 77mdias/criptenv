@@ -87,7 +87,7 @@
     },
     "empty": {
       "title": "No credentials to manage",
-      "description": "CI tokens and API keys of the projects where you are owner or admin show up here. Create one in the project settings or with criptenv ci tokens create.",
+      "description": "CI tokens and API keys of the projects where you are owner or admin show up here. Create one in the project settings or with the CLI, inside the project folder:",
       "filteredTitle": "No credentials match these filters"
     }
   },
@@ -372,7 +372,16 @@
     "audit": "Audit Log",
     "settings": "Settings",
     "close": "Close command palette",
-    "searchPlaceholder": "Search commands...",
-    "empty": "No commands found."
+    "searchPlaceholder": "Search screens, projects, environments and secrets...",
+    "empty": "No commands found.",
+    "title": "Quick search",
+    "results": "Results",
+    "compare": "Compare environments",
+    "copyList": "Copy command: list secrets",
+    "copyRun": "Copy command: run with the secrets",
+    "commandPlaceholder": "<command>",
+    "projectHint": "Project",
+    "environmentHint": "Environment",
+    "secretHint": "Secret in {project}"
   }
 }
