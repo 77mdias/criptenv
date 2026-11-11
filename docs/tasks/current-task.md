@@ -1,16 +1,16 @@
 # Current Task — Phase 3.5: Experiência Autenticada (UX)
 
-**Atualizado:** 2026-10-28
-**Plano:** `docs/superpowers/plans/2026-10-26-authenticated-experience-plan.md` · **Spec:** `docs/superpowers/specs/2026-10-26-authenticated-experience-design.md` · **Roadmap:** Phase 3.5 em `ROADMAP.md`
+**Atualizado:** 2026-11-11 — **Phase 3.5 concluída.** O próximo passo escrito é o que sobrou da Phase 3 (publicar a GitHub Action, Railway, alertas na web) e o backlog de alta prioridade em `docs/features/backlog.md`.
+**Plano:** `docs/superpowers/plans/2026-10-26-authenticated-experience-plan.md` (UX.1–UX.4) e `docs/superpowers/plans/2026-11-11-ux5-ux6.md` (UX.5–UX.6) · **Spec:** `docs/superpowers/specs/2026-10-26-authenticated-experience-design.md` · **Roadmap:** Phase 3.5 em `ROADMAP.md`
 
 | Milestone | Status | PR |
 |---|---|---|
 | UX.1 Fundação (feed legível, ator na auditoria, i18n, datas relativas) | ✅ mergeado | #54 |
 | UX.2 Dashboard central de comando (`GET /me/overview`, `/me/activity-stats`) | ✅ mergeado | #55 |
 | UX.3 Visão geral do projeto (matriz chave × ambiente, snippets) | ✅ mergeado | #58 |
-| UX.4 Detalhe do secret (painel lateral) | ✅ PR aberto | `feat/ux4-secret-detail` |
-| **UX.5a–d Atividade · Segurança · Acessos · Comparar** | ⏭️ **próximo** | — |
-| UX.6 Ctrl+K, EmptyState, skeletons | 📋 | — |
+| UX.4 Detalhe do secret (painel lateral) | ✅ mergeado | #60 |
+| UX.5a–d Atividade · Segurança · Acessos · Comparar | ✅ implementado | branch `feat/ux5-ux6` |
+| UX.6 Ctrl+K, EmptyState com comando da CLI | ✅ implementado | branch `feat/ux5-ux6` |
 
 Fora da Phase 3.5, também concluído nesta janela: CLI 0.2.0→0.2.2 no PyPI (release via tag `cli-v*`, Trusted Publishing), `ci deploy` funcional, SEO (sitemap gerado + canonical corrigido, #56), lock do vinext no container dev (#57), `authlib` removido / `cryptography` declarado (#58).
 

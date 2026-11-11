@@ -7,6 +7,16 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Área logada: Atividade, Acessos, Segurança, Comparar e busca rápida (UX.5 e UX.6) — 2026-11-11
+
+- **Atividade (`/activity`):** a auditoria de todos os seus projetos numa tela, com filtros por projeto, origem (pessoas, CI, chave de API), período e ação, guardados na URL. Agrupada por dia; exporta CSV do que está carregado (o CSV neutraliza células que começariam uma fórmula). Novo `GET /api/v1/me/audit`, que respeita a janela do plano de cada projeto e esconde os ambientes restritos de quem não é dono ou admin. O feed do dashboard usa o mesmo endpoint em vez de buscar projeto por projeto.
+- **Acessos (`/access`):** tokens de CI e chaves de API de todos os projetos em que você é dono ou admin, com situação (ativa, vencida, revogada), sem expiração e sem uso há 30 dias. Revoga na própria tela, com confirmação. Novo `GET /api/v1/me/credentials`.
+- **Segurança (`/security`):** nota de 0 a 100 e a lista do que corrigir, cada item com o link para onde se resolve: 2FA desligado e segredo vencido (graves), credencial sem expiração, credencial parada e ambiente sem envio há 90 dias (médios), projeto com mais de 2 donos ou admins e integração com erro (leves). Cada regra tira pontos uma vez. O menu mostra quantos problemas graves há. O `GET /me/overview` ganha `stale_secret_count` e `manager_count`.
+- **Comparar ambientes (`/projects/{id}/compare`):** nova aba do projeto com as chaves que só existem em um ambiente e as que existem nos dois. Com o cofre destravado, compara os valores no navegador e mostra igual ou diferente com a prévia mascarada do `criptenv diff --show-values`. Nenhum valor sai do navegador.
+- **Busca rápida (Ctrl/Cmd+K):** acha todas as telas, projetos, ambientes e os secrets do projeto aberto, e copia os comandos `criptenv list` e `criptenv run` do projeto. Funciona só com o teclado (setas e Enter) e com leitor de tela.
+- **Estados vazios com o comando da CLI** e botão de copiar, em projetos, secrets, integrações e acessos.
+- Decisões tomadas na implementação, com o porquê, em `docs/superpowers/plans/2026-11-11-ux5-ux6.md`.
+
 ### Landing e documentação: um acesso para cada lugar — 2026-11-11
 
 - **Landing: nova seção "Um acesso para cada lugar"**, depois de "Como funciona", com quatro cartões: Login (você e o time), Token de CI (pipelines), Chave de API (contêineres e scripts, somente leitura) e Integração com a hospedagem (Vercel, Render, Cloudflare). Cada um diz para quem serve, o que pode fazer, mostra um comando real e aponta para a documentação. Nos três idiomas.

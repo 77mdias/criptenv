@@ -319,6 +319,26 @@ A project starts with `development`, `staging` and `production`. The owner's pla
 | GET | `/api/v1/projects/{p_id}/secrets/expiring` | List expiring secrets | Session |
 | POST | `/api/v1/projects/{p_id}/environments/{e_id}/expiration` | Set expiration | Session |
 
+### Me Router (`/api/v1/me`)
+
+**File:** `apps/api/app/routers/me.py` · aggregates in `apps/api/app/services/overview_service.py`
+
+Read-only views across every project the signed-in user belongs to, for the web dashboard. Web session only (no API key, no CI token). Every response is filtered by membership; restricted environments are left out for roles below admin.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/me/overview` | Projects, environments (with `secret_count`, `stale_secret_count`), `member_count`, `manager_count` and the attention list |
+| GET | `/api/v1/me/activity-stats?days=30` | Audit events per day (secret changes vs other) |
+| GET | `/api/v1/me/audit` | Audit events of all the user's projects, newest first, paginated like the project audit |
+| GET | `/api/v1/me/credentials` | CI tokens and API keys of the projects the user manages (owner/admin) |
+| GET | `/api/v1/me/plan` | The user's plan, limits and usage |
+
+**`GET /me/audit` query:** `project_id`, `action`, `auth_type` (`session` | `ci_session` | `api_key`; a log without `auth_type` counts as `session`), `actor_id`, `from`, `to` (ISO date-times), `page`, `per_page` (max 100). Each project keeps its own rules: the owner's plan window and the restricted environments the user's role does not reach. A `project_id` the user is not a member of returns an empty page.
+
+**`GET /me/credentials` item:** `kind` (`ci_token` | `api_key`), `id`, `project_id`, `project_name`, `name`, `scopes`, `environment_scope`, `last_used_at`, `expires_at`, `revoked_at`, `created_at`, `status` (`active` | `expired` | `revoked`), `no_expiry` and `unused` (no use for 30 days). The two flags are only set while the credential still works. Hashes are never returned. Revoking uses the project routes (`POST .../tokens/{id}/revoke`, `DELETE .../api-keys/{id}`).
+
+**`stale_secret_count`:** a vault push rewrites every blob of the environment, so this counts the secrets of an environment that got no push for 90 days or more.
+
 ### Additional Routers
 
 The versioned API also exposes authentication/OAuth, API keys, CI login/secrets, integrations, notifications, contributions/webhooks and health aliases. Use `/docs` in development or `/openapi.json` for the complete route list. Production may disable the interactive `/docs` page while retaining `/openapi.json`.
