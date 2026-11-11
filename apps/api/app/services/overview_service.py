@@ -25,6 +25,9 @@ from app.services.project_service import ProjectService
 MANAGER_ROLES = ("owner", "admin")
 EXPIRING_WITHIN = timedelta(days=7)
 STALE_AFTER = timedelta(days=30)
+# A push rewrites every blob of the environment, so a blob older than this means the whole
+# environment got no push for that long: none of its secrets was changed or rotated.
+NOT_ROTATED_AFTER = timedelta(days=90)
 # Actions that change secret material; everything else counts as "other" activity
 CHANGE_ACTIONS = ("vault.pushed", "secret.rotated")
 
@@ -72,9 +75,19 @@ class OverviewService:
                 .group_by(VaultBlob.environment_id)
             )).all()
         }
+        stale_counts = dict((await self.db.execute(
+            select(VaultBlob.environment_id, func.count(VaultBlob.id))
+            .where(VaultBlob.project_id.in_(project_ids), VaultBlob.updated_at < now - NOT_ROTATED_AFTER)
+            .group_by(VaultBlob.environment_id)
+        )).all())
         member_counts = dict((await self.db.execute(
             select(ProjectMember.project_id, func.count(ProjectMember.id))
             .where(ProjectMember.project_id.in_(project_ids))
+            .group_by(ProjectMember.project_id)
+        )).all())
+        manager_counts = dict((await self.db.execute(
+            select(ProjectMember.project_id, func.count(ProjectMember.id))
+            .where(ProjectMember.project_id.in_(project_ids), ProjectMember.role.in_(MANAGER_ROLES))
             .group_by(ProjectMember.project_id)
         )).all())
         last_activity = {
@@ -96,6 +109,7 @@ class OverviewService:
                 "name": env.name,
                 "is_default": bool(env.is_default),
                 "secret_count": count,
+                "stale_secret_count": stale_counts.get(env.id, 0),
                 "version": env.secrets_version or 0,
                 "updated_at": updated_at or _utc(env.updated_at),
             })
@@ -107,6 +121,7 @@ class OverviewService:
                 "slug": project.slug,
                 "role": role,
                 "member_count": member_counts.get(project.id, 0),
+                "manager_count": manager_counts.get(project.id, 0),
                 "last_activity_at": last_activity.get(project.id),
                 "environments": envs_by_project.get(project.id, []),
             }

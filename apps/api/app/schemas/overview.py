@@ -10,6 +10,8 @@ class OverviewEnvironment(BaseModel):
     name: str
     is_default: bool
     secret_count: int
+    # Secrets of an environment that got no push for 90 days or more (none of them was changed)
+    stale_secret_count: int = 0
     version: int
     updated_at: Optional[datetime] = None
 
@@ -20,6 +22,8 @@ class OverviewProject(BaseModel):
     slug: str
     role: str
     member_count: int
+    # Owner plus admins
+    manager_count: int = 0
     last_activity_at: Optional[datetime] = None
     environments: list[OverviewEnvironment]
 

@@ -5,6 +5,8 @@
     "activity": "Atividade",
     "integrations": "Integrações",
     "access": "Acessos",
+    "security": "Segurança",
+    "highFindings": "{count, plural, one {problema grave} other {problemas graves}}",
     "vault": "Cofre",
     "help": "Ajuda",
     "account": "Conta",
@@ -87,6 +89,62 @@
       "title": "Nenhuma credencial para gerenciar",
       "description": "Aqui aparecem os tokens de CI e as chaves de API dos projetos em que você é dono ou admin. Crie um pelas configurações do projeto ou com criptenv ci tokens create.",
       "filteredTitle": "Nenhuma credencial com esses filtros"
+    }
+  },
+  "securityPage": {
+    "title": "Segurança",
+    "subtitle": "Como estão a sua conta e os seus projetos, e o que fazer para melhorar.",
+    "loadError": "Não foi possível avaliar a segurança agora.",
+    "score": "Nota {score} de 100",
+    "allGood": "Nada a corrigir. Continue assim.",
+    "summary": "{count, plural, one {# ponto para corrigir} other {# pontos para corrigir}}",
+    "howScored": "Cada problema tira pontos uma vez: grave 30, médio 15, leve 5.",
+    "andMore": "e mais {count}",
+    "severity": {
+      "high": "Grave",
+      "medium": "Médio",
+      "low": "Leve"
+    },
+    "empty": {
+      "title": "Tudo em ordem",
+      "description": "2FA ligado, credenciais com prazo e segredos em dia."
+    },
+    "rules": {
+      "twoFactor": {
+        "title": "Autenticação 2FA desligada",
+        "body": "Sem o 2FA, quem descobrir a sua senha entra na conta e alcança todos os seus projetos.",
+        "action": "Ligar na conta"
+      },
+      "expiredSecret": {
+        "title": "{count, plural, one {# segredo vencido} other {# segredos vencidos}}",
+        "body": "A data de troca já passou. Troque o valor e defina um novo prazo.",
+        "action": "Ver segredos"
+      },
+      "credentialNoExpiry": {
+        "title": "{count, plural, one {# credencial sem expiração} other {# credenciais sem expiração}}",
+        "body": "Um token ou chave que não vence continua valendo para sempre se vazar.",
+        "action": "Ver acessos"
+      },
+      "credentialUnused": {
+        "title": "{count, plural, one {# credencial sem uso há 30 dias} other {# credenciais sem uso há 30 dias}}",
+        "body": "Credencial parada é acesso que ninguém vigia. Se não precisa mais, revogue.",
+        "action": "Ver acessos"
+      },
+      "notRotated": {
+        "title": "{count, plural, one {# segredo sem troca há 90 dias} other {# segredos sem troca há 90 dias}}",
+        "body": "Esses ambientes não recebem nenhum envio há 90 dias ou mais, então nenhum valor foi trocado. Troque os mais sensíveis.",
+        "action": "Ver projetos"
+      },
+      "tooManyManagers": {
+        "title": "{count, plural, one {# projeto com mais de 2 donos ou admins} other {# projetos com mais de 2 donos ou admins}}",
+        "body": "Quem é admin vê os ambientes restritos e gerencia credenciais. Deixe só quem precisa.",
+        "action": "Ver projetos"
+      },
+      "failingIntegration": {
+        "title": "{count, plural, one {# integração com erro} other {# integrações com erro}}",
+        "body": "A hospedagem não está recebendo as variáveis. Confira o token do provedor.",
+        "action": "Ver integrações"
+      }
     }
   },
   "home": {

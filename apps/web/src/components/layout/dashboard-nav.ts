@@ -6,6 +6,7 @@ import {
   KeySquare,
   LayoutDashboard,
   Plug,
+  ShieldCheck,
   User,
   type LucideIcon,
 } from "lucide-react"
@@ -18,6 +19,8 @@ interface DashboardNavItem {
   labelKey: string
   href: string
   matchMode?: MatchMode
+  /** what the red counter means, read by screen readers (default: failing items) */
+  badgeLabelKey?: "withErrors" | "highFindings"
 }
 
 interface DashboardNavGroups {
@@ -33,6 +36,7 @@ export function getDashboardNavGroups(): DashboardNavGroups {
     { icon: KeyRound, labelKey: "vault", href: "/vault", matchMode: "prefix" },
     { icon: Plug, labelKey: "integrations", href: "/integrations", matchMode: "prefix" },
     { icon: KeySquare, labelKey: "access", href: "/access" },
+    { icon: ShieldCheck, labelKey: "security", href: "/security", badgeLabelKey: "highFindings" },
   ]
 
   const bottomNavItems: DashboardNavItem[] = [

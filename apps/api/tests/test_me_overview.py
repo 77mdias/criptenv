@@ -54,9 +54,10 @@ def _user(name):
                 password_hash="", kdf_salt="salt", email_verified=True)
 
 
-def _blob(project, env, key):
+def _blob(project, env, key, updated_at=None):
     return VaultBlob(id=uuid4(), project_id=project.id, environment_id=env.id, key_id=key,
-                     iv="iv", ciphertext="ct", auth_tag="tag", version=1, checksum="c" * 64)
+                     iv="iv", ciphertext="ct", auth_tag="tag", version=1, checksum="c" * 64,
+                     updated_at=updated_at)
 
 
 @pytest_asyncio.fixture
@@ -84,7 +85,8 @@ async def world():
             ProjectMember(id=uuid4(), project_id=web.id, user_id=bo.id, role="owner"),
             ProjectMember(id=uuid4(), project_id=web.id, user_id=ana.id, role="viewer"),
             ProjectMember(id=uuid4(), project_id=secret_project.id, user_id=cy.id, role="owner"),
-            _blob(api, api_prod, "DATABASE_URL"), _blob(api, api_prod, "API_KEY"),
+            _blob(api, api_prod, "DATABASE_URL"),
+            _blob(api, api_prod, "API_KEY", updated_at=NOW - timedelta(days=100)),
             _blob(api, api_dev, "DATABASE_URL"), _blob(secret_project, private_env, "LEAK"),
             # attention on `api` (ana manages it)
             SecretExpiration(id=uuid4(), project_id=api.id, environment_id=api_prod.id,
@@ -205,6 +207,32 @@ async def test_activity_stats_buckets_by_day_with_zero_fill(world):
     assert by_date[NOW.date().isoformat()] == {"date": NOW.date().isoformat(), "changes": 0, "other": 1}
     # cy's push today is not counted for ana
     assert sum(d["changes"] + d["other"] for d in days) == 3
+
+
+@pytest.mark.asyncio
+async def test_overview_counts_secrets_not_rotated_for_90_days(world):
+    factory, w = world
+    data = await _get(factory, w["ana"], "/api/v1/me/overview")
+    api = next(p for p in data["projects"] if p["name"] == "api")
+    envs = {e["name"]: e["stale_secret_count"] for e in api["environments"]}
+    assert envs == {"production": 1, "development": 0}
+
+
+@pytest.mark.asyncio
+async def test_overview_counts_owners_and_admins(world):
+    factory, w = world
+    async with factory() as db:
+        dev = _user("dev")
+        db.add(dev)
+        db.add_all([
+            ProjectMember(id=uuid4(), project_id=w["api"].id, user_id=w["bo"].id, role="admin"),
+            ProjectMember(id=uuid4(), project_id=w["api"].id, user_id=dev.id, role="developer"),
+        ])
+        await db.commit()
+
+    data = await _get(factory, w["ana"], "/api/v1/me/overview")
+    managers = {p["name"]: p["manager_count"] for p in data["projects"]}
+    assert managers == {"api": 2, "web": 1}
 
 
 @pytest.mark.asyncio

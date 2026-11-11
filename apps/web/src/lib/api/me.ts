@@ -6,6 +6,8 @@ export interface OverviewEnvironment {
   name: string;
   is_default: boolean;
   secret_count: number;
+  /** Secrets of this environment when it got no push for 90 days or more. */
+  stale_secret_count: number;
   version: number;
   updated_at: string | null;
 }
@@ -16,6 +18,8 @@ export interface OverviewProject {
   slug: string;
   role: string;
   member_count: number;
+  /** Owner plus admins. */
+  manager_count: number;
   last_activity_at: string | null;
   environments: OverviewEnvironment[];
 }

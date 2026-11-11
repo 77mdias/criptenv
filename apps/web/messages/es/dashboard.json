@@ -5,6 +5,8 @@
     "activity": "Actividad",
     "integrations": "Integraciones",
     "access": "Accesos",
+    "security": "Seguridad",
+    "highFindings": "{count, plural, one {problema grave} other {problemas graves}}",
     "vault": "Bóveda",
     "help": "Ayuda",
     "account": "Cuenta",
@@ -87,6 +89,62 @@
       "title": "Ninguna credencial para gestionar",
       "description": "Aquí aparecen los tokens de CI y las claves de API de los proyectos donde eres dueño o admin. Crea uno en la configuración del proyecto o con criptenv ci tokens create.",
       "filteredTitle": "Ninguna credencial coincide con estos filtros"
+    }
+  },
+  "securityPage": {
+    "title": "Seguridad",
+    "subtitle": "Cómo están tu cuenta y tus proyectos, y qué hacer para mejorar.",
+    "loadError": "No se pudo evaluar la seguridad ahora.",
+    "score": "Nota {score} de 100",
+    "allGood": "Nada que corregir. Sigue así.",
+    "summary": "{count, plural, one {# punto por corregir} other {# puntos por corregir}}",
+    "howScored": "Cada problema resta puntos una vez: grave 30, medio 15, leve 5.",
+    "andMore": "y {count} más",
+    "severity": {
+      "high": "Grave",
+      "medium": "Medio",
+      "low": "Leve"
+    },
+    "empty": {
+      "title": "Todo en orden",
+      "description": "2FA activado, credenciales con vencimiento y secretos al día."
+    },
+    "rules": {
+      "twoFactor": {
+        "title": "Autenticación 2FA desactivada",
+        "body": "Sin el 2FA, quien descubra tu contraseña entra en la cuenta y llega a todos tus proyectos.",
+        "action": "Activarlo en la cuenta"
+      },
+      "expiredSecret": {
+        "title": "{count, plural, one {# secreto vencido} other {# secretos vencidos}}",
+        "body": "La fecha de cambio ya pasó. Cambia el valor y define una nueva fecha.",
+        "action": "Ver secretos"
+      },
+      "credentialNoExpiry": {
+        "title": "{count, plural, one {# credencial sin vencimiento} other {# credenciales sin vencimiento}}",
+        "body": "Un token o clave que no vence sigue valiendo para siempre si se filtra.",
+        "action": "Ver accesos"
+      },
+      "credentialUnused": {
+        "title": "{count, plural, one {# credencial sin uso hace 30 días} other {# credenciales sin uso hace 30 días}}",
+        "body": "Una credencial parada es un acceso que nadie vigila. Si ya no hace falta, revócala.",
+        "action": "Ver accesos"
+      },
+      "notRotated": {
+        "title": "{count, plural, one {# secreto sin cambio hace 90 días} other {# secretos sin cambio hace 90 días}}",
+        "body": "Estos entornos no reciben ningún envío hace 90 días o más, así que ningún valor cambió. Cambia los más sensibles.",
+        "action": "Ver proyectos"
+      },
+      "tooManyManagers": {
+        "title": "{count, plural, one {# proyecto con más de 2 dueños o admins} other {# proyectos con más de 2 dueños o admins}}",
+        "body": "Los admins ven los entornos restringidos y gestionan credenciales. Deja solo a quien lo necesita.",
+        "action": "Ver proyectos"
+      },
+      "failingIntegration": {
+        "title": "{count, plural, one {# integración con error} other {# integraciones con error}}",
+        "body": "El hosting no está recibiendo las variables. Revisa el token del proveedor.",
+        "action": "Ver integraciones"
+      }
     }
   },
   "home": {

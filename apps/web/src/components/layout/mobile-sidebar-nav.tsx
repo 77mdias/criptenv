@@ -71,7 +71,10 @@ function MobileSidebarNav({ className }: MobileSidebarNavProps) {
               >
                 <item.icon className="h-5 w-5 shrink-0" />
                 <span>{tNav(item.labelKey)}</span>
-                <NavBadge count={badges[item.href]} label={tNav("withErrors", { count: badges[item.href] ?? 0 })} />
+                <NavBadge
+                  count={badges[item.href]}
+                  label={tNav(item.badgeLabelKey ?? "withErrors", { count: badges[item.href] ?? 0 })}
+                />
               </Link>
             )
           })}

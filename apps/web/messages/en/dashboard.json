@@ -5,6 +5,8 @@
     "activity": "Activity",
     "integrations": "Integrations",
     "access": "Access",
+    "security": "Security",
+    "highFindings": "{count, plural, one {serious issue} other {serious issues}}",
     "vault": "Vault",
     "help": "Help",
     "account": "Account",
@@ -87,6 +89,62 @@
       "title": "No credentials to manage",
       "description": "CI tokens and API keys of the projects where you are owner or admin show up here. Create one in the project settings or with criptenv ci tokens create.",
       "filteredTitle": "No credentials match these filters"
+    }
+  },
+  "securityPage": {
+    "title": "Security",
+    "subtitle": "How your account and projects are doing, and what to do to improve.",
+    "loadError": "Could not check security right now.",
+    "score": "Score {score} out of 100",
+    "allGood": "Nothing to fix. Keep it up.",
+    "summary": "{count, plural, one {# thing to fix} other {# things to fix}}",
+    "howScored": "Each issue takes points once: serious 30, medium 15, minor 5.",
+    "andMore": "and {count} more",
+    "severity": {
+      "high": "Serious",
+      "medium": "Medium",
+      "low": "Minor"
+    },
+    "empty": {
+      "title": "All in order",
+      "description": "2FA on, credentials that expire and secrets up to date."
+    },
+    "rules": {
+      "twoFactor": {
+        "title": "2FA authentication is off",
+        "body": "Without 2FA, whoever finds out your password gets into the account and every project in it.",
+        "action": "Turn it on in your account"
+      },
+      "expiredSecret": {
+        "title": "{count, plural, one {# expired secret} other {# expired secrets}}",
+        "body": "The rotation date has passed. Change the value and set a new date.",
+        "action": "See secrets"
+      },
+      "credentialNoExpiry": {
+        "title": "{count, plural, one {# credential with no expiry} other {# credentials with no expiry}}",
+        "body": "A token or key that never expires keeps working forever if it leaks.",
+        "action": "See access"
+      },
+      "credentialUnused": {
+        "title": "{count, plural, one {# credential unused for 30 days} other {# credentials unused for 30 days}}",
+        "body": "An idle credential is access nobody watches. Revoke it if it is no longer needed.",
+        "action": "See access"
+      },
+      "notRotated": {
+        "title": "{count, plural, one {# secret unchanged for 90 days} other {# secrets unchanged for 90 days}}",
+        "body": "These environments got no push for 90 days or more, so no value was changed. Rotate the most sensitive ones.",
+        "action": "See projects"
+      },
+      "tooManyManagers": {
+        "title": "{count, plural, one {# project with more than 2 owners or admins} other {# projects with more than 2 owners or admins}}",
+        "body": "Admins see restricted environments and manage credentials. Keep only who needs it.",
+        "action": "See projects"
+      },
+      "failingIntegration": {
+        "title": "{count, plural, one {# failing integration} other {# failing integrations}}",
+        "body": "The hosting is not receiving the variables. Check the provider token.",
+        "action": "See integrations"
+      }
     }
   },
   "home": {
