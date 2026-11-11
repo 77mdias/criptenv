@@ -1,4 +1,4 @@
-from sqlalchemy import Column, String, Boolean, Integer, DateTime, ForeignKey, func
+from sqlalchemy import Column, String, Boolean, Integer, DateTime, ForeignKey, func, text
 from sqlalchemy.dialects.postgresql import UUID
 from sqlalchemy.orm import relationship
 from app.database import Base
@@ -15,6 +15,8 @@ class Environment(Base):
     is_default = Column(Boolean, default=False)
     secrets_version = Column(Integer, default=0)
     archived = Column(Boolean, default=False, nullable=False)
+    # Only the project's owner and admins reach it (app/services/environment_access.py).
+    restricted = Column(Boolean, default=False, nullable=False, server_default=text("false"))
     archived_at = Column(DateTime(timezone=True))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())

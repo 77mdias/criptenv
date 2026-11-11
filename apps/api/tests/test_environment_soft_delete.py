@@ -83,6 +83,7 @@ def make_environment(**overrides):
         "updated_at": now,
         "archived": False,
         "archived_at": None,
+        "restricted": False,
     }
     values.update(overrides)
     return SimpleNamespace(**values)
@@ -91,7 +92,7 @@ def make_environment(**overrides):
 @pytest.fixture(autouse=True)
 def allow_project_access(monkeypatch):
     async def fake_check_user_access(self, user_id, project_id, required_role=None):
-        return object()
+        return SimpleNamespace(role="admin")
 
     async def fake_log(self, **kwargs):
         return None

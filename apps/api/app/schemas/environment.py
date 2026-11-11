@@ -8,11 +8,14 @@ class EnvironmentCreate(BaseModel):
     name: str = Field(..., min_length=1, max_length=255, pattern=r'^[a-z0-9-]+$')
     display_name: Optional[str] = None
     is_default: bool = False
+    # Only the project's owner and admins reach it. Not for production, staging, development or the default.
+    restricted: bool = False
 
 
 class EnvironmentUpdate(BaseModel):
     display_name: Optional[str] = None
     is_default: Optional[bool] = None
+    restricted: Optional[bool] = None
 
 
 class EnvironmentResponse(BaseModel):
@@ -21,6 +24,7 @@ class EnvironmentResponse(BaseModel):
     name: str
     display_name: Optional[str] = None
     is_default: bool
+    restricted: bool = False
     secrets_version: int
     created_at: datetime
     updated_at: datetime

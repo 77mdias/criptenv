@@ -42,8 +42,8 @@ def _limits(*values: int | None) -> dict[str, int | None]:
 PLANS: dict[str, Plan] = {
     #                       projects envs members integrations audit items folders
     "free": Plan("free", _limits(3, 3, 3, 1, 7, 120, 10)),
-    "pro": Plan("pro", _limits(None, None, 10, None, 30, None, None)),
-    "max": Plan("max", _limits(None, None, 25, None, 90, None, None), _SYNC_FEATURES),
+    "pro": Plan("pro", _limits(None, 5, 10, None, 30, None, None)),
+    "max": Plan("max", _limits(None, 7, 25, None, 90, None, None), _SYNC_FEATURES),
     # For self-hosted installs (DEFAULT_PLAN=unlimited).
     "unlimited": Plan("unlimited", _limits(*[None] * len(_LIMIT_KEYS)), _SYNC_FEATURES),
 }
