@@ -51,7 +51,7 @@ describe("PricingSection", () => {
     expect(rows).toEqual([
       "Segurançacompletacompletacompleta",
       "Projetos3sem limitesem limite",
-      "Ambientes por projeto3sem limitesem limite",
+      "Ambientes por projeto357",
       "Membros por projeto31025",
       "Cofre pessoal120 itens, 10 pastassem limitesem limite",
       "Conexões com hospedagem por projeto1sem limitesem limite",

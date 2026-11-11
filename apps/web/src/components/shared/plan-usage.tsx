@@ -9,6 +9,7 @@ import { UpgradeLink } from "./upgrade-link"
 // Kept in this file and exported: the i18n auditor resolves `t(`${key}.usage`)` only from a literal array here.
 export const PLAN_USAGE_KEYS = [
   "projects",
+  "environments_per_project",
   "members_per_project",
   "integrations_per_project",
 ] as const

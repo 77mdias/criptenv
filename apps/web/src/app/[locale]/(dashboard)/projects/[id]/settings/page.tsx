@@ -11,6 +11,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { PermissionDialog } from "@/components/shared/permission-dialog";
 import { environmentsApi, peekCached, projectsApi, vaultApi } from "@/lib/api";
 import { CITokensPanel } from "@/components/shared/ci-tokens-panel";
+import { EnvironmentsPanel } from "@/components/shared/environments-panel";
 import { ApiKeysPanel } from "@/components/shared/api-keys-panel";
 import { ProjectAlertSettings } from "@/components/shared/project-alert-settings";
 import { canManageProject } from "@/lib/project-permissions";
@@ -291,6 +292,9 @@ export default function SettingsPage() {
           {t("general.subtitle")}
         </p>
       </div>
+
+      {/* Environments */}
+      <EnvironmentsPanel projectId={projectId} />
 
       {/* CI Tokens */}
       <CITokensPanel projectId={projectId} />

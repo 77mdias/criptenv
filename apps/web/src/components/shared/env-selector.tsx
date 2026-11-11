@@ -1,5 +1,8 @@
 "use client"
 
+import { Lock } from "lucide-react"
+import { useTranslations } from "next-intl"
+
 import type { Environment } from "@/lib/api"
 import { cn } from "@/lib/utils"
 
@@ -16,6 +19,7 @@ export function EnvSelector({
   secretCounts = {},
   onSelect,
 }: EnvSelectorProps) {
+  const t = useTranslations("settings.environments")
   return (
     <div className="flex gap-1 overflow-x-auto border-b border-[var(--border)]" role="tablist">
       {environments.map((environment) => {
@@ -36,6 +40,9 @@ export function EnvSelector({
                 : "border-transparent text-[var(--text-muted)] hover:text-[var(--text-primary)]"
             )}
           >
+            {environment.restricted && (
+              <Lock className="mr-1.5 inline h-3.5 w-3.5 align-[-2px]" aria-label={t("restricted")} />
+            )}
             {label}
             <span className="ml-2 font-mono text-xs text-[var(--text-muted)]">
               {secretCounts[environment.id] ?? environment.secrets_count ?? 0}

@@ -70,6 +70,10 @@ jest.mock("@/components/shared/ci-tokens-panel", () => ({
   CITokensPanel: () => <div>CI Tokens panel</div>,
 }))
 
+jest.mock("@/components/shared/environments-panel", () => ({
+  EnvironmentsPanel: () => <div>Environments panel</div>,
+}))
+
 jest.mock("@/components/shared/api-keys-panel", () => ({
   ApiKeysPanel: () => <div>API Keys panel</div>,
 }))
