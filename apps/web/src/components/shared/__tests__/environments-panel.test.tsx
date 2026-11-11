@@ -141,8 +141,33 @@ describe("EnvironmentsPanel", () => {
     await open([...SEEDED, env("backup", { restricted: true })])
 
     await userEvent.click(within(row("backup")).getByRole("button", { name: "Abrir ao time" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toHaveTextContent("Todo o time do projeto passa a ver e ler este ambiente")
+    expect(mocked.update).not.toHaveBeenCalled()
+    await userEvent.click(within(dialog).getByRole("button", { name: "Abrir ao time" }))
 
     await waitFor(() => expect(mocked.update).toHaveBeenCalledWith("project-1", "env-backup", { restricted: false }))
+  })
+
+  it("renames the display name of any environment", async () => {
+    mocked.update.mockResolvedValue(env("staging", { display_name: "Homologação" }))
+    await open()
+
+    await userEvent.click(within(row("staging")).getByRole("button", { name: "Renomear" }))
+    await userEvent.type(screen.getByLabelText("Nome de exibição de staging"), "Homologação")
+    await userEvent.click(within(row("staging")).getByRole("button", { name: "Salvar" }))
+
+    await waitFor(() =>
+      expect(mocked.update).toHaveBeenCalledWith("project-1", "env-staging", { display_name: "Homologação" }),
+    )
+  })
+
+  it("tells that credentials made for the environment keep their access when restricting", async () => {
+    await open([...SEEDED, env("backup")])
+
+    await userEvent.click(within(row("backup")).getByRole("button", { name: "Restringir" }))
+
+    expect(await screen.findByRole("dialog")).toHaveTextContent("já criados para este ambiente continuam com acesso")
   })
 
   it("archives after confirmation and never offers it for the default one", async () => {

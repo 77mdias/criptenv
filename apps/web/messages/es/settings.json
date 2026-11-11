@@ -227,7 +227,7 @@
     "open": "Abrir al equipo",
     "archive": "Archivar",
     "restrictTitle": "¿Restringir {name}?",
-    "restrictBody": "Solo el creador del proyecto y los administradores verán y leerán este entorno. Lo que ya se descargó no vuelve: si alguien de fuera ya leyó estas variables, rótalas.",
+    "restrictBody": "Solo el creador del proyecto y los administradores verán y leerán este entorno. Lo que ya se descargó no vuelve: si alguien de fuera ya leyó estas variables, rótalas. Los tokens de CI y las claves de API ya creados para este entorno mantienen su acceso.",
     "archiveTitle": "¿Archivar {name}?",
     "archiveBody": "Las variables de este entorno dejan de ser accesibles y el nombre no se puede reutilizar. Esto no se puede deshacer desde la pantalla.",
     "errors": {
@@ -237,6 +237,11 @@
       "conflict": "Ya existe un entorno con ese nombre (los archivados también cuentan).",
       "invalid": "Este entorno no se puede restringir.",
       "generic": "Algo salió mal. Inténtalo de nuevo."
-    }
+    },
+    "rename": "Renombrar",
+    "save": "Guardar",
+    "renameLabel": "Nombre para mostrar de {name}",
+    "openTitle": "¿Abrir {name} al equipo?",
+    "openBody": "Todo el equipo del proyecto verá y leerá este entorno, y los tokens de CI y las claves de API sin entorno definido llegarán a él."
   }
 }

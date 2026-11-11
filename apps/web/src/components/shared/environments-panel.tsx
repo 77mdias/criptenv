@@ -20,7 +20,8 @@ const SEEDED = new Set(["production", "staging", "development"])
 // The same pattern the API enforces.
 const NAME = /^[a-z0-9-]+$/
 
-type Pending = { action: "restrict" | "archive"; environment: Environment }
+// Each of these changes who reaches the environment or whether it exists: all three ask first.
+type Pending = { action: "restrict" | "open" | "archive"; environment: Environment }
 
 /**
  * Project settings: create, restrict and archive environments. A restricted environment is reached
@@ -37,6 +38,7 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
   const [error, setError] = useState<string | null>(null)
   const [limitHit, setLimitHit] = useState(false)
   const [pending, setPending] = useState<Pending | null>(null)
+  const [renaming, setRenaming] = useState<{ id: string; value: string } | null>(null)
 
   // Bumped after every change, so the list and the usage are read again.
   const [version, setVersion] = useState(0)
@@ -106,8 +108,16 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
     void run(() =>
       action === "archive"
         ? environmentsApi.delete(projectId, environment.id)
-        : environmentsApi.update(projectId, environment.id, { restricted: true }),
+        : environmentsApi.update(projectId, environment.id, { restricted: action === "restrict" }),
     )
+  }
+
+  function rename(event: FormEvent) {
+    event.preventDefault()
+    if (!renaming) return
+    const { id, value } = renaming
+    setRenaming(null)
+    void run(() => environmentsApi.update(projectId, id, { display_name: value.trim() }))
   }
 
   const full = isPlanFull(plan, "environments_per_project") || limitHit
@@ -156,35 +166,52 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
                   )}
                 </p>
               </div>
-              {extra && (
-                <div className="flex gap-2">
-                  {environment.restricted ? (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => void run(() => environmentsApi.update(projectId, environment.id, { restricted: false }))}
-                    >
-                      {t("open")}
-                    </Button>
-                  ) : (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      disabled={busy}
-                      onClick={() => setPending({ action: "restrict", environment })}
-                    >
-                      {t("restrict")}
-                    </Button>
-                  )}
+              {renaming?.id === environment.id ? (
+                <form onSubmit={rename} className="flex items-center gap-2">
+                  <input
+                    aria-label={t("renameLabel", { name: environment.name })}
+                    value={renaming.value}
+                    onChange={(event) => setRenaming({ id: environment.id, value: event.target.value })}
+                    maxLength={255}
+                    autoFocus
+                    className="h-8 rounded-lg border border-(--border) bg-(--surface) px-2 text-sm text-(--text-primary)"
+                  />
+                  <Button type="submit" size="sm" disabled={busy}>
+                    {t("save")}
+                  </Button>
+                </form>
+              ) : (
+                <div className="flex flex-wrap gap-2">
                   <Button
                     variant="secondary"
                     size="sm"
                     disabled={busy}
-                    onClick={() => setPending({ action: "archive", environment })}
+                    onClick={() => setRenaming({ id: environment.id, value: environment.display_name ?? "" })}
                   >
-                    {t("archive")}
+                    {t("rename")}
                   </Button>
+                  {extra && (
+                    <>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() =>
+                          setPending({ action: environment.restricted ? "open" : "restrict", environment })
+                        }
+                      >
+                        {environment.restricted ? t("open") : t("restrict")}
+                      </Button>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        disabled={busy}
+                        onClick={() => setPending({ action: "archive", environment })}
+                      >
+                        {t("archive")}
+                      </Button>
+                    </>
+                  )}
                 </div>
               )}
             </li>
@@ -225,10 +252,20 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
         title={
           pending?.action === "archive"
             ? t("archiveTitle", { name: pending.environment.name })
-            : t("restrictTitle", { name: pending?.environment.name ?? "" })
+            : pending?.action === "open"
+              ? t("openTitle", { name: pending.environment.name })
+              : t("restrictTitle", { name: pending?.environment.name ?? "" })
         }
-        description={pending?.action === "archive" ? t("archiveBody") : t("restrictBody")}
-        confirmLabel={pending?.action === "archive" ? t("archive") : t("restrict")}
+        description={
+          pending?.action === "archive"
+            ? t("archiveBody")
+            : pending?.action === "open"
+              ? t("openBody")
+              : t("restrictBody")
+        }
+        confirmLabel={
+          pending?.action === "archive" ? t("archive") : pending?.action === "open" ? t("open") : t("restrict")
+        }
         destructive={pending?.action === "archive"}
         loading={busy}
         onConfirm={confirm}

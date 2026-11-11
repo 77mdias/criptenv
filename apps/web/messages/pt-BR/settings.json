@@ -227,7 +227,7 @@
     "open": "Abrir ao time",
     "archive": "Arquivar",
     "restrictTitle": "Restringir {name}?",
-    "restrictBody": "Só o criador do projeto e os administradores passam a ver e ler este ambiente. O que já foi baixado não volta: se alguém de fora já leu estas variáveis, rotacione-as.",
+    "restrictBody": "Só o criador do projeto e os administradores passam a ver e ler este ambiente. O que já foi baixado não volta: se alguém de fora já leu estas variáveis, rotacione-as. Tokens de CI e chaves de API já criados para este ambiente continuam com acesso.",
     "archiveTitle": "Arquivar {name}?",
     "archiveBody": "As variáveis deste ambiente deixam de ser acessíveis e o nome não pode ser reutilizado. Isso não pode ser desfeito pela tela.",
     "errors": {
@@ -237,6 +237,11 @@
       "conflict": "Já existe um ambiente com esse nome (ambientes arquivados também contam).",
       "invalid": "Este ambiente não pode ser restrito.",
       "generic": "Algo deu errado. Tente de novo."
-    }
+    },
+    "rename": "Renomear",
+    "save": "Salvar",
+    "renameLabel": "Nome de exibição de {name}",
+    "openTitle": "Abrir {name} ao time?",
+    "openBody": "Todo o time do projeto passa a ver e ler este ambiente, e tokens de CI e chaves de API sem ambiente definido passam a alcançá-lo."
   }
 }

@@ -227,7 +227,7 @@
     "open": "Open to the team",
     "archive": "Archive",
     "restrictTitle": "Restrict {name}?",
-    "restrictBody": "Only the project's creator and admins will see and read this environment. What was already downloaded does not come back: if someone outside already read these variables, rotate them.",
+    "restrictBody": "Only the project's creator and admins will see and read this environment. What was already downloaded does not come back: if someone outside already read these variables, rotate them. CI tokens and API keys already created for this environment keep their access.",
     "archiveTitle": "Archive {name}?",
     "archiveBody": "The variables of this environment stop being accessible and the name cannot be reused. This cannot be undone from the screen.",
     "errors": {
@@ -237,6 +237,11 @@
       "conflict": "An environment with this name already exists (archived ones count too).",
       "invalid": "This environment cannot be restricted.",
       "generic": "Something went wrong. Try again."
-    }
+    },
+    "rename": "Rename",
+    "save": "Save",
+    "renameLabel": "Display name of {name}",
+    "openTitle": "Open {name} to the team?",
+    "openBody": "The whole project team will see and read this environment, and CI tokens and API keys with no environment set will reach it."
   }
 }
