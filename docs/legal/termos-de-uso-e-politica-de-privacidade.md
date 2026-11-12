@@ -7,7 +7,7 @@
 | **Endereço** | https://criptenv.77mdevseven.tech |
 | **Fornecedor e controlador** | Jean Carlos Moreira Dias, pessoa física, CPF 520.672.278-23, Montalvão, Presidente Prudente/SP |
 | **Contato / Encarregado (DPO)** | support@criptenv.dev |
-| **Versão** | 2.0 |
+| **Versão** | 2.1 (Política de Privacidade; Termos de Uso 2.0) |
 | **Em vigor desde** | 12 de novembro de 2026 |
 
 ---
@@ -224,6 +224,8 @@ Os *escopos* solicitados são os mínimos: `read:user user:email` (GitHub), `ope
 
 **Os dados do cartão são digitados na página do Mercado Pago e nunca chegam ao CriptEnv.** Os dados da tabela ficam no banco de dados do Serviço, fora do cofre cifrado, protegidos pelos controles de acesso da infraestrutura. A cada pagamento aprovado, os dados para nota são enviados por e-mail ao mantenedor, que emite a nota fiscal.
 
+**10.10. Chat de suporte.** O chat de suporte das páginas públicas é respondido por um modelo da **Anthropic (Claude)**. O texto escrito e o histórico daquela conversa vão para a API da Anthropic só para gerar a resposta (legítimo interesse em prestar suporte, art. 7º, IX, LGPD). **O CriptEnv não guarda o texto das conversas**: o histórico fica no navegador até a aba ser fechada; no servidor ficam só contagens (mensagens e tokens) e o endereço IP, para limitar o uso. Não escreva no chat senhas, tokens, chaves ou dados de terceiros.
+
 ## 11. Compartilhamento e não comercialização de dados
 
 **11.1. Compromisso.** **Os dados cadastrais dos Usuários não são comercializados nem compartilhados com terceiros para fins publicitários, de marketing, de prospecção ou de qualquer outra natureza mercantil.**
@@ -234,6 +236,7 @@ Os *escopos* solicitados são os mínimos: `read:user user:email` (GitHub), `ope
 |---|---|
 | Cloudflare (Pages, Workers, Tunnel, R2) | entrega do aplicativo, proxy/TLS, armazenamento de avatares |
 | Mercado Pago | processamento das doações Pix e das assinaturas (cobrança recorrente e reembolsos); os dados do cartão e os dados transacionais ficam com o provedor, que recebe de nós o e-mail do pagador, o valor e a descrição do plano |
+| Anthropic | respostas do chat de suporte; recebe as mensagens da conversa e, pelos termos comerciais da API, não as usa para treinar modelos e as retém por prazo limitado |
 | Resend | envio de e-mails transacionais (destinatário e conteúdo da mensagem) |
 | GitHub / Google / Discord | autenticação OAuth — são **controladores** dos dados em suas plataformas, regidos por suas políticas |
 | Provedor de VPS/banco de dados | hospedagem da API e do PostgreSQL (dados cifrados de vault; cadastro básico) |
@@ -242,7 +245,7 @@ Os *escopos* solicitados são os mínimos: `read:user user:email` (GitHub), `ope
 
 ## 12. Transferência internacional de dados
 
-Alguns operadores acima podem processar dados fora do território brasileiro (por exemplo, Cloudflare e Resend, nos Estados Unidos; GitHub, Google e Discord em centros de dados globais). Nessas hipóteses, a transferência rege-se pelo art. 33 da LGPD, sendo adotadas garantias como cláusulas contratuais padrão do fornecedor, cifragem em trânsito (TLS) e a própria arquitetura Zero-Knowledge, que impede que o conteúdo dos segredos acompanhe qualquer transferência. O Usuário pode solicitar ao Encarregado informações sobre os países envolvidos e as salvaguardas aplicáveis.
+Alguns operadores acima podem processar dados fora do território brasileiro (por exemplo, Cloudflare, Resend e Anthropic, nos Estados Unidos; GitHub, Google e Discord em centros de dados globais). Nessas hipóteses, a transferência rege-se pelo art. 33 da LGPD, sendo adotadas garantias como cláusulas contratuais padrão do fornecedor, cifragem em trânsito (TLS) e a própria arquitetura Zero-Knowledge, que impede que o conteúdo dos segredos acompanhe qualquer transferência. O Usuário pode solicitar ao Encarregado informações sobre os países envolvidos e as salvaguardas aplicáveis.
 
 ## 13. Cookies e armazenamento local
 

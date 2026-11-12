@@ -339,6 +339,25 @@ Read-only views across every project the signed-in user belongs to, for the web 
 
 **`stale_secret_count`:** a vault push rewrites every blob of the environment, so this counts the secrets of an environment that got no push for 90 days or more.
 
+### Support Router (`/api/v1/support`)
+
+**Files:** `apps/api/app/routers/support.py`, `apps/api/app/support/` (knowledge base, docs search, chat loop)
+
+Public support chat for the website, answered by Claude Sonnet (`claude-sonnet-5-5`, low effort). No login.
+
+| Method | Path | Description |
+|--------|------|-------------|
+| GET | `/api/v1/support/status` | `{"enabled": bool}`: true when `ANTHROPIC_API_KEY` is set |
+| POST | `/api/v1/support/chat` | Answers the last question of the conversation, as Server-Sent Events |
+
+**Request:** `{"messages": [{"role": "user"|"assistant", "content": str}], "locale": "pt-BR"|"en"|"es"}`. 1 to 40 messages, the last one from the user; a question has at most 1,000 characters, an answer 4,000. Only the last 10 messages go to the model. 503 when the chat is off.
+
+**Response:** `text/event-stream` with `data:` lines: `{"type": "text", "text": ...}` while the answer is written, then `{"type": "done"}` or `{"type": "error", "code": "refusal"|"unavailable"}`.
+
+**Limits:** 20 messages per hour per IP (`429 RATE_LIMIT_EXCEEDED`) and `SUPPORT_DAILY_LIMIT` messages per day for everyone (`429 SUPPORT_DAILY_LIMIT`, default 500).
+
+**Knowledge:** `app/support/knowledge.md` goes in the system prompt with prompt caching; the model can call `search_docs` (up to 3 rounds) over a snapshot of the site's docs in `app/support/docs_index/`, rebuilt by `scripts/build_support_docs_index.py`. The conversation text is never stored or logged; only token counts are.
+
 ### Additional Routers
 
 The versioned API also exposes authentication/OAuth, API keys, CI login/secrets, integrations, notifications, contributions/webhooks and health aliases. Use `/docs` in development or `/openapi.json` for the complete route list. Production may disable the interactive `/docs` page while retaining `/openapi.json`.

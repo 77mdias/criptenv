@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # web app. Recorded on the user row at signup (terms_version +
     # terms_accepted_at) as evidence of acceptance. Bump this together with the
     # pages and docs/legal/ when the instrument changes.
-    TERMS_VERSION: str = "2.0"
+    TERMS_VERSION: str = "2.1"
     # Support chat (Claude API). No key = the chat is off and the site hides its button.
     ANTHROPIC_API_KEY: str = ""
     # Messages the support chat answers per day, all visitors together (cost cap).
