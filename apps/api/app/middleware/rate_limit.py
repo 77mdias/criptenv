@@ -5,6 +5,7 @@ Uses slowapi for FastAPI integration with X-RateLimit-* headers.
 """
 
 import hashlib
+import ipaddress
 import logging
 import time
 from typing import Optional
@@ -276,6 +277,29 @@ def _normalize_ip(value: str) -> str:
     return value
 
 
+def _trust_check(entries: set[str]):
+    """Matcher for TRUSTED_PROXIES: exact addresses and network ranges (e.g. 172.16.0.0/12)."""
+    addresses = {_normalize_ip(entry) for entry in entries if "/" not in entry}
+    networks = []
+    for entry in entries:
+        if "/" in entry:
+            try:
+                networks.append(ipaddress.ip_network(entry.strip(), strict=False))
+            except ValueError:
+                logger.warning("Ignoring invalid TRUSTED_PROXIES entry: %s", entry)
+
+    def is_trusted(value: str) -> bool:
+        if value in addresses:
+            return True
+        try:
+            address = ipaddress.ip_address(value)
+        except ValueError:
+            return False
+        return any(address in network for network in networks)
+
+    return is_trusted
+
+
 def get_client_ip(request: Request, trusted_proxies: Optional[set[str]] = None) -> str:
     """Resolve the client address used for rate limiting and abuse tracking.
 
@@ -285,9 +309,9 @@ def get_client_ip(request: Request, trusted_proxies: Optional[set[str]] = None) 
     first untrusted address, so a client-injected left-hand value is ignored.
     """
     peer = _normalize_ip(request.client.host) if request.client else "unknown"
-    trusted = {_normalize_ip(entry) for entry in (trusted_proxies or set())}
+    is_trusted = _trust_check(trusted_proxies or set())
 
-    if peer not in trusted:
+    if not is_trusted(peer):
         return peer
 
     forwarded_for = request.headers.get("x-forwarded-for")
@@ -296,7 +320,7 @@ def get_client_ip(request: Request, trusted_proxies: Optional[set[str]] = None) 
 
     chain = [_normalize_ip(hop) for hop in forwarded_for.split(",") if hop.strip()]
     for hop in reversed(chain):
-        if hop not in trusted:
+        if not is_trusted(hop):
             return hop
     return chain[0] if chain else peer
 
@@ -306,11 +330,16 @@ def is_auth_rate_limited_path(path: str) -> bool:
     return path.rstrip("/") in AUTH_RATE_LIMIT_PATHS
 
 
+def _is_support_chat(request: Request) -> bool:
+    """A question to the support chat (a paid Claude call): only POSTs, not preflights or other methods."""
+    return request.method == "POST" and request.url.path.rstrip("/") == SUPPORT_CHAT_PATH
+
+
 def build_rate_limit_key(request: Request, client_ip: str) -> str:
     """Bucket a request by credential when present, otherwise by client IP."""
     if request.url.path.startswith(ICON_PATH_PREFIX):
         return f"icons:{client_ip}"
-    if request.url.path.rstrip("/") == SUPPORT_CHAT_PATH:
+    if _is_support_chat(request):
         return f"support:{client_ip}"
     if is_auth_rate_limited_path(request.url.path):
         return f"auth:{client_ip}"
@@ -326,7 +355,7 @@ def resolve_rate_limit(request: Request) -> str:
     """Pick the rate limit string that applies to this request."""
     if request.url.path.startswith(ICON_PATH_PREFIX):
         return ICON_RATE_LIMIT
-    if request.url.path.rstrip("/") == SUPPORT_CHAT_PATH:
+    if _is_support_chat(request):
         return SUPPORT_RATE_LIMIT
     if is_auth_rate_limited_path(request.url.path):
         return AUTH_RATE_LIMIT
@@ -457,7 +486,7 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
 
             remaining = limit_count - current_count
 
-            if request.url.path.rstrip("/") == SUPPORT_CHAT_PATH and not await self._support_daily_allowed():
+            if _is_support_chat(request) and not await self._support_daily_allowed():
                 return JSONResponse(
                     status_code=429,
                     content={"error": {

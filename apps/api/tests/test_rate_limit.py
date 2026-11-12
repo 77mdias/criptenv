@@ -504,8 +504,18 @@ def test_support_chat_has_its_own_hourly_bucket():
     from app.middleware.rate_limit import build_rate_limit_key, resolve_rate_limit
 
     request = _request("/api/v1/support/chat")
+    request.method = "POST"
     assert resolve_rate_limit(request) == "20/hour"
     assert build_rate_limit_key(request, "1.2.3.4") == "support:1.2.3.4"
+
+
+def test_only_posts_to_the_chat_use_the_support_bucket():
+    from app.middleware.rate_limit import build_rate_limit_key, resolve_rate_limit
+
+    preflight = _request("/api/v1/support/chat")
+    preflight.method = "OPTIONS"
+    assert resolve_rate_limit(preflight) == "100/minute"
+    assert build_rate_limit_key(preflight, "1.2.3.4") == "ip:1.2.3.4"
 
 
 def test_support_status_is_not_limited_by_the_chat_bucket():
@@ -536,8 +546,22 @@ async def test_support_daily_cap_blocks_everyone(monkeypatch):
 
     statuses = []
     for host in ("10.0.0.1", "10.0.0.2", "10.0.0.3"):
-        response = await middleware.dispatch(_request("/api/v1/support/chat", client_host=host), call_next)
+        request = _request("/api/v1/support/chat", client_host=host)
+        request.method = "POST"
+        response = await middleware.dispatch(request, call_next)
         statuses.append(response.status_code)
 
     assert statuses == [200, 200, 429]
     assert json.loads(response.body)["error"]["code"] == "SUPPORT_DAILY_LIMIT"
+
+
+def test_trusted_proxies_accept_a_network_range():
+    """The Cloudflare tunnel runs in its own container with a Docker-assigned IP: trust the range."""
+    from app.middleware.rate_limit import get_client_ip
+
+    request = _request("/api/v1/support/chat", client_host="172.18.0.5",
+                       headers={"x-forwarded-for": "198.51.100.7"})
+    assert get_client_ip(request, {"172.16.0.0/12"}) == "198.51.100.7"
+    outside = _request("/api/v1/support/chat", client_host="203.0.113.9",
+                       headers={"x-forwarded-for": "198.51.100.7"})
+    assert get_client_ip(outside, {"172.16.0.0/12"}) == "203.0.113.9"

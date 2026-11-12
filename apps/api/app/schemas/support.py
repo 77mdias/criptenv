@@ -8,7 +8,8 @@ CONTEXT_MESSAGES = 10
 
 class SupportMessage(BaseModel):
     role: Literal["user", "assistant"]
-    content: str = Field(min_length=1, max_length=4000)
+    # A long answer with code can pass 4,000 characters; it comes back in the history.
+    content: str = Field(min_length=1, max_length=12000)
 
     @model_validator(mode="after")
     def _short_questions(self):

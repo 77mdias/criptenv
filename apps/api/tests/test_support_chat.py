@@ -124,6 +124,13 @@ async def test_chat_keeps_only_the_last_10_messages_starting_with_a_user():
     assert len(sent) <= 10 and sent[0]["role"] == "user" and sent[-1]["content"] == "última"
 
 
+async def test_chat_accepts_a_long_previous_answer():
+    history = [{"role": "user", "content": "oi"}, {"role": "assistant", "content": "x" * 9000},
+               {"role": "user", "content": "e agora?"}]
+    response = await _post(FakeClient([([_text("ok")], _message())]), {"messages": history, "locale": "pt-BR"})
+    assert response.status_code == 200
+
+
 async def test_chat_streams_text_as_sse():
     client = FakeClient([([_text("Use "), _text("criptenv run.")], _message())])
     response = await _post(client, _ask())

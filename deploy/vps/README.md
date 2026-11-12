@@ -254,7 +254,7 @@ O chat das páginas públicas usa a API da Claude (modelo `claude-sonnet-5-5`). 
 
 3. `docker compose up -d api` e confira: `curl -s https://<sua-api>/api/v1/support/status` responde `{"enabled": true}`.
 
-Cada visitante manda até 20 mensagens por hora. O custo de cada rodada (tokens de entrada, de cache e de saída) aparece no log: `docker compose logs api | grep "support chat round"`. Para desligar, apague a chave e reinicie a API.
+Cada visitante manda até 20 mensagens por hora. Isso só vale por visitante se `TRUSTED_PROXIES` incluir a faixa do Docker (`127.0.0.1,::1,172.16.0.0/12`): o túnel da Cloudflare roda num contêiner próprio, e sem essa faixa a API vê todo mundo com o IP dele. O custo de cada rodada (tokens de entrada, de cache e de saída) aparece no log: `docker compose logs api | grep "support chat round"`. Para desligar, apague a chave e reinicie a API.
 
 Ao mudar a documentação do site (`apps/web/messages/*/docs.json`), rode `python scripts/build_support_docs_index.py` em `apps/api` e faça commit do resultado; um teste falha enquanto o retrato estiver atrasado.
 

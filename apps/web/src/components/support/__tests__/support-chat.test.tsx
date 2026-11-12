@@ -137,11 +137,33 @@ describe("SupportChat", () => {
   })
 })
 
+describe("SupportChat history", () => {
+  it("sends only the last 10 real messages, so a long chat never locks up", async () => {
+    const long = Array.from({ length: 30 }, (_, i) => ({ role: i % 2 ? "assistant" : "user", content: `m${i}` }))
+    sessionStorage.setItem("criptenv-support-chat", JSON.stringify([...long, { role: "assistant", content: "" }]))
+    mockFetch()
+    renderWithIntl(<SupportChat />)
+    await openChat()
+    await ask("nova")
+
+    await waitFor(() => expect((global.fetch as jest.Mock).mock.calls.length).toBe(2))
+    const body = JSON.parse((global.fetch as jest.Mock).mock.calls[1][1].body)
+    expect(body.messages).toHaveLength(10)
+    expect(body.messages.every((m: { content: string }) => m.content)).toBe(true)
+    expect(body.messages.at(-1)).toEqual({ role: "user", content: "nova" })
+  })
+})
+
 describe("RichText", () => {
   it("renders code blocks, inline code and markdown links", () => {
     renderWithIntl(<RichText text={"Veja [a instalação](/docs/getting-started/installation):\n```bash\npip install criptenv\n```"} />)
     expect(screen.getByRole("link", { name: "a instalação" })).toHaveAttribute("href", "/docs/getting-started/installation")
     expect(screen.getByText("pip install criptenv").tagName).toBe("PRE")
+  })
+
+  it("never turns a protocol-relative URL into an internal link", () => {
+    renderWithIntl(<RichText text="[docs oficiais](//evil.example/docs)" />)
+    expect(screen.queryByRole("link")).not.toBeInTheDocument()
   })
 })
 

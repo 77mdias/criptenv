@@ -11,6 +11,8 @@ export const OPEN_SUPPORT_EVENT = "criptenv:open-support"
 const HIDDEN_KEY = "criptenv-support-hidden"
 const HISTORY_KEY = "criptenv-support-chat"
 const MAX_QUESTION = 1000
+// The server only reads this many; sending more just grows the request.
+const CONTEXT_MESSAGES = 10
 
 interface ChatEntry extends SupportMessage {
   /** A notice from the site itself (limit, error): shown, never sent to the model. */
@@ -34,7 +36,7 @@ function writeStorage(storage: () => Storage, key: string, value: string | null)
   }
 }
 
-const INLINE = /(`[^`]+`|\[[^\]]+\]\((?:\/|https?:\/\/)[^)\s]+\)|(?:https?:\/\/[^\s)]+|\/(?:docs|termos-de-uso|politica-de-privacidade|signup|login)[\w/#-]*))/g
+const INLINE = /(`[^`]+`|\[[^\]]+\]\((?:\/(?!\/)|https?:\/\/)[^)\s]+\)|(?:https?:\/\/[^\s)]+|(?<![\w/.])\/(?:docs|termos-de-uso|politica-de-privacidade|signup|login)[\w/#-]*))/g
 
 function Inline({ text }: { text: string }) {
   const parts = text.split(INLINE)
@@ -102,7 +104,8 @@ export function SupportChat() {
       const saved = readStorage(() => window.sessionStorage, HISTORY_KEY)
       if (saved) {
         try {
-          setEntries(JSON.parse(saved) as ChatEntry[])
+          // An answer cut off by a reload is saved empty: drop it.
+          setEntries((JSON.parse(saved) as ChatEntry[]).filter((entry) => entry.content))
         } catch {
           writeStorage(() => window.sessionStorage, HISTORY_KEY, null)
         }
@@ -166,7 +169,10 @@ export function SupportChat() {
     save([...asked, { role: "assistant", content: "" }])
     let answer = ""
     const result = await supportApi.chat(
-      asked.filter((entry) => !entry.notice).map(({ role, content }) => ({ role, content })),
+      asked
+        .filter((entry) => !entry.notice && entry.content)
+        .slice(-CONTEXT_MESSAGES)
+        .map(({ role, content }) => ({ role, content })),
       locale,
       (text) => {
         answer += text
