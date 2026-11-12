@@ -19,7 +19,6 @@ const baseProps = {
   secretKey: "API_KEY",
   canManageSecrets: true,
   historyVersion: 1,
-  copied: false,
   onCopy: jest.fn(),
   onRotate: jest.fn(),
   onSetExpiration: jest.fn(),

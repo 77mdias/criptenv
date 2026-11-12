@@ -11,7 +11,6 @@ interface UnlockedVaultPanelProps {
   environmentName: string;
   /** CLI command shown when the environment has no secrets yet */
   emptyCommand?: string;
-  copiedKey: string | null;
   busy: boolean;
   canManageSecrets: boolean;
   selectedKeys?: string[];
@@ -33,7 +32,6 @@ export function UnlockedVaultPanel({
   secrets,
   environmentName,
   emptyCommand,
-  copiedKey,
   busy,
   canManageSecrets,
   selectedKeys,
@@ -80,7 +78,6 @@ export function UnlockedVaultPanel({
           secrets={secrets}
           environmentName={environmentName}
           emptyCommand={emptyCommand}
-          copiedKey={copiedKey}
           canManageSecrets={canManageSecrets}
           selectedKeys={selectedKeys}
           onSelectChange={onSelectChange}

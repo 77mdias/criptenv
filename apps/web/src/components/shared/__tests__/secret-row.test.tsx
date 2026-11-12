@@ -58,10 +58,9 @@ describe("SecretRow", () => {
     const onDelete = jest.fn()
 
     render(
-      <SecretRow secret={secret} environmentName="Production" onCopy={onCopy} onEdit={onEdit} onDelete={onDelete} copied />
+      <SecretRow secret={secret} environmentName="Production" onCopy={onCopy} onEdit={onEdit} onDelete={onDelete} />
     )
 
-    expect(screen.getByText("copiado")).toBeInTheDocument()
     expect(screen.getByText("3 dias")).toBeInTheDocument()
 
     await userEvent.click(screen.getByRole("button", { name: "Copiar valor" }))

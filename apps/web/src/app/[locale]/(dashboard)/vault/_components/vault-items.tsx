@@ -29,6 +29,7 @@ import { SiteIcon } from "./site-icon"
 import { ItemActions } from "./item-actions"
 import { readSiteIconsSetting, writeSiteIconsSetting } from "@/lib/personal-vault/site-icons"
 import { UpgradeLink } from "@/components/shared/upgrade-link"
+import { toast } from "@/stores/toast"
 
 export interface DecryptedEntry {
   item: PersonalVaultItem
@@ -199,7 +200,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   }
 
   function copy(value: string) {
-    void navigator.clipboard?.writeText(value).then(() => setNotice(t("items.copied")))
+    void navigator.clipboard?.writeText(value).then(() => toast(t("items.copied")))
   }
 
   return (

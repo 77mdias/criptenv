@@ -16,6 +16,7 @@ import {
 import { deriveProjectEnvironmentKey, encrypt } from "@/lib/crypto"
 import { environmentsApi, peekCached, projectsApi, rotationApi, vaultApi } from "@/lib/api"
 import { useCryptoStore } from "@/stores/crypto"
+import { toast } from "@/stores/toast"
 import type {
   Environment,
   EnvironmentListResponse,
@@ -46,7 +47,6 @@ interface UseProjectSecretsResult {
     editingSecret: DecryptedSecret | null
     importOpen: boolean
     exportOpen: boolean
-    copiedKey: string | null
     expirationModalOpen: boolean
     expirationSecret: DecryptedSecret | null
     /** Outcome of the automatic send to hosting after the last save; null when nothing was sent. */
@@ -104,6 +104,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   const isProjectUnlocked = isUnlocked && unlockedProjectId === projectId && Boolean(keyMaterial && vaultProof)
   const copyTimersRef = useRef<number[]>([])
   const t = useTranslations("secrets.client.errors")
+  const tRow = useTranslations("secrets.row")
 
   const [project, setProject] = useState<Project | null>(cachedProject)
   const [environments, setEnvironments] = useState<Environment[]>(cachedEnvironments?.environments ?? [])
@@ -126,7 +127,6 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   const [editingSecret, setEditingSecret] = useState<DecryptedSecret | null>(null)
   const [importOpen, setImportOpen] = useState(false)
   const [exportOpen, setExportOpen] = useState(false)
-  const [copiedKey, setCopiedKey] = useState<string | null>(null)
   const [expirationModalOpen, setExpirationModalOpen] = useState(false)
   const [expirationSecret, setExpirationSecret] = useState<DecryptedSecret | null>(null)
   const [autoSyncResults, setAutoSyncResults] = useState<AutoSyncResult[] | null>(null)
@@ -429,15 +429,14 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     }
 
     await navigator.clipboard.writeText(secret.value)
-    setCopiedKey(secret.key)
+    toast(tRow("copied", { key: secret.key }))
 
     copyTimersRef.current = [
-      window.setTimeout(() => setCopiedKey(null), 3000),
       window.setTimeout(() => {
         navigator.clipboard.writeText("").catch(() => undefined)
       }, 30000),
     ]
-  }, [])
+  }, [tRow])
 
   const rotateSecret = useCallback(
     async (secret: DecryptedSecret) => {
@@ -548,7 +547,6 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       editingSecret,
       importOpen,
       exportOpen,
-      copiedKey,
       expirationModalOpen,
       expirationSecret,
       autoSyncResults,

@@ -23,7 +23,6 @@ interface SecretDetailSheetProps {
   canManageSecrets: boolean
   /** Bumps after a push/rotation so the history is refetched. */
   historyVersion: number
-  copied: boolean
   onCopy: (secret: DecryptedSecret) => void
   onRotate: (secret: DecryptedSecret) => void
   onSetExpiration: (secret: DecryptedSecret) => void
@@ -38,7 +37,6 @@ export function SecretDetailSheet({
   secret,
   canManageSecrets,
   historyVersion,
-  copied,
   onCopy,
   onRotate,
   onSetExpiration,
@@ -115,7 +113,6 @@ export function SecretDetailSheet({
                   {tRow("rotate")}
                 </Button>
               )}
-              {copied && <span className="font-mono text-xs text-green-700">{tRow("copied")}</span>}
             </div>
           ) : (
             <p className="flex items-center gap-2 text-sm text-[var(--text-tertiary)]">
