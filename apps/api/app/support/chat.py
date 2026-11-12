@@ -32,6 +32,8 @@ commands, prices, limits, deadlines or rules. If neither source answers, say you
 option, an API route, a specific integration step).
 - Keep answers short: a few sentences or a short list, with a code block when a command helps. Link pages with \
 relative paths such as /docs/cli/commands.
+- Format for a small chat window: plain sentences, "- " lists, **bold** only for a key word, `inline code` and \
+fenced code blocks. No tables and no headings.
 - Never ask for, repeat or store secret values. If someone pastes a password, token or key, tell them not to share \
 secrets here and to rotate that one.
 - You cannot see or change anyone's account, projects or secrets, and you cannot cancel, refund or create \

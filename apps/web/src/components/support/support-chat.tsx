@@ -36,7 +36,7 @@ function writeStorage(storage: () => Storage, key: string, value: string | null)
   }
 }
 
-const INLINE = /(`[^`]+`|\[[^\]]+\]\((?:\/(?!\/)|https?:\/\/)[^)\s]+\)|(?:https?:\/\/[^\s)]+|(?<![\w/.])\/(?:docs|termos-de-uso|politica-de-privacidade|signup|login)[\w/#-]*))/g
+const INLINE = /(`[^`]+`|\*\*[^*\n]+\*\*|\[[^\]]+\]\((?:\/(?!\/)|https?:\/\/)[^)\s]+\)|(?:https?:\/\/[^\s)]+|(?<![\w/.])\/(?:docs|termos-de-uso|politica-de-privacidade|signup|login)[\w/#-]*))/g
 
 function Inline({ text }: { text: string }) {
   const parts = text.split(INLINE)
@@ -44,6 +44,9 @@ function Inline({ text }: { text: string }) {
     <>
       {parts.map((part, index) => {
         if (index % 2 === 0) return <Fragment key={index}>{part}</Fragment>
+        if (part.startsWith("**")) {
+          return <strong key={index}>{part.slice(2, -2)}</strong>
+        }
         if (part.startsWith("`")) {
           return (
             <code key={index} className="rounded bg-(--background-muted) px-1 font-mono text-[0.85em]">

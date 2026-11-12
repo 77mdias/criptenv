@@ -161,6 +161,12 @@ describe("RichText", () => {
     expect(screen.getByText("pip install criptenv").tagName).toBe("PRE")
   })
 
+  it("renders **bold** without the asterisks", () => {
+    renderWithIntl(<RichText text="O **Plano Pro** custa R$ 29." />)
+    expect(screen.getByText("Plano Pro").tagName).toBe("STRONG")
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument()
+  })
+
   it("never turns a protocol-relative URL into an internal link", () => {
     renderWithIntl(<RichText text="[docs oficiais](//evil.example/docs)" />)
     expect(screen.queryByRole("link")).not.toBeInTheDocument()
