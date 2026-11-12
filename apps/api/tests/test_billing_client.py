@@ -201,3 +201,24 @@ def test_billing_admin_email_without_address_sends_nothing(sent, monkeypatch):
     monkeypatch.setattr(settings, "BILLING_NOTIFY_EMAIL", "")
     assert EmailService().send_billing_admin("x", ["y"]) is None
     assert sent == []
+
+
+@pytest.mark.asyncio
+async def test_a_refusal_logs_mercado_pagos_reason_but_not_the_payer(mp, caplog):
+    """A 400 used to log only the status code; the reason (e.g. a back_url that is not public https)
+    is what tells the operator what to fix. The rest of the body may echo payer data: not logged."""
+    client, _, routes = mp
+    routes[("POST", "/preapproval")] = httpx.Response(400, json={
+        "message": "Invalid value for back_url, must be a valid URL",
+        "error": "bad_request",
+        "payer_email": "cliente@exemplo.com",
+    })
+
+    with caplog.at_level("ERROR"), pytest.raises(MercadoPagoError):
+        await client.create_preapproval(
+            reason="CriptEnv Pro (mensal)", external_reference="sub-1", payer_email="cliente@exemplo.com",
+            amount=Decimal("29.00"), months=1, back_url="http://localhost:3000/account/billing",
+        )
+
+    assert "Invalid value for back_url" in caplog.text and "bad_request" in caplog.text
+    assert "cliente@exemplo.com" not in caplog.text
