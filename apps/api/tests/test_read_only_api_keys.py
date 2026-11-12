@@ -137,3 +137,47 @@ async def test_an_old_admin_project_key_no_longer_reads_secrets(client, world, p
     response = await client.get(f"/api/v1/projects/{world.project.id}/environments/{world.envs['staging'].id}{path}")
 
     assert response.status_code == 403
+
+
+# ─── A key on a route that writes ────────────────────────────────────────────
+
+
+def _bearer(token):
+    from starlette.requests import Request
+
+    return Request({"type": "http", "headers": [(b"authorization", f"Bearer {token}".encode())]})
+
+
+async def test_a_valid_key_on_a_session_only_route_gets_403_saying_it_only_reads(monkeypatch):
+    """Writing routes take a login or CI session. A valid key there is not "invalid or expired" (401):
+    it is a key that only reads (403), so the CLI tells the user what to use instead."""
+    from fastapi import HTTPException
+
+    import app.middleware.api_key_auth as api_key_auth
+    from app.middleware.auth import get_current_user
+
+    async def valid(_token):
+        return SimpleNamespace(user=SimpleNamespace(id=uuid4()), auth_type="api_key", api_key=None)
+
+    monkeypatch.setattr(api_key_auth, "validate_api_key_context", valid)
+    with pytest.raises(HTTPException) as refused:
+        await get_current_user(_bearer("cek_live_valid"), db=None)
+
+    assert refused.value.status_code == 403
+    assert "read" in refused.value.detail.lower()
+
+
+async def test_an_invalid_key_on_a_session_only_route_still_gets_401(monkeypatch):
+    from fastapi import HTTPException
+
+    import app.middleware.api_key_auth as api_key_auth
+    from app.middleware.auth import get_current_user
+
+    async def invalid(_token):
+        raise api_key_auth.InvalidApiKeyError()
+
+    monkeypatch.setattr(api_key_auth, "validate_api_key_context", invalid)
+    with pytest.raises(HTTPException) as refused:
+        await get_current_user(_bearer("cek_live_revoked"), db=None)
+
+    assert refused.value.status_code == 401

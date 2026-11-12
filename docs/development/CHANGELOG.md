@@ -7,6 +7,10 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Chave de API em rota que grava: 403 em vez de 401 — 2026-11-11
+
+- Uma chave de API válida usada para gravar (`criptenv set`, `criptenv env create` e as outras rotas que exigem login ou token de CI) recebia `401` e a CLI dizia "a chave é inválida, venceu ou foi revogada". Agora recebe `403` com o motivo: chaves de API só leem segredos e auditoria; para alterar, use um token de CI (`criptenv ci login`) ou o login (`criptenv login`). Chave inválida ou revogada continua com `401`.
+
 ### Área logada: Atividade, Acessos, Segurança, Comparar e busca rápida (UX.5 e UX.6) — 2026-11-11
 
 - **Atividade (`/activity`):** a auditoria de todos os seus projetos numa tela, com filtros por projeto, origem (pessoas, CI, chave de API), período e ação, guardados na URL. Agrupada por dia; exporta CSV do que está carregado (o CSV neutraliza células que começariam uma fórmula). Novo `GET /api/v1/me/audit`, que respeita a janela do plano de cada projeto e esconde os ambientes restritos de quem não é dono ou admin. O feed do dashboard usa o mesmo endpoint em vez de buscar projeto por projeto.
