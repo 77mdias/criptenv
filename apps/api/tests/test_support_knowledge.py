@@ -15,3 +15,12 @@ def test_knowledge_prices_match_the_plan_table():
 
 def test_knowledge_fits_the_budget():
     assert len(KNOWLEDGE) < 60_000
+
+
+def test_knowledge_has_the_scope_options_of_the_create_commands():
+    assert "criptenv ci tokens create --name" in KNOWLEDGE and "--environment staging" in KNOWLEDGE
+    assert "criptenv api-keys create --name" in KNOWLEDGE and "--env production" in KNOWLEDGE
+
+
+def test_knowledge_says_the_expiry_options_count_days():
+    assert "--expires-in` conta em dias" in KNOWLEDGE

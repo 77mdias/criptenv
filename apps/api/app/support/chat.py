@@ -1,4 +1,4 @@
-"""Support chat: one visitor question answered by Claude Sonnet, with the knowledge base and docs search.
+"""Support chat: one visitor question answered by Claude Haiku, with the knowledge base and docs search.
 
 Nothing from the conversation is stored or logged; only token counts are, to follow the cost.
 """
@@ -11,7 +11,8 @@ from app.support.search import search
 
 logger = logging.getLogger(__name__)
 
-MODEL = "claude-sonnet-5-5"
+# Haiku 5.5 matched Sonnet 5.5 on a live comparison of 8 support questions (8 of 8) at about 1/16 of the cost.
+MODEL = "claude-haiku-5-5"
 # Adaptive thinking counts against max_tokens: 2048 leaves room for it and a short answer.
 MAX_TOKENS = 2048
 MAX_SEARCH_ROUNDS = 3
@@ -73,8 +74,13 @@ def build_request(messages: list, locale: str, *, allow_search: bool) -> dict:
         # Same tool list every round keeps the cache; the last round just may not search again.
         "tool_choice": {"type": "auto"} if allow_search else {"type": "none"},
         "output_config": {"effort": "low"},
-        "betas": ["server-side-fallback-2026-07-01"],
-        "fallbacks": "default",
+        # Thinking blocks are bound to the exact conversation they came from. In live tests the third search
+        # round was refused with "bound to a different conversation"; drop_block discards such a block instead
+        # of failing the visitor's question (it only loses that round's reasoning).
+        "thinking": {"type": "adaptive", "block_binding": {"prefix_mismatch_behavior": "drop_block"}},
+        # No server-side refusal fallback: Haiku 5.5 does not have one. A refusal reaches the visitor as
+        # "can't answer that" plus the support e-mail.
+        "betas": ["thinking-binding-controls-2026-08-01"],
         "messages": messages,
     }
 
@@ -100,12 +106,14 @@ def _log_usage(usage) -> None:
 async def answer(client, messages: list[dict], locale: str) -> AsyncIterator[dict]:
     """Events for the browser: {"type": "text"}, then {"type": "done"} or {"type": "error", "code": ...}."""
     history = list(messages)
+    wrote = False
     try:
         for round_number in range(MAX_SEARCH_ROUNDS + 1):
             request = build_request(history, locale, allow_search=round_number < MAX_SEARCH_ROUNDS)
             async with client.beta.messages.stream(**request) as stream:
                 async for event in stream:
                     if event.type == "text":
+                        wrote = wrote or bool(event.text)
                         yield {"type": "text", "text": event.text}
                 final = await stream.get_final_message()
             _log_usage(final.usage)
@@ -124,4 +132,5 @@ async def answer(client, messages: list[dict], locale: str) -> AsyncIterator[dic
         logger.warning("support chat failed: %s", type(exc).__name__)
         yield {"type": "error", "code": "unavailable"}
         return
-    yield {"type": "done"}
+    # Seen in live tests: after several searches the model can end with thinking only and no text.
+    yield {"type": "done"} if wrote else {"type": "error", "code": "no_answer"}

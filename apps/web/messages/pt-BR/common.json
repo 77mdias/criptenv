@@ -124,7 +124,8 @@
       "unavailable": "O suporte não respondeu agora. Tente de novo em instantes ou escreva para support@criptenv.dev.",
       "rateLimit": "Você mandou muitas mensagens na última hora. Tente de novo mais tarde ou escreva para support@criptenv.dev.",
       "dailyLimit": "O suporte atingiu o limite de mensagens de hoje. Escreva para support@criptenv.dev.",
-      "off": "O suporte por chat está desligado no momento. Escreva para support@criptenv.dev."
+      "off": "O suporte por chat está desligado no momento. Escreva para support@criptenv.dev.",
+      "noAnswer": "Não encontrei essa resposta. Veja a documentação em /docs ou escreva para support@criptenv.dev."
     }
   }
 }

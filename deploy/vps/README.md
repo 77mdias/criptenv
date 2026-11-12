@@ -242,7 +242,7 @@ docker compose down
 
 ## Ligar o chat de suporte
 
-O chat das páginas públicas usa a API da Claude (modelo `claude-sonnet-5-5`). Ele vem desligado: sem chave, o botão não aparece.
+O chat das páginas públicas usa a API da Claude (modelo `claude-haiku-5-5`; cada pergunta custa por volta de US$ 0,0003 com o cache). Ele vem desligado: sem chave, o botão não aparece.
 
 1. Crie uma chave em https://platform.claude.com (Settings → API keys) e guarde-a também no projeto CriptEnv da aplicação.
 2. No `.env` da VPS:

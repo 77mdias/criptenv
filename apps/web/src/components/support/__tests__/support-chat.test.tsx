@@ -125,6 +125,14 @@ describe("SupportChat", () => {
     expect(body.messages.map((m: { content: string }) => m.content)).toEqual(["primeira", "segunda"])
   })
 
+  it("says it found no answer when the bot ends without text", async () => {
+    mockFetch({ chat: () => ({ ok: true, status: 200, body: sseBody([{ type: "error", code: "no_answer" }]) }) })
+    renderWithIntl(<SupportChat />)
+    await openChat()
+    await ask("pergunta difícil")
+    expect(await screen.findByText(/Não encontrei essa resposta/)).toBeInTheDocument()
+  })
+
   it("closes on Escape and returns focus to the button", async () => {
     mockFetch()
     renderWithIntl(<SupportChat />)

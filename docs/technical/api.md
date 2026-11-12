@@ -343,7 +343,7 @@ Read-only views across every project the signed-in user belongs to, for the web 
 
 **Files:** `apps/api/app/routers/support.py`, `apps/api/app/support/` (knowledge base, docs search, chat loop)
 
-Public support chat for the website, answered by Claude Sonnet (`claude-sonnet-5-5`, low effort). No login.
+Public support chat for the website, answered by Claude Haiku (`claude-haiku-5-5`, low effort; it matched Sonnet 5.5 on a live comparison of 8 questions at about 1/16 of the cost). No login.
 
 | Method | Path | Description |
 |--------|------|-------------|

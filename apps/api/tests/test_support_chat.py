@@ -176,6 +176,11 @@ async def test_chat_reports_an_invalid_tool_input_back_to_the_model():
     assert result["is_error"] is True
 
 
+async def test_chat_reports_an_answer_with_no_text():
+    client = FakeClient([([], _message("end_turn"))])
+    assert _events(await _post(client, _ask())) == [{"type": "error", "code": "no_answer"}]
+
+
 async def test_chat_reports_a_refusal():
     client = FakeClient([([], _message("refusal"))])
     assert _events(await _post(client, _ask()))[-1] == {"type": "error", "code": "refusal"}
@@ -197,9 +202,14 @@ async def test_request_sends_the_knowledge_cached_and_the_language_after_it():
     cached, language = request["system"]
     assert cached["cache_control"] == {"type": "ephemeral"} and support_chat.KNOWLEDGE in cached["text"]
     assert "English" in language["text"] and "cache_control" not in language
-    assert request["model"] == "claude-sonnet-5-5"
+    # Haiku 5.5 matched Sonnet 5.5 on the live comparison (8 of 8) at about 1/16 of the cost.
+    assert request["model"] == "claude-haiku-5-5"
     assert request["output_config"] == {"effort": "low"}
-    assert request["fallbacks"] == "default" and request["betas"] == ["server-side-fallback-2026-07-01"]
+    # Haiku 5.5 has no server-side refusal fallback: the parameter would be rejected.
+    assert "fallbacks" not in request
+    assert request["betas"] == ["thinking-binding-controls-2026-08-01"]
+    # A thinking block whose earlier context does not match is dropped, never a 400 for the visitor.
+    assert request["thinking"] == {"type": "adaptive", "block_binding": {"prefix_mismatch_behavior": "drop_block"}}
 
 
 async def test_nothing_from_the_conversation_is_logged(caplog):

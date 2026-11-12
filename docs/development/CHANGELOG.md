@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Chat de suporte: Haiku, busca corrigida e respostas mais limpas — 2026-11-12
+
+- **Modelo: Claude Haiku 5.5** no lugar do Sonnet 5.5. Num comparativo com a chave real (8 perguntas: Docker, preço, arrependimento, fora do assunto, inglês, token de CI só no staging, pegadinha de preço, ambiente restrito no Free), os dois acertaram as 8; o Haiku custou US$ 0,0033 contra US$ 0,054 do Sonnet. Sem fallback do servidor em recusa (o Haiku não tem).
+- **Busca na documentação corrigida:** a terceira rodada de busca era recusada pela API ("thinking block bound to a different conversation"). Toda requisição passa a pedir `drop_block` (beta `thinking-binding-controls-2026-08-01`), que descarta o pensamento que não confere em vez de recusar a pergunta.
+- **Resposta vazia:** se o modelo terminar sem texto, o chat diz que não encontrou a resposta e indica a documentação e o e-mail.
+- **Formatação:** o painel mostra **negrito**, e o bot evita tabelas e títulos, que apareciam com os símbolos crus.
+- **Base de conhecimento:** opções para limitar token de CI (`--environment`) e chave de API (`--env`) a um ambiente, e as unidades de validade.
+
 ### Chat de suporte com o Claude — 2026-11-12
 
 - **Botão com a carinha de bot** no canto inferior direito da landing, das páginas legais e da documentação. Responde qualquer dúvida sobre o CriptEnv com o Claude Sonnet (`claude-sonnet-5-5`), no idioma da página, com streaming. A pessoa pode esconder o botão; o link **Suporte** no rodapé abre o chat de novo.

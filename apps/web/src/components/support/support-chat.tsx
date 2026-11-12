@@ -156,6 +156,7 @@ export function SupportChat() {
 
   const failureText: Record<SupportFailure, string> = {
     refusal: t("errors.refusal"),
+    no_answer: t("errors.noAnswer"),
     unavailable: t("errors.unavailable"),
     rate_limit: t("errors.rateLimit"),
     daily_limit: t("errors.dailyLimit"),

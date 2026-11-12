@@ -67,13 +67,13 @@ No painel, abra o projeto, escolha o ambiente, destrave o cofre e adicione. Pela
 
 **Quais são os tipos de acesso?**
 - **Login** (você e a equipe): tudo o que o seu papel permite. Na CLI, `criptenv login`. A sessão dura até 30 dias e cai depois de 20 dias sem uso.
-- **Token de CI** (pipelines): lê e grava segredos e sincroniza com a hospedagem, numa sessão curta por execução. Crie com `criptenv ci tokens create --name deploy --expires-in 90` ou nas configurações do projeto; no pipeline, `criptenv ci login --token $CRIPTENV_TOKEN`.
-- **Chave de API** (contêineres e scripts): **só leitura** (`read:secrets` e, se quiser, `read:audit`). Crie no painel ou com `criptenv api-keys create`. Usada para gravar, recebe 403.
+- **Token de CI** (pipelines): lê e grava segredos e sincroniza com a hospedagem, numa sessão curta por execução. Crie nas configurações do projeto ou com `criptenv ci tokens create --name deploy --expires-in 90` (`--environment staging` limita a um ambiente; `--expires-in` conta em dias, sem ele o token não vence; `--scopes` escolhe os escopos, separados por vírgula). No pipeline, `criptenv ci login --token $CRIPTENV_TOKEN`.
+- **Chave de API** (contêineres e scripts): **só leitura** (`read:secrets` e, se quiser, `read:audit`). Crie no painel ou com `criptenv api-keys create --name worker --env production --expires-days 90` (`--env` limita a um ambiente; `--expires-days` de 1 a 365). Usada para gravar, recebe 403.
 - **Integração com a hospedagem** (Vercel, Render, Cloudflare Workers): envia as variáveis de um ambiente para lá. Não é credencial de leitura.
 Página: /docs/api/authentication
 
 **Uma chave de API ou um token de CI alcança todos os ambientes?**
-Se você não escolher um ambiente ao criar, alcança todos os ambientes que **não** são restritos. Um ambiente restrito só é alcançado por uma credencial criada especificamente para ele.
+Se você não escolher um ambiente ao criar, alcança todos os ambientes que **não** são restritos. Um ambiente restrito só é alcançado por uma credencial criada especificamente para ele. Na CLI, o ambiente é `--environment <nome>` no `criptenv ci tokens create` e `--env <nome>` no `criptenv api-keys create`.
 
 ## Docker e contêineres
 
@@ -83,7 +83,7 @@ Se você não escolher um ambiente ao criar, alcança todos os ambientes que **n
    COPY --from=ghcr.io/77mdias/criptenv-cli:latest /usr/local/bin/criptenv /usr/local/bin/criptenv
    ```
    O binário funciona em imagens com glibc (Debian, Ubuntu, `node:*-slim`). Em Alpine, instale com `pip install criptenv`.
-2. Crie uma **chave de API só leitura** presa ao ambiente que o contêiner usa (no painel, em Configurações do projeto → Chaves de API, ou `criptenv api-keys create`).
+2. Crie uma **chave de API só leitura** presa ao ambiente que o contêiner usa (no painel, em Configurações do projeto → Chaves de API, ou `criptenv api-keys create --name container --env production`).
 3. Passe ao contêiner, como variáveis do orquestrador (Docker secrets, variáveis do serviço no Compose, Kubernetes ou da plataforma), **nunca dentro da imagem**:
    - `CRIPTENV_API_KEY`: a chave do passo 2;
    - `CRIPTENV_VAULT_PASSWORD`: a senha do cofre do projeto (a decifragem acontece dentro do contêiner).
