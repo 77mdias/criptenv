@@ -255,7 +255,12 @@ class MercadoPagoClient:
                 error_body = e.response.json()
             except Exception:
                 error_body = e.response.text
-            logger.error("Mercado Pago %s %s error: status=%s", method, path, e.response.status_code)
+            # Only Mercado Pago's own reason: the rest of the body may echo payer data.
+            reason = error_body if isinstance(error_body, dict) else {}
+            logger.error(
+                "Mercado Pago %s %s error: status=%s error=%s message=%s",
+                method, path, e.response.status_code, reason.get("error"), reason.get("message"),
+            )
             raise MercadoPagoError(
                 f"Mercado Pago {method} {path} failed: {e.response.status_code}",
                 status_code=e.response.status_code,

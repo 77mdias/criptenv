@@ -276,10 +276,17 @@ Nenhuma chamada real ao Mercado Pago foi feita no desenvolvimento. Faça este ro
 4. Assinar um plano anual. Conferir a data da próxima cobrança no Mercado Pago (12 meses).
 5. Cancelar uma assinatura pela conta da compradora no Mercado Pago, não pelo CriptEnv. Conferir: o plano continua até o fim do período pago.
 
+Já confirmado no teste de 2026-11-10 (pilha local, token `TEST-` da conta real):
+
+- o cancelamento com `status: "cancelled"` é aceito;
+- `localhost` é recusado como endereço de volta (`Invalid value for back_url`): `FRONTEND_URL` precisa ser https público, mesmo em teste (use um túnel como o ngrok);
+- com o token `TEST-` de uma conta real, o e-mail do pagador não pode ser de conta de teste (`Both payer and collector must be real or test users`). Com as contas de teste deste roteiro, os dois lados são de teste.
+
+Quando o Mercado Pago recusa uma chamada, o motivo aparece no log da API (`docker compose logs api | grep "Mercado Pago"`, campos `error=` e `message=`).
+
 Anote o que a documentação deles não confirma e o código assume:
 
 - a cobrança a cada 12 meses (`frequency: 12`) é aceita;
-- o cancelamento com `status: "cancelled"` é aceito;
 - as notificações de assinatura chegam com `type` igual a `subscription_preapproval` ou `subscription_authorized_payment` e o identificador em `data.id`;
 - quais meios de pagamento a tela deles oferece (o Pix não renova sozinho).
 
