@@ -18,7 +18,7 @@
                ✅ DONE
 ```
 
-> **Status**: Phase 1 ✅ COMPLETE (April 2026). Phase 2 ✅ COMPLETE (April 2026). Phase 3 🔄 IN PROGRESS (~60%). Phase 3.5 (Authenticated UX) ✅ COMPLETE (November 2026). Phase 4 📋 PLANNED.
+> **Status**: Phase 1 ✅ COMPLETE (April 2026). Phase 2 ✅ COMPLETE (April 2026). Phase 3 🔄 IN PROGRESS (Railway and Marketplace publishing pending). Phase 3.5 (Authenticated UX) ✅ COMPLETE (November 2026). Phase 4 📋 PLANNED.
 
 ---
 
@@ -162,13 +162,13 @@ criptenv export -o .env                 # Exportar para .env
 
 ## Phase 3: CI/CD Integrations & Dynamic Secrets
 
-**Timeline**: 3 months (Q2-Q3 2026) — In Progress (~60% complete)
+**Timeline**: 3 months (Q2-Q3 2026) — In Progress (Railway and Marketplace publishing pending)
 **Goal**: Ecossistema de integrações
 
 ### Objectives
 
 - [x] GitHub Actions official action (action.yml + src/index.ts ✅)
-- [x] Secret expiration/alerts (API + CLI ✅, Web UI ⚠️ Partial)
+- [x] Secret expiration/alerts (API ✅, CLI ✅, Web ✅; production delivery still to be validated)
 - [x] Secret rotation basics (API + CLI ✅)
 - [x] Vercel, Railway, Render integrations (Vercel ✅, Render ✅, Railway ⚠️ Pending, CLI commands ✅)
 - [x] CLI tokens for CI/CD (ci-login ✅, ci-secrets ✅, ci-deploy ✅, ci-tokens ✅)
@@ -228,10 +228,10 @@ GET    /api/v1/ci/secrets                  # CI session auth ✅
 | Milestone                    | Week | Criteria                  | Status |
 | ---------------------------- | ---- | ------------------------- | ------ |
 | **M3.1**: GitHub Action      | 4    | Official action published | ⚠️ Partial (publishing pending) |
-| **M3.2**: Cloud integrations | 6    | Vercel + Render working   | ✅ Implemented (Railway pending) |
+| **M3.2**: Cloud integrations | 6    | Vercel + Render working   | ✅ Implemented (Vercel, Render, Cloudflare Workers; Railway pending) |
 | **M3.3**: CI tokens          | 8    | Token-based auth for CI   | ✅ Implemented |
 | **M3.4**: Public API         | 10   | REST API documented       | ✅ Implemented |
-| **M3.5**: Secret alerts      | 12   | Expiration notifications  | ⚠️ Partial (API/CLI done, Web partial) |
+| **M3.5**: Secret alerts      | 12   | Expiration notifications  | ✅ Implemented (API, CLI, Web); real delivery in production not validated yet |
 | **M3.6**: APScheduler        | -    | Background job lifespan   | ✅ Implemented |
 
 ---
