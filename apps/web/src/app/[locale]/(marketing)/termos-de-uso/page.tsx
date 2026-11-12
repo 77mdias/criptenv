@@ -556,6 +556,14 @@ export default function TermsPage() {
             o silêncio não importa concordância; estes Termos e a documentação
             técnica pública constituem o inteiro acordo quanto ao seu objeto.
           </LegalP>
+          <LegalP>
+            <strong>10.4. Identificação do fornecedor.</strong> O CriptEnv é
+            mantido e as assinaturas são vendidas por{" "}
+            <strong>Jean Carlos Moreira Dias</strong>, pessoa física, CPF{" "}
+            <span className="font-mono text-sm">520.672.278-23</span>, com
+            endereço em Montalvão, Presidente Prudente/SP. Contato:{" "}
+            <span className="font-mono text-sm">support@criptenv.dev</span>.
+          </LegalP>
         </LegalSection>
       </LegalDocument>
       <Footer />

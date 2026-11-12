@@ -60,8 +60,11 @@ export default function PrivacyPage() {
               Esta Política descreve como o{" "}
               <strong>CriptEnv</strong> trata dados pessoais, em conformidade
               com a <strong>Lei nº 13.709/2018 (LGPD)</strong>, o Marco Civil da
-              Internet (Lei nº 12.965/2014) e normas correlatas. O mantenedor
-              atua como <strong>controlador</strong> dos dados descritos abaixo.
+              Internet (Lei nº 12.965/2014) e normas correlatas. O controlador
+              dos dados descritos abaixo é o mantenedor do CriptEnv,{" "}
+              <strong>Jean Carlos Moreira Dias</strong>, pessoa física, CPF{" "}
+              <span className="font-mono text-sm">520.672.278-23</span>, com
+              endereço em Montalvão, Presidente Prudente/SP.
             </LegalP>
             <LegalP>
               Ela integra, e deve ser lida junto com, os{" "}

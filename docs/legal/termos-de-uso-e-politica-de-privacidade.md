@@ -5,6 +5,7 @@
 | **Instrumento** | Termos de Uso e Política de Privacidade (documento combinado) |
 | **Serviço** | CriptEnv — plataforma de gestão de segredos e variáveis de ambiente com criptografia Zero-Knowledge |
 | **Endereço** | https://criptenv.77mdevseven.tech |
+| **Fornecedor e controlador** | Jean Carlos Moreira Dias, pessoa física, CPF 520.672.278-23, Montalvão, Presidente Prudente/SP |
 | **Contato / Encarregado (DPO)** | support@criptenv.dev |
 | **Versão** | 2.0 |
 | **Em vigor desde** | 12 de novembro de 2026 |
@@ -183,7 +184,7 @@ Os limites de um projeto seguem o plano de quem é dono dele. Preços em reais, 
 
 # PARTE II — POLÍTICA DE PRIVACIDADE (LGPD)
 
-*Aplicam-se a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD), o Marco Civil da Internet (Lei nº 12.965/2014) e normas correlatas. O mantenedor do CriptEnv atua como **controlador** dos dados descritos abaixo.*
+*Aplicam-se a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD), o Marco Civil da Internet (Lei nº 12.965/2014) e normas correlatas. O controlador dos dados descritos abaixo é o mantenedor do CriptEnv, **Jean Carlos Moreira Dias**, pessoa física, CPF 520.672.278-23, com endereço em Montalvão, Presidente Prudente/SP.*
 
 ## 10. Dados tratados, finalidades e bases legais
 
@@ -302,6 +303,8 @@ O **Encarregado de Proteção de Dados** do CriptEnv atende pelo canal **support
 **21.2. Foro.** Fica eleito o foro do **domicílio do titular** para dirimir controvérsias decorrentes de relação de consumo (art. 6º, VI, do CDC); não configurada relação de consumo, o foro do domicílio do mantenedor do projeto, em território brasileiro, ressalvada a faculdade do autor da ação de eleger o foro de residência da parte ré, onde for domiciliado, nas hipóteses admitidas em lei (art. 63, §3º, do CPC).
 
 **21.3.** A nulidade ou inexequibilidade de qualquer cláusula não invalida o restante do instrumento, aplicando-se, no que couber, a norma legal equivalente mais próxima da intenção original. A tolerância a eventuais descumprimentos não implica renúncia ou novação. O silêncio não importa em concordância. Estes Termos, junto com a documentação técnica pública do projeto, constituem o inteiro acordo entre as partes quanto ao seu objeto.
+
+**21.4. Identificação do fornecedor.** O CriptEnv é mantido e as assinaturas são vendidas por **Jean Carlos Moreira Dias**, pessoa física, CPF 520.672.278-23, com endereço em Montalvão, Presidente Prudente/SP. Contato: support@criptenv.dev.
 
 ---
 
