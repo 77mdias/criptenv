@@ -57,6 +57,7 @@
     "payerEmailHint": "Precisa ser o mesmo e-mail da conta que vai pagar; senão o Mercado Pago recusa.",
     "pay": "Ir para o pagamento",
     "payHint": "Você paga no Mercado Pago; o CriptEnv não vê os dados do seu cartão. A cobrança se repete a cada ciclo até você cancelar.",
+    "termsHint": "Ao seguir para o pagamento, você aceita as <link>regras de assinatura dos Termos de Uso</link>: renovação automática, cancelamento a qualquer momento e reembolso em até 7 dias da primeira cobrança.",
     "edit": "Editar dados",
     "save": "Salvar dados",
     "saved": "Dados para nota atualizados."

@@ -14,7 +14,7 @@ import {
 export const metadata: Metadata = {
   title: "Política de Privacidade · CriptEnv",
   description:
-    "Política de Privacidade do CriptEnv (LGPD): coleta mínima via OAuth, arquitetura Zero-Knowledge, não comercialização de dados, transferência internacional, retenção e exclusão definitiva da conta.",
+    "Política de Privacidade do CriptEnv (LGPD): coleta mínima via OAuth, dados para nota fiscal das assinaturas, arquitetura Zero-Knowledge, não comercialização de dados, transferência internacional, retenção e exclusão definitiva da conta.",
 };
 
 function DataTable({
@@ -60,8 +60,11 @@ export default function PrivacyPage() {
               Esta Política descreve como o{" "}
               <strong>CriptEnv</strong> trata dados pessoais, em conformidade
               com a <strong>Lei nº 13.709/2018 (LGPD)</strong>, o Marco Civil da
-              Internet (Lei nº 12.965/2014) e normas correlatas. O mantenedor
-              atua como <strong>controlador</strong> dos dados descritos abaixo.
+              Internet (Lei nº 12.965/2014) e normas correlatas. O controlador
+              dos dados descritos abaixo é o mantenedor do CriptEnv,{" "}
+              <strong>Jean Carlos Moreira Dias</strong>, pessoa física, CPF{" "}
+              <span className="font-mono text-sm">520.672.278-23</span>, com
+              endereço em Montalvão, Presidente Prudente/SP.
             </LegalP>
             <LegalP>
               Ela integra, e deve ser lida junto com, os{" "}
@@ -80,12 +83,13 @@ export default function PrivacyPage() {
             </LegalP>
           </>
         }
-        version="Versão 1.0 · Em vigor desde 23 de setembro de 2026 · Encarregado (DPO): support@criptenv.dev"
+        version="Versão 2.0 · Em vigor desde 12 de novembro de 2026 · Encarregado (DPO): support@criptenv.dev"
       >
         <LegalSection id="1-dados" title="1. Dados tratados, finalidades e bases legais">
           <LegalP>
             <strong>1.1. Minimização.</strong> Coletamos o mínimo indispensável
-            para autenticar usuários e operar equipes. Nada além disso.
+            para autenticar usuários, operar equipes e, para quem assina um
+            plano pago, cobrar e emitir nota fiscal. Nada além disso.
           </LegalP>
           <LegalSub title="1.2. Coleta via OAuth (Google, GitHub, Discord)" />
           <LegalP>
@@ -128,7 +132,8 @@ export default function PrivacyPage() {
             E-mail, nome, <strong>hash</strong> da senha (nunca o texto claro),
             salt de derivação, indicadores de verificação de e-mail e
             configuração de 2FA. E-mails transacionais (verificação, redefinição
-            de senha, convites, alertas de expiração, confirmação de doação) são
+            de senha, convites, alertas de expiração, confirmação de doação,
+            assinatura confirmada ou cancelada e cobrança recusada) são
             enviados quando o evento correspondente ocorre.
           </LegalP>
           <LegalSub title="1.4. Dados técnicos e de segurança" />
@@ -140,7 +145,47 @@ export default function PrivacyPage() {
             <strong>sem conteúdo de segredos</strong>); métricas agregadas de
             uso; registros de rate limiting e prevenção a abuso.
           </LegalP>
-          <LegalSub title="1.5. Doações e metadados" />
+          <LegalSub title="1.5. Assinaturas pagas (Pro e Max)" />
+          <LegalP>
+            Só de quem contrata uma assinatura, para executar o contrato (art.
+            7º, V, da LGPD) e cumprir a obrigação de emitir nota fiscal (art.
+            7º, II):
+          </LegalP>
+          <DataTable
+            rows={[
+              {
+                label: "CPF ou CNPJ, nome ou razão social, endereço",
+                value:
+                  "Emissão da nota fiscal de cada pagamento. Você pode corrigi-los em Conta → Assinatura.",
+              },
+              {
+                label: "E-mail da conta no Mercado Pago",
+                value:
+                  "Identificar o pagador ao criar a assinatura no Mercado Pago.",
+              },
+              {
+                label: "Plano, ciclo, valor, datas e situação",
+                value:
+                  "Saber qual plano vale para a conta, quando renova, prazo de tolerância e reembolsos.",
+              },
+              {
+                label: "Identificadores no Mercado Pago",
+                value:
+                  "Da assinatura e de cada pagamento, para conferir cobranças, cancelar e devolver valores.",
+              },
+            ]}
+          />
+          <LegalP>
+            <strong>
+              Os dados do cartão são digitados na página do Mercado Pago e nunca
+              chegam ao CriptEnv.
+            </strong>{" "}
+            Os dados da tabela ficam no banco de dados do Serviço, fora do
+            cofre cifrado, protegidos pelos controles de acesso da
+            infraestrutura. A cada pagamento aprovado, os dados para nota são
+            enviados por e-mail ao mantenedor, que emite a nota fiscal.
+          </LegalP>
+          <LegalSub title="1.6. Doações e metadados" />
           <LegalP>
             Doações: apenas os dados voluntariamente informados (nome e e-mail
             opcionais; valor; status), para confirmação, agradecimento e
@@ -191,7 +236,7 @@ export default function PrivacyPage() {
               {
                 label: "Mercado Pago",
                 value:
-                  "Processamento das doações Pix; dados transacionais permanecem com o provedor.",
+                  "Processamento das doações Pix e das assinaturas (cobrança recorrente e reembolsos). Os dados do cartão e os dados transacionais ficam com o provedor; recebe de nós o e-mail do pagador, o valor e a descrição do plano.",
               },
               {
                 label: "Resend",
@@ -245,8 +290,9 @@ export default function PrivacyPage() {
           </LegalP>
           <LegalP>
             <strong>4.2.</strong> Não há cookies de terceiros para publicidade,
-            fingerprinting ou rastreamento entre sites. A autenticação OAuth e o
-            pagamento Pix ocorrem nos domínios dos respectivos provedores,
+            fingerprinting ou rastreamento entre sites. A autenticação OAuth e os
+            pagamentos (Pix e assinaturas) ocorrem nos domínios dos respectivos
+            provedores,
             sujeitos a suas políticas.
           </LegalP>
         </LegalSection>
@@ -262,7 +308,9 @@ export default function PrivacyPage() {
             </Link>
             : transporte cifrado (TLS) em toda a Plataforma; controle de acesso
             baseado em papéis (RBAC) por projeto; tokens armazenados como hash;
-            verificação de assinatura em webhooks de pagamento; isolamento entre
+            verificação de assinatura em webhooks de pagamento, com a situação
+            de cada assinatura sempre conferida de novo na API do Mercado Pago;
+            dados de cartão fora dos nossos servidores; isolamento entre
             contas e projetos; segredos de infraestrutura mantidos apenas como
             variáveis de ambiente.
           </LegalP>
@@ -290,8 +338,10 @@ export default function PrivacyPage() {
             existir. Sessões expiram conforme configurado. Logs de segurança e
             auditoria são retidos pelo período necessário à proteção da
             Plataforma e a obrigações legais (art. 15, §1º, do Marco Civil),
-            com posterior eliminação ou anonimização. Registros de doações são
-            mantidos pelo prazo de obrigações contábeis/fiscais aplicável.
+            com posterior eliminação ou anonimização. Registros de doações e as
+            notas fiscais das assinaturas, com os dados usados para emiti-las,
+            são mantidos pelo prazo da legislação tributária (em regra, 5
+            anos), mesmo depois da exclusão da conta.
           </LegalP>
           <LegalP>
             <strong>6.2.</strong> Ao final do tratamento, os dados são
@@ -345,7 +395,7 @@ export default function PrivacyPage() {
             <strong>eliminação definitiva</strong> de: dados de login (e-mail,
             nome, avatar); vínculos OAuth (Google/GitHub/Discord); sessões
             ativas e dispositivos confiáveis; tokens de API/CI; participações em
-            equipes; e{" "}
+            equipes; registros de assinatura guardados no Serviço; e{" "}
             <strong>
               os blocos de dados criptografados dos projetos de sua titularidade
             </strong>
@@ -364,6 +414,12 @@ export default function PrivacyPage() {
               : após a exclusão, nada pode ser recuperado (arquitetura
               Zero-Knowledge).
             </LegalP>
+            <LegalP>
+              <strong>Assinatura ativa:</strong> é cancelada no Mercado Pago
+              antes da exclusão, sem novas cobranças e sem devolução
+              automática. Para pedir o reembolso de arrependimento (Termos,
+              Cláusula 5.5), cancele a assinatura antes de excluir a conta.
+            </LegalP>
           </LegalAlert>
           <LegalP>
             <strong>8.3. Backups residuais.</strong> Cópias de segurança
@@ -371,7 +427,7 @@ export default function PrivacyPage() {
             a rotação; encerrado o ciclo, nenhuma cópia identificável permanece.
             Podem ser conservados apenas dados anonimizados/estatísticos
             irrelacionáveis a você e registros obrigatórios por lei (ex.:
-            doações).
+            doações e notas fiscais, Cláusula 6.1).
           </LegalP>
         </LegalSection>
 
@@ -409,19 +465,19 @@ export default function PrivacyPage() {
               {
                 label: "O servidor VÊ",
                 value:
-                  "Blocos cifrados AES-256-GCM (ciphertext, IV, auth tag, checksum); salt PBKDF2 e wrapped DEK; vault proof; metadados de projetos/ambientes; logs de auditoria (sem valores); IP e user-agent de sessão.",
+                  "Blocos cifrados AES-256-GCM (ciphertext, IV, auth tag, checksum); salt PBKDF2 e wrapped DEK; vault proof; metadados de projetos/ambientes; logs de auditoria (sem valores); IP e user-agent de sessão; de quem assina, os dados para nota fiscal e a situação da assinatura.",
               },
               {
                 label: "O servidor NUNCA VÊ",
                 value:
-                  "Senha da conta em texto claro (apenas hash); senha do vault do projeto e chaves derivadas; conteúdo de variáveis, secrets, chaves e tokens; chaves em localStorage (nunca persistidas); exports .env do usuário; dados de navegação para publicidade (não coletamos).",
+                  "Senha da conta em texto claro (apenas hash); senha do vault do projeto e chaves derivadas; conteúdo de variáveis, secrets, chaves e tokens; chaves em localStorage (nunca persistidas); exports .env do usuário; dados do cartão de crédito (ficam no Mercado Pago); dados de navegação para publicidade (não coletamos).",
               },
             ]}
           />
           <LegalP>
             Documento redigido com base em auditoria técnica do código-fonte do
-            CriptEnv (criptografia, autenticação, OAuth, doações, gestão de
-            equipes e fluxos de exclusão de conta), visando à precisão entre o
+            CriptEnv (criptografia, autenticação, OAuth, doações, assinaturas,
+            gestão de equipes e fluxos de exclusão de conta), visando à precisão entre o
             texto jurídico e a implementação real (art. 6º, VI — transparência,
             LGPD).
           </LegalP>

@@ -57,6 +57,7 @@
     "payerEmailHint": "It must be the e-mail of the account that will pay; otherwise Mercado Pago refuses the payment.",
     "pay": "Go to payment",
     "payHint": "You pay at Mercado Pago; CriptEnv never sees your card data. The charge repeats every cycle until you cancel.",
+    "termsHint": "By going to the payment, you accept the <link>subscription rules in the Terms of Use</link> (in Portuguese): automatic renewal, cancel at any time and a refund within 7 days of the first charge.",
     "edit": "Edit data",
     "save": "Save data",
     "saved": "Invoice data updated."

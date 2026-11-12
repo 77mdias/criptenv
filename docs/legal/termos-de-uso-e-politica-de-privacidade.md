@@ -5,9 +5,10 @@
 | **Instrumento** | Termos de Uso e Política de Privacidade (documento combinado) |
 | **Serviço** | CriptEnv — plataforma de gestão de segredos e variáveis de ambiente com criptografia Zero-Knowledge |
 | **Endereço** | https://criptenv.77mdevseven.tech |
+| **Fornecedor e controlador** | Jean Carlos Moreira Dias, pessoa física, CPF 520.672.278-23, Montalvão, Presidente Prudente/SP |
 | **Contato / Encarregado (DPO)** | support@criptenv.dev |
-| **Versão** | 1.0 |
-| **Em vigor desde** | 23 de setembro de 2026 |
+| **Versão** | 2.0 |
+| **Em vigor desde** | 12 de novembro de 2026 |
 
 ---
 
@@ -15,14 +16,15 @@
 
 Antes do texto jurídico, um resumo honesto para desenvolvedores:
 
-1. **O serviço é gratuito e oferecido "COMO ESTÁ".** Não há SLA de disponibilidade nem suporte técnico obrigatório, e o projeto pode ser modificado, limitado ou descontinuado a qualquer momento, sem aviso prévio.
+1. **Há um plano gratuito (Free) e assinaturas pagas (Pro e Max), e o serviço é oferecido "COMO ESTÁ".** Em nenhum plano há SLA de disponibilidade nem suporte técnico obrigatório, e o projeto pode ser modificado, limitado ou descontinuado a qualquer momento; se isso atingir um período já pago, a parte não usada é devolvida.
 2. **Zero-Knowledge de verdade:** seus segredos são criptografados no seu dispositivo (navegador ou CLI) com AES-256-GCM antes de chegarem ao servidor. O servidor armazena apenas blocos cifrados ilegíveis e **não possui a chave de descriptografia**.
 3. **Se você perder a senha do vault ou suas chaves, os dados são perdidos para sempre.** A administração não tem como recuperá-los — por desenho, não por negligência.
 4. **Uso com dados de produção é por sua conta e risco.** A ferramenta foi desenhada para o fluxo de desenvolvimento; segredos de produção exigem cautela máxima e backups próprios.
 5. **Não vendemos, alugamos ou compartilhamos seus dados cadastrais com terceiros** para fins comerciais. A coleta via OAuth é mínima: e-mail, nome de exibição, identificador público e (quando disponível) URL de avatar.
-6. **Doações via Pix (Mercado Pago) são voluntárias, não dão direitos exclusivos e não são reembolsáveis.**
-7. **Você pode excluir sua conta a qualquer momento** diretamente no dashboard, o que remove seus dados de login e seus blocos criptografados.
-8. O código é open source (licença MIT): você pode auditar, bifurcar e auto-hospedar o CriptEnv quando quiser independência do serviço oficial.
+6. **Assinaturas são pagas no Mercado Pago, renovam sozinhas até você cancelar e podem ser canceladas a qualquer momento.** Cancelando em até 7 dias da primeira cobrança, o valor volta (Cláusula 9.5). O CriptEnv não vê os dados do seu cartão; pede CPF ou CNPJ, nome e endereço só para emitir a nota fiscal.
+7. **Doações via Pix (Mercado Pago) são voluntárias, não dão direitos exclusivos e não são reembolsáveis.**
+8. **Você pode excluir sua conta a qualquer momento** diretamente no dashboard, o que remove seus dados de login e seus blocos criptografados.
+9. O código é open source (licença MIT): você pode auditar, bifurcar e auto-hospedar o CriptEnv quando quiser independência do serviço oficial.
 
 ---
 
@@ -34,7 +36,7 @@ Antes do texto jurídico, um resumo honesto para desenvolvedores:
 
 **0.3.** A aceitação destes Termos é condição para utilização do Serviço e se dá no ato de criação da conta ou primeiro acesso após a publicação de versão atualizada (Cláusula 20). No cadastro por e-mail, a aceitação é registrada mediante **marcação expressa da caixa de aceite** ao final do formulário; no cadastro ou acesso por provedores OAuth (Google, GitHub ou Discord), dá-se pelo **primeiro uso** do Serviço, com aviso exibido no momento da autenticação. Para fins de comprovação, a aceitação é **registrada eletronicamente** com data/hora e a **versão vigente** do instrumento, vinculadas à conta do Usuário. O Usuário declara ter lido e compreendido este instrumento, em especial os avisos de irrecoverabilidade (Cláusula 2.4) e de limitação de responsabilidade (Cláusula 3). Tratando-se de contrato de adesão (art. 423 do Código Civil), as cláusulas limitativas aqui previstas foram redigidas de forma destacada e em linguagem compreensível.
 
-**0.4.** O Serviço é mantido de forma independente, sem cobrança de assinatura ou licença (Cláusula 1), por projeto de software livre licenciado sob MIT, cujo código-fonte pode ser auditado publicamente.
+**0.4.** O Serviço é mantido de forma independente, com plano gratuito e assinaturas pagas (Cláusula 9), por projeto de software livre licenciado sob MIT, cujo código-fonte pode ser auditado publicamente. Quem contrata uma assinatura aceita também as regras da Cláusula 9 ao seguir para o pagamento.
 
 ---
 
@@ -42,15 +44,17 @@ Antes do texto jurídico, um resumo honesto para desenvolvedores:
 
 ## 1. Escopo, natureza do serviço e garantias
 
-**1.1. Natureza gratuita.** O Serviço é fornecido integralmente **de graça**, como contribuição à comunidade de desenvolvedores. Não há relação de consumo onerosa, mensalidade, cobrança por uso nem planos pagos. O financiamento ocorre por doações voluntárias (Cláusula 5).
+**1.1. Planos.** O Serviço tem um plano gratuito (Free) e assinaturas pagas (Pro e Max), descritas na Cláusula 9. Os planos diferem em limites e em recursos de automação; **a segurança é a mesma em todos**: criptografia Zero-Knowledge, 2FA, sessões e expiração de segredos não são recursos pagos. Doações voluntárias (Cláusula 5) continuam possíveis e não dependem de plano.
 
-**1.2. Ausência de SLA.** Por ser gratuito, **não existe Acordo de Nível de Serviço (SLA)**, garantia de tempo de atividade (*uptime*), continuidade, performance mínima, janela de recuperação nem compromisso de escalabilidade. Eventuais indicadores de status exibidos na interface são meramente informativos e não constituem obrigação contratual.
+**1.2. Ausência de SLA.** Em nenhum plano, gratuito ou pago, **existe Acordo de Nível de Serviço (SLA)**, garantia de tempo de atividade (*uptime*), continuidade, performance mínima, janela de recuperação nem compromisso de escalabilidade. A assinatura paga amplia limites e recursos; não contrata disponibilidade garantida. Eventuais indicadores de status exibidos na interface são meramente informativos e não constituem obrigação contratual.
 
 **1.3. Ausência de suporte obrigatório.** Não há suporte técnico contratual, atendimento com prazo de resposta ou canal obrigatório de help desk. Dúvidas, relatos de bugs e vulnerabilidades podem ser encaminhados, por boa-fé, a **support@criptenv.dev** ou ao repositório público do projeto, sem que isso crie expectativa de resposta ou dever de correção em prazo determinado.
 
 **1.4. Serviço "COMO ESTÁ".** O Serviço é fornecido no estado em que se encontra ("**AS-IS**") e conforme disponível ("**AS AVAILABLE**"), **sem garantias de qualquer natureza, expressas ou implícitas**, incluindo, sem limitação, garantias de comercialização, adequação a finalidade específica, integridade, exatidão, disponibilidade ininterrupta ou ausência de erros.
 
 **1.5. Direito de modificação e descontinuidade.** O mantenedor reserva-se o direito de **modificar, suspender, limitar ou descontinuar, total ou parcialmente, o Serviço — ou qualquer funcionalidade, integração, endpoint ou terminal — a qualquer momento e sem aviso prévio**, inclusive por motivos de segurança, custo de infraestrutura, mudanças em APIs de terceiros ou decisão unilateral. O Usuário concorda que não assiste direito a indenização, aviso prévio, migração assistida ou exportação compensatória em caso de descontinuidade — **recomenda-se fortemente manter cópias locais e rotinas próprias de backup dos arquivos `.env` originais** (Cláusula 2.4).
+
+**1.5.1. Assinaturas em curso.** Se o Serviço for descontinuado, ou se um recurso incluído no plano pago deixar de existir, antes do fim de um período já pago, o assinante recebe de volta o valor proporcional ao tempo não usado.
 
 **1.6. Auto-hospedagem como alternativa.** Por ser software livre (MIT), o Usuário pode, a qualquer momento, bifurcar, auditar e implantar sua própria instância do CriptEnv, independentemente do serviço oficial, não sendo tais instâncias de qualquer forma cobertas por estes Termos, salvo quanto a elas o Usuário decida aplicar.
 
@@ -89,7 +93,7 @@ Antes do texto jurídico, um resumo honesto para desenvolvedores:
 - indisponibilidade, lentidão ou corrupção de sistemas derivados do uso (ou da impossibilidade de uso) da ferramenta;
 - perda de dados por descontinuidade do Serviço (Cláusula 1.5).
 
-**3.3. Isenção por atos de terceiros e APIs conectadas.** O Serviço integra-se a sistemas de terceiros — **GitHub** (OAuth, Actions e workflows), Google, Discord, Mercado Pago, Vercel, Render, webhooks e provedores de nuvem. O mantenedor **não responde por falhas, indisponibilidades, mudanças unilaterais de API, limites de cota, atrasos, sequestro de conta ou qualquer evento originado nesses terceiros**, tampouco por falhas de autenticação OAuth causadas pelos provedores. Cada integração rege-se pelos termos do respectivo provedor, com o qual o Usuário mantém relação própria.
+**3.3. Isenção por atos de terceiros e APIs conectadas.** O Serviço integra-se a sistemas de terceiros — **GitHub** (OAuth, Actions e workflows), Google, Discord, Mercado Pago, Vercel, Render, Cloudflare, webhooks e provedores de nuvem. O mantenedor **não responde por falhas, indisponibilidades, mudanças unilaterais de API, limites de cota, atrasos, sequestro de conta ou qualquer evento originado nesses terceiros**, tampouco por falhas de autenticação OAuth causadas pelos provedores. Cada integração rege-se pelos termos do respectivo provedor, com o qual o Usuário mantém relação própria.
 
 **3.4. Responsabilidade do Usuário.** O Usuário é o único responsável por: (i) a legalidade do Conteúdo que armazena; (ii) a titularidade ou autorização para uso das credenciais guardadas; (iii) a precisão e integridade de seus dados; (iv) a proteção dos textos claros e exports locais; (v) decisões de engenharia tomadas com base em informações obtidas na Plataforma.
 
@@ -111,7 +115,7 @@ Antes do texto jurídico, um resumo honesto para desenvolvedores:
 
 **5.1. Natureza.** As contribuições financeiras via **Pix, processadas pelo Mercado Pago**, são **atos estritamente voluntários e não comerciais**, destinados a apoiar a infraestrutura, manutenção, documentação e evolução do Serviço. A doação não configura compra, assinatura, licença, patrocínio, investimento nem qualquer contraprestação de direito material.
 
-**5.2. Ausência de contrapartida.** **Doar não concede recursos exclusivos, funcionalidades adicionais, níveis de acesso, suporte prioritário, tratamento diferenciado, direito a roadmap, nem direitos comerciais, contratuais ou societários** sobre o projeto. Todos os Usuários — doadores ou não — recebem idêntico Serviço, nas condições da Cláusula 1.
+**5.2. Ausência de contrapartida.** **Doar não concede recursos exclusivos, funcionalidades adicionais, níveis de acesso, suporte prioritário, tratamento diferenciado, direito a roadmap, nem direitos comerciais, contratuais ou societários** sobre o projeto. Doar não ativa nem substitui uma assinatura (Cláusula 9): doadores e não doadores do mesmo plano recebem idêntico Serviço.
 
 **5.3. Irreembolsabilidade.** Em razão de sua natureza voluntária, **os valores doados não são reembolsáveis sob nenhuma hipótese**, ressalvadas, exclusivamente, as hipóteses previstas em normas de ordem pública, ordem judicial ou autoridade competente, e as cobranças duplicadas comprovadamente decorrentes de falha técnica de processamento, caso em que o tratamento ocorrerá nos canais do Mercado Pago.
 
@@ -127,7 +131,7 @@ Antes do texto jurídico, um resumo honesto para desenvolvedores:
 - utilizar a Plataforma para distribuir malware, ataques ou material protegido por direito autoral de terceiros sem autorização;
 - tentar burlar limites de requisições, autenticação, isolamento entre contas ou mecanismos de segurança (incluindo varreduras automatizadas e engenharia reversa com finalidade de abuso);
 - usar tokens de CI/API de terceiros sem autorização, ou ceder/compartilhar a própria conta;
-- abusar da infraestrutura gratuita (ex.: uso como armazenamento genérico de arquivos, mineração, spam via webhooks).
+- abusar da infraestrutura (ex.: uso como armazenamento genérico de arquivos, mineração, spam via webhooks).
 
 **6.2. Sanções.** O mantenedor pode, a seu critério e sem aviso prévio, suspender, restringir ou encerrar acessos em caso de violação, risco à segurança, à infraestrutura ou a terceiros, sem prejuízo das medidas legais cabíveis.
 
@@ -145,17 +149,48 @@ Antes do texto jurídico, um resumo honesto para desenvolvedores:
 
 **8.3. API pública.** Endpoints, chaves `cek_` e limites de taxa podem ser alterados ou descontinuados conforme a Cláusula 1.5, com versionamento de melhor esforço (`/api/v1`).
 
+## 9. Planos, assinaturas e pagamento
+
+**9.1. Planos e preços.**
+
+| Plano | Preço | O que inclui |
+|---|---|---|
+| Free | gratuito | 3 projetos; por projeto, 3 ambientes, 3 membros e 1 integração com hospedagem; 7 dias de histórico de auditoria; cofre pessoal com 120 itens e 10 pastas |
+| Pro | R$ 29 por mês ou R$ 290 por ano | projetos, integrações e cofre pessoal sem limite; por projeto, 5 ambientes e 10 membros; 30 dias de histórico de auditoria |
+| Max | R$ 69 por mês ou R$ 690 por ano | o mesmo do Pro, com 7 ambientes e 25 membros por projeto, 90 dias de histórico, envio automático das variáveis para a hospedagem ao salvar, novo deploy disparado junto e sincronização a partir de CI |
+
+Os limites de um projeto seguem o plano de quem é dono dele. Preços em reais, com os tributos já incluídos. O preço de uma assinatura em curso não muda; um preço novo vale só para contratações feitas depois de publicado na página de planos.
+
+**9.2. Contratação e pagamento.** A assinatura é contratada em Conta → Assinatura e paga na página do **Mercado Pago**, que processa a cobrança. **O CriptEnv não recebe nem guarda os dados do seu cartão.** Para emitir a nota fiscal de cada pagamento, pedimos CPF ou CNPJ, nome ou razão social, endereço e o e-mail da conta no Mercado Pago (Cláusula 10.9). O plano passa a valer quando o Mercado Pago aprova o pagamento, não antes.
+
+**9.3. Renovação automática.** A cobrança se repete a cada ciclo (mensal ou anual) até o Usuário cancelar. Se uma cobrança for recusada, o Mercado Pago tenta de novo e a conta **mantém o plano por 7 dias** a partir da primeira recusa, com aviso por e-mail e no Dashboard. Pago dentro desse prazo, tudo segue normal; depois dele, a conta volta ao Free.
+
+**9.4. Cancelamento.** O Usuário pode cancelar a qualquer momento em Conta → Assinatura. Não há novas cobranças, o plano vale até o fim do período já pago e depois a conta volta ao Free. Fora dos casos das Cláusulas 1.5.1, 9.5 e 9.6, o período em curso não é devolvido.
+
+> ### 9.5. Direito de arrependimento (art. 49 do CDC)
+> **Cancelando em até 7 dias da primeira cobrança de uma assinatura, o Usuário recebe de volta o valor pago** e a conta volta ao Free na hora. A devolução é automática na primeira vez em cada conta; um pedido seguinte dentro do mesmo prazo é encaminhado ao suporte e tratado conforme o art. 49 do Código de Defesa do Consumidor. O valor volta pelo Mercado Pago, no meio usado no pagamento, nos prazos dele.
+
+**9.6. Troca de plano.** Subir do Pro para o Max vale na hora: o Max é cobrado inteiro e a parte do Pro ainda não usada é devolvida, proporcional ao tempo. Descer de plano ou trocar entre mensal e anual vale no fim do período já pago; essa troca é uma assinatura nova, paga ao ser contratada, e só pode ser feita nos últimos 31 dias do período.
+
+**9.7. Conta acima do limite.** Quando a conta volta a um plano menor, **nada é apagado nem escondido**: ler, editar, exportar e apagar continuam funcionando. Só deixa de ser possível criar algo novo acima do limite do plano.
+
+**9.8. Exclusão da conta.** Excluir a conta cancela a assinatura no Mercado Pago, sem novas cobranças. A exclusão não devolve valores automaticamente: para exercer o arrependimento da Cláusula 9.5, cancele a assinatura antes de excluir a conta ou escreva ao suporte dentro do prazo.
+
+**9.9. Nota fiscal.** Emitimos nota fiscal de cada pagamento com os dados informados na contratação, que o Usuário pode corrigir em Conta → Assinatura.
+
+**9.10. Auto-hospedagem.** Planos e cobrança valem só para o Serviço em https://criptenv.77mdevseven.tech. Uma instância própria (Cláusula 1.6) não tem limites de plano nem cobrança.
+
 ---
 
 # PARTE II — POLÍTICA DE PRIVACIDADE (LGPD)
 
-*Aplicam-se a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD), o Marco Civil da Internet (Lei nº 12.965/2014) e normas correlatas. O mantenedor do CriptEnv atua como **controlador** dos dados descritos abaixo.*
+*Aplicam-se a Lei nº 13.709/2018 (Lei Geral de Proteção de Dados — LGPD), o Marco Civil da Internet (Lei nº 12.965/2014) e normas correlatas. O controlador dos dados descritos abaixo é o mantenedor do CriptEnv, **Jean Carlos Moreira Dias**, pessoa física, CPF 520.672.278-23, com endereço em Montalvão, Presidente Prudente/SP.*
 
-## 9. Dados tratados, finalidades e bases legais
+## 10. Dados tratados, finalidades e bases legais
 
-**9.1. Princípio da minimização.** Coletamos o mínimo indispensável para autenticar Usuários e operar Equipes. **O conteúdo dos seus segredos jamais é coletado**: é cifrado no seu dispositivo e chega ao servidor como bloco ilegível (Cláusula 2).
+**10.1. Princípio da minimização.** Coletamos o mínimo indispensável para autenticar Usuários, operar Equipes e, para quem assina um plano pago, cobrar e emitir nota fiscal. **O conteúdo dos seus segredos jamais é coletado**: é cifrado no seu dispositivo e chega ao servidor como bloco ilegível (Cláusula 2).
 
-**9.2. Dados de autenticação via OAuth.** Ao entrar com Google, GitHub ou Discord, solicitamos ao provedor **apenas**:
+**10.2. Dados de autenticação via OAuth.** Ao entrar com Google, GitHub ou Discord, solicitamos ao provedor **apenas**:
 
 | Dado | Finalidade |
 |---|---|
@@ -166,97 +201,110 @@ Antes do texto jurídico, um resumo honesto para desenvolvedores:
 
 Os *escopos* solicitados são os mínimos: `read:user user:email` (GitHub), `openid email profile` (Google), `identify email` (Discord). Os pedidos de permissão exibidos pelo provedor no momento do consentimento prevalecem sobre qualquer descrição aqui contida, na hipótese de divergência.
 
-**9.3. Dados de autenticação por e-mail e senha.** Para o fluxo clássico: e-mail, nome, **hash** da senha (nunca a senha em texto claro), *salt* de derivação, indicadores de verificação de e-mail e configuração de 2FA. E-mails transacionais (verificação, redefinição de senha, convites, alertas de expiração, confirmação de doação) são enviados quando o evento correspondente ocorre.
+**10.3. Dados de autenticação por e-mail e senha.** Para o fluxo clássico: e-mail, nome, **hash** da senha (nunca a senha em texto claro), *salt* de derivação, indicadores de verificação de e-mail e configuração de 2FA. E-mails transacionais (verificação, redefinição de senha, convites, alertas de expiração, confirmação de doação, assinatura confirmada ou cancelada e cobrança recusada) são enviados quando o evento correspondente ocorre.
 
-**9.4. Dados técnicos e de segurança.** Para proteger a Plataforma (base legal: legítimo interesse em segurança, art. 7º, IX, e art. 11, II, "f" da LGPD; art. 15 do Marco Civil): registros de sessão com endereço IP e *user-agent*; logs de auditoria por projeto (identificador do operador, operação realizada e data/hora — **sem conteúdo de segredos**); métricas agregadas de uso e telemetria mínima de desempenho; registros de *rate limiting* e prevenção a abuso.
+**10.4. Dados técnicos e de segurança.** Para proteger a Plataforma (base legal: legítimo interesse em segurança, art. 7º, IX, e art. 11, II, "f" da LGPD; art. 15 do Marco Civil): registros de sessão com endereço IP e *user-agent*; logs de auditoria por projeto (identificador do operador, operação realizada e data/hora — **sem conteúdo de segredos**); métricas agregadas de uso e telemetria mínima de desempenho; registros de *rate limiting* e prevenção a abuso.
 
-**9.5. Dados de doações.** Apenas os voluntariamente informados (nome e e-mail opcionais; valor; status), para confirmação, agradecimento e cumprimento de obrigações contábeis/fiscais (art. 7º, II e V, LGPD).
+**10.5. Dados de doações.** Apenas os voluntariamente informados (nome e e-mail opcionais; valor; status), para confirmação, agradecimento e cumprimento de obrigações contábeis/fiscais (art. 7º, II e V, LGPD).
 
-**9.6. Metadados de projetos.** Nomes de projetos, ambientes e papéis de membros — necessários à execução do serviço solicitado (art. 7º, V, LGPD).
+**10.6. Metadados de projetos.** Nomes de projetos, ambientes e papéis de membros — necessários à execução do serviço solicitado (art. 7º, V, LGPD).
 
-**9.7. Bases legais resumidas.** Execução do Serviço solicitado (conta, Equipes, sincronização); cumprimento de obrigação legal (fiscal/contábil; registros de segurança); legítimo interesse (segurança, prevenção a fraude e abuso); consentimento, quando expressamente solicitado para tratamento específico.
+**10.7. Bases legais resumidas.** Execução do Serviço solicitado (conta, Equipes, sincronização); cumprimento de obrigação legal (fiscal/contábil; registros de segurança); legítimo interesse (segurança, prevenção a fraude e abuso); consentimento, quando expressamente solicitado para tratamento específico.
 
-**9.8. O que NÃO fazemos.** Não coletamos dados de navegação para publicidade; não usamos cookies de rastreamento ou redes de anúncios; não criamos perfis comportamentais; não tomamos decisões automatizadas com efeitos jurídicos (art. 20 da LGPD); **e não vendemos, alugamos, negociamos ou monetizamos dados pessoais**.
+**10.8. O que NÃO fazemos.** Não coletamos dados de navegação para publicidade; não usamos cookies de rastreamento ou redes de anúncios; não criamos perfis comportamentais; não tomamos decisões automatizadas com efeitos jurídicos (art. 20 da LGPD); **e não vendemos, alugamos, negociamos ou monetizamos dados pessoais**.
 
-## 10. Compartilhamento e não comercialização de dados
+**10.9. Dados de assinaturas pagas.** Só de quem contrata Pro ou Max, para executar o contrato (art. 7º, V, LGPD) e cumprir a obrigação de emitir nota fiscal (art. 7º, II):
 
-**10.1. Compromisso.** **Os dados cadastrais dos Usuários não são comercializados nem compartilhados com terceiros para fins publicitários, de marketing, de prospecção ou de qualquer outra natureza mercantil.**
+| Dado | Finalidade |
+|---|---|
+| CPF ou CNPJ, nome ou razão social, endereço | emissão da nota fiscal de cada pagamento; podem ser corrigidos em Conta → Assinatura |
+| E-mail da conta no Mercado Pago | identificar o pagador ao criar a assinatura no Mercado Pago |
+| Plano, ciclo, valor, datas e situação | saber qual plano vale para a conta, quando renova, prazo de tolerância e reembolsos |
+| Identificadores no Mercado Pago | da assinatura e de cada pagamento, para conferir cobranças, cancelar e devolver valores |
 
-**10.2. Operadores e subprocessadores.** Alguns fornecedores tratam dados, exclusivamente para operar o Serviço, sob a condição de operadores (arts. 5º, VII, e 39 da LGPD), com quem são adotadas salvaguardas contratuais e técnicas:
+**Os dados do cartão são digitados na página do Mercado Pago e nunca chegam ao CriptEnv.** Os dados da tabela ficam no banco de dados do Serviço, fora do cofre cifrado, protegidos pelos controles de acesso da infraestrutura. A cada pagamento aprovado, os dados para nota são enviados por e-mail ao mantenedor, que emite a nota fiscal.
+
+## 11. Compartilhamento e não comercialização de dados
+
+**11.1. Compromisso.** **Os dados cadastrais dos Usuários não são comercializados nem compartilhados com terceiros para fins publicitários, de marketing, de prospecção ou de qualquer outra natureza mercantil.**
+
+**11.2. Operadores e subprocessadores.** Alguns fornecedores tratam dados, exclusivamente para operar o Serviço, sob a condição de operadores (arts. 5º, VII, e 39 da LGPD), com quem são adotadas salvaguardas contratuais e técnicas:
 
 | Fornecedor | Tratamento |
 |---|---|
 | Cloudflare (Pages, Workers, Tunnel, R2) | entrega do aplicativo, proxy/TLS, armazenamento de avatares |
-| Mercado Pago | processamento de doações Pix (dados transacionais permanecem com o provedor) |
+| Mercado Pago | processamento das doações Pix e das assinaturas (cobrança recorrente e reembolsos); os dados do cartão e os dados transacionais ficam com o provedor, que recebe de nós o e-mail do pagador, o valor e a descrição do plano |
 | Resend | envio de e-mails transacionais (destinatário e conteúdo da mensagem) |
 | GitHub / Google / Discord | autenticação OAuth — são **controladores** dos dados em suas plataformas, regidos por suas políticas |
 | Provedor de VPS/banco de dados | hospedagem da API e do PostgreSQL (dados cifrados de vault; cadastro básico) |
 
-**10.3. Hipóteses legais.** Dados podem ser compartilhados perante ordem judicial, requisição de autoridade competente (incluindo autoridades de segurança pública e ANPD, nos termos do art. 23 da LGPD e do Marco Civil), ou para proteção de direitos, prevenção a fraude e segurança da Plataforma, sempre na menor extensão possível.
+**11.3. Hipóteses legais.** Dados podem ser compartilhados perante ordem judicial, requisição de autoridade competente (incluindo autoridades de segurança pública e ANPD, nos termos do art. 23 da LGPD e do Marco Civil), ou para proteção de direitos, prevenção a fraude e segurança da Plataforma, sempre na menor extensão possível.
 
-## 11. Transferência internacional de dados
+## 12. Transferência internacional de dados
 
 Alguns operadores acima podem processar dados fora do território brasileiro (por exemplo, Cloudflare e Resend, nos Estados Unidos; GitHub, Google e Discord em centros de dados globais). Nessas hipóteses, a transferência rege-se pelo art. 33 da LGPD, sendo adotadas garantias como cláusulas contratuais padrão do fornecedor, cifragem em trânsito (TLS) e a própria arquitetura Zero-Knowledge, que impede que o conteúdo dos segredos acompanhe qualquer transferência. O Usuário pode solicitar ao Encarregado informações sobre os países envolvidos e as salvaguardas aplicáveis.
 
-## 12. Cookies e armazenamento local
+## 13. Cookies e armazenamento local
 
-**12.1.** Utilizamos um cookie de sessão `HTTP-only` (inacessível a scripts, mitigando XSS) para manter o login, e chaves de `localStorage` estritamente funcionais (ex.: preferência de tema). **Chaves criptográficas nunca são persistidas em `localStorage`** — existem apenas em memória durante a sessão.
+**13.1.** Utilizamos um cookie de sessão `HTTP-only` (inacessível a scripts, mitigando XSS) para manter o login, e chaves de `localStorage` estritamente funcionais (ex.: preferência de tema). **Chaves criptográficas nunca são persistidas em `localStorage`** — existem apenas em memória durante a sessão.
 
-**12.2.** Não há cookies de terceiros para publicidade, *fingerprinting* ou rastreamento entre sites. A autenticação OAuth e o pagamento Pix ocorrem nos domínios dos respectivos provedores, sujeitos a suas políticas.
+**13.2.** Não há cookies de terceiros para publicidade, *fingerprinting* ou rastreamento entre sites. A autenticação OAuth e os pagamentos (Pix e assinaturas) ocorrem nos domínios dos respectivos provedores, sujeitos a suas políticas.
 
-## 13. Medidas de segurança e notificação de incidentes
+## 14. Medidas de segurança e notificação de incidentes
 
-**13.1.** Além da arquitetura da Cláusula 2.6: transporte cifrado (TLS) em toda a Plataforma; controle de acesso baseado em papéis (RBAC) por projeto; armazenamento de tokens como *hash*; verificação de assinatura em webhooks de pagamento; isolamento entre contas e projetos; variáveis sensíveis de infraestrutura mantidas apenas como segredos de ambiente.
+**14.1.** Além da arquitetura da Cláusula 2.6: transporte cifrado (TLS) em toda a Plataforma; controle de acesso baseado em papéis (RBAC) por projeto; armazenamento de tokens como *hash*; verificação de assinatura em webhooks de pagamento, com a situação de cada assinatura sempre conferida de novo na API do Mercado Pago; dados de cartão fora dos nossos servidores; isolamento entre contas e projetos; variáveis sensíveis de infraestrutura mantidas apenas como segredos de ambiente.
 
-**13.2. Incidentes.** Em caso de incidente de segurança que possa acarretar risco relevante aos titulares, o mantenedor comunicará à **ANPD** e aos titulares afetados os dados descritos no art. 48 da LGPD, em prazo razoável, pelo e-mail cadastrado e/ou aviso no Serviço. Importante: **a arquitetura Zero-Knowledge foi desenhada para que incidentes de servidor não exponham o conteúdo dos segredos**.
+**14.2. Incidentes.** Em caso de incidente de segurança que possa acarretar risco relevante aos titulares, o mantenedor comunicará à **ANPD** e aos titulares afetados os dados descritos no art. 48 da LGPD, em prazo razoável, pelo e-mail cadastrado e/ou aviso no Serviço. Importante: **a arquitetura Zero-Knowledge foi desenhada para que incidentes de servidor não exponham o conteúdo dos segredos**.
 
-**13.3. Reporte de vulnerabilidades.** Relatos responsáveis são bem-vindos e devem ser enviados a **support@criptenv.dev** com detalhes técnicos. Pedimos uso ético da divulgação (*responsible disclosure*), com prazo razoável para correção antes de publicação.
+**14.3. Reporte de vulnerabilidades.** Relatos responsáveis são bem-vindos e devem ser enviados a **support@criptenv.dev** com detalhes técnicos. Pedimos uso ético da divulgação (*responsible disclosure*), com prazo razoável para correção antes de publicação.
 
-## 14. Retenção de dados
+## 15. Retenção de dados
 
-**14.1.** Dados de conta são retidos enquanto a conta existir. Sessões expiram conforme configurado. Logs de segurança e auditoria são retidos pelo período necessário à proteção da Plataforma e cumprimento de obrigações legais (art. 15, §1º, do Marco Civil), com posterior eliminação ou anonimização. Registros de doações são mantidos pelo prazo de obrigações contábeis/fiscais aplicável.
+**15.1.** Dados de conta são retidos enquanto a conta existir. Sessões expiram conforme configurado. Logs de segurança e auditoria são retidos pelo período necessário à proteção da Plataforma e cumprimento de obrigações legais (art. 15, §1º, do Marco Civil), com posterior eliminação ou anonimização. Registros de doações e as notas fiscais das assinaturas, com os dados usados para emiti-las, são mantidos pelo prazo da legislação tributária (em regra, 5 anos), mesmo depois da exclusão da conta.
 
-**14.2.** Ao final do tratamento, os dados são eliminados ou anonimizados (art. 16 da LGPD), respeitadas retenções legais. Os blocos cifrados de vault, sem conhecimento da chave, são matematicamente inúteis e eliminados junto com os projetos (Cláusula 16).
+**15.2.** Ao final do tratamento, os dados são eliminados ou anonimizados (art. 16 da LGPD), respeitadas retenções legais. Os blocos cifrados de vault, sem conhecimento da chave, são matematicamente inúteis e eliminados junto com os projetos (Cláusula 17).
 
-## 15. Direitos do titular (art. 18 da LGPD)
+## 16. Direitos do titular (art. 18 da LGPD)
 
 O Usuário pode solicitar, a qualquer momento: confirmação da existência de tratamento; acesso aos dados; correção de dados incompletos, inexatos ou desatualizados; anonimização, bloqueio ou eliminação de dados desnecessários, excessivos ou tratados em desconformidade; portabilidade; informação sobre compartilhamentos; revogação de consentimento, quando aplicável; oposição a tratamentos baseados em legítimo interesse.
 
-**15.1. Como exercer.** (i) **Correção de perfil e exclusão de avatar**: diretamente no Dashboard (Configurações da conta), sem intermediários; (ii) **Exclusão da conta e dados**: autoatendimento na própria conta (Cláusula 16); (iii) **Demais solicitações**: e-mail ao Encarregado (**support@criptenv.dev**) a partir do endereço cadastrado, com descrição do pedido. Respostas são dadas em até **15 (quinze) dias**, prorrogáveis uma vez por igual período em caso de justificativa comunicada ao titular, conforme orientação da ANPD.
+**16.1. Como exercer.** (i) **Correção de perfil e exclusão de avatar**: diretamente no Dashboard (Configurações da conta), sem intermediários; (ii) **Exclusão da conta e dados**: autoatendimento na própria conta (Cláusula 17); (iii) **Demais solicitações**: e-mail ao Encarregado (**support@criptenv.dev**) a partir do endereço cadastrado, com descrição do pedido. Respostas são dadas em até **15 (quinze) dias**, prorrogáveis uma vez por igual período em caso de justificativa comunicada ao titular, conforme orientação da ANPD.
 
-**15.2.** O titular pode também peticionar diretamente à ANPD ou recorrer ao Poder Judiciário, sem prejuízo de canais administrativos.
+**16.2.** O titular pode também peticionar diretamente à ANPD ou recorrer ao Poder Judiciário, sem prejuízo de canais administrativos.
 
-## 16. Exclusão definitiva da conta
+## 17. Exclusão definitiva da conta
 
-**16.1. Como excluir.** No Dashboard, em **Configurações da conta → Excluir conta** (confirmação por digitação de segurança), ou por solicitação ao Encarregado por e-mail registrado.
+**17.1. Como excluir.** No Dashboard, em **Configurações da conta → Excluir conta** (confirmação por digitação de segurança), ou por solicitação ao Encarregado por e-mail registrado.
 
-**16.2. O que é removido.** A exclusão produz **eliminação definitiva** de: dados de login (e-mail, nome, avatar); vínculos OAuth (Google/GitHub/Discord); sessões ativas e dispositivos confiáveis; tokens de API/CI; participações em Equipes; e **os blocos de dados criptografados dos projetos de sua titularidade**, incluindo vaults cifrados de todos os ambientes.
+**17.2. O que é removido.** A exclusão produz **eliminação definitiva** de: dados de login (e-mail, nome, avatar); vínculos OAuth (Google/GitHub/Discord); sessões ativas e dispositivos confiáveis; tokens de API/CI; participações em Equipes; registros de assinatura guardados no Serviço; e **os blocos de dados criptografados dos projetos de sua titularidade**, incluindo vaults cifrados de todos os ambientes.
 
-**16.3. Efeitos sobre Equipes (importante).** Projetos **de titularidade do Usuário** são excluídos em cascata — **membros convidados perdem o acesso**. Se a intenção é apenas sair de uma Equipe sem destruir o projeto, transfira a titularidade ou peça a um administrador a remoção da sua participação, em vez de excluir a conta. **Exporte previamente os `.env` que desejar conservar** (Cláusula 2.4: após a exclusão, nada pode ser recuperado).
+**17.3. Efeitos sobre Equipes (importante).** Projetos **de titularidade do Usuário** são excluídos em cascata — **membros convidados perdem o acesso**. Se a intenção é apenas sair de uma Equipe sem destruir o projeto, transfira a titularidade ou peça a um administrador a remoção da sua participação, em vez de excluir a conta. **Exporte previamente os `.env` que desejar conservar** (Cláusula 2.4: após a exclusão, nada pode ser recuperado). **Assinatura ativa** é cancelada no Mercado Pago antes da exclusão, sem novas cobranças e sem devolução automática; para pedir o reembolso de arrependimento (Cláusula 9.5), cancele a assinatura antes de excluir a conta.
 
-**16.4. Backups residuais.** Cópias de segurança rotineiras podem persistir por ciclo limitado, sendo eliminadas com a rotação; encerrado esse ciclo, nenhuma cópia identificável permanece. Podem ser conservados apenas dados anonimizados/estatísticos irrelacionáveis ao titular e registros obrigatórios por lei (ex.: doações).
+**17.4. Backups residuais.** Cópias de segurança rotineiras podem persistir por ciclo limitado, sendo eliminadas com a rotação; encerrado esse ciclo, nenhuma cópia identificável permanece. Podem ser conservados apenas dados anonimizados/estatísticos irrelacionáveis ao titular e registros obrigatórios por lei (ex.: doações e notas fiscais, Cláusula 15.1).
 
-## 17. Titulares menores
+## 18. Titulares menores
 
 O Serviço não é direcionado a menores de 16 (dezesseis) anos. O tratamento de dados de crianças e adolescentes (art. 14 da LGPD) não faz parte do escopo do Serviço; contas suspeitas de pertencer a menores podem ser suspensas, com eliminação dos dados.
 
-## 18. Encarregado (DPO) e contato
+## 19. Encarregado (DPO) e contato
 
 O **Encarregado de Proteção de Dados** do CriptEnv atende pelo canal **support@criptenv.dev**, para: exercício de direitos de titulares, comunicação de incidentes, reporte de vulnerabilidades e questões sobre estas Políticas. Em caso de resposta insatisfatória, cabe reclamação à ANPD.
 
-## 19. Alterações destes Termos
+## 20. Alterações destes Termos
 
-**19.1.** Estes Termos podem ser alterados a qualquer momento (inclusive em razão de mudanças no Serviço, na legislação ou em orientações da ANPD), entrando em vigor imediatamente na publicação. Alterações **materialmente relevantes** serão comunicadas, quando factível, por e-mail ou aviso no Dashboard.
+**20.1.** Estes Termos podem ser alterados a qualquer momento (inclusive em razão de mudanças no Serviço, na legislação ou em orientações da ANPD), entrando em vigor imediatamente na publicação. Alterações **materialmente relevantes** serão comunicadas, quando factível, por e-mail ou aviso no Dashboard.
 
-**19.2.** O uso continuado do Serviço após a publicação implica aceitação da versão vigente. A data e a versão vigentes constam sempre do topo deste documento e das páginas `/termos-de-uso` e `/politica-de-privacidade` do Serviço.
+**20.2.** O uso continuado do Serviço após a publicação implica aceitação da versão vigente. A data e a versão vigentes constam sempre do topo deste documento e das páginas `/termos-de-uso` e `/politica-de-privacidade` do Serviço.
 
-## 20. Legislação aplicável, foro e disposições gerais
+## 21. Legislação aplicável, foro e disposições gerais
 
-**20.1.** Estes Termos regem-se pelas leis da República Federativa do Brasil, especialmente o Código Civil, a LGPD, o Marco Civil da Internet e, quando configurada relação de consumo, o CDC.
+**21.1.** Estes Termos regem-se pelas leis da República Federativa do Brasil, especialmente o Código Civil, a LGPD, o Marco Civil da Internet e, quando configurada relação de consumo, o CDC.
 
-**20.2. Foro.** Fica eleito o foro do **domicílio do titular** para dirimir controvérsias decorrentes de relação de consumo (art. 6º, VI, do CDC); não configurada relação de consumo, o foro do domicílio do mantenedor do projeto, em território brasileiro, ressalvada a faculdade do autor da ação de eleger o foro de residência da parte ré, onde for domiciliado, nas hipóteses admitidas em lei (art. 63, §3º, do CPC).
+**21.2. Foro.** Fica eleito o foro do **domicílio do titular** para dirimir controvérsias decorrentes de relação de consumo (art. 6º, VI, do CDC); não configurada relação de consumo, o foro do domicílio do mantenedor do projeto, em território brasileiro, ressalvada a faculdade do autor da ação de eleger o foro de residência da parte ré, onde for domiciliado, nas hipóteses admitidas em lei (art. 63, §3º, do CPC).
 
-**20.3.** A nulidade ou inexequibilidade de qualquer cláusula não invalida o restante do instrumento, aplicando-se, no que couber, a norma legal equivalente mais próxima da intenção original. A tolerância a eventuais descumprimentos não implica renúncia ou novação. O silêncio não importa em concordância. Estes Termos, junto com a documentação técnica pública do projeto, constituem o inteiro acordo entre as partes quanto ao seu objeto.
+**21.3.** A nulidade ou inexequibilidade de qualquer cláusula não invalida o restante do instrumento, aplicando-se, no que couber, a norma legal equivalente mais próxima da intenção original. A tolerância a eventuais descumprimentos não implica renúncia ou novação. O silêncio não importa em concordância. Estes Termos, junto com a documentação técnica pública do projeto, constituem o inteiro acordo entre as partes quanto ao seu objeto.
+
+**21.4. Identificação do fornecedor.** O CriptEnv é mantido e as assinaturas são vendidas por **Jean Carlos Moreira Dias**, pessoa física, CPF 520.672.278-23, com endereço em Montalvão, Presidente Prudente/SP. Contato: support@criptenv.dev.
 
 ---
 
@@ -269,6 +317,7 @@ O **Encarregado de Proteção de Dados** do CriptEnv atende pelo canal **support
 | "Vault proof" (comprovação de conhecimento, sem revelar segredo) | **Conteúdo de variáveis, secrets, chaves e tokens** |
 | Metadados: IDs de projeto/ambiente, nomes, versões, datas | Chaves em `localStorage` (nunca persistidas) |
 | Logs de auditoria (quem, qual operação, quando — sem valores) | Exports `.env` do usuário (existem apenas na máquina dele) |
-| IP e user-agent de sessão (segurança) | Dados de navegação para publicidade (não coletamos) |
+| IP e user-agent de sessão (segurança) | Dados do cartão de crédito (ficam no Mercado Pago) |
+| De quem assina: dados para nota fiscal e situação da assinatura | Dados de navegação para publicidade (não coletamos) |
 
-*Documento redigido com base em auditoria técnica do código-fonte do CriptEnv (criptografia, autenticação, OAuth, doações, gestão de equipes e fluxos de exclusão de conta), visando à precisão entre o texto jurídico e a implementação real (art. 6º, VI — transparência, LGPD).*
+*Documento redigido com base em auditoria técnica do código-fonte do CriptEnv (criptografia, autenticação, OAuth, doações, assinaturas, gestão de equipes e fluxos de exclusão de conta), visando à precisão entre o texto jurídico e a implementação real (art. 6º, VI — transparência, LGPD).*

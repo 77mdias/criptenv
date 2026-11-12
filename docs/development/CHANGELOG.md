@@ -7,6 +7,13 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Termos de Uso e Política de Privacidade 2.0: assinaturas — 2026-11-12
+
+- **Termos de Uso:** deixam de descrever o serviço como só gratuito. Nova cláusula 5 com os planos e preços, contratação no Mercado Pago, renovação automática, 7 dias de tolerância para cobrança recusada, cancelamento, arrependimento em até 7 dias (art. 49 do CDC), troca de plano, conta acima do limite, exclusão da conta com assinatura ativa e nota fiscal. Se o serviço for descontinuado antes do fim de um período pago, a parte não usada é devolvida (1.5.1).
+- **Política de Privacidade:** dados pedidos de quem assina (CPF ou CNPJ, nome, endereço, e-mail do pagador), para que servem, onde ficam e por quanto tempo; o Mercado Pago como operador da cobrança; dados do cartão nunca passam pelo CriptEnv; o que acontece com a assinatura e com as notas ao excluir a conta.
+- **Aceite:** novos cadastros registram a versão `2.0` (`TERMS_VERSION`). A tela de assinatura passa a levar às regras de assinatura dos Termos antes do pagamento.
+- `docs/legal/termos-de-uso-e-politica-de-privacidade.md` acompanha as duas páginas.
+
 ### Chave de API em rota que grava: 403 em vez de 401 — 2026-11-11
 
 - Uma chave de API válida usada para gravar (`criptenv set`, `criptenv env create` e as outras rotas que exigem login ou token de CI) recebia `401` e a CLI dizia "a chave é inválida, venceu ou foi revogada". Agora recebe `403` com o motivo: chaves de API só leem segredos e auditoria; para alterar, use um token de CI (`criptenv ci login`) ou o login (`criptenv login`). Chave inválida ou revogada continua com `401`.
