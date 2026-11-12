@@ -8,6 +8,7 @@ import { TopNav } from "./top-nav";
 import { CommandPalette } from "@/components/shared/command-palette";
 import { DashboardFloatingBar } from "./dashboard-floating-bar";
 import { BillingNotice } from "./billing-notice";
+import { Toaster } from "@/components/ui/toaster";
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -38,6 +39,7 @@ function AppShell({ children, breadcrumbs }: AppShellProps) {
         </main>
       </div>
       <CommandPalette />
+      <Toaster />
     </div>
   );
 }

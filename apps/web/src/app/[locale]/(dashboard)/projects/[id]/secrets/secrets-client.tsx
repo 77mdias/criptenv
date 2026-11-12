@@ -210,7 +210,6 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
               ? `criptenv set API_URL=https://... -p ${projectId} -e ${state.activeEnv.name}`
               : undefined
           }
-          copiedKey={state.copiedKey}
           busy={state.vaultLoading || state.saving}
           canManageSecrets={canManageSecrets}
           selectedKeys={selectedSecretKeys}
@@ -239,7 +238,6 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         )}
         canManageSecrets={canManageSecrets}
         historyVersion={state.vaultVersion}
-        copied={state.copiedKey === detailKey}
         onCopy={actions.copySecret}
         onRotate={setRotateTarget}
         onSetExpiration={actions.openExpirationModal}

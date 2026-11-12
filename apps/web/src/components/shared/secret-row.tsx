@@ -22,7 +22,6 @@ export interface DecryptedSecret {
 interface SecretRowProps {
   secret: DecryptedSecret
   environmentName: string
-  copied?: boolean
   canManageSecrets?: boolean
   onCopy: (secret: DecryptedSecret) => void
   onEdit: (secret: DecryptedSecret) => void
@@ -38,7 +37,6 @@ interface SecretRowProps {
 export function SecretRow({
   secret,
   environmentName,
-  copied = false,
   canManageSecrets = true,
   onCopy,
   onEdit,
@@ -189,9 +187,6 @@ export function SecretRow({
           >
             <Trash2 className="h-3.5 w-3.5" />
           </Button>
-        )}
-        {copied && (
-          <span className="ml-2 font-mono text-xs text-green-700">{t("copied")}</span>
         )}
       </div>
     </div>

@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input"
 import { CryptoError } from "@/lib/crypto"
 import type { PersonalVaultConfig } from "@/lib/api/personal-vault"
 import { decryptItem, unlockProtectedKey, type PersonalVaultItemPlain } from "@/lib/personal-vault/crypto"
+import { toast } from "@/stores/toast"
 import type { DecryptedEntry } from "./vault-items"
 
 interface Props {
@@ -118,7 +119,7 @@ function RevealBody({ entry, config, vaultKey }: { entry: DecryptedEntry; config
                   size="icon"
                   variant="ghost"
                   aria-label={t("reveal.copy", { field: label })}
-                  onClick={() => void navigator.clipboard?.writeText(value)}
+                  onClick={() => void navigator.clipboard?.writeText(value).then(() => toast(t("items.copied")))}
                 >
                   <Copy aria-hidden className="h-4 w-4" />
                 </Button>

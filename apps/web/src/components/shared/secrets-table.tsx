@@ -12,7 +12,6 @@ interface SecretsTableProps {
   environmentName: string
   /** CLI command shown in the empty state */
   emptyCommand?: string
-  copiedKey?: string | null
   canManageSecrets?: boolean
   selectedKeys?: string[]
   onSelectChange?: (secret: DecryptedSecret, selected: boolean) => void
@@ -62,7 +61,6 @@ export function SecretsTable({
   secrets,
   environmentName,
   emptyCommand,
-  copiedKey,
   canManageSecrets = true,
   selectedKeys = [],
   onSelectChange,
@@ -151,7 +149,6 @@ export function SecretsTable({
             key={secret.key}
             secret={secret}
             environmentName={environmentName}
-            copied={copiedKey === secret.key}
             canManageSecrets={canManageSecrets}
             selectable={selectionEnabled}
             selected={selectedKeySet.has(secret.key)}
