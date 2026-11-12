@@ -477,3 +477,67 @@ def test_icon_paths_get_their_own_bucket_and_limit():
     vault = _request("/api/v1/personal-vault/items")
     assert build_rate_limit_key(vault, "1.2.3.4") == "ip:1.2.3.4"
     assert resolve_rate_limit(vault) == "100/minute"
+
+
+# ─── Support chat: hourly bucket per IP and a daily cap for everyone ──────────
+
+
+@pytest.mark.asyncio
+async def test_memory_storage_respects_window_seconds(monkeypatch):
+    """An hourly bucket must not reset after 60 seconds like the per-minute ones."""
+    from app.middleware import rate_limit
+    from app.middleware.rate_limit import RateLimitStorage
+
+    storage = RateLimitStorage(storage_backend="memory")
+    key = f"support:window-test:{id(storage)}"
+    now = 1_000_000.0
+    monkeypatch.setattr(rate_limit.time, "time", lambda: now)
+    assert await storage.check_and_increment(key, 2, 3600) == (True, 1)
+    now += 61
+    assert await storage.check_and_increment(key, 2, 3600) == (True, 2)
+    assert await storage.check_and_increment(key, 2, 3600) == (False, 3)
+    now += 3600
+    assert await storage.check_and_increment(key, 2, 3600) == (True, 1)
+
+
+def test_support_chat_has_its_own_hourly_bucket():
+    from app.middleware.rate_limit import build_rate_limit_key, resolve_rate_limit
+
+    request = _request("/api/v1/support/chat")
+    assert resolve_rate_limit(request) == "20/hour"
+    assert build_rate_limit_key(request, "1.2.3.4") == "support:1.2.3.4"
+
+
+def test_support_status_is_not_limited_by_the_chat_bucket():
+    from app.middleware.rate_limit import build_rate_limit_key, resolve_rate_limit
+
+    request = _request("/api/v1/support/status")
+    assert resolve_rate_limit(request) == "100/minute"
+    assert build_rate_limit_key(request, "1.2.3.4") == "ip:1.2.3.4"
+
+
+@pytest.mark.asyncio
+async def test_support_daily_cap_blocks_everyone(monkeypatch):
+    import json
+
+    from starlette.responses import JSONResponse
+
+    from app.config import settings
+    from app.middleware import rate_limit
+    from app.middleware.rate_limit import RateLimitConfig, RateLimitMiddleware, RateLimitStorage
+
+    async def call_next(request):
+        return JSONResponse(status_code=200, content={"ok": True})
+
+    monkeypatch.setattr(settings, "SUPPORT_DAILY_LIMIT", 2)
+    monkeypatch.setattr(rate_limit, "_rate_limit_storage", {})
+    middleware = RateLimitMiddleware(app=None, config=RateLimitConfig(storage_backend="memory"))
+    middleware.storage = RateLimitStorage(storage_backend="memory")
+
+    statuses = []
+    for host in ("10.0.0.1", "10.0.0.2", "10.0.0.3"):
+        response = await middleware.dispatch(_request("/api/v1/support/chat", client_host=host), call_next)
+        statuses.append(response.status_code)
+
+    assert statuses == [200, 200, 429]
+    assert json.loads(response.body)["error"]["code"] == "SUPPORT_DAILY_LIMIT"

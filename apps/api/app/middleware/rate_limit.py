@@ -25,6 +25,12 @@ PUBLIC_RATE_LIMIT = "100/minute"    # Public endpoints: 100 req/min per IP
 # Site icons: one <img> per vault login, so they get their own bucket and never
 # eat the 100/min the vault itself needs.
 ICON_RATE_LIMIT = "300/minute"
+# Support chat: every message is a paid call to the Claude API, so a visitor gets a
+# small hourly bucket and everyone together shares a daily cap (SUPPORT_DAILY_LIMIT).
+SUPPORT_CHAT_PATH = "/api/v1/support/chat"
+SUPPORT_RATE_LIMIT = "20/hour"
+SUPPORT_DAILY_KEY = "support:all"
+SUPPORT_DAILY_ERROR_CODE = "SUPPORT_DAILY_LIMIT"
 
 # Paths that verify credentials, so they get the strict AUTH_RATE_LIMIT instead
 # of the generic anonymous bucket. These are the brute-force surfaces (signin,
@@ -180,7 +186,7 @@ class RateLimitStorage:
             return count
 
         now = time.time()
-        if key not in self._storage or self._is_window_expired(self._storage[key][1]):
+        if key not in self._storage or self._is_window_expired(self._storage[key][1], window_seconds):
             self._storage[key] = (1, now)
             return 1
         count, _ = self._storage[key]
@@ -205,7 +211,7 @@ class RateLimitStorage:
             return count <= limit, count
 
         now = time.time()
-        if key not in self._storage or self._is_window_expired(self._storage[key][1]):
+        if key not in self._storage or self._is_window_expired(self._storage[key][1], window_seconds):
             self._storage[key] = (1, now)
             return True, 1
         count, timestamp = self._storage[key]
@@ -222,9 +228,9 @@ class RateLimitStorage:
         if key in self._storage:
             del self._storage[key]
     
-    def _is_window_expired(self, timestamp: float) -> bool:
-        """Check if the rate limit window has expired (1 minute)."""
-        return time.time() - timestamp > 60
+    def _is_window_expired(self, timestamp: float, window_seconds: int = 60) -> bool:
+        """Whether the bucket that started at `timestamp` has run past its window."""
+        return time.time() - timestamp > window_seconds
 
 
 def get_rate_limit_key(request: Request) -> Optional[str]:
@@ -304,6 +310,8 @@ def build_rate_limit_key(request: Request, client_ip: str) -> str:
     """Bucket a request by credential when present, otherwise by client IP."""
     if request.url.path.startswith(ICON_PATH_PREFIX):
         return f"icons:{client_ip}"
+    if request.url.path.rstrip("/") == SUPPORT_CHAT_PATH:
+        return f"support:{client_ip}"
     if is_auth_rate_limited_path(request.url.path):
         return f"auth:{client_ip}"
 
@@ -318,6 +326,8 @@ def resolve_rate_limit(request: Request) -> str:
     """Pick the rate limit string that applies to this request."""
     if request.url.path.startswith(ICON_PATH_PREFIX):
         return ICON_RATE_LIMIT
+    if request.url.path.rstrip("/") == SUPPORT_CHAT_PATH:
+        return SUPPORT_RATE_LIMIT
     if is_auth_rate_limited_path(request.url.path):
         return AUTH_RATE_LIMIT
     return get_rate_limit_for_auth_type(identify_auth_type(request))
@@ -386,6 +396,18 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
             storage_uri=self.config.storage_uri,
         )
     
+    async def _support_daily_allowed(self) -> bool:
+        from app.config import settings
+
+        try:
+            allowed, _ = await self.storage.check_and_increment(
+                SUPPORT_DAILY_KEY, settings.SUPPORT_DAILY_LIMIT, 86400
+            )
+        except Exception:
+            logger.warning("Rate limit storage unavailable; support daily cap not checked", exc_info=True)
+            return True
+        return allowed
+
     async def dispatch(self, request: Request, call_next):
         # Skip rate limiting for health checks and docs
         if should_bypass_rate_limit(request):
@@ -434,6 +456,15 @@ class RateLimitMiddleware(BaseHTTPMiddleware):
                 return response
 
             remaining = limit_count - current_count
+
+            if request.url.path.rstrip("/") == SUPPORT_CHAT_PATH and not await self._support_daily_allowed():
+                return JSONResponse(
+                    status_code=429,
+                    content={"error": {
+                        "code": SUPPORT_DAILY_ERROR_CODE,
+                        "message": "The support chat reached its daily limit. Write to support@criptenv.dev.",
+                    }},
+                )
         else:
             remaining = limit_count - 1
         

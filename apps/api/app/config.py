@@ -26,6 +26,10 @@ class Settings(BaseSettings):
     # terms_accepted_at) as evidence of acceptance. Bump this together with the
     # pages and docs/legal/ when the instrument changes.
     TERMS_VERSION: str = "2.0"
+    # Support chat (Claude API). No key = the chat is off and the site hides its button.
+    ANTHROPIC_API_KEY: str = ""
+    # Messages the support chat answers per day, all visitors together (cost cap).
+    SUPPORT_DAILY_LIMIT: int = 500
     # Secure by default: DEBUG governs the cookie `Secure` flag and whether the
     # API docs and one-time development tokens are exposed, so a deployment that
     # forgets to set it must not silently turn those on.
