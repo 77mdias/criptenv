@@ -1,6 +1,6 @@
 # Current Task — Phase 3.5: Experiência Autenticada (UX)
 
-**Atualizado:** 2026-11-11 — **Phase 3.5 concluída.** O próximo passo escrito é o que sobrou da Phase 3 (publicar a GitHub Action, Railway, alertas na web) e o backlog de alta prioridade em `docs/features/backlog.md`.
+**Atualizado:** 2026-11-12 — **Phase 3.5 concluída.** O próximo passo escrito é o que sobrou da Phase 3 (integração com o Railway, publicar a GitHub Action, validar os alertas em produção; a parte web dos alertas já está pronta) e o backlog de alta prioridade em `docs/features/backlog.md`.
 **Plano:** `docs/superpowers/plans/2026-10-26-authenticated-experience-plan.md` (UX.1–UX.4) e `docs/superpowers/plans/2026-11-11-ux5-ux6.md` (UX.5–UX.6) · **Spec:** `docs/superpowers/specs/2026-10-26-authenticated-experience-design.md` · **Roadmap:** Phase 3.5 em `ROADMAP.md`
 
 | Milestone | Status | PR |

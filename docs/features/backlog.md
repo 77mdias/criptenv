@@ -20,18 +20,15 @@ Planned and future features organized by priority.
 
 #### Project Alert Follow-ups
 
-- [ ] **Production migration rollout**
-  - Apply `20260918_0010_create_alert_deliveries.py` only against a confirmed target database.
-  - Status: Pending environment validation
+- [x] **Production migration rollout**
+  - `20260918_0010_create_alert_deliveries.py` is applied: production runs migrations up to `20261110_0021`, which come after it in the same chain.
 
-- [ ] **Alert E2E fixture/provider validation**
-  - Replace the Cypress `example.com` recipient or disable/mock Resend in the isolated E2E environment.
-  - Re-run owner/admin and 320/375/390/430px alert assertions.
-  - Status: Blocked by current Resend fixture
+- [x] **Alert E2E fixture/provider validation**
+  - `cypress/e2e/project-alert-settings.cy.ts` passes in the full E2E run (2026-11-11, 24/24) and in CI.
 
 - [ ] **Production alert operations validation**
-  - Verify Resend configuration, webhook allowlisting, retries and scheduler monitoring in a controlled environment.
-  - Status: Pending production validation
+  - The web part is done (settings card, per-secret deadline and notice, bell, dashboard attention card). What is missing is one real delivery in production: set a short deadline on a test secret, wait for the hourly `scheduler` job, and check the bell, the e-mail (Resend) and the webhook.
+  - Status: Pending, needs access to production (the owner's account and the VPS logs)
 
 #### VPS Operations Baseline
 
