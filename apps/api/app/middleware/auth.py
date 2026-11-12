@@ -39,6 +39,16 @@ async def get_current_user(
             detail="Not authenticated",
             headers={"WWW-Authenticate": "Bearer"},
         )
+    if token.startswith(API_KEY_PREFIX):
+        # A revoked or unknown key still gets 401; a valid one is refused for what it is: read-only.
+        from app.middleware.api_key_auth import validate_api_key_context
+
+        await validate_api_key_context(token)
+        raise HTTPException(
+            status_code=status.HTTP_403_FORBIDDEN,
+            detail="API keys only read secrets and audit logs. To change anything, use a CI token "
+            "(criptenv ci login) or sign in (criptenv login).",
+        )
     return await _user_from_session_token(token, db)
 
 
