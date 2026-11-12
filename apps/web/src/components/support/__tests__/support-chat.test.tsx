@@ -125,6 +125,14 @@ describe("SupportChat", () => {
     expect(body.messages.map((m: { content: string }) => m.content)).toEqual(["primeira", "segunda"])
   })
 
+  it("says it found no answer when the bot ends without text", async () => {
+    mockFetch({ chat: () => ({ ok: true, status: 200, body: sseBody([{ type: "error", code: "no_answer" }]) }) })
+    renderWithIntl(<SupportChat />)
+    await openChat()
+    await ask("pergunta difícil")
+    expect(await screen.findByText(/Não encontrei essa resposta/)).toBeInTheDocument()
+  })
+
   it("closes on Escape and returns focus to the button", async () => {
     mockFetch()
     renderWithIntl(<SupportChat />)
@@ -159,6 +167,12 @@ describe("RichText", () => {
     renderWithIntl(<RichText text={"Veja [a instalação](/docs/getting-started/installation):\n```bash\npip install criptenv\n```"} />)
     expect(screen.getByRole("link", { name: "a instalação" })).toHaveAttribute("href", "/docs/getting-started/installation")
     expect(screen.getByText("pip install criptenv").tagName).toBe("PRE")
+  })
+
+  it("renders **bold** without the asterisks", () => {
+    renderWithIntl(<RichText text="O **Plano Pro** custa R$ 29." />)
+    expect(screen.getByText("Plano Pro").tagName).toBe("STRONG")
+    expect(screen.queryByText(/\*\*/)).not.toBeInTheDocument()
   })
 
   it("never turns a protocol-relative URL into an internal link", () => {

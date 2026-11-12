@@ -124,7 +124,8 @@
       "unavailable": "Support didn't answer right now. Try again in a moment or write to support@criptenv.dev.",
       "rateLimit": "You sent many messages in the last hour. Try again later or write to support@criptenv.dev.",
       "dailyLimit": "Support reached today's message limit. Write to support@criptenv.dev.",
-      "off": "Chat support is off right now. Write to support@criptenv.dev."
+      "off": "Chat support is off right now. Write to support@criptenv.dev.",
+      "noAnswer": "I couldn't find that answer. See the docs at /docs or write to support@criptenv.dev."
     }
   }
 }

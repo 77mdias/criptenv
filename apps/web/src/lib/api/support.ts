@@ -5,7 +5,7 @@ export interface SupportMessage {
   content: string;
 }
 
-export type SupportFailure = "refusal" | "unavailable" | "rate_limit" | "daily_limit" | "off";
+export type SupportFailure = "refusal" | "no_answer" | "unavailable" | "rate_limit" | "daily_limit" | "off";
 export type SupportResult = { ok: true } | { ok: false; code: SupportFailure };
 
 /** Splits an SSE body into the JSON payloads of its `data:` lines. */
@@ -60,7 +60,8 @@ export const supportApi = {
       for (const event of parsed.events) {
         if (event.type === "text" && typeof event.text === "string") onText(event.text);
         if (event.type === "error") {
-          return { ok: false, code: event.code === "refusal" ? "refusal" : "unavailable" };
+          const code = event.code === "refusal" || event.code === "no_answer" ? event.code : "unavailable";
+          return { ok: false, code };
         }
         if (event.type === "done") return { ok: true };
       }
