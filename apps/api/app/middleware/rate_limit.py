@@ -286,7 +286,7 @@ def _trust_check(entries: set[str]):
             try:
                 networks.append(ipaddress.ip_network(entry.strip(), strict=False))
             except ValueError:
-                logger.warning("Ignoring invalid TRUSTED_PROXIES entry: %s", entry)
+                logger.warning("Ignoring an invalid network range in TRUSTED_PROXIES")
 
     def is_trusted(value: str) -> bool:
         if value in addresses:
