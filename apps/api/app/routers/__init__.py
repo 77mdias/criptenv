@@ -19,9 +19,11 @@ from app.routers.me import router as me_router
 from app.routers.personal_vault import router as personal_vault_router
 from app.routers.icons import router as icons_router
 from app.routers.billing import router as billing_router
+from app.routers.support import router as support_router
 
 __all__ = [
     "billing_router",
+    "support_router",
     "auth_router",
     "oauth_router",
     "projects_router",

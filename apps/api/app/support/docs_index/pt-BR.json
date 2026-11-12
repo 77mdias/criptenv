@@ -1,0 +1,1670 @@
+[
+ {
+  "id": "home.hero.title",
+  "path": "/docs",
+  "title": "Bem-vindo à Documentação do CriptEnv",
+  "text": "Bem-vindo à Documentação do CriptEnv"
+ },
+ {
+  "id": "home.hero.subtitle",
+  "path": "/docs",
+  "title": "Bem-vindo à Documentação do CriptEnv",
+  "text": "Aqui você encontra tudo o que precisa para gerenciar seus secrets com segurança de nível militar — do CLI ao dashboard, da API às integrações CI/CD."
+ },
+ {
+  "id": "home.whatIs.title",
+  "path": "/docs",
+  "title": "O que é o CriptEnv?",
+  "text": "O que é o CriptEnv?"
+ },
+ {
+  "id": "home.whatIs.paragraph1",
+  "path": "/docs",
+  "title": "O que é o CriptEnv?",
+  "text": "O CriptEnv é uma plataforma open-source de gerenciamento de secrets com arquitetura Zero-Knowledge. Alternativa ao Doppler e Infisical, permite que desenvolvedores e times gerenciem variáveis de ambiente, API keys e credenciais sensíveis com criptografia de ponta a ponta."
+ },
+ {
+  "id": "home.whatIs.paragraph2",
+  "path": "/docs",
+  "title": "O que é o CriptEnv?",
+  "text": "Todos os secrets são criptografados 100% no lado do cliente com AES-256-GCM. O servidor nunca recebe dados em plaintext — mesmo com acesso total ao banco de dados, é impossível descriptografar suas credenciais."
+ },
+ {
+  "id": "home.whatIs.exampleTitle",
+  "path": "/docs",
+  "title": "O que é o CriptEnv?",
+  "text": "Exemplo rápido"
+ },
+ {
+  "id": "home.principles.title",
+  "path": "/docs",
+  "title": "Princípios da API",
+  "text": "Princípios da API"
+ },
+ {
+  "id": "home.principles.zeroKnowledge",
+  "path": "/docs",
+  "title": "Princípios da API",
+  "text": "Zero-Knowledge Secrets são criptografados 100% client-side. O servidor armazena apenas ciphertext — nunca vê seus dados reais."
+ },
+ {
+  "id": "home.principles.consistent",
+  "path": "/docs",
+  "title": "Princípios da API",
+  "text": "Consistente CLI e API compartilham a mesma semântica. O que você faz no terminal, pode fazer via HTTP e vice-versa."
+ },
+ {
+  "id": "home.principles.secureByDefault",
+  "path": "/docs",
+  "title": "Princípios da API",
+  "text": "Seguro por padrão AES-256-GCM com PBKDF2-HKDF. Sem plaintext em logs, sem exposição de tokens, sem comprometimento de dados."
+ },
+ {
+  "id": "home.principles.openSource",
+  "path": "/docs",
+  "title": "Princípios da API",
+  "text": "Open Source Código aberto sob licença MIT. Audite, contribua e execute self-hosted quando precisar."
+ },
+ {
+  "id": "home.capabilities.title",
+  "path": "/docs",
+  "title": "O que você pode fazer",
+  "text": "O que você pode fazer"
+ },
+ {
+  "id": "home.capabilities.items",
+  "path": "/docs",
+  "title": "O que você pode fazer",
+  "text": "Gerenciar via CLI Terminal-first: set, get, list, delete, push, pull — tudo no seu fluxo natural de desenvolvimento. Sincronizar com Cloud CLI e web usam o mesmo vault remoto criptografado. Push importa arquivos; pull exporta para arquivos locais. Gerenciar Times Convites, roles (admin, developer, viewer) e permissões granulares por projeto. CI/CD Integrado Tokens CI para pipelines. GitHub Action oficial. Secrets como variáveis de ambiente. Integrações Cloud Push direto para Vercel, Railway e Render. Sincronize secrets com seus providers. Rotação de Secrets Políticas manual, notify e auto. Alertas de expiração e histórico de rotações. Auditoria Completa Log de todas as operações: quem, quando, o que. Filtrável por ação e recurso. Importar/Exportar Importe de arquivos .env existentes. Exporte em .env ou JSON. API REST API versionada com API keys, CI tokens e rate limiting. Documentação OpenAPI completa."
+ },
+ {
+  "id": "home.firstSteps.title",
+  "path": "/docs",
+  "title": "Primeiros passos",
+  "text": "Primeiros passos"
+ },
+ {
+  "id": "home.firstSteps.items",
+  "path": "/docs",
+  "title": "Primeiros passos",
+  "text": "Instalação do CLI Instale via Homebrew, pip, ou script de instalação. Suporte a macOS, Linux e Windows. Guia Rápido Em 5 minutos, crie seu primeiro projeto e gerencie seus primeiros secrets. Configurar CI/CD Integre com GitHub Actions, GitLab CI ou qualquer pipeline usando tokens CI. Entender a Criptografia Como funciona o protocolo AES-256-GCM com derivação PBKDF2/HKDF."
+ },
+ {
+  "id": "home.learnMore.title",
+  "path": "/docs",
+  "title": "Saiba mais sobre o CriptEnv",
+  "text": "Saiba mais sobre o CriptEnv"
+ },
+ {
+  "id": "home.learnMore.items",
+  "path": "/docs",
+  "title": "Saiba mais sobre o CriptEnv",
+  "text": "Guia de Segurança Protocolo de criptografia, zero-knowledge architecture e modelo de ameaças. API Reference Documentação completa dos endpoints da API REST. GitHub (Open Source) Código fonte aberto, issues, contribuições. Licença MIT. Suporte & Comunidade Entre em contato para dúvidas, reportar bugs ou sugerir funcionalidades. llms.txt Índice completo da documentação para descoberta por LLMs e agentes. Dashboard Acesse o painel web para gerenciar projetos, secrets e membros do time."
+ },
+ {
+  "id": "gettingStarted.quickstart.breadcrumb",
+  "path": "/docs/getting-started/quickstart",
+  "title": "Quickstart",
+  "text": "Getting Started Quickstart"
+ },
+ {
+  "id": "gettingStarted.quickstart.title",
+  "path": "/docs/getting-started/quickstart",
+  "title": "Quickstart",
+  "text": "Quickstart"
+ },
+ {
+  "id": "gettingStarted.quickstart.subtitle",
+  "path": "/docs/getting-started/quickstart",
+  "title": "Quickstart",
+  "text": "Comece a usar o CriptEnv em menos de 5 minutos. Este guia rápido vai levá-lo da instalação até a leitura do primeiro segredo."
+ },
+ {
+  "id": "gettingStarted.quickstart.prerequisites",
+  "path": "/docs/getting-started/quickstart",
+  "title": "Quickstart",
+  "text": "Pré-requisitos: Python 3.10+ instalado no seu sistema."
+ },
+ {
+  "id": "gettingStarted.quickstart.steps",
+  "path": "/docs/getting-started/quickstart",
+  "title": "Quickstart",
+  "text": "Instale o CLI Instale o CriptEnv via pip: Crie uma conta e faça login Acesse criptenv.77mdevseven.tech e crie sua conta gratuitamente. Depois autentique o CLI: O comando criptenv init é opcional. Ele apenas prepara metadata local em ~/.criptenv/. Crie um projeto Crie um novo projeto para organizar seus segredos: Você definirá uma Vault password para o projeto. Ela protege os secrets e não é enviada ao servidor. Defina seus segredos Agora adicione variáveis de ambiente secretas ao projeto: Todos os segredos são criptografados no CLI com AES-256-GCM antes do envio. O CriptEnv nunca recebe dados em texto claro. Liste seus segredos Veja todos os segredos configurados: O comando list mostra apenas os nomes das variáveis, nunca os valores. Assim é seguro usar em logs e CI. Leia um segredo Recupere o valor de um segredo específico: Importe ou exporte arquivos .env O vault remoto já fica sincronizado. Use arquivos quando precisar migrar ou materializar variáveis localmente:"
+ },
+ {
+  "id": "gettingStarted.quickstart.nextSteps",
+  "path": "/docs/getting-started/quickstart",
+  "title": "Quickstart",
+  "text": "Próximos passos Aprenda os conceitos fundamentais do CriptEnv Explore a referência completa de comandos Importe e exporte arquivos com criptenv push FILE e criptenv pull --output FILE Integre com seu pipeline de CI/CD"
+ },
+ {
+  "id": "gettingStarted.installation.breadcrumb",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Getting Started"
+ },
+ {
+  "id": "gettingStarted.installation.title",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Instalação"
+ },
+ {
+  "id": "gettingStarted.installation.intro",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "O CriptEnv CLI é distribuído via PyPI. Instale em qualquer sistema com Python 3.10+."
+ },
+ {
+  "id": "gettingStarted.installation.requirements",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Requisito mínimo: Python 3.10 ou superior. O CLI é multiplataforma e funciona em macOS, Linux e Windows."
+ },
+ {
+  "id": "gettingStarted.installation.pip",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Instalação via pip A maneira mais rápida de instalar o CriptEnv:"
+ },
+ {
+  "id": "gettingStarted.installation.binary",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Binário único (sem Python) Para servidores e containers, baixe o executável único para Linux x86_64. Ele já inclui o Python e as dependências. Em imagens Docker, copie o binário da imagem oficial em vez de instalar Python: O binário funciona em imagens baseadas em glibc (Debian, Ubuntu, node:*-slim, node:bookworm). Imagens Alpine (musl) não são suportadas: nelas, use pip."
+ },
+ {
+  "id": "gettingStarted.installation.pipxTip",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Recomendamos usar pipx para instalar ferramentas de CLI globalmente, evitando conflitos de dependências:"
+ },
+ {
+  "id": "gettingStarted.installation.devTab",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Desenvolvimento Para contribuir ou modificar o código, clone o repositório e instale em modo editável:"
+ },
+ {
+  "id": "gettingStarted.installation.verify",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Verificação da Instalação Após instalar, verifique se tudo está funcionando corretamente com o comando de diagnóstico:"
+ },
+ {
+  "id": "gettingStarted.installation.doctorNote",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "O comando criptenv doctor verifica a instalação, dependências, configuração e conectividade com a nuvem. Se algo estiver incorreto, ele fornecerá instruções para correção."
+ },
+ {
+  "id": "gettingStarted.installation.uninstall",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "Desinstalação Para remover completamente o CriptEnv do seu sistema:"
+ },
+ {
+  "id": "gettingStarted.installation.uninstallWarning",
+  "path": "/docs/getting-started/installation",
+  "title": "Instalação",
+  "text": "A desinstalação do CLI não remove seus dados locais automaticamente. Para remover também o vault e dados locais, delete o diretório ~/.criptenv."
+ },
+ {
+  "id": "gettingStarted.concepts.breadcrumb",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Getting Started"
+ },
+ {
+  "id": "gettingStarted.concepts.title",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Conceitos Fundamentais"
+ },
+ {
+  "id": "gettingStarted.concepts.subtitle",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Entenda como projetos, ambientes, vaults e o CLI remoto se conectam para proteger secrets de ponta a ponta."
+ },
+ {
+  "id": "gettingStarted.concepts.zeroKnowledgeCallout",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "CriptEnv é zero-knowledge: secrets são criptografados no cliente e o servidor armazena apenas blobs cifrados."
+ },
+ {
+  "id": "gettingStarted.concepts.cards",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Zero-Knowledge Toda criptografia acontece no seu dispositivo. A API nunca recebe secrets em texto claro nem a Vault password do projeto. Projetos Projetos agrupam secrets relacionados e possuem uma Vault password própria para proteger seus dados. Ambientes Ambientes separam configurações por estágio, como development, staging e production. Os planos Pro e Max permitem ambientes extras, que podem ser restritos aos administradores. Vault Remoto O vault remoto é a fonte de verdade. Ele guarda blobs criptografados e fica sincronizado entre CLI, web e equipe. Vault Password Senha do projeto usada somente no cliente para derivar chaves, descriptografar em memória e provar acesso ao vault. Import/Export Push importa arquivos .env para o vault remoto. Pull exporta secrets remotos para arquivos locais."
+ },
+ {
+  "id": "gettingStarted.concepts.howItWorks",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Zero-Knowledge — Como funciona? O CLI lê a Vault password do projeto por prompt ou CRIPTENV_VAULT_PASSWORD. A chave do ambiente é derivada localmente com PBKDF2-HMAC-SHA256 e HKDF. Secrets são criptografados ou descriptografados em memória com AES-256-GCM. A API recebe somente ciphertext, IV, auth tag, checksum e metadata."
+ },
+ {
+  "id": "gettingStarted.concepts.vaultPasswordLostTip",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Se a Vault password do projeto for perdida, os secrets cifrados daquele projeto não podem ser recuperados pelo servidor."
+ },
+ {
+  "id": "gettingStarted.concepts.projects",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Projetos e Ambientes Projetos são namespaces de colaboração. Ambientes isolam valores por estágio sem misturar produção, homologação e desenvolvimento."
+ },
+ {
+  "id": "gettingStarted.concepts.remoteCli",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "CLI como Terminal Remoto A CLI não mantém um vault local de secrets como fluxo principal. Ela resolve projeto e ambiente pela API, baixa blobs criptografados, opera em memória e envia os novos blobs criptografados de volta."
+ },
+ {
+  "id": "gettingStarted.concepts.importExport",
+  "path": "/docs/getting-started/concepts",
+  "title": "Conceitos Fundamentais",
+  "text": "Import e Export Use arquivos quando precisar migrar de um .env existente ou materializar secrets para execução local: Arquivos exportados como .env contêm plaintext. Adicione-os ao .gitignore e trate-os como secrets locais."
+ },
+ {
+  "id": "integrations.overview.title",
+  "path": "/docs/integrations",
+  "title": "Integrações",
+  "text": "Integrações"
+ },
+ {
+  "id": "integrations.overview.description",
+  "path": "/docs/integrations",
+  "title": "Integrações",
+  "text": "O CriptEnv se integra com as principais plataformas de deploy e CI/CD do mercado. Configure a sincronização automática de variáveis de ambiente criptografadas diretamente no seu pipeline de deploy."
+ },
+ {
+  "id": "integrations.overview.cards",
+  "path": "/docs/integrations",
+  "title": "Integrações",
+  "text": "Execute o CriptEnv diretamente nos seus workflows do GitHub Actions para injetar secrets de forma segura durante o build e deploy. Envie os secrets do CriptEnv para as variáveis de ambiente de um projeto na Vercel, ou importe-as da Vercel. Em breve. Integração com Railway para sincronização de variáveis de ambiente. Envie os secrets do CriptEnv para as variáveis de ambiente de um serviço no Render, ou importe-as do Render. Envie os secrets do CriptEnv para um Cloudflare Worker como secret bindings criptografados."
+ },
+ {
+  "id": "integrations.railway.title",
+  "path": "/docs/integrations/railway",
+  "title": "Integração com Railway",
+  "text": "Integração com Railway"
+ },
+ {
+  "id": "integrations.railway.comingSoon",
+  "path": "/docs/integrations/railway",
+  "title": "Integração com Railway",
+  "text": "A integração com Railway está em desenvolvimento e será disponibilizada em breve. Atualmente, o CriptEnv suporta integrações com Vercel e Render."
+ },
+ {
+  "id": "integrations.railway.whenLaunched",
+  "path": "/docs/integrations/railway",
+  "title": "Integração com Railway",
+  "text": "Quando lançada, a integração com Railway permitirá sincronizar suas variáveis de ambiente criptografadas com os serviços do Railway de forma automática e segura."
+ },
+ {
+  "id": "integrations.vercel.title",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "Integração com a Vercel"
+ },
+ {
+  "id": "integrations.vercel.description",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "Envie os secrets de um ambiente do CriptEnv para as variáveis de ambiente de um projeto na Vercel, ou importe as variáveis da Vercel para o CriptEnv. Os secrets são decifrados e cifrados na sua máquina; a API só os repassa para a Vercel."
+ },
+ {
+  "id": "integrations.vercel.infoCallout",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "O sync roda quando você pede: pelo dashboard (Secrets → Sincronizar, ou Sincronizar no card da integração), pela CLI ou por um pipeline de CI. Não há sync em segundo plano: rode-o depois de alterar secrets ou adicione-o ao seu workflow de deploy."
+ },
+ {
+  "id": "integrations.vercel.setup",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "Configuração Crie um token de acesso na Vercel Acesse vercel.com/account/tokens e crie um token. Se o projeto pertence a um time, restrinja o token a esse time. Conecte o projeto No dashboard do CriptEnv, abra Integrações, escolha Vercel e cole o token e o ID ou nome do projeto. Projetos de time também precisam do ID do time (team_..., em Team Settings). Ou use a CLI: Conectar pela CLI Valide a conexão A validação busca o projeto na Vercel com o token salvo, então pega token, projeto ou time errados antes do primeiro sync."
+ },
+ {
+  "id": "integrations.vercel.targets",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "Ambientes da Vercel Cada sync grava em um ambiente da Vercel: production, preview ou development. O padrão é o nome do ambiente do CriptEnv; use --target quando os nomes forem diferentes. Mapeamento de ambientes"
+ },
+ {
+  "id": "integrations.vercel.manual",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "Sync pela CLI O push envia todos os secrets do ambiente do CriptEnv para a Vercel. O pull importa as variáveis da Vercel e as cifra no vault do CriptEnv; secrets existentes são mantidos, a menos que você passe --overwrite. Sync com a Vercel"
+ },
+ {
+  "id": "integrations.vercel.ci",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "Sync pelo CI Com um token de CI com o escopo write:integrations, o ci deploy importa o arquivo .env no vault e depois envia o ambiente inteiro para a Vercel. O envio por sessão de CI exige que o dono do projeto esteja no plano Max."
+ },
+ {
+  "id": "integrations.vercel.overwriteWarning",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "O push sobrescreve variáveis da Vercel com o mesmo nome no ambiente de destino. Variáveis que só existem na Vercel não são alteradas. O CriptEnv as grava como variáveis do tipo Encrypted."
+ },
+ {
+  "id": "integrations.vercel.pullNote",
+  "path": "/docs/integrations/vercel",
+  "title": "Integração com a Vercel",
+  "text": "O pull ignora variáveis Sensitive (a Vercel nunca devolve o valor delas) e variáveis de Preview específicas de uma branch."
+ },
+ {
+  "id": "integrations.render.title",
+  "path": "/docs/integrations/render",
+  "title": "Integração com o Render",
+  "text": "Integração com o Render"
+ },
+ {
+  "id": "integrations.render.description",
+  "path": "/docs/integrations/render",
+  "title": "Integração com o Render",
+  "text": "Envie os secrets de um ambiente do CriptEnv para as variáveis de ambiente de um serviço no Render, ou importe-as do serviço. Os secrets são decifrados e cifrados na sua máquina; a API só os repassa para o Render."
+ },
+ {
+  "id": "integrations.render.setup",
+  "path": "/docs/integrations/render",
+  "title": "Integração com o Render",
+  "text": "Configuração Crie uma API key no Render No Render, acesse Account Settings → API Keys e crie uma nova API key. Anote o valor: ele só é exibido uma vez. Conecte o serviço No dashboard do CriptEnv, abra Integrações, escolha Render e cole a API key e o ID do serviço (srv-..., na URL do serviço). Ou use a CLI: Valide a conexão A validação busca o serviço com a chave salva, então pega chave ou ID de serviço errados antes do primeiro sync."
+ },
+ {
+  "id": "integrations.render.cli",
+  "path": "/docs/integrations/render",
+  "title": "Integração com o Render",
+  "text": "Sync pela CLI Sync com o Render"
+ },
+ {
+  "id": "integrations.render.scopeTip",
+  "path": "/docs/integrations/render",
+  "title": "Integração com o Render",
+  "text": "As variáveis do Render pertencem a um serviço, então cada integração aponta para um serviço e a opção --target não é usada. O push adiciona ou atualiza cada variável e nunca apaga as outras variáveis do serviço. Environment Groups ainda não são suportados."
+ },
+ {
+  "id": "integrations.render.apiKeyWarning",
+  "path": "/docs/integrations/render",
+  "title": "Integração com o Render",
+  "text": "Uma API key do Render tem acesso amplo à sua conta. Recomendamos criar uma chave dedicada à integração com o CriptEnv."
+ },
+ {
+  "id": "integrations.cloudflare.title",
+  "path": "/docs/integrations/cloudflare",
+  "title": "Integração com Cloudflare Workers",
+  "text": "Integração com Cloudflare Workers"
+ },
+ {
+  "id": "integrations.cloudflare.description",
+  "path": "/docs/integrations/cloudflare",
+  "title": "Integração com Cloudflare Workers",
+  "text": "Envie os secrets de um ambiente do CriptEnv para um Cloudflare Worker como secret bindings criptografados, disponíveis em tempo de execução via env. Os secrets são decifrados na sua máquina; a API só os repassa para a Cloudflare."
+ },
+ {
+  "id": "integrations.cloudflare.pushOnly",
+  "path": "/docs/integrations/cloudflare",
+  "title": "Integração com Cloudflare Workers",
+  "text": "Só push: a Cloudflare nunca devolve o valor de um secret de Worker, então esta integração não importa secrets para o CriptEnv."
+ },
+ {
+  "id": "integrations.cloudflare.setup",
+  "path": "/docs/integrations/cloudflare",
+  "title": "Integração com Cloudflare Workers",
+  "text": "Configuração Crie um token de API na Cloudflare Acesse dash.cloudflare.com/profile/api-tokens e crie um token com a permissão Account → Workers Scripts → Edit na sua conta. Conecte o Worker No dashboard do CriptEnv, abra Integrações, escolha Cloudflare Workers e informe o token, o ID da conta (na barra lateral do dashboard ou em wrangler whoami) e o nome do script do Worker. Ou use a CLI: Valide a conexão A validação lista os secrets do Worker com o token salvo, então pega token, conta ou nome de script errados antes do primeiro sync."
+ },
+ {
+  "id": "integrations.cloudflare.environments",
+  "path": "/docs/integrations/cloudflare",
+  "title": "Integração com Cloudflare Workers",
+  "text": "Ambientes do Wrangler Cada ambiente do Wrangler publica um script próprio, chamado nome-ambiente (por exemplo my-app-staging). Conecte uma integração por script e sincronize nele o ambiente correspondente do CriptEnv."
+ },
+ {
+  "id": "integrations.cloudflare.cli",
+  "path": "/docs/integrations/cloudflare",
+  "title": "Integração com Cloudflare Workers",
+  "text": "Sync pela CLI Push para Cloudflare Workers"
+ },
+ {
+  "id": "integrations.cloudflare.versionWarning",
+  "path": "/docs/integrations/cloudflare",
+  "title": "Integração com Cloudflare Workers",
+  "text": "Cada push envia os secrets em requisições de até 100, e cada requisição cria uma nova versão do Worker. Se uma falhar, os lotes anteriores continuam aplicados. Secrets com o mesmo nome são sobrescritos; secrets que só existem na Cloudflare não são alterados."
+ },
+ {
+  "id": "integrations.githubAction.description",
+  "path": "/docs/integrations/github-action",
+  "title": "githubAction",
+  "text": "Use a Action oficial do CriptEnv (@criptenv/action) para descriptografar e injetar suas variáveis de ambiente diretamente nos seus workflows do GitHub Actions."
+ },
+ {
+  "id": "integrations.githubAction.tokenCallout",
+  "path": "/docs/integrations/github-action",
+  "title": "githubAction",
+  "text": "A GitHub Action do CriptEnv requer um token de API válido. Você pode gerar um em Painel → Tokens. É um token de CI (ci_...); para ler um ambiente restrito, crie o token para esse ambiente."
+ },
+ {
+  "id": "integrations.githubAction.setup",
+  "path": "/docs/integrations/github-action",
+  "title": "githubAction",
+  "text": "Configuração Guarde o token de CI e a senha do cofre no GitHub No painel do CriptEnv, gere um token de CI (começa com ci_) com escopo read:secrets. Como o CriptEnv é zero-knowledge, o token sozinho só baixa valores cifrados: para receber os valores em texto claro, a Action também precisa da senha do cofre do projeto. Guarde os dois como Repository Secrets. Adicionar secrets no GitHub Obtenha o ID do projeto Copie o ID do seu projeto no painel do CriptEnv. Você precisará dele para que a action saiba qual projeto descriptografar. Adicione a Action ao workflow Configure o workflow do GitHub Actions para usar a action do CriptEnv antes dos seus comandos de build ou deploy."
+ },
+ {
+  "id": "integrations.githubAction.inputs",
+  "path": "/docs/integrations/github-action",
+  "title": "githubAction",
+  "text": "Variáveis de Entrada A Action suporta as seguintes variáveis de entrada: Token de CI do CriptEnv (começa com ci_). Recomendado usar via GitHub Secrets. ID do projeto no CriptEnv. Senha do cofre do projeto (via GitHub Secrets). Com ela, a Action exporta os valores em texto claro; sem ela, as variáveis recebem o ciphertext. Ambiente alvo (ex: production, staging). Padrão: production. URL da API do CriptEnv. Padrão: https://criptenv-api.77mdevseven.tech/api/v1. Prefixo para as variáveis de ambiente. Padrão: SECRET_."
+ },
+ {
+  "id": "integrations.githubAction.fullExample",
+  "path": "/docs/integrations/github-action",
+  "title": "githubAction",
+  "text": "Exemplo Completo Workflow com múltiplos ambientes"
+ },
+ {
+  "id": "integrations.githubAction.tokenWarning",
+  "path": "/docs/integrations/github-action",
+  "title": "githubAction",
+  "text": "Nunca exponha o token do CriptEnv em logs públicos. Use sempre o GitHub Secrets para armazenar tokens e credenciais sensíveis."
+ },
+ {
+  "id": "guides.overview.title",
+  "path": "/docs/guides",
+  "title": "Guias",
+  "text": "Guias"
+ },
+ {
+  "id": "guides.overview.description",
+  "path": "/docs/guides",
+  "title": "Guias",
+  "text": "Guias práticos passo a passo para cenários comuns de uso do CriptEnv."
+ },
+ {
+  "id": "guides.overview.cards",
+  "path": "/docs/guides",
+  "title": "Guias",
+  "text": "Seu Primeiro Projeto Do zero ao primeiro secret gerenciado em 5 minutos. Crie conta, projeto, e gerencie suas variáveis de ambiente. Configurar Time Convide membros, defina roles (admin, developer, viewer) e gerencie permissões por projeto. CI/CD com CriptEnv Integre com GitHub Actions, GitLab CI, CircleCI e mais. Tokens CI e GitHub Action oficial. Rotação de Secrets Configure políticas de rotação manual, notify ou auto. Automatize com GitHub Actions scheduled workflows. Migrando do .env Importe seus arquivos .env existentes para o CriptEnv com um único comando."
+ },
+ {
+  "id": "guides.firstProject.title",
+  "path": "/docs/guides/first-project",
+  "title": "Seu Primeiro Projeto",
+  "text": "Seu Primeiro Projeto"
+ },
+ {
+  "id": "guides.firstProject.description",
+  "path": "/docs/guides/first-project",
+  "title": "Seu Primeiro Projeto",
+  "text": "Aprenda a configurar o CriptEnv do zero e gerenciar seus primeiros secrets de forma segura. Este guia leva menos de 5 minutos."
+ },
+ {
+  "id": "guides.firstProject.prerequisites",
+  "path": "/docs/guides/first-project",
+  "title": "Seu Primeiro Projeto",
+  "text": "Pré-requisitos Uma conta no CriptEnv (gratuita) Python 3.10+ instalado Acesso ao terminal"
+ },
+ {
+  "id": "guides.firstProject.steps",
+  "path": "/docs/guides/first-project",
+  "title": "Seu Primeiro Projeto",
+  "text": "Passo a passo Crie sua conta Acesse criptenv.77mdevseven.tech e crie sua conta gratuitamente. Você pode usar login com GitHub, Google ou Discord para agilizar o processo. Instale o CLI Instalar CLI Faça login Autenticar CLI Crie um novo projeto Crie um projeto via CLI (você também pode criar pelo dashboard web): Criar projeto Você será solicitado a definir uma senha de vault para o projeto. Essa senha é usada para criptografar os secrets deste projeto. Adicione suas variáveis de ambiente Adicione seus secrets via CLI: Adicionar secrets Importe um .env existente Se você já tem um arquivo .env, importe-o para o vault remoto: Importar para o vault remoto Carregue as variáveis no seu projeto Exporte os secrets para um arquivo .env local: Exportar para .env"
+ },
+ {
+  "id": "guides.firstProject.done",
+  "path": "/docs/guides/first-project",
+  "title": "Seu Primeiro Projeto",
+  "text": "Parabéns! Seu primeiro projeto está configurado. Agora seus secrets estão criptografados e seguros no CriptEnv."
+ },
+ {
+  "id": "guides.firstProject.next",
+  "path": "/docs/guides/first-project",
+  "title": "Seu Primeiro Projeto",
+  "text": "Próximos passos Configure o GitHub Action para sincronizar secrets no CI/CD Convide sua equipe para colaborar no gerenciamento de secrets Explore a referência completa de comandos"
+ },
+ {
+  "id": "guides.teamSetup.title",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Configuração de Equipe"
+ },
+ {
+  "id": "guides.teamSetup.description",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Aprenda a convidar membros, definir permissões e organizar sua equipe no CriptEnv para colaborar no gerenciamento de secrets de forma segura."
+ },
+ {
+  "id": "guides.teamSetup.invite",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Convidando membros Acesse as configurações da equipe No painel do CriptEnv, navegue até Configurações → Equipe. Aqui você pode ver todos os membros atuais e gerenciar convites. Envie um convite Clique em \"Convidar Membro\" e insira o email da pessoa que deseja adicionar. Selecione o papel (role) que ela terá na equipe. Exemplo de convite Aceite o convite O membro receberá um email com o link para aceitar o convite. Após aceitar, ele terá acesso aos projetos conforme as permissões definidas."
+ },
+ {
+  "id": "guides.teamSetup.roles",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Papéis e Permissões O CriptEnv oferece 4 níveis de permissão para membros da equipe: Papel Ver secrets Editar secrets Gerenciar equipe Configurações Ambientes restritos são a exceção: só Owner e Admin os veem e leem. Para criar ou restringir um ambiente, abra Configurações do projeto → Ambientes."
+ },
+ {
+  "id": "guides.teamSetup.perProject",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Permissões por Projeto Você pode configurar permissões granulares por projeto. Um membro pode ser Admin em um projeto e Viewer em outro. Exemplo de permissões por projeto"
+ },
+ {
+  "id": "guides.teamSetup.cli",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Gerenciando via CLI Comandos de equipe no CLI"
+ },
+ {
+  "id": "guides.teamSetup.leastPrivilege",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Recomendamos seguir o princípio do menor privilégio: conceda apenas as permissões necessárias para cada membro realizar suas tarefas."
+ },
+ {
+  "id": "guides.teamSetup.ownerWarning",
+  "path": "/docs/guides/team-setup",
+  "title": "Configuração de Equipe",
+  "text": "Membros com papel Owner têm acesso total ao projeto, incluindo a exclusão. Limite este papel a pessoas de extrema confiança."
+ },
+ {
+  "id": "guides.cicd.title",
+  "path": "/docs/guides/cicd-setup",
+  "title": "Configuração de CI/CD",
+  "text": "Configuração de CI/CD"
+ },
+ {
+  "id": "guides.cicd.description",
+  "path": "/docs/guides/cicd-setup",
+  "title": "Configuração de CI/CD",
+  "text": "Configure o CriptEnv no seu pipeline de CI/CD para carregar secrets de forma segura durante build, testes e deploy. Suporte para GitHub Actions e outras plataformas via CLI."
+ },
+ {
+  "id": "guides.cicd.github",
+  "path": "/docs/guides/cicd-setup",
+  "title": "Configuração de CI/CD",
+  "text": "A forma mais simples de integrar. Use a Action oficial do CriptEnv: Adicione o token e a senha do cofre como secrets No repositório GitHub, vá em Settings → Secrets and variables → Actions e adicione o token de CI do CriptEnv e a senha do cofre do projeto como novos secrets. Sem a senha do cofre, a Action recebe apenas valores cifrados. Configuração do secret Configure o workflow"
+ },
+ {
+  "id": "guides.cicd.practices",
+  "path": "/docs/guides/cicd-setup",
+  "title": "Configuração de CI/CD",
+  "text": "Boas Práticas para CI/CD Use ambientes separados: configure secrets diferentes para staging e production Token com escopo mínimo: crie tokens específicos para CI/CD com apenas permissão de leitura Nunca logue secrets: evite imprimir variáveis de ambiente nos logs do CI Rotacione tokens: atualize os tokens do CriptEnv periodicamente"
+ },
+ {
+  "id": "guides.cicd.commitWarning",
+  "path": "/docs/guides/cicd-setup",
+  "title": "Configuração de CI/CD",
+  "text": "Nunca commite tokens do CriptEnv diretamente no código. Use sempre variáveis de ambiente ou secrets nativos da plataforma de CI/CD."
+ },
+ {
+  "id": "guides.secretRotation.title",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "Rotação de Secrets"
+ },
+ {
+  "id": "guides.secretRotation.description",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "A rotação regular de secrets é uma prática essencial de segurança. Aprenda a configurar e automatizar a rotação de variáveis de ambiente usando o CriptEnv."
+ },
+ {
+  "id": "guides.secretRotation.infoCallout",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "A rotação de secrets reduz a janela de exposição caso uma credencial seja comprometida. Recomendamos rodar a cada 30-90 dias, dependendo do nível de sensibilidade."
+ },
+ {
+  "id": "guides.secretRotation.why",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "Por que rotacionar? Reduz o impacto de vazamentos e comprometimentos Atende a requisitos de compliance (SOC2, ISO 27001, LGPD) Remove acessos de funcionários que saíram da empresa Mantém boas práticas de higiene de segurança"
+ },
+ {
+  "id": "guides.secretRotation.manual",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "Rotação Manual Gere o novo secret Gere o novo secret no serviço correspondente (banco de dados, API, etc.). Certifique-se de que o novo secret está funcionando antes de atualizar no CriptEnv. Atualize no CriptEnv Use o CLI para atualizar a variável com o novo valor: Atualizar variável Sincronize com as integrações Se você tem integrações configuradas (Vercel, Render), sincronize manualmente: Sincronizar integrações Verifique a aplicação Confirme que a aplicação está funcionando corretamente com o novo secret. Monitore logs e métricas por alguns minutos."
+ },
+ {
+  "id": "guides.secretRotation.automated",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "Rotação Automatizada Configure a rotação automática usando o GitHub Actions: Rotação automática com GitHub Actions"
+ },
+ {
+  "id": "guides.secretRotation.policies",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "Políticas de Rotação Defina políticas de rotação por tipo de secret: Tipo de Secret Frequência Recomendada Prioridade A cada 30 dias A cada 90 dias A cada 180 dias Alta Média Crítica"
+ },
+ {
+  "id": "guides.secretRotation.expiry",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "Expiração e Alertas Configure expiração automática e alertas para seus secrets: Configurar expiração e alertas"
+ },
+ {
+  "id": "guides.secretRotation.overlapWarning",
+  "path": "/docs/guides/secret-rotation",
+  "title": "Rotação de Secrets",
+  "text": "Ao rotacionar secrets em produção, certifique-se de que todos os serviços dependentes são atualizados simultaneamente para evitar downtime. Considere usar rotação com período de sobreposição (overlap) onde tanto o secret antigo quanto o novo são válidos por um período."
+ },
+ {
+  "id": "guides.migration.breadcrumb",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Migração de .env"
+ },
+ {
+  "id": "guides.migration.title",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Migração de arquivos .env"
+ },
+ {
+  "id": "guides.migration.description",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Leve as variáveis de um .env existente para o cofre do CriptEnv e passe a injetá-las em memória, sem nenhum arquivo com valores no disco."
+ },
+ {
+  "id": "guides.migration.step1",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Crie o projeto e o ambiente A criação do projeto define a senha do cofre: guarde-a num gerenciador de senhas. Os comandos aceitam o ID ou o nome do projeto. Projeto e ambiente"
+ },
+ {
+  "id": "guides.migration.step2",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Importe o arquivo Cada linha CHAVE=valor vira um secret cifrado no cliente. Chaves existentes são mantidas, a menos que você passe --overwrite. Importar"
+ },
+ {
+  "id": "guides.migration.step3",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Confira se nada ficou para trás O diff compara o arquivo com o cofre e sai com código 1 se houver diferença (útil também como gate de CI). Comparar"
+ },
+ {
+  "id": "guides.migration.step4",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Rode o app com os secrets em memória O run decifra os valores e executa o comando no lugar do próprio processo (sinais como SIGTERM chegam direto ao app). As credenciais do CriptEnv não são repassadas ao app. Executar"
+ },
+ {
+  "id": "guides.migration.step5",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Apague o arquivo antigo Quando tudo estiver rodando pelo CriptEnv, remova o arquivo com valores e mantenha só um .env.example com os nomes. Remover"
+ },
+ {
+  "id": "guides.migration.servers",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "Em servidores e containers Sem terminal, a CLI lê as credenciais do ambiente: CRIPTENV_API_KEY (API key cek_... com escopo read:secrets) autentica o processo sem gravar sessão em disco, e CRIPTENV_VAULT_PASSWORD abre o cofre. Se faltar alguma, o comando falha com erro em vez de esperar um prompt."
+ },
+ {
+  "id": "guides.migration.exportWarning",
+  "path": "/docs/guides/migration",
+  "title": "Migração de arquivos .env",
+  "text": "criptenv export gera texto claro. Se precisar dele, prefira --format json lido direto pelo processo; no formato env, valores com espaço, #, aspas ou quebra de linha saem entre aspas."
+ },
+ {
+  "id": "sdks.overview.description",
+  "path": "/docs/sdks",
+  "title": "overview",
+  "text": "Use os SDKs oficiais do CriptEnv para integrar o gerenciamento de secrets diretamente na sua aplicação. Descriptografe variáveis de ambiente de forma simples e segura com poucas linhas de código."
+ },
+ {
+  "id": "sdks.overview.cards",
+  "path": "/docs/sdks",
+  "title": "overview",
+  "text": "SDK oficial para Node.js, Deno e navegadores. Suporte completo a TypeScript com tipos definidos. Instale via npm, yarn ou pnpm. SDK oficial para Python 3.8+. Gerencie seus secrets com uma API simples e Pythonica. Instale via pip ou poetry."
+ },
+ {
+  "id": "sdks.overview.comparison",
+  "path": "/docs/sdks",
+  "title": "overview",
+  "text": "Comparação Recurso Descriptografar variáveis Gerenciar secrets Cache local"
+ },
+ {
+  "id": "sdks.javascript.title",
+  "path": "/docs/sdks/javascript",
+  "title": "SDK JavaScript / TypeScript",
+  "text": "SDK JavaScript / TypeScript"
+ },
+ {
+  "id": "sdks.javascript.inDevelopment",
+  "path": "/docs/sdks/javascript",
+  "title": "SDK JavaScript / TypeScript",
+  "text": "O SDK oficial para JavaScript/TypeScript está em desenvolvimento. Acompanhe o progresso no repositório GitHub."
+ },
+ {
+  "id": "sdks.javascript.meanwhile",
+  "path": "/docs/sdks/javascript",
+  "title": "SDK JavaScript / TypeScript",
+  "text": "Enquanto o SDK não é lançado, você pode usar a API REST diretamente ou a GitHub Action para CI/CD."
+ },
+ {
+  "id": "sdks.python.title",
+  "path": "/docs/sdks/python",
+  "title": "SDK Python",
+  "text": "SDK Python"
+ },
+ {
+  "id": "sdks.python.inDevelopment",
+  "path": "/docs/sdks/python",
+  "title": "SDK Python",
+  "text": "O SDK oficial para Python está em desenvolvimento. Acompanhe o progresso no repositório GitHub."
+ },
+ {
+  "id": "sdks.python.meanwhile",
+  "path": "/docs/sdks/python",
+  "title": "SDK Python",
+  "text": "Enquanto o SDK não é lançado, você pode usar o CLI diretamente ou a API REST para integrações programáticas."
+ },
+ {
+  "id": "security.overview.title",
+  "path": "/docs/security",
+  "title": "Segurança",
+  "text": "Segurança"
+ },
+ {
+  "id": "security.overview.description",
+  "path": "/docs/security",
+  "title": "Segurança",
+  "text": "O CriptEnv foi projetado com uma arquitetura de conhecimento zero (zero-knowledge), garantindo que seus segredos de ambiente nunca sejam expostos ao servidor. Toda criptografia acontece no lado do cliente — o servidor armazena apenas dados criptografados que não podem ser decifrados sem a Vault password do projeto."
+ },
+ {
+  "id": "security.overview.passwordCallout",
+  "path": "/docs/security",
+  "title": "Segurança",
+  "text": "A Vault password do projeto nunca é enviada ao servidor. Ela é usada localmente para derivar chaves criptográficas que nunca saem do seu dispositivo."
+ },
+ {
+  "id": "security.overview.principles",
+  "path": "/docs/security",
+  "title": "Segurança",
+  "text": "Princípios de Segurança Confidencialidade Todos os segredos são criptografados com AES-256-GCM antes de qualquer armazenamento ou transmissão. O servidor nunca vê dados em texto claro. Integridade O AES-GCM fornece autenticação integrada (GCM Auth Tag de 128 bits), garantindo que qualquer adulteração nos dados criptografados seja detectada imediatamente durante a descriptografia. Isolamento entre ambientes Cada ambiente tem sua própria chave, derivada com HKDF a partir da chave do vault e do ID do ambiente. A chave de um ambiente não decifra os secrets de outro. Restringir um ambiente é outra coisa: uma regra de acesso aplicada pelo servidor. Como a senha do vault é uma por projeto, a restrição impede o servidor de entregar os dados, mas não desfaz o que alguém já baixou. Resistência a Força Bruta A derivação de chaves utiliza PBKDF2 com 100.000 iterações de HMAC-SHA256, tornando ataques de força bruta computacionalmente caros mesmo com hardware especializado."
+ },
+ {
+  "id": "security.overview.hierarchy",
+  "path": "/docs/security",
+  "title": "Segurança",
+  "text": "Hierarquia de Chaves O CriptEnv utiliza uma hierarquia de chaves bem definida para isolar ambientes e projetos: 100k iterações Chave do Vault (256-bit) Chave do Ambiente (256-bit) Segredos Criptografados"
+ },
+ {
+  "id": "security.overview.docs",
+  "path": "/docs/security",
+  "title": "Segurança",
+  "text": "Documentação de Segurança Protocolo de Criptografia Detalhes técnicos sobre algoritmos, parâmetros e fluxo completo de derivação de chaves. Arquitetura Zero-Knowledge Como o modelo de conhecimento zero protege seus dados e o que o servidor pode e não pode ver. Modelo de Ameaças Análise de cenários de ataque, níveis de risco e mitigações implementadas."
+ },
+ {
+  "id": "security.zeroKnowledge.title",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "Arquitetura Zero-Knowledge"
+ },
+ {
+  "id": "security.zeroKnowledge.description",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "A arquitetura de conhecimento zero do CriptEnv garante que o servidor nunca tenha acesso aos valores dos seus segredos em texto claro. Toda criptografia e descriptografia acontece exclusivamente no cliente do usuário, usando a Vault password do projeto, que nunca é transmitida."
+ },
+ {
+  "id": "security.zeroKnowledge.simpleCallout",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "Em termos simples: mesmo que o servidor seja completamente comprometido, os atacantes só teriam acesso a dados criptografados que são inúteis sem a Vault password do projeto."
+ },
+ {
+  "id": "security.zeroKnowledge.what",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "O Que É Conhecimento Zero? No contexto do CriptEnv, \"conhecimento zero\" significa que o servidor pode confirmar que você tem a senha correta (através do vault proof) sem jamais saber qual é essa senha ou ter acesso às chaves derivadas dela. Isso é diferente de sistemas tradicionais onde o servidor armazena hashes de senha e os dados — no CriptEnv, os valores criptografados são inúteis mesmo para quem controla o servidor."
+ },
+ {
+  "id": "security.zeroKnowledge.clientSide",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "Como Funciona a Criptografia do Lado do Cliente Todo o processo de criptografia acontece no navegador usando a Web Crypto API:"
+ },
+ {
+  "id": "security.zeroKnowledge.visibility",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "O Que o Servidor Vê vs. Não Vê O Servidor Vê O Servidor NÃO Vê ✓ Ciphertext (valores criptografados em AES-256-GCM)\n✓ Nomes das variáveis (chaves) — só os valores são cifrados\n✓ IVs (vetores de inicialização — não são secretos)\n✓ Auth Tags (tags de autenticação GCM)\n✓ Salts do PBKDF2 (aleatórios por projeto, públicos por design)\n✓ Hash bcrypt do vault proof\n✓ IDs de ambientes e projetos (metadados não-secretos)\n✓ Timestamps de criação e modificação\n✓ Estrutura organizacional (projetos, ambientes) ✗ Vault password do projeto\n✗ Chave do vault derivada (saída do PBKDF2)\n✗ Chaves de ambiente (saída do HKDF)\n✗ Valores das variáveis de ambiente em texto claro\n✗ Capacidade de descriptografar os valores"
+ },
+ {
+  "id": "security.zeroKnowledge.proof",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "Mecanismo do Vault Proof O vault proof permite que o servidor verifique se o usuário conhece a senha correta sem que a senha ou as chaves de criptografia sejam transmitidas. O proof é derivado da mesma Vault password, mas com um salt próprio e aleatório (proof_salt), diferente do salt da chave de criptografia. Assim o proof não serve para derivar a chave de criptografia, e o servidor guarda apenas um hash bcrypt dele."
+ },
+ {
+  "id": "security.zeroKnowledge.implications",
+  "path": "/docs/security/zero-knowledge",
+  "title": "Arquitetura Zero-Knowledge",
+  "text": "Implicações Práticas Esqueceu a senha? Não há mecanismo de recuperação. Como o servidor nunca teve acesso à sua senha ou chaves, não é possível recuperar dados sem ela. Isso é uma feature, não um bug — garante que ninguém além de você pode acessar seus segredos. Segurança para Equipes Em ambientes compartilhados, cada membro acessa apenas projetos autorizados e a descriptografia continua acontecendo no cliente. Auditoria O servidor pode registrar eventos de acesso (timestamps, IPs, IDs de ambiente) sem nunca ter acesso aos valores dos segredos. Isso permite auditoria de segurança sem comprometer a arquitetura zero-knowledge."
+ },
+ {
+  "id": "security.encryption.breadcrumb",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "Criptografia"
+ },
+ {
+  "id": "security.encryption.title",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "Protocolo de Criptografia"
+ },
+ {
+  "id": "security.encryption.description",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "O CriptEnv utiliza uma cadeia de derivação de chaves em múltiplas camadas para garantir que cada ambiente tenha uma chave criptográfica única e isolada. Todo o processo acontece no navegador do usuário — o servidor nunca tem acesso às chaves ou aos valores em texto claro."
+ },
+ {
+  "id": "security.encryption.flow",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "Fluxo de Derivação de Chaves O processo completo de derivação segue estas etapas:"
+ },
+ {
+  "id": "security.encryption.params",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "Parâmetros Criptográficos Algoritmo Iterações Tamanho do Salt Tamanho da Chave PBKDF2 (Derivação da Chave do Vault) HMAC-SHA256 — Função pseudo-aleatória baseada em hash 100.000 iterações — dificulta ataques de força bruta 32 bytes (256 bits) — gerado aleatoriamente por projeto, na criação do vault 32 bytes (256 bits) — chave do vault de saída HKDF (Derivação por Ambiente) SHA-256 — Função de hash subjacente Chave do vault de 256 bits derivada do PBKDF2 ID do ambiente (UUID) — garante chave única por ambiente \"criptenv-vault-v1\" — contexto da aplicação 32 bytes (256 bits) — chave do ambiente de saída AES-256-GCM (Criptografia dos Dados) AES-256-GCM — Criptografia autenticada com Galois/Counter Mode 32 bytes (256 bits) — chave do ambiente derivada via HKDF 12 bytes (96 bits) — gerado aleatoriamente para cada operação de criptografia 16 bytes (128 bits) — tag de autenticação para verificação de integridade O IV (vetor de inicialização) é gerado aleatoriamente para cada operação de criptografia. Nunca reutilize um IV com a mesma chave — isso comprometeria a segurança do GCM."
+ },
+ {
+  "id": "security.encryption.proof",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "Derivação do Vault Proof Além da chave de criptografia, o CriptEnv deriva uma prova separada, usada para autorizar escritas no vault pela API. Ela comprova que você conhece a Vault password sem revelar a senha nem a chave de criptografia."
+ },
+ {
+  "id": "security.encryption.storage",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "Metadata Local vs. Vault Remoto Metadata Local Vault Remoto O CLI mantém metadata local em SQLite no diretório do usuário: O fluxo principal da CLI não armazena secrets localmente. Secrets vivem no vault remoto e são descriptografados apenas em memória. O cofre na nuvem armazena apenas valores já criptografados:"
+ },
+ {
+  "id": "security.encryption.implementation",
+  "path": "/docs/security/encryption",
+  "title": "Protocolo de Criptografia",
+  "text": "Implementação Exemplo simplificado do fluxo de criptografia usando a Web Crypto API:"
+ },
+ {
+  "id": "security.threatModel.title",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Modelo de Ameaças"
+ },
+ {
+  "id": "security.threatModel.description",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Esta página analisa os cenários de ataque mais relevantes para o CriptEnv, o nível de risco de cada um e o que a arquitetura protege — e o que não protege."
+ },
+ {
+  "id": "security.threatModel.assumption",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "O modelo de ameaças assume que o atacante pode ter acesso completo ao servidor, banco de dados e infraestrutura — mas não ao dispositivo do usuário."
+ },
+ {
+  "id": "security.threatModel.summary",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Resumo de Ameaças Cenário Risco Impacto Status"
+ },
+ {
+  "id": "security.threatModel.risk",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Crítico Alto Médio"
+ },
+ {
+  "id": "security.threatModel.riskBadge",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Risco Crítico Risco Alto Risco Médio"
+ },
+ {
+  "id": "security.threatModel.detail",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Análise Detalhada Mitigação:"
+ },
+ {
+  "id": "security.threatModel.threats",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Banco de dados comprometido Ciphertext e nomes das variáveis expostos; valores ilegíveis sem a senha do vault Mitigado Cenário: um atacante obtém acesso completo ao banco de dados do servidor, incluindo usuários, ambientes e secrets armazenados. Valores armazenados apenas como ciphertext AES-256-GCM Salts do PBKDF2 e IVs são públicos por design Só um hash bcrypt do vault proof é armazenado, nunca a senha ou as chaves Nomes das variáveis (chaves) ficam em texto claro — não coloque segredos nos nomes Resultado: os valores roubados são inúteis sem a senha do vault. O ataque que resta é força bruta offline contra essa senha, desacelerada pelo PBKDF2 — por isso uma senha forte é essencial. Administrador malicioso Pode ler metadados; poderia servir código web adulterado para capturar senhas Parcialmente mitigado Cenário: um administrador do servidor ou alguém com acesso privilegiado tenta ler os dados dos usuários. Os valores armazenados não podem ser decifrados com o que o servidor guarda A CLI cifra localmente e não executa código servido pela aplicação web O código é open source, então a lógica do cliente pode ser revisada Resultado: o administrador vê metadados (timestamps, IDs, nomes das variáveis), mas não os valores. Como em qualquer app zero-knowledge baseado na web, quem controla o servidor poderia servir JavaScript alterado que capture a senha digitada no navegador; quem precisa descartar esse risco deve usar a CLI. Man-in-the-Middle (MITM) Interceptação de tráfego, mas os valores trafegam já cifrados Mitigado Cenário: um atacante intercepta o tráfego de rede entre o cliente e o servidor. TLS (HTTPS) em todas as comunicações HSTS para impedir downgrade para HTTP Os valores são cifrados antes do envio A senha do vault e as chaves derivadas nunca trafegam pela rede Resultado: mesmo com o TLS quebrado, o atacante só veria ciphertext AES-256-GCM. Um TLS quebrado ainda poderia expor tokens de sessão, metadados e o código da aplicação web. Ataque XSS (Cross-Site Scripting) Código rodando na aplicação poderia ler dados decifrados em memória Parcialmente mitigado Cenário: um atacante injeta scripts que executam no contexto do navegador do usuário. Content Security Policy (CSP) restritiva O React escapa o conteúdo renderizado por padrão Cookies HttpOnly para tokens de sessão Resultado: se um XSS tiver sucesso apesar dessas medidas, o atacante poderia ler os secrets decifrados em memória e a senha do vault digitada durante aquela sessão. Sequestro de sessão (Session Hijacking) Acesso à API como o usuário, mas apenas a dados cifrados Mitigado Cenário: um atacante rouba o token de sessão do usuário e se passa por ele no servidor. Sessões com expiração automática O usuário pode listar e revogar suas sessões ativas A senha do vault não faz parte da sessão Resultado: o atacante pode acessar a API, mas os dados retornados estão cifrados. Sem a senha do vault, nada pode ser decifrado — embora metadados possam ser lidos e dados apagados até a sessão ser revogada. Ataque de força bruta na senha Tentativa de adivinhar a senha do vault Depende da força da senha Cenário: um atacante tenta adivinhar a senha do vault do projeto testando muitas combinações — online contra a API, ou offline com um banco de dados roubado. PBKDF2 com 100.000 iterações torna cada tentativa lenta Salt aleatório por projeto (impede rainbow tables e ataque a vários vaults de uma vez) Rate limiting na API (só para tentativas online) A auth tag do AES-GCM faz uma senha errada falhar imediatamente Resultado: a ~100 ms por tentativa em um núcleo de CPU, testar 1 bilhão de senhas leva cerca de 3 anos — e GPUs fazem muitas tentativas em paralelo. O rate limiting não ajuda contra um ataque offline, então a segurança depende de uma senha longa e aleatória."
+ },
+ {
+  "id": "security.threatModel.layers",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Resumo de Defesas em Profundidade"
+ },
+ {
+  "id": "security.threatModel.userResponsibility",
+  "path": "/docs/security/threat-model",
+  "title": "Modelo de Ameaças",
+  "text": "Responsabilidade do Usuário: a segurança do sistema depende fundamentalmente da força da senha do vault. Use uma senha longa, única e gerada por um gerenciador de senhas. A arquitetura zero-knowledge não pode proteger contra uma senha fraca ou reutilizada."
+ },
+ {
+  "id": "cli.overview.description",
+  "path": "/docs/cli",
+  "title": "overview",
+  "text": "Gerencie seus segredos diretamente do terminal — com criptografia de ponta a ponta e zero conhecimento do lado do servidor."
+ },
+ {
+  "id": "cli.overview.philosophy",
+  "path": "/docs/cli",
+  "title": "overview",
+  "text": "Filosofia Terminal-First Todas as operações acontecem no seu terminal. Se você consegue abrir um shell, consegue usar o CriptEnv. Zero-Knowledge Os valores dos seus segredos são criptografados localmente com AES-256-GCM antes de qualquer sincronização. O servidor nunca os vê em texto claro. Vault Remoto A CLI opera no vault remoto do projeto, mantendo tudo sincronizado com o dashboard web e com a equipe."
+ },
+ {
+  "id": "cli.overview.features",
+  "path": "/docs/cli",
+  "title": "overview",
+  "text": "Recursos Gestão de Segredos Armazene, rotacione, importe e exporte variáveis de ambiente com criptografia forte e versionamento. Sincronização Push importa arquivos .env para o vault remoto; pull exporta o vault remoto para arquivos locais. Multi-Ambientes Crie e gerencie ambientes isolados (dev, staging, production) dentro de um mesmo projeto. CI/CD Integre com pipelines de CI/CD. Faça login headless, liste segredos e faça deploy sem expor credenciais. Integrações Conecte provedores de nuvem (Vercel, Render, Cloudflare Workers) e faça push ou pull de secrets. Rotação e Expiração Configure alertas de expiração e rotacione chaves com versionamento automático."
+ },
+ {
+  "id": "cli.overview.install",
+  "path": "/docs/cli",
+  "title": "overview",
+  "text": "Instalação Rápida Requer Python 3.10 ou superior. O CLI é multiplataforma e funciona em macOS, Linux e Windows. Após a instalação, consulte a Referência de Comandos para ver todas as opções disponíveis, ou a Configuração para entender a estrutura local."
+ },
+ {
+  "id": "cli.overview.next",
+  "path": "/docs/cli",
+  "title": "overview",
+  "text": "Próximos Passos Referência de Comandos Lista completa de todos os comandos, opções e exemplos de uso. Configuração Estrutura do ~/.criptenv/, sessão local, Vault password e variáveis de ambiente."
+ },
+ {
+  "id": "cli.configuration.breadcrumb",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Configuração"
+ },
+ {
+  "id": "cli.configuration.title",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Configuração do CLI"
+ },
+ {
+  "id": "cli.configuration.description",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Entenda como o CriptEnv CLI funciona como terminal remoto, quais dados ficam localmente e como usar variáveis de ambiente em automações."
+ },
+ {
+  "id": "cli.configuration.remote",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Terminal Remoto Os comandos principais operam diretamente no vault remoto do projeto. O CLI baixa blobs criptografados, descriptografa em memória quando necessário, recriptografa no próprio processo e envia apenas ciphertext para a API. O backend nunca recebe os valores dos secrets em texto claro e a Vault password do projeto nunca é enviada ao servidor."
+ },
+ {
+  "id": "cli.configuration.local",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Estrutura Local O diretório ~/.criptenv/ guarda apenas metadata leve e credenciais locais de sessão: Arquivo Descrição Chave local usada para proteger tokens de sessão da CLI e do CI. Banco SQLite com sessão, projeto atual, cache de metadata e tabelas de compatibilidade. O fluxo normal do CLI não grava uma cópia local dos secrets. Backups de ~/.criptenv/ ainda devem ser protegidos porque contêm credenciais de sessão."
+ },
+ {
+  "id": "cli.configuration.vaultPassword",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Vault Password A Vault password pertence ao projeto. Ela deriva as chaves de criptografia client-side e é solicitada apenas quando um comando precisa descriptografar ou alterar secrets. Para automação, defina CRIPTENV_VAULT_PASSWORD. O CLI usa essa variável no lugar do prompt interativo."
+ },
+ {
+  "id": "cli.configuration.envVars",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Variáveis de Ambiente Variável Tipo URL da API. Padrão: https://criptenv-api.77mdevseven.tech Projeto padrão para comandos que aceitam --project. Vault password do projeto para uso não interativo. API key (cek_...) que autentica o processo diretamente, sem login e sem gravar sessão em disco — ideal para CI, containers e HOME somente leitura. É somente leitura: para gravar ou sincronizar em um pipeline, use um token de CI. Evite expor CRIPTENV_VAULT_PASSWORD em logs, shells compartilhados ou históricos persistentes. Em CI, use o mecanismo de secrets do provedor."
+ },
+ {
+  "id": "cli.configuration.doctor",
+  "path": "/docs/cli/configuration",
+  "title": "Configuração do CLI",
+  "text": "Use criptenv doctor para verificar sessão, projeto atual, metadata local e conectividade com a API."
+ },
+ {
+  "id": "cli.commands.breadcrumb",
+  "path": "/docs/cli/commands",
+  "title": "Referência de Comandos",
+  "text": "Comandos"
+ },
+ {
+  "id": "cli.commands.title",
+  "path": "/docs/cli/commands",
+  "title": "Referência de Comandos",
+  "text": "Referência de Comandos"
+ },
+ {
+  "id": "cli.commands.description",
+  "path": "/docs/cli/commands",
+  "title": "Referência de Comandos",
+  "text": "Documentação completa de todos os comandos do CriptEnv CLI, organizados por categoria."
+ },
+ {
+  "id": "cli.commands.options",
+  "path": "/docs/cli/commands",
+  "title": "Referência de Comandos",
+  "text": "Opções"
+ },
+ {
+  "id": "cli.commands.configurationLink",
+  "path": "/docs/cli/commands",
+  "title": "Referência de Comandos",
+  "text": "Para mais detalhes sobre a configuração do CLI, consulte a página de Configuração."
+ },
+ {
+  "id": "cli.commands.sections",
+  "path": "/docs/cli/commands",
+  "title": "Referência de Comandos",
+  "text": "Comandos Core Segredos Sincronização Importação e Exportação Ambientes Projetos CI/CD Integrações Manutenção"
+ },
+ {
+  "id": "cli.commands.items",
+  "path": "/docs/cli/commands",
+  "title": "Referência de Comandos",
+  "text": "Prepara o diretório ~/.criptenv/ e o banco de metadata local. Este comando é opcional e não cria vault local de secrets nem senha mestra. Autentica com a conta CriptEnv. Armazena o token de sessão localmente. E-mail da conta (login por e-mail e senha) Login por e-mail e senha, pedindo o e-mail interativamente Device flow, para SSH/headless Login com API key (cek_...). Também lida de CRIPTENV_API_KEY; sem valor, pede de forma oculta Encerra a sessão atual e remove o token armazenado localmente. Verifica a integridade da configuração local: banco de dados, permissões, conectividade e versão do CLI. Criptografa e armazena um segredo no vault remoto do projeto. Use a sintaxe KEY=value. Chave e valor do segredo Ambiente de destino Projeto de destino Tipo na Vercel: Secret (ninguém lê depois de salvo) ou Config. Sem flag, mantém o tipo atual; variável nova vira Config Descriptografa em memória e exibe o valor de um segredo remoto. Nome do segredo Ambiente de origem Projeto de origem Copia o valor para a área de transferência Lista todas as chaves do vault remoto sem descriptografar valores. Filtrar por ambiente Filtrar por projeto Remove permanentemente um segredo do vault remoto. Nome do segredo a remover Ambiente de origem Pula confirmação Cria uma nova versão do segredo. A versão anterior é mantida para referência. Nome do segredo Ambiente Novo valor (auto-gerado se omitido) Pula confirmação Importa um arquivo .env para o vault remoto. Sem arquivo, o comando falha com orientação para usar import. Arquivo .env de origem Projeto específico Ambiente específico Sobrescreve chaves existentes Exporta segredos do vault remoto para um arquivo local. Sem --output, o comando falha com orientação para usar export. Projeto específico Ambiente específico Arquivo de saída Formato: env ou json Importa segredos de um arquivo .env para o vault remoto. Caminho para o arquivo .env Ambiente de destino Projeto de destino Sobrescreve chaves existentes Exporta segredos do vault remoto para um arquivo .env ou JSON. Formato: env (padrão) ou json Ambiente de origem Projeto de origem Arquivo de saída (padrão: stdout) Executa um comando com os segredos do ambiente injetados como variáveis de ambiente — sem escrever nenhum arquivo em disco. O código de saída do processo filho é propagado. Ambiente de origem Projeto de origem Compara um arquivo .env local com o vault remoto (detecção de drift) e sai com status 1 quando houver diferenças — útil como gate de CI. Com --show-values exibe apenas um preview mascarado; valores completos nunca são impressos. Ambiente de comparação Projeto de comparação Preview mascarado dos valores alterados Lista todos os ambientes do projeto. Os restritos aparecem marcados. Filtrar por projeto Cria um novo ambiente. Nome do ambiente (ex: staging) Projeto ao qual pertence Nome legível para humanos Cria o ambiente restrito ao dono e aos administradores Cria um novo projeto com senha de vault. Nome do projeto Slug opcional do projeto Descrição do projeto Lista todos os projetos. Autenticação headless para ambientes de CI/CD. Token de CI/CD (começa com ci_) ID do projeto Encerra a sessão de CI/CD. Lista segredos disponíveis no contexto de CI. Ambiente (ex: production) Importa um arquivo de secrets para o vault remoto no contexto de CI. Requer CLI 0.2.2+, um token de CI com escopo write:secrets e CRIPTENV_VAULT_PASSWORD: os valores são cifrados no runner e a API só recebe os blobs. Tokens restritos a um ambiente só podem fazer deploy nele. Arquivo .env de origem Ambiente de deploy Mostra o que seria enviado, sem enviar Provedor conectado que recebe o ambiente inteiro depois da importação Ambiente no provedor para --provider (padrão: --env) Lista os tokens de CI/CD do projeto. Projeto Inclui tokens revogados Cria um novo token de CI/CD. O token é exibido apenas uma vez. Nome do token Escopos separados por vírgula (padrão: read:secrets) Restringe o token a um ambiente Dias até expirar (padrão: não expira) Projeto Revoga um token de CI/CD. ID do token a revogar Lista integrações de provedores de nuvem conectadas. Projeto Conecta um novo provedor de nuvem. Provedor: vercel, render ou cloudflare Token de API do provedor Nome da integração Projeto na Vercel, ID do serviço no Render ou nome do script do Worker ID do projeto no CriptEnv ID do time na Vercel (projetos de time) ID da conta Cloudflare Desconecta uma integração. Pegue o ID em integrations list. ID da integração a desconectar ID do projeto no CriptEnv Pula confirmação Verifica se uma integração ainda alcança o provedor com o token salvo. Sai com código 1 quando não alcança. ID da integração a validar ID do projeto no CriptEnv Envia um ambiente do CriptEnv para o provedor ou importa os valores do provedor para o vault. Sai com código 1 quando o provedor rejeita o sync. Provedor: vercel, render ou cloudflare Ambiente do CriptEnv (padrão: production) Direção: push (padrão) ou pull Projeto Ambiente no provedor (Vercel: production, preview, development; padrão: --env) ID da integração, quando o provedor tem várias No pull, sobrescreve secrets que já existem Define a data de expiração de um segredo. Nome do segredo Dias até expiração Política: manual, notify (padrão), auto Ambiente Projeto Configura alertas de expiração para um segredo. Nome do segredo Dias antes da expiração para alertar Ambiente Projeto Lista segredos com rotação pendente. Filtrar por ambiente Filtrar por projeto Dias à frente para verificar (padrão: 30) Mostra o histórico de rotações de um segredo. Nome do segredo Ambiente Projeto Renomeia um ambiente, o restringe ao dono e aos administradores ou o abre ao time. ID do ambiente Projeto ao qual pertence Novo nome legível Restringe ao dono e aos administradores Abre um ambiente restrito ao time Cria uma API key somente leitura para contêineres e scripts. A chave aparece uma única vez. Nome da chave read:secrets (padrão) e/ou read:audit Limita a chave a um ambiente; sem ele, vale para todos os não restritos Expiração em dias (1 a 365) Projeto ao qual pertence"
+ },
+ {
+  "id": "api.health.description",
+  "path": "/docs/api/health",
+  "title": "health",
+  "text": "Endpoints públicos para verificar a disponibilidade da API. Úteis para monitoramento, load balancers e verificações de integração."
+ },
+ {
+  "id": "api.health.callout",
+  "path": "/docs/api/health",
+  "title": "health",
+  "text": "Estes endpoints não requerem autenticação e retornam rapidamente para uso em health checks de infraestrutura."
+ },
+ {
+  "id": "api.health.status",
+  "path": "/docs/api/health",
+  "title": "health",
+  "text": "Status da API Retorna o status geral da API. Este endpoint sempre responde 200 se o servidor estiver ativo."
+ },
+ {
+  "id": "api.health.ready",
+  "path": "/docs/api/health",
+  "title": "health",
+  "text": "Prontidão Verifica se a API está pronta para receber requisições, incluindo a conectividade com o banco de dados. Retorna 200 se tudo estiver operacional, ou 503 se o banco estiver inacessível."
+ },
+ {
+  "id": "api.audit.description",
+  "path": "/docs/api/audit",
+  "title": "audit",
+  "text": "Consulte o registro das ações realizadas no projeto. Os audit logs rastreiam alterações no vault, secrets, ambientes, membros, convites, tokens, API keys e configurações."
+ },
+ {
+  "id": "api.audit.callout",
+  "path": "/docs/api/audit",
+  "title": "audit",
+  "text": "Leituras (pull, get, export) não são registradas; apenas alterações. Os audit logs são removidos junto com o projeto ou a conta."
+ },
+ {
+  "id": "api.audit.list",
+  "path": "/docs/api/audit",
+  "title": "audit",
+  "text": "Listar audit logs Retorna os logs de auditoria do projeto de forma paginada e filtrável. Cada entrada contém o autor, a ação, o recurso afetado, a origem (auth_type) e o timestamp. Página (padrão: 1) Itens por página (padrão: 50, máx: 100) Filtrar por ação, ex.: vault.pushed, secret.rotated, member.added, member.role_changed, invite.created, token.created, api_key.created Filtrar por tipo de recurso, ex.: vault, environment, member, invite, integration, ci_token, api_key, project"
+ },
+ {
+  "id": "api.audit.auth",
+  "path": "/docs/api/audit",
+  "title": "audit",
+  "text": "Aceita sessão de membro ou API key com o escopo read:audit. Só uma API key de todos os ambientes pode ter esse escopo: com environment_scope, a criação retorna 422 e a leitura, 403. Eventos de ambientes restritos aparecem apenas para o dono e os administradores, e nunca para uma API key."
+ },
+ {
+  "id": "api.invites.description",
+  "path": "/docs/api/invites",
+  "title": "invites",
+  "text": "Gerencie convites por email para adicionar novos membros a um projeto. Convites possuem expiração de 7 dias e são vinculados a um papel específico."
+ },
+ {
+  "id": "api.invites.callout",
+  "path": "/docs/api/invites",
+  "title": "invites",
+  "text": "Todos os endpoints abaixo requerem autenticação e pertencem à rota base /api/v1/projects/'{pid}'/invites. Criar e remover convites exige o papel admin; o papel owner não pode ser concedido por convite."
+ },
+ {
+  "id": "api.invites.create",
+  "path": "/docs/api/invites",
+  "title": "invites",
+  "text": "Criar convite Envia um convite por email para um novo membro (apenas admins). O convite expira em 7 dias automaticamente. O token do convite só é retornado nesta resposta. Email do convidado Papel do membro: viewer, developer ou admin"
+ },
+ {
+  "id": "api.invites.list",
+  "path": "/docs/api/invites",
+  "title": "invites",
+  "text": "Listar convites Retorna os convites do projeto. Convites revogados pelo endpoint de revoke são removidos permanentemente."
+ },
+ {
+  "id": "api.invites.accept",
+  "path": "/docs/api/invites",
+  "title": "invites",
+  "text": "Aceitar convite Aceita um convite pendente. O usuário autenticado passa a ter acesso ao projeto com o papel definido no convite."
+ },
+ {
+  "id": "api.invites.revoke",
+  "path": "/docs/api/invites",
+  "title": "invites",
+  "text": "Revogar convite Revoga um convite pendente e remove o link permanentemente do banco. Developers só podem revogar convites pendentes criados por eles; admins podem revogar qualquer um."
+ },
+ {
+  "id": "api.invites.delete",
+  "path": "/docs/api/invites",
+  "title": "invites",
+  "text": "Remover convite Remove permanentemente um convite do projeto (apenas admins). Retorna 204 sem corpo."
+ },
+ {
+  "id": "api.ciTokens.description",
+  "path": "/docs/api/ci-tokens",
+  "title": "ciTokens",
+  "text": "Tokens de autenticação para pipelines de CI/CD. Começam com ci_, podem ser limitados a escopos e a um ambiente, e o valor em texto claro é exibido apenas uma vez, na criação. Na pipeline, o token é trocado por uma sessão de 1 hora (ci_s_…)."
+ },
+ {
+  "id": "api.ciTokens.vaultWarning",
+  "path": "/docs/api/ci-tokens",
+  "title": "ciTokens",
+  "text": "O token sozinho não decifra nada: os valores são cifrados com a senha do cofre do projeto. A pipeline precisa do token e da senha do cofre (por exemplo, nos secrets CRIPTENV_TOKEN e CRIPTENV_VAULT_PASSWORD)."
+ },
+ {
+  "id": "api.ciTokens.create",
+  "path": "/docs/api/ci-tokens",
+  "title": "ciTokens",
+  "text": "Criar token o campo token só aparece nesta resposta. Nome descritivo do token Descrição opcional Escopos no formato acao:recurso. Padrão: [\"read:secrets\"] Limita o token a um ambiente (ex: production), que precisa existir no projeto. Se omitido, vale para todos. Ambientes restritos ficam de fora: um ambiente restrito exige um token criado para ele. Expiração opcional (ISO 8601)"
+ },
+ {
+  "id": "api.ciTokens.list",
+  "path": "/docs/api/ci-tokens",
+  "title": "ciTokens",
+  "text": "Listar tokens Retorna os tokens do projeto. O valor do token nunca é retornado após a criação."
+ },
+ {
+  "id": "api.ciTokens.revoke",
+  "path": "/docs/api/ci-tokens",
+  "title": "ciTokens",
+  "text": "Revogar token Revoga o token imediatamente. Responde 204 No Content."
+ },
+ {
+  "id": "api.ciTokens.delete",
+  "path": "/docs/api/ci-tokens",
+  "title": "ciTokens",
+  "text": "Remover token Remove o token permanentemente. Responde 204 No Content."
+ },
+ {
+  "id": "api.ciTokens.pipeline",
+  "path": "/docs/api/ci-tokens",
+  "title": "ciTokens",
+  "text": "Usar o token na pipeline Troque o token por uma sessão de 1 hora e baixe os blobs cifrados do ambiente. A decifragem acontece no cliente, com a senha do cofre. Na prática, use a CLI (criptenv ci login) ou a GitHub Action, que fazem a troca e a decifragem por você."
+ },
+ {
+  "id": "api.integrations.description",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Conecte o CriptEnv a provedores de hospedagem para sincronizar secrets. Disponíveis hoje: Vercel, Render e Cloudflare Workers (Railway em breve)."
+ },
+ {
+  "id": "api.integrations.callout",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "push envia os secrets do CriptEnv para o provedor e pull os lê do provedor (só Vercel e Render). O cliente decifra antes do push e cifra depois do pull: o servidor nunca vê as chaves do vault."
+ },
+ {
+  "id": "api.integrations.create",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Criar integração Conecta uma nova integração com um provedor de hospedagem. O token do provedor é armazenado cifrado no servidor. Provedor: vercel, render ou cloudflare. Provedores desconhecidos retornam 422. Nome da integração Configuração do provedor; chaves ausentes retornam 422. Vercel: api_token, project_id e team_id em projetos de time. Render: api_token e service_id. Cloudflare: api_token, account_id e script_name."
+ },
+ {
+  "id": "api.integrations.list",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Listar integrações Retorna as integrações do projeto e os provedores disponíveis para conectar. O campo features traz os recursos de sincronização do plano do dono do projeto (auto_sync, ci_sync, sync_redeploy)."
+ },
+ {
+  "id": "api.integrations.get",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Obter integração Retorna os detalhes de uma integração específica."
+ },
+ {
+  "id": "api.integrations.delete",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Remover integração Remove a integração e o token do provedor armazenado. Retorna 204 sem corpo."
+ },
+ {
+  "id": "api.integrations.sync",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Sincronizar Executa um sync entre o CriptEnv e o provedor. Use push para enviar secrets ou pull para lê-los; o pull devolve os valores em secrets para o cliente cifrar no vault. Falhas do provedor respondem 200 com success: false e a mensagem do provedor. Direção: push ou pull Ambiente no provedor. Vercel: production, preview ou development (padrão: production). Render e Cloudflare o ignoram. Secrets já decifrados a enviar ao provedor. O servidor nunca decifra o vault, então um push sem este campo não envia nada. Só no push: chaves a remover do provedor (as que foram apagadas no CriptEnv). Exige o plano Max do dono do projeto. deploy_scheduled diz se um novo deploy foi agendado no provedor. Com uma sessão de CI (ci_s_), este endpoint exige o plano Max do dono do projeto e responde 402 nos demais."
+ },
+ {
+  "id": "api.integrations.validate",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Validar integração Verifica se a conexão com o provedor funciona com as credenciais armazenadas."
+ },
+ {
+  "id": "api.integrations.update",
+  "path": "/docs/api/integrations",
+  "title": "integrations",
+  "text": "Atualizar envio automático e deploy Define o vínculo de envio automático e a opção de deploy da integração. Campos omitidos não mudam. Ligar qualquer um dos dois exige o plano Max do dono do projeto (402 Plan feature required); desligar funciona em qualquer plano. Mapa de id do ambiente do CriptEnv para o destino no provedor (Vercel: production, preview ou development; Render e Cloudflare: production). Mapa vazio desliga o envio automático. Dispara um novo deploy no provedor cerca de 1 minuto depois do último envio. Na Vercel vale só para production; a Cloudflare não precisa."
+ },
+ {
+  "id": "api.environments.title",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Ambientes"
+ },
+ {
+  "id": "api.environments.description",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Ambientes permitem isolar conjuntos de segredos dentro de um projeto — normalmente production, staging e development. Cada ambiente possui sua própria chave de criptografia, derivada no cliente a partir da senha do vault do projeto."
+ },
+ {
+  "id": "api.environments.params",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "ID do projeto (path parameter) ID do ambiente (path parameter)"
+ },
+ {
+  "id": "api.environments.create",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Criar Ambiente Cria um novo ambiente dentro de um projeto. Requer papel de admin. Nome do ambiente: letras minúsculas, números e hífens (ex: staging). Deve ser único no projeto. Nome legível Marca como ambiente padrão do projeto Restringe o ambiente ao dono e aos administradores do projeto Exemplo — Criar ambiente"
+ },
+ {
+  "id": "api.environments.list",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Listar Ambientes Retorna os ambientes ativos (não arquivados) do projeto. Quando chamado com uma API key restrita a um ambiente, só esse ambiente é retornado e api_key_environment_scope indica qual. Exemplo — Listar ambientes"
+ },
+ {
+  "id": "api.environments.get",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Obter Ambiente por ID Retorna um ambiente específico. Ambientes arquivados retornam 404. Exemplo — Obter ambiente"
+ },
+ {
+  "id": "api.environments.update",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Atualizar Ambiente Atualiza o nome de exibição ou o indicador de padrão de um ambiente. O name não pode ser alterado. Requer papel de admin. Também aceita restricted, para restringir o ambiente ou abri-lo ao time. Novo nome de exibição Torna o ambiente padrão true restringe o ambiente; false abre ao time Exemplo — Atualizar ambiente"
+ },
+ {
+  "id": "api.environments.delete",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Arquivar Ambiente Arquiva o ambiente: ele some das listagens e seus endpoints passam a retornar 404. O ambiente padrão não pode ser removido. Requer papel de admin. Ambientes arquivados deixam de ser acessíveis pela API e pela CLI. Para continuar usando os secrets, exporte-os antes de arquivar. Resposta vazia — o ambiente foi arquivado. Exemplo — Arquivar ambiente"
+ },
+ {
+  "id": "api.environments.limits",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Todo projeto nasce com development, staging e production. O plano do dono define quantos ambientes o projeto pode ter: 3 no Free, 5 no Pro e 7 no Max. Acima do limite, criar retorna 402."
+ },
+ {
+  "id": "api.environments.restricted",
+  "path": "/docs/api/environments",
+  "title": "Ambientes",
+  "text": "Ambientes restritos Um ambiente com restricted: true só existe para o dono e os administradores do projeto: para os outros papéis ele não aparece na lista e seus endpoints retornam 404. Tokens de CI e API keys só o alcançam quando são criados para ele. Os três ambientes iniciais e o ambiente padrão não podem ser restritos (422). A restrição é aplicada pelo servidor e não desfaz o que alguém já baixou."
+ },
+ {
+  "id": "api.vault.description",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "O Vault armazena e sincroniza os segredos criptografados de cada ambiente. Os dados sempre trafegam criptografados; o servidor nunca vê os valores em texto claro (zero-knowledge)."
+ },
+ {
+  "id": "api.vault.flow",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "Fluxo Zero-Knowledge Antes de usar os endpoints do Vault, é importante entender o fluxo de criptografia. Toda a criptografia e descriptografia acontece no cliente:"
+ },
+ {
+  "id": "api.vault.permissions",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "Leituras aceitam sessão de membro, API key com read:secrets (restrita ao seu ambiente, se tiver escopo) ou sessão de CI. Escritas exigem papel admin para pessoas, ou uma sessão de CI com escopo write:secrets; aqui as API keys são somente leitura."
+ },
+ {
+  "id": "api.vault.push",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "Push Segredos Envia os blobs criptografados do ambiente. O push substitui todo o conjunto armazenado no ambiente, então envie todos os segredos, não só os alterados. Passe expected_version para controle de concorrência otimista. Lista completa dos segredos criptografados do ambiente Nome do segredo (ex: DATABASE_URL) — armazenado em texto claro IV do AES-GCM (12 bytes, base64) Valor criptografado (base64) Auth tag do AES-GCM (16 bytes, base64) Checksum de integridade calculado pelo cliente Versão do segredo (≥ 1) Prova da senha do vault; obrigatória quando o projeto tem vault configurado Versão do ambiente em que sua alteração se baseia; omita para pular a verificação de conflito Exemplo — Push de segredos"
+ },
+ {
+  "id": "api.vault.conflict",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "Detecção de Conflitos Se o ambiente mudou desde expected_version, a API rejeita o push com um conflito. Uma prova de vault incorreta retorna 403. Em caso de conflito, faça um pull da versão mais recente, reaplique sua alteração e faça o push novamente."
+ },
+ {
+  "id": "api.vault.pull",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "Pull Segredos Retorna todos os blobs criptografados do ambiente e a versão atual. Descriptografe-os no cliente com a chave derivada da senha do vault. Exemplo — Pull de segredos"
+ },
+ {
+  "id": "api.vault.version",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "Versão do Vault Retorna a versão atual do vault do ambiente e a quantidade de blobs — uma forma barata de verificar alterações sem baixar os blobs. Exemplo — Verificar versão"
+ },
+ {
+  "id": "api.vault.deploy",
+  "path": "/docs/api/vault",
+  "title": "vault",
+  "text": "Exemplo Completo — Deploy Na pipeline, deixe a CLI cuidar do pull e da descriptografia: ela deriva as chaves e injeta os valores em memória. Deploy com os segredos em memória"
+ },
+ {
+  "id": "api.rotation.breadcrumb",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Rotação"
+ },
+ {
+  "id": "api.rotation.title",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Rotação e expiração"
+ },
+ {
+  "id": "api.rotation.description",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Rotacione segredos, defina datas e políticas de expiração e configure alertas de expiração do projeto."
+ },
+ {
+  "id": "api.rotation.callout",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Os endpoints por segredo ficam sob /projects/'{pid}'/environments/'{eid}'/secrets/'{secret_key}'. Rotacionar e definir ou remover expiração exigem o papel admin; consultar status e histórico exige apenas ser membro."
+ },
+ {
+  "id": "api.rotation.rotate",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Rotacionar segredo Grava uma nova versão do segredo. O novo valor é cifrado no cliente como qualquer valor do vault; o servidor recebe apenas new_value (ciphertext), iv e auth_tag. Na prática, use criptenv rotate, que gera, cifra e envia o valor. Novo valor, já cifrado (ciphertext em base64) IV do AES-GCM (base64) Auth tag do AES-GCM (base64) Motivo da rotação (máx. 500 caracteres) Versão do ambiente para controle de concorrência otimista"
+ },
+ {
+  "id": "api.rotation.expiration",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Definir expiração Define quando o segredo expira e o que acontece nesse momento. Nome do segredo Data e hora de expiração (ISO 8601) manual, notify (padrão) ou auto Dias antes da expiração para enviar o alerta"
+ },
+ {
+  "id": "api.rotation.status",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Status da rotação Retorna a versão atual, a expiração e a política do segredo."
+ },
+ {
+  "id": "api.rotation.history",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Histórico de rotações Lista as rotações do segredo, com quem rotacionou e o motivo."
+ },
+ {
+  "id": "api.rotation.removeExpiration",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Remover expiração Remove a configuração de expiração do segredo."
+ },
+ {
+  "id": "api.rotation.expiring",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Segredos expirando Lista os segredos do projeto que expiram dentro da janela informada. Dias à frente para verificar (padrão: 30, máx: 365)"
+ },
+ {
+  "id": "api.rotation.alerts",
+  "path": "/docs/api/rotation",
+  "title": "Rotação e expiração",
+  "text": "Configurações de alerta Configurações de alerta de expiração do projeto, sob /projects/'{pid}'/alert-settings. Exige o papel admin. A URL do webhook nunca é retornada inteira, só um preview. Consultar configurações Atualizar configurações Testar webhook Envia um alerta de teste para o webhook configurado. Liga ou desliga os alertas de expiração Dias padrão antes da expiração para alertar (1-365) Canais: in_app, email, webhook (booleanos) URL HTTPS que recebe os alertas por webhook"
+ },
+ {
+  "id": "api.members.title",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Membros"
+ },
+ {
+  "id": "api.members.description",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "O sistema de membros controla quem tem acesso a cada projeto e com qual nível de permissão. Cada membro é associado a um projeto com um papel."
+ },
+ {
+  "id": "api.members.roles",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Papéis (Roles) Papel Permissões Criador do projeto. Tudo o que um admin pode fazer; não pode ser concedido por convite. Acesso total: configurações, ambientes, membros, convites, escrita no vault, rotação, expiração e re-key do vault. Lê e usa segredos; pode revogar convites que criou. Sem configurações, gestão de membros ou escrita no vault. Leitura do projeto sem ações administrativas."
+ },
+ {
+  "id": "api.members.rekeyCallout",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Remover um membro não muda a senha do vault que ele conhecia. Para impedir o acesso de um ex-membro aos dados cifrados, um admin deve fazer o re-key do vault (POST /api/v1/projects/'{id}'/vault/rekey) após a remoção."
+ },
+ {
+  "id": "api.members.params",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "ID do projeto (path parameter) ID do membro (path parameter) Papel: admin, developer ou viewer"
+ },
+ {
+  "id": "api.members.add",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Adicionar membro Adiciona ao projeto um usuário existente do CriptEnv pelo user_id. Requer papel admin. Para convidar alguém por email, use a API de Convites. ID do usuário a adicionar Exemplo — Adicionar membro"
+ },
+ {
+  "id": "api.members.list",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Listar Membros Retorna todos os membros do projeto. Qualquer membro pode chamar. Exemplo — Listar membros"
+ },
+ {
+  "id": "api.members.get",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Obter membro Retorna um membro do projeto."
+ },
+ {
+  "id": "api.members.update",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Atualizar Papel do Membro Altera o papel de um membro. Requer papel admin. Exemplo — Alterar papel"
+ },
+ {
+  "id": "api.members.remove",
+  "path": "/docs/api/members",
+  "title": "Membros",
+  "text": "Remover Membro Remove um membro do projeto. Requer papel admin. Resposta vazia — o membro foi removido. Exemplo — Remover membro"
+ },
+ {
+  "id": "api.projects.title",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Projetos"
+ },
+ {
+  "id": "api.projects.description",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Projetos são a unidade organizacional principal do CriptEnv. Cada projeto tem seus ambientes, membros e um vault próprio, protegido pela senha do vault do projeto."
+ },
+ {
+  "id": "api.projects.vaultCallout",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "A senha do vault nunca chega ao servidor. Na criação, o cliente deriva as chaves e envia apenas vault_config (salts, parâmetros do KDF e um verificador cifrado) e vault_proof. Use o dashboard web ou criptenv projects create, que fazem isso por você."
+ },
+ {
+  "id": "api.projects.params",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "ID do projeto (path parameter)"
+ },
+ {
+  "id": "api.projects.create",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Criar Projeto Cria um projeto. O usuário autenticado se torna o owner. Nome do projeto Slug opcional (letras minúsculas, números e hífens); gerado a partir do nome se omitido Descrição opcional Configurações livres do projeto Parâmetros do vault gerados pelo cliente (salts, iterações, verificador cifrado) Prova derivada da senha do vault Exemplo — Criar projeto"
+ },
+ {
+  "id": "api.projects.list",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Listar Projetos Retorna os projetos dos quais o usuário é membro, com o papel dele em cada um. Inclui projetos arquivados Exemplo — Listar projetos"
+ },
+ {
+  "id": "api.projects.get",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Obter Projeto por ID Retorna um projeto do qual o usuário é membro."
+ },
+ {
+  "id": "api.projects.update",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Atualizar Projeto Atualiza nome, descrição, configurações ou o indicador de arquivado do projeto. Requer papel admin. Novo nome Nova descrição Novas configurações Arquiva ou desarquiva o projeto Exemplo — Atualizar projeto"
+ },
+ {
+  "id": "api.projects.delete",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Deletar Projeto Remove permanentemente o projeto. Requer papel owner. Isso remove o projeto com todos os ambientes, segredos cifrados, membros e convites. Não pode ser desfeito. Para esconder um projeto sem perder dados, arquive-o. Resposta vazia — o projeto foi removido. Exemplo — Deletar projeto"
+ },
+ {
+  "id": "api.projects.rekey",
+  "path": "/docs/api/projects",
+  "title": "Projetos",
+  "text": "Re-key do Vault Troca a senha do vault do projeto. O cliente decifra todos os ambientes com a senha atual, cifra de novo com a nova e envia tudo em uma requisição; o servidor confere o current_vault_proof e substitui a configuração e os blobs. Requer papel admin. Prova da senha atual do vault Parâmetros do vault para a nova senha Prova da nova senha do vault Todos os ambientes com seus blobs cifrados de novo com a nova senha Retorna o projeto atualizado. Exemplo — Re-key"
+ },
+ {
+  "id": "api.authentication.title",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "Autenticação"
+ },
+ {
+  "id": "api.authentication.description",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "A API do CriptEnv suporta múltiplos métodos de autenticação para diferentes cenários: dashboard web, integrações de terceiros e pipelines de CI/CD."
+ },
+ {
+  "id": "api.authentication.overview",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "Visão Geral Todas as requisições autenticadas devem incluir uma credencial válida. A API identifica o tipo pelo formato: Tipo Prefixo Duração Uso Sessão cookie 30 dias, ou 20 dias sem uso Dashboard web e CLI (criptenv login) API Key cek_ Até ser revogada ou a expiração opcional Contêineres e scripts, somente leitura CI Token ci_ → ci_s_ Token até ser revogado; cada sessão ci_s_ dura 1 hora Pipelines de CI/CD: lê, grava e sincroniza A integração com a hospedagem (Vercel, Render, Cloudflare) não é uma credencial: é o CriptEnv enviando as variáveis de um ambiente para o provedor. Um ambiente restrito só é alcançado pelo dono, pelos administradores e por tokens de CI ou API keys criados para ele."
+ },
+ {
+  "id": "api.authentication.session",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "Sessão (Cookies) Quando você faz login pelo dashboard web, o servidor cria um cookie HTTP-only seguro que o navegador envia automaticamente em todas as requisições seguintes. A CLI (criptenv login) recebe uma sessão do mesmo tipo, com os mesmos prazos, enviada no cabeçalho Authorization e guardada cifrada em ~/.criptenv. O cookie de sessão é HttpOnly, Secure e usa SameSite=Lax. Ele não pode ser lido via JavaScript, o que o protege contra XSS. Fluxo de Login Se a conta tiver 2FA ativo e o navegador não estiver lembrado, o login retorna um desafio temporário e não cria cookie de sessão até a validação do segundo fator. Expiração da Sessão A sessão expira 30 dias após o login, ou antes, após 20 dias sem nenhuma requisição. Ela não é estendida além dos 30 dias; depois disso, é preciso fazer login novamente."
+ },
+ {
+  "id": "api.authentication.apiKeys",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "API Keys API Keys têm prefixo cek_ e valem até serem revogadas (ou até a expiração opcional). São ideais para integrações server-to-server que leem projetos, ambientes e vault blobs criptografados pela API pública. Cada chave fica presa ao projeto em que foi criada: GET /api/v1/projects lista só esse projeto, e qualquer outro projeto responde 404, mesmo que você seja membro dele. Escopos API keys só leem. Uma key fica meses dentro de um contêiner ou de um arquivo e funciona sem senha nem segundo fator, então uma key vazada não pode alterar nem apagar nada. Para gravar segredos ou sincronizar com a hospedagem, use um CI token (sessão curta) ou o login. environment_scope precisa ser um ambiente existente. A key age como quem a criou: se essa pessoa perde o acesso, a key perde junto. Escopo Permissão Leitura de projetos, ambientes e vault blobs criptografados Leitura do histórico de auditoria do projeto. Só em chave sem environment_scope Restringe a key ao ambiente informado. É o único jeito de uma key alcançar um ambiente restrito Permite leitura em todos os ambientes do projeto, menos os restritos Criar uma API Key O campo key é retornado apenas na criação. Guarde-o em um local seguro; se perder, revogue a chave e crie uma nova. Usar API Key nas requisições"
+ },
+ {
+  "id": "api.authentication.ci",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "CI Tokens CI Tokens têm prefixo ci_ e são projetados para pipelines de CI/CD. O pipeline troca o token por uma sessão temporária ci_s_ de 1 hora, com escopos como read:secrets, write:secrets e write:integrations. Sem environment_scope, o token vale para todos os ambientes não restritos; um ambiente restrito exige um token criado para ele. Gerar um CI Token Usar CI Token no GitHub Actions Guarde o token (ci_...) e a senha do cofre como GitHub Secrets. A Action troca o token por uma sessão ci_s_ (POST /api/v1/auth/ci-login), baixa os blobs (GET /api/v1/ci/secrets) e decifra localmente com a senha do cofre."
+ },
+ {
+  "id": "api.authentication.oauth",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "O CriptEnv suporta login social via OAuth 2.0 com os seguintes provedores: GitHub — ideal para desenvolvedores que já usam GitHub no dia a dia. Google — login rápido com sua conta Google corporativa ou pessoal. Discord — para membros da comunidade CriptEnv no Discord. O provedor devolve o usuário para /api/auth/oauth/github/callback?code=…&state=…. A API valida o state, troca o código, cria ou vincula a conta, cria o cookie de sessão e redireciona para o app."
+ },
+ {
+  "id": "api.authentication.errors",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "Erros de Autenticação Os erros seguem o formato do FastAPI: um campo detail com a mensagem, ou um objeto com code e message para erros de escopo e de ambiente."
+ },
+ {
+  "id": "api.authentication.practices",
+  "path": "/docs/api/authentication",
+  "title": "Autenticação",
+  "text": "Boas Práticas Use API Keys para integrações server-to-server com os escopos mínimos necessários. Use CI Tokens em pipelines: cada sessão dura só 1 hora. Nunca exponha API Keys no frontend ou em logs de CI. Rotacione API Keys periodicamente e revogue chaves não utilizadas. Defina environment_scope para limitar o impacto de uma chave comprometida."
+ },
+ {
+  "id": "api.overview.description",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "A API REST do CriptEnv permite integrar o gerenciamento de segredos em qualquer pipeline, ferramenta ou aplicação. Esta referência cobre os endpoints disponíveis, autenticação, formato de resposta e tratamento de erros."
+ },
+ {
+  "id": "api.overview.baseUrl",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "URL Base Todos os endpoints da API ficam sob esta URL base: Os endpoints de autenticação (login, sessões, 2FA, OAuth) ficam sob /api/auth. Todas as requisições devem usar HTTPS."
+ },
+ {
+  "id": "api.overview.auth",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "Autenticação A API aceita três tipos de credencial, cada um adequado a um cenário diferente: Sessão Cookie HTTP-only criado no login, para o dashboard web. Dura 30 dias, ou 20 dias sem uso. API Key Token com prefixo cek_ para contêineres e scripts, somente leitura. Pode ser restrito a um ambiente. CI Token Token com prefixo ci_ para pipelines de CI/CD, trocado por sessões ci_s_ de 1 hora. Para mais detalhes sobre cada método, consulte a documentação de autenticação."
+ },
+ {
+  "id": "api.overview.format",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "Formato de Resposta Todas as respostas são JSON, com Content-Type application/json. Resposta de Sucesso Resposta de Lista Listas vêm dentro de um objeto, com os itens e um total. Resposta de Erro"
+ },
+ {
+  "id": "api.overview.status",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "Códigos de Status HTTP Sucesso — operação concluída Criado — recurso criado com sucesso Sem conteúdo — operação sem retorno (ex: DELETE) Requisição inválida — dados ou operação inválidos Não autenticado — credencial ausente ou inválida Proibido — sem permissão para esta operação Não encontrado — recurso não existe ou você não tem acesso Conflito — recurso já existe ou versão desatualizada Não processável — a requisição falhou na validação Limite excedido — muitas requisições Erro interno — erro inesperado no servidor"
+ },
+ {
+  "id": "api.overview.rateLimit",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "Rate Limiting A API aplica limites de taxa para proteger o serviço contra abuso. Os limites variam conforme o tipo de autenticação: Credencial Limite Janela por minuto Endpoints públicos (por IP) API Key (por chave) CI Token (por token) Endpoints de auth (por IP) Os headers de rate limit são incluídos nas respostas: Quando o limite é excedido, a API retorna 429 Too Many Requests com um campo retry_after (em segundos) no corpo da resposta."
+ },
+ {
+  "id": "api.overview.pagination",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "Paginação A maioria das listas retorna todos os itens de uma vez. Os endpoints paginados documentam seus próprios parâmetros — por exemplo, o audit log usa page e per_page (padrão 50, máx. 100)."
+ },
+ {
+  "id": "api.overview.domains",
+  "path": "/docs/api",
+  "title": "overview",
+  "text": "Referência por Domínio Autenticação Sessões, API Keys, CI Tokens e OAuth. Projetos CRUD de projetos e re-key do vault. Ambientes Ambientes dentro de um projeto. Vault Push, pull e versionamento de segredos criptografados. Membros Papéis e acesso aos projetos. Convites Convites por email para entrar em um projeto. CI Tokens Tokens para pipelines de CI/CD. Rotação Rotação, expiração e alertas. Integrações Sincronização com Vercel e Render. Auditoria Registro de auditoria do projeto. Health Verificações de disponibilidade."
+ }
+]

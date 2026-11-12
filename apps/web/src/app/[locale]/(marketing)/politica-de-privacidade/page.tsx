@@ -83,7 +83,7 @@ export default function PrivacyPage() {
             </LegalP>
           </>
         }
-        version="Versão 2.0 · Em vigor desde 12 de novembro de 2026 · Encarregado (DPO): support@criptenv.dev"
+        version="Versão 2.1 · Em vigor desde 12 de novembro de 2026 · Encarregado (DPO): support@criptenv.dev"
       >
         <LegalSection id="1-dados" title="1. Dados tratados, finalidades e bases legais">
           <LegalP>
@@ -185,7 +185,22 @@ export default function PrivacyPage() {
             infraestrutura. A cada pagamento aprovado, os dados para nota são
             enviados por e-mail ao mantenedor, que emite a nota fiscal.
           </LegalP>
-          <LegalSub title="1.6. Doações e metadados" />
+          <LegalSub title="1.6. Chat de suporte" />
+          <LegalP>
+            O chat de suporte das páginas públicas é respondido por um modelo
+            de linguagem da <strong>Anthropic (Claude)</strong>. O texto que
+            você escreve e o histórico daquela conversa são enviados à API da
+            Anthropic só para gerar a resposta (legítimo interesse em prestar
+            suporte, art. 7º, IX, da LGPD).{" "}
+            <strong>
+              O CriptEnv não guarda o texto das conversas
+            </strong>
+            : o histórico fica apenas no seu navegador, até a aba ser fechada.
+            No servidor registramos só contagens (mensagens e tokens) e o
+            endereço IP, para limitar o uso. Não escreva no chat senhas,
+            tokens, chaves ou dados pessoais de terceiros.
+          </LegalP>
+          <LegalSub title="1.7. Doações e metadados" />
           <LegalP>
             Doações: apenas os dados voluntariamente informados (nome e e-mail
             opcionais; valor; status), para confirmação, agradecimento e
@@ -239,6 +254,11 @@ export default function PrivacyPage() {
                   "Processamento das doações Pix e das assinaturas (cobrança recorrente e reembolsos). Os dados do cartão e os dados transacionais ficam com o provedor; recebe de nós o e-mail do pagador, o valor e a descrição do plano.",
               },
               {
+                label: "Anthropic",
+                value:
+                  "Respostas do chat de suporte; recebe as mensagens da conversa. Pelos termos comerciais da API, não as usa para treinar modelos e as retém por prazo limitado.",
+              },
+              {
                 label: "Resend",
                 value: "Envio de e-mails transacionais (destinatário e conteúdo da mensagem).",
               },
@@ -266,7 +286,7 @@ export default function PrivacyPage() {
         <LegalSection id="3-transferencia" title="3. Transferência internacional de dados">
           <LegalP>
             Alguns operadores podem processar dados fora do território
-            brasileiro (por exemplo, Cloudflare e Resend, nos Estados Unidos;
+            brasileiro (por exemplo, Cloudflare, Resend e Anthropic, nos Estados Unidos;
             GitHub, Google e Discord em centros de dados globais). A
             transferência rege-se pelo <strong>art. 33 da LGPD</strong>, com
             garantias como cláusulas contratuais padrão do fornecedor,

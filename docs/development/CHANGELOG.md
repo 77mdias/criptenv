@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Chat de suporte com o Claude — 2026-11-12
+
+- **Botão com a carinha de bot** no canto inferior direito da landing, das páginas legais e da documentação. Responde qualquer dúvida sobre o CriptEnv com o Claude Sonnet (`claude-sonnet-5-5`), no idioma da página, com streaming. A pessoa pode esconder o botão; o link **Suporte** no rodapé abre o chat de novo.
+- **Conhecimento:** uma base de perguntas e respostas escrita para o suporte (produto, segurança, credenciais, Docker, CI, hospedagem, ambientes, equipe, planos, cobrança, cancelamento, conta), sempre carregada com cache, mais busca por trechos na documentação do site.
+- **Custo e abuso:** 20 mensagens por hora por visitante, teto diário configurável (`SUPPORT_DAILY_LIMIT`, padrão 500), perguntas de até 1.000 caracteres, só as últimas 10 mensagens vão ao modelo. Sem `ANTHROPIC_API_KEY`, o chat fica desligado.
+- **Privacidade:** o texto das conversas não é guardado nem vai para log; o histórico fica só no navegador. A Política de Privacidade passa à versão 2.1, com a Anthropic como operadora.
+- O limitador de requisições em memória passa a respeitar a janela de cada bucket (antes expirava sempre em 60 s).
+
 ### Termos de Uso e Política de Privacidade 2.0: assinaturas — 2026-11-12
 
 - **Termos de Uso:** deixam de descrever o serviço como só gratuito. Nova cláusula 5 com os planos e preços, contratação no Mercado Pago, renovação automática, 7 dias de tolerância para cobrança recusada, cancelamento, arrependimento em até 7 dias (art. 49 do CDC), troca de plano, conta acima do limite, exclusão da conta com assinatura ativa e nota fiscal. Se o serviço for descontinuado antes do fim de um período pago, a parte não usada é devolvida (1.5.1).
