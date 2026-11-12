@@ -3,6 +3,7 @@ import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { Brand } from "@/components/layout/brand";
 import { StatusBadge } from "@/components/ui/status-badge";
+import { SupportLink } from "@/components/support/support-link";
 
 async function Footer() {
   const t = await getTranslations("common.footer");
@@ -38,6 +39,7 @@ async function Footer() {
               >
                 {t("privacy")}
               </Link>
+              <SupportLink className="hover:text-[var(--text-primary)] transition" />
               <Link
                 href="https://github.com/77mdias/criptenv"
                 className="hover:text-[var(--text-primary)] transition"

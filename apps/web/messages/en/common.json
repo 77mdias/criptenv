@@ -107,5 +107,24 @@
   "billingNotice": {
     "text": "We could not charge your subscription. Your plan holds until {date}.",
     "action": "Fix it"
+  },
+  "support": {
+    "open": "Open support",
+    "title": "CriptEnv support",
+    "hide": "Hide the support button",
+    "close": "Close",
+    "notice": "Messages go to Anthropic (Claude) to generate the answer. Do not paste real secrets here.",
+    "greeting": "Hi! Ask anything about CriptEnv: security, plans, CLI, Docker, CI...",
+    "placeholder": "Type your question",
+    "send": "Send",
+    "thinking": "Thinking...",
+    "footerLink": "Support",
+    "errors": {
+      "refusal": "I can't answer that question. To talk to a person, write to support@criptenv.dev.",
+      "unavailable": "Support didn't answer right now. Try again in a moment or write to support@criptenv.dev.",
+      "rateLimit": "You sent many messages in the last hour. Try again later or write to support@criptenv.dev.",
+      "dailyLimit": "Support reached today's message limit. Write to support@criptenv.dev.",
+      "off": "Chat support is off right now. Write to support@criptenv.dev."
+    }
   }
 }

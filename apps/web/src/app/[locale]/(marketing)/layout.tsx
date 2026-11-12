@@ -1,6 +1,7 @@
 import { getTranslations } from "next-intl/server";
 import { MarketingHeader } from "@/components/layout/marketing-header";
 import { FloatingBar } from "@/components/floating-bar/floating-bar";
+import { SupportChat } from "@/components/support/support-chat";
 
 export default async function MarketingLayout({
   children,
@@ -19,6 +20,7 @@ export default async function MarketingLayout({
       <MarketingHeader />
       <FloatingBar />
       <main id="conteudo">{children}</main>
+      <SupportChat />
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{

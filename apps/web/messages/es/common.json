@@ -107,5 +107,24 @@
   "billingNotice": {
     "text": "No pudimos cobrar tu suscripción. Tu plan sigue hasta el {date}.",
     "action": "Resolver"
+  },
+  "support": {
+    "open": "Abrir el soporte",
+    "title": "Soporte CriptEnv",
+    "hide": "Ocultar el botón de soporte",
+    "close": "Cerrar",
+    "notice": "Los mensajes van a Anthropic (Claude) para generar la respuesta. No pegues secretos reales aquí.",
+    "greeting": "¡Hola! Pregunta lo que quieras sobre CriptEnv: seguridad, planes, CLI, Docker, CI...",
+    "placeholder": "Escribe tu duda",
+    "send": "Enviar",
+    "thinking": "Pensando...",
+    "footerLink": "Soporte",
+    "errors": {
+      "refusal": "No puedo responder esa pregunta. Para hablar con una persona, escribe a support@criptenv.dev.",
+      "unavailable": "El soporte no respondió ahora. Inténtalo de nuevo en un momento o escribe a support@criptenv.dev.",
+      "rateLimit": "Enviaste muchos mensajes en la última hora. Inténtalo más tarde o escribe a support@criptenv.dev.",
+      "dailyLimit": "El soporte alcanzó el límite de mensajes de hoy. Escribe a support@criptenv.dev.",
+      "off": "El soporte por chat está apagado en este momento. Escribe a support@criptenv.dev."
+    }
   }
 }

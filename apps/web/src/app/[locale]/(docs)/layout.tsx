@@ -7,6 +7,7 @@ import { cn } from "@/lib/utils";
 import { DocSidebar, MobileDocSidebar } from "@/components/docs/doc-sidebar";
 import { DocTOC } from "@/components/docs/doc-toc";
 import { FloatingBar } from "@/components/floating-bar/floating-bar";
+import { SupportChat } from "@/components/support/support-chat";
 import { ThemeSwitch } from "@/components/ui/theme-switch";
 import { Search, ChevronDown, ChevronRight } from "lucide-react";
 import { SearchModal, openDocSearch } from "@/components/docs/search-modal";
@@ -133,6 +134,7 @@ export default function DocsLayout({
 
       {/* Main content area */}
       <DocsMainContent>{children}</DocsMainContent>
+      <SupportChat />
     </div>
   );
 }
