@@ -25,7 +25,7 @@ class Settings(BaseSettings):
     # web app. Recorded on the user row at signup (terms_version +
     # terms_accepted_at) as evidence of acceptance. Bump this together with the
     # pages and docs/legal/ when the instrument changes.
-    TERMS_VERSION: str = "1.0"
+    TERMS_VERSION: str = "2.0"
     # Secure by default: DEBUG governs the cookie `Secure` flag and whether the
     # API docs and one-time development tokens are exposed, so a deployment that
     # forgets to set it must not silently turn those on.

@@ -3,6 +3,7 @@
 import { useState, type FormEvent } from "react"
 import { useTranslations } from "next-intl"
 
+import { Link } from "@/i18n/navigation"
 import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
@@ -75,6 +76,21 @@ export function TaxInfoForm({ mode, initial, busy, onSubmit }: TaxInfoFormProps)
         )}
 
         {mode === "checkout" && <p className="text-xs text-(--text-muted)">{t("tax.payHint")}</p>}
+        {mode === "checkout" && (
+          <p className="text-xs text-(--text-muted)">
+            {t.rich("tax.termsHint", {
+              link: (chunks) => (
+                <Link
+                  href="/termos-de-uso#5-assinaturas"
+                  target="_blank"
+                  className="font-medium text-(--accent) underline-offset-4 hover:underline"
+                >
+                  {chunks}
+                </Link>
+              ),
+            })}
+          </p>
+        )}
         <Button type="submit" loading={busy}>
           {mode === "checkout" ? t("tax.pay") : t("tax.save")}
         </Button>
