@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { PermissionDialog } from "@/components/shared/permission-dialog";
 import { RolePicker } from "@/components/shared/role-picker";
@@ -173,6 +174,7 @@ export default function MembersPage() {
     useState<(typeof roles)[number]>("developer");
   const [inviting, setInviting] = useState(false);
   const [permissionOpen, setPermissionOpen] = useState(false);
+  const [removing, setRemoving] = useState<Member | null>(null);
   // The plan of the project's owner. null = unknown: no usage shown, nothing disabled; the API still enforces.
   const [plan, setPlan] = useState<Plan | null>(null);
   const [limitHit, setLimitHit] = useState(false);
@@ -300,13 +302,15 @@ export default function MembersPage() {
     }
   };
 
-  const handleRemove = async (member: Member) => {
+  const handleRemove = (member: Member) => {
     if (!canManageMembers) {
       setPermissionOpen(true);
       return;
     }
-    const displayName = member.name || member.email || member.user_id;
-    if (!window.confirm(t("confirmRemove", { name: displayName }))) return;
+    setRemoving(member);
+  };
+
+  const removeMember = async (member: Member) => {
     setBusyId(member.id);
     setError(null);
     try {
@@ -611,6 +615,17 @@ export default function MembersPage() {
         </Card>
       )}
       <PermissionDialog open={permissionOpen} onOpenChange={setPermissionOpen} />
+      <ConfirmActionDialog
+        open={removing !== null}
+        title={removing ? t("confirmRemove", { name: removing.name || removing.email || removing.user_id }) : ""}
+        destructive
+        onOpenChange={(open) => !open && setRemoving(null)}
+        onConfirm={() => {
+          // The row's own busy state (busyId) shows the progress.
+          setRemoving(null);
+          if (removing) void removeMember(removing);
+        }}
+      />
     </div>
   );
 }

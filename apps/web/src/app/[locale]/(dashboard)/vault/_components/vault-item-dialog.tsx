@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Input } from "@/components/ui/input"
+import { Select } from "@/components/ui/select"
 import { ApiError } from "@/lib/api/client"
 import { CryptoError } from "@/lib/crypto"
 import {
@@ -69,16 +70,15 @@ export function FolderSelect({ id, label, folders, value, onChange }: {
       <label htmlFor={id} className={labelClass}>
         {label}
       </label>
-      <select id={id} className={textareaClass + " min-h-10"} value={value} onChange={(event) => onChange(event.target.value)}>
-        <option value="">{t("folders.none")}</option>
-        {folders.map(({ folder, name }) =>
-          name === null ? null : (
-            <option key={folder.id} value={folder.id}>
-              {name}
-            </option>
-          ),
-        )}
-      </select>
+      <Select
+        id={id}
+        value={value}
+        onValueChange={onChange}
+        options={[
+          { value: "", label: t("folders.none") },
+          ...folders.flatMap(({ folder, name }) => (name === null ? [] : [{ value: folder.id, label: name }])),
+        ]}
+      />
     </div>
   )
 }
@@ -199,7 +199,7 @@ function ItemForm({
     }
   }
 
-  const set = (key: keyof typeof emptyForm) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) =>
+  const set = (key: keyof typeof emptyForm) => (event: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) =>
     setForm((current) => ({ ...current, [key]: event.target.value }))
 
   const extraInput = (
@@ -233,10 +233,15 @@ function ItemForm({
               <label htmlFor="vault-item-type" className={labelClass}>
                 {t("itemDialog.type")}
               </label>
-              <select id="vault-item-type" className={textareaClass + " min-h-10"} value={form.type} onChange={set("type")}>
-                <option value="login">{t("itemDialog.typeLogin")}</option>
-                <option value="note">{t("itemDialog.typeNote")}</option>
-              </select>
+              <Select
+                id="vault-item-type"
+                value={form.type}
+                onValueChange={(type) => setForm((current) => ({ ...current, type: type as typeof emptyForm.type }))}
+                options={[
+                  { value: "login", label: t("itemDialog.typeLogin") },
+                  { value: "note", label: t("itemDialog.typeNote") },
+                ]}
+              />
             </div>
           )}
           <Input label={t("itemDialog.title")} value={form.title} onChange={set("title")} autoFocus />

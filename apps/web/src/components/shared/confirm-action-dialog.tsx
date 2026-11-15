@@ -15,7 +15,8 @@ import {
 interface ConfirmActionDialogProps {
   open: boolean
   title: string
-  description: string
+  /** Leave out when the title already says it all. */
+  description?: string
   confirmLabel?: string
   cancelLabel?: string
   destructive?: boolean
@@ -42,7 +43,8 @@ export function ConfirmActionDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-md" showClose={false}>
+      {/* Radix warns about a dialog with no description unless aria-describedby is cleared. */}
+      <DialogContent className="max-w-md" showClose={false} {...(description ? {} : { "aria-describedby": undefined })}>
         <div className="flex items-start gap-3">
           <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[var(--background-muted)] text-[var(--text-primary)]">
             <AlertTriangle className="h-5 w-5" />
@@ -50,7 +52,7 @@ export function ConfirmActionDialog({
           <div className="min-w-0">
             <DialogHeader className="mb-0 pr-0">
               <DialogTitle>{title}</DialogTitle>
-              <DialogDescription className="mt-2">{description}</DialogDescription>
+              {description && <DialogDescription className="mt-2">{description}</DialogDescription>}
             </DialogHeader>
           </div>
         </div>
