@@ -13,6 +13,7 @@ import {
   X,
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -44,6 +45,7 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
   const [createdKey, setCreatedKey] = useState<APIKeyCreateResponse | null>(null);
   const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [revokingId, setRevokingId] = useState<string | null>(null);
 
   const fetchKeys = useCallback(async () => {
     try {
@@ -117,7 +119,6 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
   };
 
   const handleRevoke = async (keyId: string) => {
-    if (!window.confirm(t("revokeConfirm"))) return;
     try {
       await apiKeysApi.revoke(projectId, keyId);
       void fetchKeys();
@@ -286,13 +287,24 @@ export function ApiKeysPanel({ projectId }: ApiKeysPanelProps) {
                   )}
                 </div>
               </div>
-              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={() => handleRevoke(key.id)}>
+              <Button variant="ghost" size="icon" className="h-8 w-8 text-red-600" onClick={() => setRevokingId(key.id)}>
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           ))}
         </div>
       )}
+      <ConfirmActionDialog
+        open={revokingId !== null}
+        title={t("revokeConfirm")}
+        description={t("revokeConfirmDescription")}
+        destructive
+        onOpenChange={(open) => !open && setRevokingId(null)}
+        onConfirm={() => {
+          setRevokingId(null);
+          if (revokingId) void handleRevoke(revokingId);
+        }}
+      />
     </Card>
   );
 }

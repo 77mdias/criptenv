@@ -2,6 +2,12 @@ function inputByLabel(label: string | RegExp) {
   return cy.contains("label", label).parent().find("input, textarea")
 }
 
+/** Picks an option in a themed select: a button whose list opens outside the dialog. */
+function pick(trigger: string, option: string) {
+  cy.get(trigger).click()
+  cy.contains('[role="option"]', option).click()
+}
+
 // PBKDF2 at 600k iterations runs in the browser; give key derivation room.
 const CRYPTO_TIMEOUT = 30000
 
@@ -29,7 +35,7 @@ describe("personal vault", () => {
 
   function addNote(title: string, content: string) {
     cy.contains("button", "Novo item", { timeout: 15000 }).click()
-    cy.get("#vault-item-type").select("note")
+    pick("#vault-item-type", "Nota segura")
     inputByLabel("Título").type(title)
     inputByLabel("Conteúdo").type(content)
     cy.contains("button", "Salvar").click()
@@ -145,10 +151,10 @@ describe("personal vault", () => {
     folderButton("Trabalho").should("be.visible")
 
     cy.contains("button", "Novo item").click()
-    cy.get("#vault-item-type").select("note")
+    pick("#vault-item-type", "Nota segura")
     inputByLabel("Título").type("Chave")
     inputByLabel("Conteúdo").type("abc-123")
-    cy.get("#vault-item-folder").select("Trabalho")
+    pick("#vault-item-folder", "Trabalho")
     cy.contains("button", "Salvar").click()
     row("Chave").should("be.visible")
 
@@ -159,14 +165,14 @@ describe("personal vault", () => {
 
     // Moving only re-encrypts the summary: no extra password, the note stays readable.
     cy.get('button[aria-label="Mover Chave"]').click()
-    cy.get("#vault-move-folder").select("Sem pasta")
+    pick("#vault-move-folder", "Sem pasta")
     cy.contains("button", /^Mover$/).click()
     cy.contains("li", "Chave", { timeout: 15000 }).should("not.exist")
     folderButton("Sem pasta").click()
     row("Chave").should("be.visible")
 
     cy.get('button[aria-label="Mover Chave"]').click()
-    cy.get("#vault-move-folder").select("Trabalho")
+    pick("#vault-move-folder", "Trabalho")
     cy.contains("button", /^Mover$/).click()
     cy.contains("li", "Chave", { timeout: 15000 }).should("not.exist")
     folderButton("Trabalho").click()
@@ -174,6 +180,7 @@ describe("personal vault", () => {
 
     // Deleting the folder never deletes its items: they show under "Sem pasta".
     cy.get('button[aria-label="Apagar Trabalho"]').click()
+    cy.get('[role="dialog"]').contains("button", "Apagar").click()
     cy.contains("h2", "Todas", { timeout: 15000 }).should("be.visible")
     cy.get('nav[aria-label="Pastas"] button[aria-label^="Trabalho,"]').should("not.exist")
     folderButton("Sem pasta").click()

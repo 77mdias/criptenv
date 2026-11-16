@@ -4,6 +4,7 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslations } from "next-intl";
 import { Camera, Trash2, Loader2 } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { authApi } from "@/lib/api";
 
 interface AvatarUploadProps {
@@ -22,6 +23,7 @@ export function AvatarUpload({
   const [previewUrl, setPreviewUrl] = useState<string | null>(currentAvatarUrl);
   const [isUploading, setIsUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [confirmOpen, setConfirmOpen] = useState(false);
   // A broken avatar URL would otherwise render the raw `alt` text (the full
   // name) inside the circle. Tracking WHICH url failed (instead of a boolean +
   // effect reset) retries automatically when the avatar changes and avoids
@@ -86,8 +88,6 @@ export function AvatarUpload({
 
   const handleDelete = useCallback(async () => {
     if (!previewUrl) return;
-
-    if (!window.confirm(t("avatar.removeConfirm"))) return;
 
     setIsUploading(true);
     setError(null);
@@ -176,7 +176,7 @@ export function AvatarUpload({
           <Button
             size="sm"
             variant="ghost"
-            onClick={handleDelete}
+            onClick={() => setConfirmOpen(true)}
             disabled={isUploading}
             className="text-xs text-red-500 hover:text-red-400 hover:bg-red-500/10"
           >
@@ -196,6 +196,17 @@ export function AvatarUpload({
       <p className="text-[10px] text-[var(--text-muted)] font-mono text-center">
         {t("avatar.hint")}
       </p>
+      <ConfirmActionDialog
+        open={confirmOpen}
+        title={t("avatar.removeConfirm")}
+        confirmLabel={t("avatar.remove")}
+        destructive
+        onOpenChange={setConfirmOpen}
+        onConfirm={() => {
+          setConfirmOpen(false);
+          void handleDelete();
+        }}
+      />
     </div>
   );
 }

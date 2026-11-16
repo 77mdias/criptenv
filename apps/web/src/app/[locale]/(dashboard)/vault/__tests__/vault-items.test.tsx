@@ -109,6 +109,18 @@ function type(label: string, value: string, container: HTMLElement | Document = 
   fireEvent.change(scope.getByLabelText(label), { target: { value } })
 }
 
+/** Picks an option in the themed select: its list is rendered outside the dialog. */
+function choose(label: string, option: string, container: HTMLElement) {
+  fireEvent.click(within(container).getByLabelText(label))
+  fireEvent.click(screen.getByRole("option", { name: option }))
+}
+
+/** Answers yes in the delete confirmation dialog. */
+async function confirmDelete() {
+  const dialog = await screen.findByRole("dialog")
+  fireEvent.click(within(dialog).getByRole("button", { name: "Apagar" }))
+}
+
 describe("vault items", () => {
   it("filters by search and type", async () => {
     await renderItems()
@@ -215,10 +227,12 @@ describe("vault items", () => {
   })
 
   it("deletes after confirmation", async () => {
-    jest.spyOn(window, "confirm").mockReturnValue(true)
     mocked(api.deletePersonalVaultItem).mockResolvedValue(undefined)
     await renderItems()
     fireEvent.click(screen.getByRole("button", { name: "Apagar Wi-Fi" }))
+    expect(await screen.findByText('"Wi-Fi" vai ser apagado. Isso não pode ser desfeito.')).toBeInTheDocument()
+    expect(api.deletePersonalVaultItem).not.toHaveBeenCalled()
+    await confirmDelete()
     await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i3"))
     await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
   })
@@ -370,16 +384,15 @@ describe("vault items", () => {
   })
 
   it("deleting an item already deleted elsewhere just reloads", async () => {
-    jest.spyOn(window, "confirm").mockReturnValue(true)
     mocked(api.deletePersonalVaultItem).mockRejectedValue(new ApiError("Item not found", 404, null))
     await renderItems()
     fireEvent.click(screen.getByRole("button", { name: "Apagar Wi-Fi" }))
+    await confirmDelete()
     await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
     expect(screen.queryByText("Não foi possível salvar. Tente de novo.")).not.toBeInTheDocument()
   })
 
   it("an undecryptable item is listed as unreadable and the rest still shows", async () => {
-    jest.spyOn(window, "confirm").mockReturnValue(true)
     mocked(api.deletePersonalVaultItem).mockResolvedValue(undefined)
     mocked(api.listPersonalVaultItems).mockResolvedValue([item("i1", true), item("i2"), item("i3")])
     mocked(vaultCrypto.decryptSummary).mockImplementation(async (id) => {
@@ -403,6 +416,7 @@ describe("vault items", () => {
     type("Buscar", "")
 
     fireEvent.click(screen.getByRole("button", { name: "Apagar Item ilegível" }))
+    await confirmDelete()
     await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
   })
 
@@ -560,7 +574,6 @@ describe("folders", () => {
     mocked(vaultCrypto.encryptFolderName).mockResolvedValue(envelope)
     mocked(api.updatePersonalVaultFolder).mockResolvedValue(folder("f1", 2))
     mocked(api.deletePersonalVaultFolder).mockResolvedValue(undefined)
-    jest.spyOn(window, "confirm").mockReturnValue(true)
     await renderItems(undefined, { ...TWO, summaries: IN_FOLDERS })
 
     fireEvent.click(column().getByRole("button", { name: "Trabalho, 2 itens" }))
@@ -574,7 +587,8 @@ describe("folders", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
 
     fireEvent.click(screen.getByRole("button", { name: "Apagar Trabalho" }))
-    expect(window.confirm).toHaveBeenCalledWith('Apagar a pasta "Trabalho"? Os itens dela vão para Sem pasta.')
+    expect(await screen.findByText('A pasta "Trabalho" vai ser apagada. Os itens dela vão para Sem pasta.')).toBeInTheDocument()
+    await confirmDelete()
     await waitFor(() => expect(api.deletePersonalVaultFolder).toHaveBeenCalledWith("f1"))
     expect(await screen.findByRole("heading", { name: "Todas" })).toBeInTheDocument()
     expect(api.updatePersonalVaultItem).not.toHaveBeenCalled()
@@ -636,7 +650,6 @@ describe("review fixes", () => {
     mocked(vaultCrypto.encryptItem).mockResolvedValue({ ...ENC, protected: false })
     mocked(api.createPersonalVaultItem).mockRejectedValue(new ApiError("Plan limit reached", 402, null))
     mocked(api.deletePersonalVaultItem).mockResolvedValue(undefined)
-    jest.spyOn(window, "confirm").mockReturnValue(true)
     await renderItems()
 
     fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
@@ -647,6 +660,7 @@ describe("review fixes", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
 
     fireEvent.click(screen.getByRole("button", { name: "Apagar GitHub" }))
+    await confirmDelete()
     await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
     await waitFor(() =>
       expect(screen.queryByText("Você chegou ao limite de itens do plano gratuito.")).not.toBeInTheDocument(),
@@ -687,7 +701,7 @@ describe("item folders", () => {
     fireEvent.click(column().getByRole("button", { name: "Trabalho, 2 itens" }))
     fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
     let dialog = await screen.findByRole("dialog")
-    expect(within(dialog).getByLabelText("Pasta")).toHaveValue("f1")
+    expect(within(dialog).getByLabelText("Pasta")).toHaveTextContent("Trabalho")
     type("Título", "Banco", dialog)
     fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
     await waitFor(() => expect(api.createPersonalVaultItem).toHaveBeenCalledTimes(1))
@@ -696,7 +710,7 @@ describe("item folders", () => {
     await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
     fireEvent.click(screen.getByRole("button", { name: "Novo item" }))
     dialog = await screen.findByRole("dialog")
-    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "" } })
+    choose("Pasta", "Sem pasta", dialog)
     type("Título", "Solto", dialog)
     fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
     await waitFor(() => expect(api.createPersonalVaultItem).toHaveBeenCalledTimes(2))
@@ -712,7 +726,7 @@ describe("item folders", () => {
     fireEvent.click(screen.getByRole("button", { name: "Editar Wi-Fi" }))
     let dialog = await screen.findByRole("dialog")
     await waitFor(() => expect(within(dialog).getByLabelText("Título")).toHaveValue("Wi-Fi"))
-    expect(within(dialog).getByLabelText("Pasta")).toHaveValue("f1")
+    expect(within(dialog).getByLabelText("Pasta")).toHaveTextContent("Trabalho")
     fireEvent.click(within(dialog).getByRole("button", { name: "Salvar" }))
     await waitFor(() => expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1))
     expect(plainOf(0)).toMatchObject({ folderId: "f1" })
@@ -739,9 +753,9 @@ describe("item folders", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Mover Instagram" }))
     const dialog = await screen.findByRole("dialog")
-    expect(within(dialog).getByLabelText("Pasta")).toHaveValue("f1")
+    expect(within(dialog).getByLabelText("Pasta")).toHaveTextContent("Trabalho")
     expect(within(dialog).queryByLabelText("Senha de proteção extra")).not.toBeInTheDocument()
-    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "f2" } })
+    choose("Pasta", "Pessoal", dialog)
     fireEvent.click(within(dialog).getByRole("button", { name: "Mover" }))
 
     await waitFor(() => expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1))
@@ -758,7 +772,7 @@ describe("item folders", () => {
     await renderItems(undefined, TWO)
     fireEvent.click(screen.getByRole("button", { name: "Mover Wi-Fi" }))
     const dialog = await screen.findByRole("dialog")
-    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "" } })
+    choose("Pasta", "Sem pasta", dialog)
     fireEvent.click(within(dialog).getByRole("button", { name: "Mover" }))
     await waitFor(() => expect(vaultCrypto.resealSummary).toHaveBeenCalledTimes(1))
     expect(mocked(vaultCrypto.resealSummary).mock.calls[0][1]).toEqual({ type: "note", title: "Wi-Fi" })
@@ -773,7 +787,7 @@ describe("item folders", () => {
     await renderItems(undefined, TWO)
     fireEvent.click(screen.getByRole("button", { name: "Mover GitHub" }))
     const dialog = await screen.findByRole("dialog")
-    fireEvent.change(within(dialog).getByLabelText("Pasta"), { target: { value: "f1" } })
+    choose("Pasta", "Trabalho", dialog)
     fireEvent.click(within(dialog).getByRole("button", { name: "Mover" }))
     expect(await screen.findByText(text)).toBeInTheDocument()
     expect(api.updatePersonalVaultItem).toHaveBeenCalledTimes(1)

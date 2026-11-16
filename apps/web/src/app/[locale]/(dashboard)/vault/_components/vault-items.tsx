@@ -6,6 +6,7 @@ import { KeyRound, Lock, Pencil, Plus, Settings, ShieldAlert, ShieldCheck, Stick
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Skeleton } from "@/components/ui/skeleton"
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { EmptyState } from "@/components/shared/empty-state"
 import {
   deletePersonalVaultFolder,
@@ -75,6 +76,9 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   const [siteIcons, setSiteIcons] = useState(readSiteIconsSetting)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
+  // The deletion waiting for a yes in the confirm dialog; `run` never throws.
+  const [confirming, setConfirming] = useState<{ title: string; description: string; run: () => Promise<void> } | null>(null)
+  const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
     let cancelled = false
@@ -171,32 +175,41 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
 
   const reload = () => setReloadToken((n) => n + 1)
 
-  async function handleDelete(itemId: string, title: string) {
-    if (!window.confirm(t("items.deleteConfirm", { title }))) return
-    try {
-      await deletePersonalVaultItem(itemId)
-      setLimitHit(null)
-      reload()
-    } catch (err) {
-      // Already deleted in another tab: the goal is met, just refresh the list.
-      if (err instanceof ApiError && err.status === 404) reload()
-      else setError(t("errors.save"))
-    }
+  function handleDelete(itemId: string, title: string) {
+    setConfirming({
+      title: t("items.deleteTitle"),
+      description: t("items.deleteConfirm", { title }),
+      run: async () => {
+        try {
+          await deletePersonalVaultItem(itemId)
+          setLimitHit(null)
+          reload()
+        } catch (err) {
+          // Already deleted in another tab: the goal is met, just refresh the list.
+          if (err instanceof ApiError && err.status === 404) reload()
+          else setError(t("errors.save"))
+        }
+      },
+    })
   }
 
-  async function handleDeleteFolder(target: DecryptedFolder) {
-    const name = target.name ?? t("folders.unreadable")
-    if (!window.confirm(t("folders.deleteConfirm", { name }))) return
-    try {
-      // Only the folder row goes: its items fall under "none" on their own.
-      await deletePersonalVaultFolder(target.folder.id)
-      setSelected("all")
-      setLimitHit(null)
-      reload()
-    } catch (err) {
-      if (err instanceof ApiError && err.status === 404) reload()
-      else setError(t("errors.save"))
-    }
+  function handleDeleteFolder(target: DecryptedFolder) {
+    setConfirming({
+      title: t("folders.deleteTitle"),
+      description: t("folders.deleteConfirm", { name: target.name ?? t("folders.unreadable") }),
+      run: async () => {
+        try {
+          // Only the folder row goes: its items fall under "none" on their own.
+          await deletePersonalVaultFolder(target.folder.id)
+          setSelected("all")
+          setLimitHit(null)
+          reload()
+        } catch (err) {
+          if (err instanceof ApiError && err.status === 404) reload()
+          else setError(t("errors.save"))
+        }
+      },
+    })
   }
 
   function copy(value: string) {
@@ -247,7 +260,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
               </Button>
             )}
             {currentFolder && (
-              <Button type="button" size="icon" variant="ghost" aria-label={t("folders.delete", { name: currentLabel })} onClick={() => void handleDeleteFolder(currentFolder)}>
+              <Button type="button" size="icon" variant="ghost" aria-label={t("folders.delete", { name: currentLabel })} onClick={() => handleDeleteFolder(currentFolder)}>
                 <Trash2 aria-hidden className="h-4 w-4" />
               </Button>
             )}
@@ -309,7 +322,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
                       onReveal={() => setRevealing(entry)}
                       onMove={() => setMoving(entry)}
                       onEdit={() => setEditing(entry)}
-                      onDelete={() => void handleDelete(item.id, summary.title)}
+                      onDelete={() => handleDelete(item.id, summary.title)}
                     />
                   </li>
                 )
@@ -328,7 +341,7 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
                     size="icon"
                     variant="ghost"
                     aria-label={t("items.delete", { title: t("items.unreadable") })}
-                    onClick={() => void handleDelete(item.id, t("items.unreadable"))}
+                    onClick={() => handleDelete(item.id, t("items.unreadable"))}
                   >
                     <Trash2 aria-hidden className="h-4 w-4" />
                   </Button>
@@ -400,6 +413,22 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
           setMoving(null)
           setNotice(reason === "deleted" ? t("itemDialog.deleted") : t("itemDialog.conflict"))
           reload()
+        }}
+      />
+      <ConfirmActionDialog
+        open={confirming !== null}
+        title={confirming?.title ?? ""}
+        description={confirming?.description}
+        confirmLabel={t("items.menu.delete")}
+        destructive
+        loading={deleting}
+        onOpenChange={(open) => !open && !deleting && setConfirming(null)}
+        onConfirm={async () => {
+          if (!confirming) return
+          setDeleting(true)
+          await confirming.run()
+          setDeleting(false)
+          setConfirming(null)
         }}
       />
       <VaultSettingsDialog

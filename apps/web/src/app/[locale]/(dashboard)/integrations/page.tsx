@@ -9,6 +9,7 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Skeleton } from "@/components/ui/skeleton";
+import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog";
 import { EmptyState } from "@/components/shared/empty-state";
 import { OneWaySyncNotice } from "@/components/shared/one-way-sync-notice";
 import { isPlanFull, PlanUsage } from "@/components/shared/plan-usage";
@@ -62,6 +63,7 @@ export default function IntegrationsPage() {
   const [saving, setSaving] = useState(false);
   const [validatingId, setValidatingId] = useState<string | null>(null);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [removing, setRemoving] = useState<Integration | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [form, setForm] = useState(() => emptyForm("vercel"));
   // The plan of the selected project's owner. null = unknown: no usage shown, nothing disabled; the API still enforces.
@@ -220,7 +222,6 @@ export default function IntegrationsPage() {
 
   const handleDelete = async (integration: Integration) => {
     if (!selectedProjectId) return;
-    if (!window.confirm(t("removeConfirm", { name: integration.name }))) return;
 
     setDeletingId(integration.id);
     setError(null);
@@ -357,7 +358,7 @@ export default function IntegrationsPage() {
                         className="h-8 w-8 text-red-600"
                         loading={deletingId === integration.id}
                         aria-label={t("actions.remove")}
-                        onClick={() => handleDelete(integration)}
+                        onClick={() => setRemoving(integration)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -469,6 +470,18 @@ export default function IntegrationsPage() {
           </Card>
         </div>
       )}
+      <ConfirmActionDialog
+        open={removing !== null}
+        title={removing ? t("removeConfirm", { name: removing.name }) : ""}
+        confirmLabel={t("actions.remove")}
+        destructive
+        onOpenChange={(open) => !open && setRemoving(null)}
+        onConfirm={() => {
+          // The row's own spinner (deletingId) shows the progress.
+          setRemoving(null);
+          if (removing) void handleDelete(removing);
+        }}
+      />
     </div>
   );
 }
