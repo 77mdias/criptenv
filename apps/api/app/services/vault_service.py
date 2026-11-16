@@ -117,6 +117,29 @@ class VaultService:
 
         return created_blobs, False
 
+    async def removes_keys(
+        self,
+        project_id: UUID,
+        environment_id: UUID,
+        pushed_key_ids: set[str],
+        expected_version: Optional[int] = None,
+    ) -> bool:
+        """Whether a push with these key ids would drop a secret the environment has now.
+
+        A push that is stale anyway drops nothing: push_blobs refuses it with a conflict.
+        """
+        environment = await self._get_active_environment(project_id, environment_id)
+        if expected_version is not None and environment.secrets_version != expected_version:
+            return False
+
+        result = await self.db.execute(
+            select(VaultBlob.key_id).where(
+                VaultBlob.environment_id == environment_id,
+                VaultBlob.project_id == project_id,
+            )
+        )
+        return any(key_id not in pushed_key_ids for key_id in result.scalars().all())
+
     async def pull_blobs(
         self,
         project_id: UUID,

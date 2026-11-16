@@ -58,6 +58,33 @@ describe("project vault and secrets", () => {
     })
   })
 
+  it("an account with 2FA only removes a secret with a valid code", () => {
+    cy.createProject("twofa-e2e", vaultPassword).then((projectId) => {
+      cy.enableTwoFactor()
+      cy.visitHydrated(`/projects/${projectId}/secrets`)
+      cy.contains("Desbloquear vault", { timeout: 15000 }).should("be.visible")
+      inputByLabel("Senha mestra").type(vaultPassword)
+      cy.contains("button", "Desbloquear").click()
+      cy.contains("Vault desbloqueado apenas nesta sessão", { timeout: 15000 }).should("be.visible")
+      cy.contains("Criar Secret").click()
+      inputByLabel("Chave").type("database_url")
+      inputByLabel("Valor").type("postgres://example")
+      cy.contains("button", "Salvar").click()
+      cy.contains("DATABASE_URL", { timeout: 15000 }).should("be.visible")
+
+      cy.get('[aria-label="Remover secret"]').click()
+      cy.get('[role="dialog"]').within(() => {
+        cy.contains("button", "Remover").should("be.disabled")
+        inputByLabel("Código de verificação").type("000000")
+        cy.contains("button", "Remover").click()
+        cy.contains("Código inválido", { timeout: 15000 }).should("be.visible")
+        cy.typeTwoFactorCode()
+        cy.contains("button", "Remover").click()
+      })
+      cy.contains("Nenhum secret neste ambiente", { timeout: 15000 }).should("be.visible")
+    })
+  })
+
   it("sets an expiration from the secret detail panel without unlocking the vault", () => {
     cy.createProject("detail-e2e", vaultPassword).then((projectId) => {
       cy.visit(`/projects/${projectId}/secrets?key=API_KEY`)

@@ -129,7 +129,12 @@
   "dialog": {
     "confirm": "Confirm",
     "cancel": "Cancel",
-    "close": "Close confirmation"
+    "close": "Close confirmation",
+    "twoFactorLabel": "Verification code",
+    "twoFactorHelp": "Your account has two-factor authentication. Enter the code from your authenticator app or a backup code.",
+    "twoFactorRequired": "Enter the code from your authenticator app to confirm.",
+    "twoFactorInvalid": "Invalid code. Check it and try again.",
+    "twoFactorLocked": "Too many attempts. Wait a few minutes and try again."
   },
   "header": {
     "signOut": "Sign out"

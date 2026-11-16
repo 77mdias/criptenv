@@ -35,7 +35,7 @@ Os segredos cifrados ficam perdidos para sempre. Ninguém, nem a equipe do Cript
 Quem invadir o banco de dados leva blocos ilegíveis. Os valores só podem ser lidos com a senha do cofre, que não fica no servidor. Ameaças e limites do modelo: /docs/security/threat-model
 
 **Tem autenticação em dois fatores?**
-Sim, 2FA por app autenticador (TOTP), com códigos de recuperação. Ative em Conta. A página Segurança, no painel, mostra o que falta proteger na sua conta.
+Sim, 2FA por app autenticador (TOTP), com códigos de recuperação. Ative em Conta. Com o 2FA ativo, apagar um segredo de projeto ou um item do cofre pessoal no painel também pede o código do autenticador (ou um código de recuperação). A página Segurança, no painel, mostra o que falta proteger na sua conta.
 
 **O que o zero-knowledge não protege?**
 O texto que aparece na sua tela depois de destravar o cofre, arquivos `.env` que você exportar, variáveis injetadas no seu CI e o que acontece na sua máquina ou no seu servidor.

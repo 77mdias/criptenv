@@ -129,7 +129,12 @@
   "dialog": {
     "confirm": "Confirmar",
     "cancel": "Cancelar",
-    "close": "Fechar confirmação"
+    "close": "Fechar confirmação",
+    "twoFactorLabel": "Código de verificação",
+    "twoFactorHelp": "Sua conta tem verificação em duas etapas. Digite o código do app autenticador ou um código de backup.",
+    "twoFactorRequired": "Digite o código do app autenticador para confirmar.",
+    "twoFactorInvalid": "Código inválido. Confira e tente de novo.",
+    "twoFactorLocked": "Muitas tentativas. Aguarde alguns minutos e tente de novo."
   },
   "header": {
     "signOut": "Sair da conta"

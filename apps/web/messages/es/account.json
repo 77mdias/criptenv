@@ -129,7 +129,12 @@
   "dialog": {
     "confirm": "Confirmar",
     "cancel": "Cancelar",
-    "close": "Cerrar confirmación"
+    "close": "Cerrar confirmación",
+    "twoFactorLabel": "Código de verificación",
+    "twoFactorHelp": "Tu cuenta tiene verificación en dos pasos. Escribe el código de tu app de autenticación o un código de respaldo.",
+    "twoFactorRequired": "Escribe el código de tu app de autenticación para confirmar.",
+    "twoFactorInvalid": "Código inválido. Revísalo e inténtalo de nuevo.",
+    "twoFactorLocked": "Demasiados intentos. Espera unos minutos e inténtalo de nuevo."
   },
   "header": {
     "signOut": "Cerrar sesión"

@@ -7,6 +7,7 @@ import { meApi, type Plan } from "@/lib/api/me"
 import * as vaultCrypto from "@/lib/personal-vault/crypto"
 import { PersonalVaultSessionProvider } from "../_components/vault-session"
 import { VaultItems } from "../_components/vault-items"
+import { useAuthStore } from "@/stores/auth"
 
 jest.mock("@/lib/api/personal-vault", () => ({
   getPersonalVaultConfig: jest.fn(),
@@ -233,8 +234,32 @@ describe("vault items", () => {
     expect(await screen.findByText('"Wi-Fi" vai ser apagado. Isso não pode ser desfeito.')).toBeInTheDocument()
     expect(api.deletePersonalVaultItem).not.toHaveBeenCalled()
     await confirmDelete()
-    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i3"))
+    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i3", undefined))
     await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+  })
+
+  it("an account with 2FA confirms the deletion with its code", async () => {
+    useAuthStore.setState({ user: { id: "u1", email: "ana@example.com", name: "Ana", kdf_salt: "s", avatar_url: null, two_factor_enabled: true } })
+    mocked(api.deletePersonalVaultItem)
+      .mockRejectedValueOnce(new ApiError("refused", 403, { detail: { code: "TWO_FACTOR_INVALID", message: "refused" } }))
+      .mockResolvedValue(undefined)
+    await renderItems()
+    fireEvent.click(screen.getByRole("button", { name: "Apagar Wi-Fi" }))
+    const dialog = await screen.findByRole("dialog")
+    const confirm = within(dialog).getByRole("button", { name: "Apagar" })
+    expect(confirm).toBeDisabled()
+
+    fireEvent.change(within(dialog).getByLabelText("Código de verificação"), { target: { value: "111111" } })
+    fireEvent.click(confirm)
+    expect(await within(dialog).findByText("Código inválido. Confira e tente de novo.")).toBeInTheDocument()
+    expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(1)
+
+    fireEvent.change(within(dialog).getByLabelText("Código de verificação"), { target: { value: "222222" } })
+    fireEvent.click(confirm)
+    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenLastCalledWith("i3", "222222"))
+    await waitFor(() => expect(screen.queryByRole("dialog")).not.toBeInTheDocument())
+    await waitFor(() => expect(api.listPersonalVaultItems).toHaveBeenCalledTimes(2))
+    useAuthStore.setState({ user: null })
   })
 
   it("mobile menu holds the item actions", async () => {
@@ -417,7 +442,7 @@ describe("vault items", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Apagar Item ilegível" }))
     await confirmDelete()
-    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
+    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2", undefined))
   })
 
   it("a create retried after a lost response saves the latest edits over the landed copy", async () => {
@@ -661,7 +686,7 @@ describe("review fixes", () => {
 
     fireEvent.click(screen.getByRole("button", { name: "Apagar GitHub" }))
     await confirmDelete()
-    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2"))
+    await waitFor(() => expect(api.deletePersonalVaultItem).toHaveBeenCalledWith("i2", undefined))
     await waitFor(() =>
       expect(screen.queryByText("Você chegou ao limite de itens do plano gratuito.")).not.toBeInTheDocument(),
     )
