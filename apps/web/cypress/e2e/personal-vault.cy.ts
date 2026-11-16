@@ -139,6 +139,23 @@ describe("personal vault", () => {
     cy.get("@icon.all").should("have.length", 1)
   })
 
+  it("an account with 2FA only deletes an item with a valid code", () => {
+    cy.enableTwoFactor()
+    createVault()
+    addNote("Chave", "abc-123")
+
+    cy.get('button[aria-label="Apagar Chave"]').click()
+    cy.get('[role="dialog"]').within(() => {
+      cy.contains("button", "Apagar").should("be.disabled")
+      inputByLabel("Código de verificação").type("000000")
+      cy.contains("button", "Apagar").click()
+      cy.contains("Código inválido", { timeout: 15000 }).should("be.visible")
+      cy.typeTwoFactorCode()
+      cy.contains("button", "Apagar").click()
+    })
+    cy.contains("li", "Chave", { timeout: 15000 }).should("not.exist")
+  })
+
   it("organizes items in folders and keeps them when the folder is deleted", () => {
     const folderButton = (name: string) =>
       cy.get(`nav[aria-label="Pastas"] button[aria-label^="${name},"]`, { timeout: 15000 })

@@ -15,6 +15,7 @@ import {
 } from "@/components/shared/secret-counts"
 import { deriveProjectEnvironmentKey, encrypt } from "@/lib/crypto"
 import { environmentsApi, peekCached, projectsApi, rotationApi, vaultApi } from "@/lib/api"
+import { twoFactorRefusal } from "@/lib/api/client"
 import { useCryptoStore } from "@/stores/crypto"
 import { toast } from "@/stores/toast"
 import type {
@@ -63,8 +64,9 @@ interface UseProjectSecretsResult {
     unlockVault: (material: { keyMaterial: CryptoKey; vaultProof: string }) => void
     lockVault: () => void
     saveSecret: (secret: SecretFormValue) => Promise<void>
-    deleteSecret: (secret: DecryptedSecret) => Promise<void>
-    deleteSecrets: (keys: string[]) => Promise<void>
+    /** Rejects with the API's 2FA refusal (see twoFactorRefusal) so the confirm dialog can show it. */
+    deleteSecret: (secret: DecryptedSecret, twoFactorCode?: string) => Promise<void>
+    deleteSecrets: (keys: string[], twoFactorCode?: string) => Promise<void>
     /** Resolves false when the vault write failed (the error is in `state.error`). */
     importSecrets: (importedSecrets: DecryptedSecret[], options?: { autoSync?: boolean }) => Promise<boolean>
     dismissAutoSync: () => void
@@ -329,7 +331,11 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   }, [])
 
   const pushSecrets = useCallback(
-    async (nextSecrets: DecryptedSecret[], options?: { autoSync?: boolean }): Promise<boolean> => {
+    async (
+      nextSecrets: DecryptedSecret[],
+      // `twoFactor`: this push drops a secret, so it carries the 2FA code and its caller handles a refusal.
+      options?: { autoSync?: boolean; twoFactor?: { code?: string } },
+    ): Promise<boolean> => {
       if (!activeEnv || !keyMaterial || !vaultProof) return false
 
       setSaving(true)
@@ -337,11 +343,12 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       try {
         const envKey = await deriveProjectEnvironmentKey(keyMaterial, activeEnv.id)
         const blobs = await encryptVault(nextSecrets, envKey, vaultVersion + 1)
-        const data = await vaultApi.push(projectId, activeEnv.id, {
-          blobs,
-          vault_proof: vaultProof,
-          expected_version: vaultVersion,
-        })
+        const data = await vaultApi.push(
+          projectId,
+          activeEnv.id,
+          { blobs, vault_proof: vaultProof, expected_version: vaultVersion },
+          options?.twoFactor?.code,
+        )
         await applyVaultPull(activeEnv, data.blobs, data.version)
         if (options?.autoSync !== false) {
           // Not awaited: the save is done; hosting is told afterwards and a failure there only shows a notice.
@@ -349,6 +356,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         }
         return true
       } catch (err) {
+        if (options?.twoFactor && twoFactorRefusal(err)) throw err
         setError(getErrorMessage(err, t("saveSecrets")))
         return false
       } finally {
@@ -397,17 +405,17 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   )
 
   const deleteSecrets = useCallback(
-    async (keys: string[]) => {
+    async (keys: string[], twoFactorCode?: string) => {
       if (keys.length === 0) return
       const keysToDelete = new Set(keys)
-      await pushSecrets(secrets.filter((item) => !keysToDelete.has(item.key)))
+      await pushSecrets(secrets.filter((item) => !keysToDelete.has(item.key)), { twoFactor: { code: twoFactorCode } })
     },
     [pushSecrets, secrets]
   )
 
   const deleteSecret = useCallback(
-    async (secret: DecryptedSecret) => {
-      await deleteSecrets([secret.key])
+    async (secret: DecryptedSecret, twoFactorCode?: string) => {
+      await deleteSecrets([secret.key], twoFactorCode)
     },
     [deleteSecrets]
   )

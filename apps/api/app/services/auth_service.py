@@ -663,12 +663,7 @@ class AuthService:
             await self.db.flush()
             raise ValueError("Too many invalid attempts; start a new 2FA challenge")
 
-        normalized_code = code.strip().replace(" ", "").upper()
-        verified = self._verify_totp_code(user, normalized_code)
-        if not verified:
-            verified = await self.verify_backup_code(user, normalized_code)
-
-        if not verified:
+        if not await self.verify_two_factor_code(user, code):
             challenge.failed_attempts = (challenge.failed_attempts or 0) + 1
             if challenge.failed_attempts >= self.MAX_2FA_CHALLENGE_ATTEMPTS:
                 challenge.consumed_at = datetime.now(timezone.utc)
@@ -692,6 +687,13 @@ class AuthService:
 
         await self.db.flush()
         return user, session, trusted_token
+
+    async def verify_two_factor_code(self, user: User, code: str) -> bool:
+        """A code from the authenticator or, failing that, an unused backup code (spent on use)."""
+        normalized_code = code.strip().replace(" ", "").upper()
+        if self._verify_totp_code(user, normalized_code):
+            return True
+        return await self.verify_backup_code(user, normalized_code)
 
     async def verify_backup_code(self, user: User, code: str) -> bool:
         """Verify a backup code and remove it from the user's list."""

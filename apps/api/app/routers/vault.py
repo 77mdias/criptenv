@@ -10,6 +10,7 @@ from app.services.vault_service import VaultService, ConflictError
 from app.services.audit_service import AuditService
 from app.schemas.vault import VaultPushRequest, VaultPullResponse, VaultBlobPull
 from app.middleware.auth import get_current_user, get_current_auth_context, AuthContext
+from app.middleware.second_factor import require_second_factor
 from app.middleware.ci_auth import (
     CI_SESSION_PREFIX,
     validate_ci_session,
@@ -174,6 +175,14 @@ async def push_vault(
         )
 
     try:
+        # Dropping a secret is a deletion: a dashboard user with 2FA confirms it with a code.
+        # CI tokens (no user) and CLI sessions are not asked.
+        if current_user is not None and current_user.two_factor_enabled is True:
+            if await vault_service.removes_keys(
+                project_uuid, env_uuid, {blob.key_id for blob in payload.blobs}, payload.expected_version
+            ):
+                await require_second_factor(request, current_user, db, exempt_cli=True)
+
         blobs_data = [blob.model_dump() for blob in payload.blobs]
         created_blobs, conflict = await vault_service.push_blobs(
             project_id=project_uuid,

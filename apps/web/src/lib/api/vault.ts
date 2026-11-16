@@ -1,4 +1,4 @@
-import { request } from './client';
+import { request, twoFactorHeaders } from './client';
 import type {
   VaultPushRequest,
   VaultPullResponse,
@@ -6,8 +6,9 @@ import type {
 } from './client';
 
 export const vaultApi = {
-  push(projectId: string, environmentId: string, body: VaultPushRequest): Promise<VaultPullResponse> {
-    return request('POST', `/api/v1/projects/${projectId}/environments/${environmentId}/vault/push`, body);
+  /** `twoFactorCode` confirms a push that drops a secret, for accounts with 2FA on. */
+  push(projectId: string, environmentId: string, body: VaultPushRequest, twoFactorCode?: string): Promise<VaultPullResponse> {
+    return request('POST', `/api/v1/projects/${projectId}/environments/${environmentId}/vault/push`, body, undefined, twoFactorHeaders(twoFactorCode));
   },
 
   pull(projectId: string, environmentId: string): Promise<VaultPullResponse> {

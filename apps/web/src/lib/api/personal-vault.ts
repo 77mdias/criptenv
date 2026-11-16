@@ -1,4 +1,4 @@
-import { ApiError, request } from "./client"
+import { ApiError, request, twoFactorHeaders } from "./client"
 import type { EncryptedField, EncryptedItem, PersonalVaultConfigInput } from "@/lib/personal-vault/crypto"
 
 // Web dashboard only: these routes accept the session cookie and refuse any
@@ -64,8 +64,9 @@ export function updatePersonalVaultItem(
   })
 }
 
-export function deletePersonalVaultItem(id: string): Promise<void> {
-  return request("DELETE", `${BASE}/items/${encodeURIComponent(id)}`)
+/** `twoFactorCode` confirms the deletion for accounts with 2FA on. */
+export function deletePersonalVaultItem(id: string, twoFactorCode?: string): Promise<void> {
+  return request("DELETE", `${BASE}/items/${encodeURIComponent(id)}`, undefined, undefined, twoFactorHeaders(twoFactorCode))
 }
 
 export { isPlanLimitError } from "./client"

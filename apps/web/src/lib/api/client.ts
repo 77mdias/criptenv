@@ -37,6 +37,26 @@ export function isPlanLimitError(error: unknown): boolean {
   return error instanceof ApiError && error.status === 402;
 }
 
+/** Carries the 2FA code that confirms a deletion for accounts with 2FA on. */
+export const TWO_FACTOR_HEADER = "X-2FA-Code";
+
+const TWO_FACTOR_REFUSALS = {
+  TWO_FACTOR_REQUIRED: "required",
+  TWO_FACTOR_INVALID: "invalid",
+  TWO_FACTOR_LOCKED: "locked",
+} as const;
+
+export type TwoFactorRefusal = (typeof TWO_FACTOR_REFUSALS)[keyof typeof TWO_FACTOR_REFUSALS];
+
+/** Why the API refused a deletion over its 2FA code, or null for any other error. */
+export function twoFactorRefusal(error: unknown): TwoFactorRefusal | null {
+  if (!(error instanceof ApiError)) return null;
+  const code = (error.body as { detail?: { code?: string } } | null)?.detail?.code;
+  return TWO_FACTOR_REFUSALS[code as keyof typeof TWO_FACTOR_REFUSALS] ?? null;
+}
+
+export const twoFactorHeaders = (code?: string) => (code ? { [TWO_FACTOR_HEADER]: code } : undefined);
+
 // ─── Types ─────────────────────────────────────────────────────────────────────
 
 export interface User {
@@ -609,6 +629,7 @@ export async function request<T>(
   path: string,
   body?: unknown,
   params?: Record<string, string | number | undefined>,
+  headers?: Record<string, string>,
 ): Promise<T> {
   const url = buildUrl(path, params);
   const cacheKey = url.toString();
@@ -616,7 +637,7 @@ export async function request<T>(
   const performFetch = async (): Promise<T> => {
     const res = await fetch(cacheKey, {
       method,
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...headers },
       credentials: "include",
       body: body ? JSON.stringify(body) : undefined,
     });

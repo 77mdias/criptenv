@@ -270,13 +270,14 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         }
         confirmLabel={t("remove")}
         destructive
+        secondFactor
         loading={state.saving}
         onOpenChange={(open) => {
           if (!open) setDeleteTarget(null)
         }}
-        onConfirm={async () => {
+        onConfirm={async (twoFactorCode) => {
           if (!deleteTarget) return
-          await actions.deleteSecret(deleteTarget)
+          await actions.deleteSecret(deleteTarget, twoFactorCode)
           setDeleteTarget(null)
         }}
       />
@@ -290,12 +291,13 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         }
         confirmLabel={t("bulkDeleteConfirm", { count: selectedSecrets.length })}
         destructive
+        secondFactor
         loading={state.saving}
         onOpenChange={(open) => setBulkDeleteOpen(open)}
-        onConfirm={async () => {
+        onConfirm={async (twoFactorCode) => {
           const keysToDelete = selectedSecrets.map((secret) => secret.key)
           if (keysToDelete.length === 0) return
-          await actions.deleteSecrets(keysToDelete)
+          await actions.deleteSecrets(keysToDelete, twoFactorCode)
           clearSelection()
           setBulkDeleteOpen(false)
         }}

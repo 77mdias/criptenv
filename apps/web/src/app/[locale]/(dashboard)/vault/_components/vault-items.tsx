@@ -16,7 +16,7 @@ import {
   type PersonalVaultConfig,
   type PersonalVaultItem,
 } from "@/lib/api/personal-vault"
-import { ApiError } from "@/lib/api/client"
+import { ApiError, twoFactorRefusal } from "@/lib/api/client"
 import { meApi, type Plan } from "@/lib/api/me"
 import { decryptFolderName, decryptSummary, type ItemSummary } from "@/lib/personal-vault/crypto"
 import { FolderColumn, type DecryptedFolder, type FolderSelection } from "./folder-column"
@@ -76,8 +76,13 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
   const [siteIcons, setSiteIcons] = useState(readSiteIconsSetting)
   const [notice, setNotice] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
-  // The deletion waiting for a yes in the confirm dialog; `run` never throws.
-  const [confirming, setConfirming] = useState<{ title: string; description: string; run: () => Promise<void> } | null>(null)
+  // The deletion waiting for a yes in the confirm dialog. `run` only rejects with a 2FA refusal, which the dialog shows.
+  const [confirming, setConfirming] = useState<{
+    title: string
+    description: string
+    secondFactor?: boolean
+    run: (twoFactorCode?: string) => Promise<void>
+  } | null>(null)
   const [deleting, setDeleting] = useState(false)
 
   useEffect(() => {
@@ -179,12 +184,14 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
     setConfirming({
       title: t("items.deleteTitle"),
       description: t("items.deleteConfirm", { title }),
-      run: async () => {
+      secondFactor: true,
+      run: async (twoFactorCode) => {
         try {
-          await deletePersonalVaultItem(itemId)
+          await deletePersonalVaultItem(itemId, twoFactorCode)
           setLimitHit(null)
           reload()
         } catch (err) {
+          if (twoFactorRefusal(err)) throw err
           // Already deleted in another tab: the goal is met, just refresh the list.
           if (err instanceof ApiError && err.status === 404) reload()
           else setError(t("errors.save"))
@@ -421,14 +428,18 @@ export function VaultItems({ vaultKey, config, onConfigChange }: Props) {
         description={confirming?.description}
         confirmLabel={t("items.menu.delete")}
         destructive
+        secondFactor={confirming?.secondFactor}
         loading={deleting}
         onOpenChange={(open) => !open && !deleting && setConfirming(null)}
-        onConfirm={async () => {
+        onConfirm={async (twoFactorCode) => {
           if (!confirming) return
           setDeleting(true)
-          await confirming.run()
-          setDeleting(false)
-          setConfirming(null)
+          try {
+            await confirming.run(twoFactorCode)
+            setConfirming(null)
+          } finally {
+            setDeleting(false)
+          }
         }}
       />
       <VaultSettingsDialog

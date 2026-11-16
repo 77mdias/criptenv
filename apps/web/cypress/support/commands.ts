@@ -7,6 +7,10 @@ declare global {
       visitHydrated(url: string): Chainable<void>
       signup(email?: string, password?: string): Chainable<void>
       createProject(name?: string, vaultPassword?: string): Chainable<string>
+      /** Turns 2FA on for the signed-in user through the API. Reload the page afterwards. */
+      enableTwoFactor(): Chainable<void>
+      /** Types the current authenticator code into the confirm dialog's code field. */
+      typeTwoFactorCode(): Chainable<void>
     }
   }
 }
@@ -83,6 +87,20 @@ Cypress.Commands.add("createProject", (name = "e2e-project", vaultPassword = "Va
   return cy.wait("@createProject")
     .its("response.body.id")
     .should("be.a", "string")
+})
+
+Cypress.Commands.add("enableTwoFactor", () => {
+  cy.request("POST", "/api/auth/2fa/setup").then(({ body }) => {
+    const secret = new URL(body.secret_uri).searchParams.get("secret")
+    cy.wrap(secret).as("totpSecret")
+    cy.task("totp", secret).then((code) => cy.request("POST", "/api/auth/2fa/verify", { code }))
+  })
+})
+
+Cypress.Commands.add("typeTwoFactorCode", () => {
+  cy.get<string>("@totpSecret")
+    .then((secret) => cy.task<string>("totp", secret))
+    .then((code) => inputByLabel("Código de verificação").type(code))
 })
 
 export {}

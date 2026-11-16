@@ -1,10 +1,24 @@
 import { defineConfig } from "cypress"
 import { execFileSync } from "node:child_process"
+import { createHmac } from "node:crypto"
 import { existsSync } from "node:fs"
 import { dirname, join, resolve } from "node:path"
 import { fileURLToPath } from "node:url"
 
 const configDir = dirname(fileURLToPath(import.meta.url))
+
+/** The current 6-digit code for a base32 TOTP secret (RFC 6238: SHA-1, 30 s), as an authenticator app shows it. */
+function totp(secret: string): string {
+  const bits = [...secret.replace(/=+$/, "").toUpperCase()]
+    .map((char) => "ABCDEFGHIJKLMNOPQRSTUVWXYZ234567".indexOf(char).toString(2).padStart(5, "0"))
+    .join("")
+  const key = Buffer.from((bits.match(/.{8}/g) ?? []).map((byte) => parseInt(byte, 2)))
+  const counter = Buffer.alloc(8)
+  counter.writeBigUInt64BE(BigInt(Math.floor(Date.now() / 30000)))
+  const hmac = createHmac("sha1", key).update(counter).digest()
+  const offset = hmac[hmac.length - 1] & 0xf
+  return String((hmac.readUInt32BE(offset) & 0x7fffffff) % 1_000_000).padStart(6, "0")
+}
 
 export default defineConfig({
   e2e: {
@@ -15,6 +29,7 @@ export default defineConfig({
           console.log(message)
           return null
         },
+        totp,
         resetDb() {
           const apiRoot = resolve(configDir, "../api")
           const venvPython = join(apiRoot, ".venv", "bin", "python")

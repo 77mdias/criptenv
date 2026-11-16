@@ -87,7 +87,7 @@ async def fake_db():
 async def test_vault_push_rejects_project_v1_without_proof():
     app = FastAPI()
     app.include_router(vault_router)
-    user = SimpleNamespace(id=uuid4(), email="dev@example.com")
+    user = SimpleNamespace(id=uuid4(), email="dev@example.com", two_factor_enabled=False)
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db] = fake_db
 
@@ -128,7 +128,7 @@ async def test_vault_push_rejects_project_v1_without_proof():
 async def test_vault_push_passes_expected_version_to_service():
     app = FastAPI()
     app.include_router(vault_router)
-    user = SimpleNamespace(id=uuid4(), email="dev@example.com")
+    user = SimpleNamespace(id=uuid4(), email="dev@example.com", two_factor_enabled=False)
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db] = fake_db
 
@@ -175,7 +175,7 @@ async def test_vault_push_passes_expected_version_to_service():
 async def test_vault_push_returns_409_for_expected_version_conflict():
     app = FastAPI()
     app.include_router(vault_router)
-    user = SimpleNamespace(id=uuid4(), email="dev@example.com")
+    user = SimpleNamespace(id=uuid4(), email="dev@example.com", two_factor_enabled=False)
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db] = fake_db
 
@@ -219,7 +219,7 @@ async def test_vault_push_returns_409_for_expected_version_conflict():
 async def test_vault_push_rejects_developer_project_write():
     app = FastAPI()
     app.include_router(vault_router)
-    user = SimpleNamespace(id=uuid4(), email="dev@example.com")
+    user = SimpleNamespace(id=uuid4(), email="dev@example.com", two_factor_enabled=False)
     app.dependency_overrides[get_current_user] = lambda: user
     app.dependency_overrides[get_db] = fake_db
 

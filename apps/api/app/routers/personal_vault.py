@@ -1,11 +1,12 @@
 """Personal vault (cofre pessoal) routes: web dashboard only (cookie auth)."""
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, HTTPException, Response, status
+from fastapi import APIRouter, Depends, HTTPException, Request, Response, status
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
 from app.middleware.auth import get_current_web_user
+from app.middleware.second_factor import require_second_factor
 from app.models.user import User
 from app.plans import PERSONAL_VAULT_FOLDERS, PERSONAL_VAULT_ITEMS, plan_for
 from app.schemas.personal_vault import (
@@ -108,9 +109,11 @@ async def update_item(
 @router.delete("/items/{item_id}", status_code=status.HTTP_204_NO_CONTENT)
 async def delete_item(
     item_id: UUID,
+    request: Request,
     user: User = Depends(get_current_web_user),
     db: AsyncSession = Depends(get_db),
 ):
+    await require_second_factor(request, user, db)
     try:
         await PersonalVaultService(db).delete_item(user.id, item_id)
     except _ERRORS as exc:
