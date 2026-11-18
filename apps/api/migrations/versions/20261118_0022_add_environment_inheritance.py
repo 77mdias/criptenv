@@ -31,7 +31,8 @@ def upgrade() -> None:
         sa.Column(
             "parent_id",
             postgresql.UUID(as_uuid=True),
-            sa.ForeignKey("environments.id", name="fk_environments_parent_id", ondelete="RESTRICT"),
+            # Unnamed: Postgres calls it environments_parent_id_fkey, as a schema built from the models does.
+            sa.ForeignKey("environments.id", ondelete="RESTRICT"),
             nullable=True,
         ),
     )
@@ -50,9 +51,10 @@ def upgrade() -> None:
 
 
 def downgrade() -> None:
-    op.drop_index("ix_environments_expires_at", table_name="environments")
-    op.drop_index("ix_environments_parent_id", table_name="environments")
+    # IF EXISTS: a database bootstrapped from the models (scripts/migrate.py) has no partial index.
+    op.execute("DROP INDEX IF EXISTS ix_environments_expires_at")
+    op.execute("DROP INDEX IF EXISTS ix_environments_parent_id")
     op.drop_column("environments", "unset_keys")
     op.drop_column("environments", "expires_at")
-    op.drop_constraint("fk_environments_parent_id", "environments", type_="foreignkey")
+    # Dropping the column drops its foreign key too, whatever it is named.
     op.drop_column("environments", "parent_id")
