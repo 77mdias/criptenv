@@ -1,0 +1,8 @@
+renders/
+.hyperframes/
+node_modules/
+snapshots/
+.thumbnails/
+__pycache__/
+# The film's layers: scripts/build_assets.py writes them again from the source images.
+assets/

@@ -89,6 +89,12 @@ function LandingMotion({ children }: LandingMotionProps) {
           },
         )
       })
+
+      // The hero's loop (hero-secret.css) still costs style work per frame here: hold it off screen.
+      ScrollTrigger.create({
+        trigger: "#hero",
+        onToggle: (self) => self.trigger?.classList.toggle("is-offscreen", !self.isActive),
+      })
     },
     { scope },
   )
