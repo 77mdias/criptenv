@@ -206,7 +206,7 @@
     "default": "Padrão",
     "restricted": "Restrito a administradores",
     "name": "Nome",
-    "nameHint": "Letras minúsculas, números e hífen. Não pode ser mudado depois.",
+    "nameHint": "Letras minúsculas, números e hífen; use / para um filho (dev/wt-x). Não pode ser mudado depois.",
     "displayName": "Nome de exibição",
     "restrictedHint": "Desenvolvedores e leitores não veem nem leem este ambiente. Tokens de CI e chaves de API só o alcançam se forem criados para ele.",
     "create": "Criar ambiente",
@@ -219,16 +219,34 @@
     "archiveBody": "As variáveis deste ambiente deixam de ser acessíveis e o nome não pode ser reutilizado. Isso não pode ser desfeito pela tela.",
     "errors": {
       "load": "Não foi possível carregar os ambientes.",
-      "name": "Use só letras minúsculas, números e hífen no nome.",
+      "name": "Use só letras minúsculas, números, hífen e / (para um filho) no nome.",
       "limit": "O projeto chegou ao limite de ambientes do plano.",
       "conflict": "Já existe um ambiente com esse nome (ambientes arquivados também contam).",
       "invalid": "Este ambiente não pode ser restrito.",
-      "generic": "Algo deu errado. Tente de novo."
+      "generic": "Algo deu errado. Tente de novo.",
+      "inheritance": "Não foi possível criar o filho: confira o pai, o limite de níveis de herança e a validade.",
+      "hasChildren": "Este ambiente tem ambientes filhos. Exclua os filhos primeiro."
     },
     "rename": "Renomear",
     "save": "Salvar",
     "renameLabel": "Nome de exibição de {name}",
     "openTitle": "Abrir {name} ao time?",
-    "openBody": "Todo o time do projeto passa a ver e ler este ambiente, e tokens de CI e chaves de API sem ambiente definido passam a alcançá-lo."
+    "openBody": "Todo o time do projeto passa a ver e ler este ambiente, e tokens de CI e chaves de API sem ambiente definido passam a alcançá-lo.",
+    "parent": "Herda de",
+    "parentNone": "Nenhum (ambiente independente)",
+    "parentHint": "O filho guarda só o que muda; o resto vem do pai e acompanha as mudanças dele.",
+    "ttl": "Validade",
+    "ttlOptions": {
+      "none": "Não expira",
+      "86400": "1 dia",
+      "604800": "7 dias",
+      "2592000": "30 dias"
+    },
+    "ttlHint": "Só para filhos. Um filho com validade é apagado sozinho ao vencer e não conta no limite do plano.",
+    "inherits": "Herda de {parent}",
+    "expires": "Expira em {date}",
+    "delete": "Excluir",
+    "deleteTitle": "Excluir {name}?",
+    "deleteBody": "Apaga este ambiente e só os valores próprios dele; o pai não muda. Tokens de CI e chaves de API criados para ele são revogados e o nome fica livre de novo."
   }
 }

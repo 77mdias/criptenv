@@ -132,4 +132,33 @@ describe("SecretRow", () => {
     expect(screen.queryByRole("checkbox", { name: "Selecionar secret DATABASE_URL" })).not.toBeInTheDocument()
   })
 
+  it("shows an inherited value with its origin and only override and unset as changes", async () => {
+    const onEdit = jest.fn()
+    const onDelete = jest.fn()
+    const inherited: DecryptedSecret = { key: "DATABASE_URL", value: "postgres://dev", inheritedFrom: "dev" }
+    render(
+      <SecretRow
+        secret={inherited}
+        environmentName="dev/wt-x"
+        selectable
+        onSelectChange={jest.fn()}
+        onCopy={jest.fn()}
+        onEdit={onEdit}
+        onDelete={onDelete}
+        onRotate={jest.fn()}
+        onSetExpiration={jest.fn()}
+      />
+    )
+
+    expect(screen.getByText("herdada de dev")).toBeInTheDocument()
+    expect(screen.queryByRole("checkbox")).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Rotacionar secret" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Configurar expiração" })).not.toBeInTheDocument()
+    expect(screen.queryByRole("button", { name: "Remover secret" })).not.toBeInTheDocument()
+
+    await userEvent.click(screen.getByRole("button", { name: "Sobrescrever neste ambiente" }))
+    await userEvent.click(screen.getByRole("button", { name: "Remover herança" }))
+    expect(onEdit).toHaveBeenCalledWith(inherited)
+    expect(onDelete).toHaveBeenCalledWith(inherited)
+  })
 })

@@ -206,7 +206,7 @@
     "default": "Predeterminado",
     "restricted": "Restringido a administradores",
     "name": "Nombre",
-    "nameHint": "Letras minúsculas, números y guion. No se puede cambiar después.",
+    "nameHint": "Letras minúsculas, números y guion; usa / para un hijo (dev/wt-x). No se puede cambiar después.",
     "displayName": "Nombre para mostrar",
     "restrictedHint": "Desarrolladores y lectores no ven ni leen este entorno. Los tokens de CI y las claves de API solo llegan a él si se crean para él.",
     "create": "Crear entorno",
@@ -219,16 +219,34 @@
     "archiveBody": "Las variables de este entorno dejan de ser accesibles y el nombre no se puede reutilizar. Esto no se puede deshacer desde la pantalla.",
     "errors": {
       "load": "No se pudieron cargar los entornos.",
-      "name": "Usa solo letras minúsculas, números y guion en el nombre.",
+      "name": "Usa solo letras minúsculas, números, guion y / (para un hijo) en el nombre.",
       "limit": "El proyecto llegó al límite de entornos del plan.",
       "conflict": "Ya existe un entorno con ese nombre (los archivados también cuentan).",
       "invalid": "Este entorno no se puede restringir.",
-      "generic": "Algo salió mal. Inténtalo de nuevo."
+      "generic": "Algo salió mal. Inténtalo de nuevo.",
+      "inheritance": "No se pudo crear el hijo: revisa el padre, el límite de niveles de herencia y la caducidad.",
+      "hasChildren": "Este entorno tiene entornos hijos. Elimínalos primero."
     },
     "rename": "Renombrar",
     "save": "Guardar",
     "renameLabel": "Nombre para mostrar de {name}",
     "openTitle": "¿Abrir {name} al equipo?",
-    "openBody": "Todo el equipo del proyecto verá y leerá este entorno, y los tokens de CI y las claves de API sin entorno definido llegarán a él."
+    "openBody": "Todo el equipo del proyecto verá y leerá este entorno, y los tokens de CI y las claves de API sin entorno definido llegarán a él.",
+    "parent": "Hereda de",
+    "parentNone": "Ninguno (entorno independiente)",
+    "parentHint": "El hijo guarda solo lo que cambia; el resto viene del padre y sigue sus cambios.",
+    "ttl": "Caducidad",
+    "ttlOptions": {
+      "none": "No caduca",
+      "86400": "1 día",
+      "604800": "7 días",
+      "2592000": "30 días"
+    },
+    "ttlHint": "Solo para hijos. Un hijo con caducidad se elimina solo al vencer y no cuenta en el límite del plan.",
+    "inherits": "Hereda de {parent}",
+    "expires": "Caduca el {date}",
+    "delete": "Eliminar",
+    "deleteTitle": "¿Eliminar {name}?",
+    "deleteBody": "Elimina este entorno y solo sus valores propios; el padre no cambia. Los tokens de CI y claves de API creados para él se revocan y el nombre queda libre."
   }
 }

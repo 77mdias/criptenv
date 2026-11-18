@@ -206,7 +206,7 @@
     "default": "Default",
     "restricted": "Restricted to admins",
     "name": "Name",
-    "nameHint": "Lowercase letters, numbers and hyphens. It cannot be changed later.",
+    "nameHint": "Lowercase letters, numbers and hyphens; use / for a child (dev/wt-x). Cannot be changed later.",
     "displayName": "Display name",
     "restrictedHint": "Developers and viewers neither see nor read this environment. CI tokens and API keys only reach it when created for it.",
     "create": "Create environment",
@@ -219,16 +219,34 @@
     "archiveBody": "The variables of this environment stop being accessible and the name cannot be reused. This cannot be undone from the screen.",
     "errors": {
       "load": "Could not load the environments.",
-      "name": "Use only lowercase letters, numbers and hyphens in the name.",
+      "name": "Use only lowercase letters, numbers, hyphens and / (for a child) in the name.",
       "limit": "The project has reached the plan's environment limit.",
       "conflict": "An environment with this name already exists (archived ones count too).",
       "invalid": "This environment cannot be restricted.",
-      "generic": "Something went wrong. Try again."
+      "generic": "Something went wrong. Try again.",
+      "inheritance": "The child could not be created: check the parent, the inheritance depth limit and the expiry.",
+      "hasChildren": "This environment has child environments. Delete them first."
     },
     "rename": "Rename",
     "save": "Save",
     "renameLabel": "Display name of {name}",
     "openTitle": "Open {name} to the team?",
-    "openBody": "The whole project team will see and read this environment, and CI tokens and API keys with no environment set will reach it."
+    "openBody": "The whole project team will see and read this environment, and CI tokens and API keys with no environment set will reach it.",
+    "parent": "Inherits from",
+    "parentNone": "None (standalone environment)",
+    "parentHint": "A child stores only what changes; everything else comes from the parent and follows its changes.",
+    "ttl": "Expiry",
+    "ttlOptions": {
+      "none": "Never expires",
+      "86400": "1 day",
+      "604800": "7 days",
+      "2592000": "30 days"
+    },
+    "ttlHint": "Children only. A child with an expiry is deleted automatically and does not count against the plan limit.",
+    "inherits": "Inherits from {parent}",
+    "expires": "Expires {date}",
+    "delete": "Delete",
+    "deleteTitle": "Delete {name}?",
+    "deleteBody": "Deletes this environment and only its own values; the parent does not change. CI tokens and API keys created for it are revoked and the name is free again."
   }
 }

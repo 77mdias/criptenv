@@ -1,7 +1,7 @@
 import type { DecryptedSecret } from "@/components/shared/secret-row"
-import type { VaultBlob } from "@/lib/api"
+import type { VaultBlob, VaultResolvedBlob } from "@/lib/api"
 import { checksum, decrypt, encrypt } from "@/lib/crypto"
-import { decryptVault, encryptVault } from "../vault-crypto"
+import { decryptResolved, decryptVault, encryptVault, mergeInherited } from "../vault-crypto"
 
 jest.mock("@/lib/crypto", () => ({
   checksum: jest.fn(async (value: string) => `sha256:${value}`),
@@ -133,5 +133,44 @@ describe("vault crypto helpers", () => {
     expect(mockedChecksum).toHaveBeenCalledWith(
       "DATABASE_URL:iv:postgres://local:cipher:postgres://local:tag:postgres://local"
     )
+  })
+
+  it("decrypts a child's resolved view with each blob's own environment key", async () => {
+    const keys: Record<string, CryptoKey> = { "env-dev": { id: "dev" } as unknown as CryptoKey, "env-wt": { id: "wt" } as unknown as CryptoKey }
+    const keyFor = jest.fn(async (environmentId: string) => keys[environmentId])
+    const blob = (over: Partial<VaultResolvedBlob>): VaultResolvedBlob => ({
+      ...vaultBlob({}), source_environment_name: "dev/wt-x", origin: "local", ...over,
+    })
+
+    const secrets = await decryptResolved(
+      [
+        blob({ key_id: "PORT", ciphertext: "p", environment_id: "env-wt" }),
+        blob({ key_id: "DATABASE_URL", ciphertext: "d", environment_id: "env-dev", origin: "inherited", source_environment_name: "dev" }),
+      ],
+      keyFor
+    )
+
+    expect(secrets.map((secret) => [secret.key, secret.inheritedFrom])).toEqual([
+      ["DATABASE_URL", "dev"],
+      ["PORT", null],
+    ])
+    expect(mockedDecrypt).toHaveBeenCalledWith("d", keys["env-dev"], "iv", "auth-tag")
+    expect(mockedDecrypt).toHaveBeenCalledWith("p", keys["env-wt"], "iv", "auth-tag")
+  })
+
+  it("merges a child's own secrets with what it still inherits", () => {
+    const resolved = [
+      { key: "A", value: "a", inheritedFrom: "dev" },
+      { key: "B", value: "b", inheritedFrom: "dev" },
+      { key: "C", value: "own-old", inheritedFrom: null },
+      { key: "D", value: "d", inheritedFrom: "dev" },
+    ]
+    const own = [{ key: "B", value: "override" }, { key: "E", value: "new" }]
+
+    expect(mergeInherited(own, resolved, ["D"]).map((secret) => [secret.key, secret.value])).toEqual([
+      ["A", "a"],
+      ["B", "override"],
+      ["E", "new"],
+    ])
   })
 })

@@ -2,6 +2,7 @@ import { request, twoFactorHeaders } from './client';
 import type {
   VaultPushRequest,
   VaultPullResponse,
+  VaultResolvedResponse,
   VaultVersionResponse,
 } from './client';
 
@@ -13,6 +14,11 @@ export const vaultApi = {
 
   pull(projectId: string, environmentId: string): Promise<VaultPullResponse> {
     return request('GET', `/api/v1/projects/${projectId}/environments/${environmentId}/vault/pull`);
+  },
+
+  /** The environment resolved through its parents; each blob says which environment holds it. Read-only. */
+  resolved(projectId: string, environmentId: string): Promise<VaultResolvedResponse> {
+    return request('GET', `/api/v1/projects/${projectId}/environments/${environmentId}/vault/resolved`);
   },
 
   getVersion(projectId: string, environmentId: string): Promise<VaultVersionResponse> {
