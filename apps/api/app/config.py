@@ -47,6 +47,8 @@ class Settings(BaseSettings):
     INTEGRATION_CONFIG_SECRET: str = ""
     SCHEDULER_ENABLED: bool = True
     SCHEDULER_INTERVAL_HOURS: int = 24
+    # How many parent hops an environment may have (dev/wt-x -> dev is one).
+    ENV_INHERITANCE_MAX_DEPTH: int = 3
     
     # API URL for OAuth callbacks
     API_URL: str = "http://localhost:8000"

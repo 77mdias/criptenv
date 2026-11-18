@@ -1,5 +1,5 @@
 from sqlalchemy import Column, String, Boolean, Integer, DateTime, ForeignKey, func, text
-from sqlalchemy.dialects.postgresql import UUID
+from sqlalchemy.dialects.postgresql import UUID, JSONB
 from sqlalchemy.orm import relationship
 from app.database import Base
 import uuid
@@ -18,6 +18,12 @@ class Environment(Base):
     # Only the project's owner and admins reach it (app/services/environment_access.py).
     restricted = Column(Boolean, default=False, nullable=False, server_default=text("false"))
     archived_at = Column(DateTime(timezone=True))
+    # Inheritance (app/services/environment_inheritance.py): a child stores only its overrides.
+    parent_id = Column(UUID(as_uuid=True), ForeignKey("environments.id", ondelete="RESTRICT"), nullable=True, index=True)
+    # Ephemeral children only: past this moment the environment is gone (cleanup job deletes it).
+    expires_at = Column(DateTime(timezone=True), nullable=True)
+    # Inherited keys this child hides, without touching the ancestor that holds them.
+    unset_keys = Column(JSONB, nullable=False, default=list, server_default=text("'[]'"))
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
 
