@@ -29,7 +29,8 @@ async def auto_sync(
         if "auto_sync" not in envelope.get("features", []) or not bound:
             return
 
-        state = await vault.load_state(env_name)
+        # Resolved: a child environment syncs what it inherits too, not only its overrides.
+        state = await vault.load_resolved(env_name)
         targets = [
             (item, item["auto_sync_targets"][state.environment.id])
             for item in bound

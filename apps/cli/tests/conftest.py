@@ -68,6 +68,12 @@ class RemoteVaultFakeClient:
     async def pull_vault(self, project_id: str, env_id: str) -> dict:
         return {"blobs": list(self.blobs), "version": self.version}
 
+    async def resolved_vault(self, project_id: str, env_id: str) -> dict:
+        # A root environment resolves to its own blobs.
+        blobs = [{**blob, "origin": "local", "source_environment_name": "production"} for blob in self.blobs]
+        return {"blobs": blobs, "version": self.version, "unset_keys": [],
+                "chain": [{"id": env_id, "name": "production"}]}
+
     async def push_vault(
         self,
         project_id: str,

@@ -10,6 +10,7 @@ Implements M3.3 CI Tokens Enhancement specification:
 import asyncio
 import os
 import time
+from dataclasses import replace
 from typing import Optional
 
 import click
@@ -315,7 +316,10 @@ def ci_deploy(
                 asyncio.run(client.get_ci_secrets(session.project_id, environment)),
                 environment,
             )
-            by_key = {blob["key_id"]: blob for blob in state.blobs}
+            # /ci/secrets resolves through parent environments: only the environment's own blobs
+            # are pushed back, or a child would get copies of everything it inherits.
+            own = [blob for blob in state.blobs if blob.get("origin", "local") == "local"]
+            by_key = {blob["key_id"]: blob for blob in own}
 
             for key, value in entries:
                 existing = by_key.get(key)
@@ -331,7 +335,7 @@ def ci_deploy(
 
             # Provider sync mirrors the whole environment, not only the deployed file.
             provider_secrets = {**asyncio.run(vault.decrypt_all(state)), **dict(entries)} if provider else {}
-            result = asyncio.run(vault.push_state(state, list(by_key.values())))
+            result = asyncio.run(vault.push_state(replace(state, blobs=own, resolved=False), list(by_key.values())))
             version = result.get("version", "unknown")
             click.echo(f"✓ Deployment complete ({len(entries)} secret(s), version {version})")
         except click.ClickException as e:

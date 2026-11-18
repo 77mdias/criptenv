@@ -6,7 +6,7 @@ from criptenv import __version__
 from criptenv.commands.init import init_command
 from criptenv.commands.login import login_command, logout_command
 from criptenv.commands.secrets import (
-    set_command, get_command, list_command, delete_command,
+    set_command, get_command, list_command, delete_command, unset_command,
     rotate_command, secrets_group, rotation_group,
 )
 from criptenv.commands.sync import push_command, pull_command
@@ -47,6 +47,7 @@ main.add_command(set_command)
 main.add_command(get_command)
 main.add_command(list_command, name="list")
 main.add_command(delete_command)
+main.add_command(unset_command)
 main.add_command(rotate_command)  # M3.5: Rotation
 main.add_command(push_command)
 main.add_command(pull_command)

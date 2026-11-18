@@ -279,14 +279,25 @@ class CriptEnvClient:
         return resp.json()
 
     async def create_environment(
-        self, project_id: str, name: str, display_name: str | None = None, restricted: bool = False
+        self,
+        project_id: str,
+        name: str,
+        display_name: str | None = None,
+        restricted: bool = False,
+        parent_id: str | None = None,
+        ttl_seconds: int | None = None,
     ) -> dict[str, Any]:
-        """POST /api/v1/projects/{id}/environments. `restricted`: only the project's owner and admins reach it."""
+        """POST /api/v1/projects/{id}/environments. `restricted`: only the project's owner and admins reach it.
+        `parent_id`: inherit from that environment (stores only overrides). `ttl_seconds`: ephemeral child."""
         payload: dict[str, Any] = {"name": name}
         if display_name:
             payload["display_name"] = display_name
         if restricted:
             payload["restricted"] = True
+        if parent_id:
+            payload["parent_id"] = parent_id
+        if ttl_seconds is not None:
+            payload["ttl_seconds"] = ttl_seconds
         resp = await self._request(
             "POST", f"/api/v1/projects/{project_id}/environments", json=payload
         )
@@ -301,13 +312,16 @@ class CriptEnvClient:
         blobs: list[dict],
         vault_proof: str | None = None,
         expected_version: int | None = None,
+        unset_keys: list[str] | None = None,
     ) -> dict[str, Any]:
-        """POST /api/v1/projects/{id}/environments/{eid}/vault/push"""
+        """POST /api/v1/projects/{id}/environments/{eid}/vault/push. `unset_keys`: child environments only."""
         payload: dict[str, Any] = {"blobs": blobs}
         if vault_proof:
             payload["vault_proof"] = vault_proof
         if expected_version is not None:
             payload["expected_version"] = expected_version
+        if unset_keys is not None:
+            payload["unset_keys"] = unset_keys
         resp = await self._request(
             "POST",
             f"/api/v1/projects/{project_id}/environments/{env_id}/vault/push",
@@ -319,6 +333,20 @@ class CriptEnvClient:
         """GET /api/v1/projects/{id}/environments/{eid}/vault/pull"""
         resp = await self._request(
             "GET", f"/api/v1/projects/{project_id}/environments/{env_id}/vault/pull"
+        )
+        return resp.json()
+
+    async def resolved_vault(self, project_id: str, env_id: str) -> dict[str, Any]:
+        """GET .../vault/resolved: the environment resolved through its parents, each blob with its source."""
+        resp = await self._request(
+            "GET", f"/api/v1/projects/{project_id}/environments/{env_id}/vault/resolved"
+        )
+        return resp.json()
+
+    async def environment_diff(self, project_id: str, env_id: str) -> dict[str, Any]:
+        """GET .../environments/{eid}/diff: key names of a child against its parent (no values)."""
+        resp = await self._request(
+            "GET", f"/api/v1/projects/{project_id}/environments/{env_id}/diff"
         )
         return resp.json()
 

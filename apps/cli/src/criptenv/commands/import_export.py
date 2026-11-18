@@ -83,7 +83,8 @@ def export_entries_remote(
     with cli_context(require_auth=True) as (db, _master_key, client):
         resolved_project_id = resolve_project_id(db, project, client)
         vault = RemoteVault(client, resolved_project_id)
-        state = run_async(vault.load_state(env_name))
+        # Resolved: a child environment exports what it inherits too (what `run` injects).
+        state = run_async(vault.load_resolved(env_name))
         return run_async(vault.decrypt_all(state))
 
 
