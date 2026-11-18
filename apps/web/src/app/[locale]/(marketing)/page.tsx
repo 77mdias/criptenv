@@ -25,7 +25,7 @@ import { PricingSection } from "@/components/marketing/pricing-section";
 import { ProblemToVaultSection } from "@/components/marketing/problem-to-vault-section";
 import { SecurityScrollytelling } from "@/components/marketing/security-scrollytelling";
 import { PlatformPreviewSection } from "@/components/marketing/platform-preview-section";
-import { HeroSceneLazy } from "@/components/marketing/hero-scene-lazy";
+import { HeroBackdrop, HeroShard } from "@/components/marketing/hero-secret";
 import { LandingMotionLazy } from "@/components/marketing/landing-motion-lazy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -154,9 +154,10 @@ export default async function LandingPage() {
     <LandingMotionLazy>
       <section
         id="hero"
-        className="relative flex min-h-screen scroll-mt-14 items-center overflow-hidden bg-(--background)"
+        className="hero-secret relative flex min-h-screen scroll-mt-14 items-center overflow-hidden bg-(--background)"
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_72%_42%,var(--glow-soft),transparent_34%),linear-gradient(to_bottom,transparent_72%,var(--background))]" />
+        <HeroBackdrop />
+        <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent_72%,var(--background))]" />
 
         <div className="relative mx-auto w-full max-w-7xl px-6 py-24 sm:px-8 lg:py-0">
           <div className="grid items-center gap-12 lg:grid-cols-[0.9fr_1.1fr] lg:gap-10">
@@ -219,13 +220,12 @@ export default async function LandingPage() {
 
             <div
               data-motion="hero"
-              className="relative min-h-100 overflow-visible sm:min-h-130 lg:min-h-160"
+              className="relative min-h-143 overflow-visible sm:min-h-130 lg:min-h-160"
             >
-              <HeroSceneLazy />
+              <HeroShard />
               <div className="absolute inset-x-0 bottom-4 mx-auto w-full max-w-xl px-2 sm:bottom-10">
                 <TerminalPanel />
               </div>
-              <div className="absolute left-1/2 top-10 h-56 w-56 -translate-x-1/2 rounded-full border border-(--border) bg-(--surface)/20 blur-3xl" />
             </div>
           </div>
         </div>

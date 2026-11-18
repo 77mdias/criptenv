@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### Hero da landing: "o segredo" no lugar do modelo 3D — 2026-11-18
+
+- **Hero novo:** saem o modelo 3D em Three.js e o gradiente de fundo. Entram um fragmento de luz com 90 estilhaços em órbita e um fundo de raios de luz com flocos desfocados, nos temas escuro e claro, com imagens de fundo próprias para tela estreita.
+- **Sem script:** o loop de 16 s é só CSS, com keyframes em `translate`, `transform` e `opacity`, que rodam no compositor. Ele pausa quando o hero sai da tela e fica parado no primeiro quadro com `prefers-reduced-motion`.
+- **Peso:** de 180 a 265 KB de imagens por tema e formato de tela, mais 7,6 KB de CSS comprimido; o hero deixa de carregar o Three.js.
+- **Mobile:** a caixa da cena cresce de 400 para 572 px, para o fragmento aparecer acima do painel de terminal.
+- **Origem:** as camadas e os keyframes de cada estilhaço saem de `ux-ui/motion/hero-secret/scripts/build_assets.py --web`, a partir das imagens-fonte; a mesma pasta guarda o filme HyperFrames em que o loop foi desenhado.
+
 ### Chat de suporte: Haiku, busca corrigida e respostas mais limpas — 2026-11-12
 
 - **Modelo: Claude Haiku 5.5** no lugar do Sonnet 5.5. Num comparativo com a chave real (8 perguntas: Docker, preço, arrependimento, fora do assunto, inglês, token de CI só no staging, pegadinha de preço, ambiente restrito no Free), os dois acertaram as 8; o Haiku custou US$ 0,0033 contra US$ 0,054 do Sonnet. Sem fallback do servidor em recusa (o Haiku não tem).

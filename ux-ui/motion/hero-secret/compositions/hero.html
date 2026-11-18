@@ -1,0 +1,316 @@
+<template>
+  <style>
+    #root {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+      background: #050506;
+    }
+    #root img {
+      display: block;
+      position: absolute;
+    }
+
+    /* One number drives the loop: --p runs 0 → 1 over the 16 s (the script below) and every
+       layer is a periodic function of it, so the last frame meets the first. On the site the
+       same CSS loops with `@property --p` and a linear keyframe animation, no script. */
+    #hero-stage {
+      position: absolute;
+      inset: 0;
+      --p: 0;
+      --beat: max(0, sin(var(--p) * 4turn)); /* the seam's signal: once every 4 s */
+      --depth: 0.2;
+    }
+
+    /* The camera drifts on a slow figure of eight; --k is how far each depth shifts (px). */
+    .hero-cam {
+      position: absolute;
+      inset: 0;
+      translate: calc(sin(var(--p) * 1turn) * var(--k) * 1px)
+        calc(sin(var(--p) * 2turn + 0.6rad) * var(--k) * 0.5px);
+    }
+    #hero-plate {
+      left: -77px;
+      top: -43px;
+      width: 2074px;
+      height: 1166px;
+    }
+
+    /* The shard's centre on the canvas; scripts/build_assets.py places everything from here. */
+    #hero-shard {
+      position: absolute;
+      left: 1300px;
+      top: 500px;
+      width: 0;
+      height: 0;
+    }
+    #hero-glow {
+      z-index: 0;
+      opacity: calc(0.9 + var(--beat) * var(--beat) * 0.1);
+    }
+    #hero-crystal {
+      position: absolute;
+      z-index: 2;
+      rotate: calc(sin(var(--p) * 1turn + 1rad) * 2.5deg);
+    }
+    #hero-core {
+      inset: 0;
+      width: 100%;
+      height: 100%;
+    }
+    #hero-seam {
+      opacity: calc(var(--beat) * var(--beat) * var(--beat) * 0.95);
+    }
+
+    /* A piece turns once around the shard per loop, on the ellipse that passes through where
+       it sits in the source image (--r, --th, --q), near side left to right. It is larger,
+       brighter and in front of the crystal on the near half, behind it on the far half. */
+    .hero-frag {
+      position: absolute;
+      left: 0;
+      top: 0;
+      background: url(assets/shard-pieces.webp) no-repeat;
+      background-size: var(--sheet);
+      --a: calc(var(--th) * 1rad - var(--p) * 1turn);
+      --u: calc(cos(var(--a)) * var(--r));
+      --v: calc(sin(var(--a)) * var(--r) * var(--q) + sin((var(--p) * 2 + var(--ph)) * 1turn) * var(--bob));
+      translate: calc((var(--u) * var(--ca) - var(--v) * var(--sa)) * 1px)
+        calc((var(--u) * var(--sa) + var(--v) * var(--ca)) * 1px);
+      /* --depth: how much larger a piece is on the near side; 1 where it sits in the source */
+      scale: calc((1 + sin(var(--a)) * var(--depth)) / (1 + sin(var(--th) * 1rad) * var(--depth)));
+      rotate: calc(sin((var(--p) + var(--ph)) * 1turn) * var(--rot) * 1deg);
+      opacity: calc(0.78 + sin(var(--a)) * 0.22);
+      z-index: calc(2 + clamp(-1, sin(var(--a)) * 1000, 1));
+    }
+
+    /* Out-of-focus flakes between the camera and the shard. Each depth is two copies half a
+       loop apart, one mirrored: a copy fades in, drifts --wx / --wy px and fades out while the
+       other takes over, so the drift never reverses and never jumps. Dimmed on the left,
+       where the page sets its headline. */
+    #hero-fg {
+      position: absolute;
+      inset: 0;
+      -webkit-mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.08) 30%, #000 68%);
+      mask-image: linear-gradient(90deg, rgba(0, 0, 0, 0.08) 0%, rgba(0, 0, 0, 0.08) 30%, #000 68%);
+    }
+    .hero-drift {
+      left: -192px;
+      top: -108px;
+      width: 2304px;
+      height: 1296px;
+      --w: mod(var(--p) + var(--ph), 1);
+      translate: calc((var(--w) - 0.5) * var(--wx) * 1px) calc((var(--w) - 0.5) * var(--wy) * 1px);
+      opacity: calc(sin(var(--w) * 0.5turn) * sin(var(--w) * 0.5turn) * var(--o));
+    }
+    .hero-drift.b {
+      scale: -1 1;
+    }
+  </style>
+
+  <div id="root" data-composition-id="hero" data-width="1920" data-height="1080">
+    <div id="hero-stage" data-layout-ignore>
+      <div class="hero-cam" style="--k: 10">
+        <img id="hero-plate" src="assets/plate.webp" alt="" />
+      </div>
+
+      <div class="hero-cam" style="--k: 24">
+        <div id="hero-shard">
+          <!-- shard:start -->
+          <img id="hero-glow" src="assets/shard-glow.webp" alt="" style="left:-480.0px;top:-480.0px;width:960.0px;height:960.0px" />
+          <div id="hero-crystal" style="left:-132.4px;top:-217.5px;width:255.6px;height:434.4px;transform-origin:132.4px 217.5px">
+            <img id="hero-core" src="assets/shard-core.webp" alt="" />
+            <img id="hero-seam" src="assets/shard-seam.webp" alt="" style="left:14.4px;top:103.8px;width:240.0px;height:240.0px" />
+          </div>
+          <div id="hero-ring" style="--ca:0.9189;--sa:-0.3944;--sheet:819.2px 91.2px">
+            <i class="hero-frag" style="width:57.6px;height:36.0px;margin:-18.0px 0 0 -28.8px;background-position:-208.0px -0.0px;--r:352.8;--th:-2.137;--q:0.403;--bob:6.8;--ph:0.897;--rot:5.4"></i>
+            <i class="hero-frag" style="width:40.0px;height:41.6px;margin:-20.8px 0 0 -20.0px;background-position:-100.0px -0.0px;--r:325.5;--th:2.989;--q:0.403;--bob:4.8;--ph:0.874;--rot:4.0"></i>
+            <i class="hero-frag" style="width:32.0px;height:56.0px;margin:-28.0px 0 0 -16.0px;background-position:-33.6px -0.0px;--r:321.6;--th:0.044;--q:0.403;--bob:7.9;--ph:0.797;--rot:-5.8"></i>
+            <i class="hero-frag" style="width:32.0px;height:41.6px;margin:-20.8px 0 0 -16.0px;background-position:-141.6px -0.0px;--r:351.8;--th:-0.518;--q:0.403;--bob:4.7;--ph:0.255;--rot:-6.7"></i>
+            <i class="hero-frag" style="width:31.2px;height:36.8px;margin:-18.4px 0 0 -15.6px;background-position:-175.2px -0.0px;--r:313.5;--th:-2.781;--q:0.403;--bob:6.0;--ph:0.553;--rot:8.8"></i>
+            <i class="hero-frag" style="width:34.4px;height:30.4px;margin:-15.2px 0 0 -17.2px;background-position:-267.2px -0.0px;--r:339.3;--th:2.225;--q:0.403;--bob:6.7;--ph:0.989;--rot:5.3"></i>
+            <i class="hero-frag" style="width:40.0px;height:24.8px;margin:-12.4px 0 0 -20.0px;background-position:-414.4px -0.0px;--r:361.1;--th:-0.940;--q:0.403;--bob:4.0;--ph:0.613;--rot:-4.2"></i>
+            <i class="hero-frag" style="width:20.8px;height:28.8px;margin:-14.4px 0 0 -10.4px;background-position:-303.2px -0.0px;--r:284.5;--th:-2.976;--q:0.403;--bob:6.1;--ph:0.466;--rot:-9.5"></i>
+            <i class="hero-frag" style="width:31.2px;height:47.2px;margin:-23.6px 0 0 -15.6px;background-position:-67.2px -0.0px;--r:309.1;--th:0.975;--q:0.403;--bob:6.8;--ph:0.514;--rot:-5.5"></i>
+            <i class="hero-frag" style="width:21.6px;height:28.0px;margin:-14.0px 0 0 -10.8px;background-position:-325.6px -0.0px;--r:293.2;--th:-0.915;--q:0.403;--bob:3.1;--ph:0.192;--rot:-8.2"></i>
+            <i class="hero-frag" style="width:20.8px;height:27.2px;margin:-13.6px 0 0 -10.4px;background-position:-367.2px -0.0px;--r:273.7;--th:0.633;--q:0.403;--bob:4.2;--ph:0.370;--rot:-35.6"></i>
+            <i class="hero-frag" style="width:23.2px;height:21.6px;margin:-10.8px 0 0 -11.6px;background-position:-527.2px -0.0px;--r:400.2;--th:2.017;--q:0.403;--bob:3.9;--ph:0.268;--rot:-36.9"></i>
+            <i class="hero-frag" style="width:24.8px;height:22.4px;margin:-11.2px 0 0 -12.4px;background-position:-500.8px -0.0px;--r:290.3;--th:-2.044;--q:0.403;--bob:6.1;--ph:0.847;--rot:33.3"></i>
+            <i class="hero-frag" style="width:23.2px;height:25.6px;margin:-12.8px 0 0 -11.6px;background-position:-389.6px -0.0px;--r:312.1;--th:-0.597;--q:0.403;--bob:3.5;--ph:0.541;--rot:27.2"></i>
+            <i class="hero-frag" style="width:19.2px;height:16.0px;margin:-8.0px 0 0 -9.6px;background-position:-14.4px -62.4px;--r:396.7;--th:-2.330;--q:0.403;--bob:8.2;--ph:0.361;--rot:15.5"></i>
+            <i class="hero-frag" style="width:21.6px;height:18.4px;margin:-9.2px 0 0 -10.8px;background-position:-596.8px -0.0px;--r:363.9;--th:-2.965;--q:0.403;--bob:5.3;--ph:0.323;--rot:17.9"></i>
+            <i class="hero-frag" style="width:16.0px;height:16.8px;margin:-8.4px 0 0 -8.0px;background-position:-744.0px -0.0px;--r:396.7;--th:1.307;--q:0.403;--bob:7.9;--ph:0.379;--rot:29.3"></i>
+            <i class="hero-frag" style="width:24.0px;height:21.6px;margin:-10.8px 0 0 -12.0px;background-position:-552.0px -0.0px;--r:319.9;--th:-0.453;--q:0.403;--bob:6.6;--ph:0.638;--rot:31.6"></i>
+            <i class="hero-frag" style="width:24.0px;height:23.2px;margin:-11.6px 0 0 -12.0px;background-position:-475.2px -0.0px;--r:324.2;--th:-0.271;--q:0.403;--bob:3.9;--ph:0.440;--rot:-24.5"></i>
+            <i class="hero-frag" style="width:28.0px;height:17.6px;margin:-8.8px 0 0 -14.0px;background-position:-683.2px -0.0px;--r:394.2;--th:-1.429;--q:0.403;--bob:3.6;--ph:0.968;--rot:-19.6"></i>
+            <i class="hero-frag" style="width:16.0px;height:17.6px;margin:-8.8px 0 0 -8.0px;background-position:-712.8px -0.0px;--r:271.2;--th:0.350;--q:0.403;--bob:7.0;--ph:0.300;--rot:-31.2"></i>
+            <i class="hero-frag" style="width:17.6px;height:16.8px;margin:-8.4px 0 0 -8.8px;background-position:-761.6px -0.0px;--r:317.3;--th:-1.553;--q:0.403;--bob:3.8;--ph:0.845;--rot:38.6"></i>
+            <i class="hero-frag" style="width:17.6px;height:19.2px;margin:-9.6px 0 0 -8.8px;background-position:-577.6px -0.0px;--r:383.1;--th:2.603;--q:0.403;--bob:8.4;--ph:0.570;--rot:-19.0"></i>
+            <i class="hero-frag" style="width:27.2px;height:18.4px;margin:-9.2px 0 0 -13.6px;background-position:-620.0px -0.0px;--r:324.9;--th:-2.253;--q:0.403;--bob:8.6;--ph:0.552;--rot:-18.7"></i>
+            <i class="hero-frag" style="width:16.8px;height:28.0px;margin:-14.0px 0 0 -8.4px;background-position:-348.8px -0.0px;--r:292.7;--th:0.002;--q:0.403;--bob:8.3;--ph:0.642;--rot:23.8"></i>
+            <i class="hero-frag" style="width:16.0px;height:16.8px;margin:-8.4px 0 0 -8.0px;background-position:-780.8px -0.0px;--r:396.6;--th:-0.778;--q:0.403;--bob:5.5;--ph:0.239;--rot:15.0"></i>
+            <i class="hero-frag" style="width:16.0px;height:13.6px;margin:-6.8px 0 0 -8.0px;background-position:-178.4px -62.4px;--r:348.0;--th:2.754;--q:0.403;--bob:8.3;--ph:0.468;--rot:22.4"></i>
+            <i class="hero-frag" style="width:14.4px;height:16.8px;margin:-8.4px 0 0 -7.2px;background-position:-798.4px -0.0px;--r:417.2;--th:-1.499;--q:0.403;--bob:7.5;--ph:0.025;--rot:23.7"></i>
+            <i class="hero-frag" style="width:15.2px;height:18.4px;margin:-9.2px 0 0 -7.6px;background-position:-648.8px -0.0px;--r:405.4;--th:1.252;--q:0.403;--bob:3.2;--ph:0.123;--rot:-31.1"></i>
+            <i class="hero-frag" style="width:16.0px;height:18.4px;margin:-9.2px 0 0 -8.0px;background-position:-665.6px -0.0px;--r:357.0;--th:2.792;--q:0.403;--bob:5.6;--ph:0.524;--rot:36.7"></i>
+            <i class="hero-frag" style="width:12.8px;height:12.8px;margin:-6.4px 0 0 -6.4px;background-position:-230.4px -62.4px;--r:334.8;--th:1.502;--q:0.403;--bob:5.1;--ph:0.590;--rot:-23.2"></i>
+            <i class="hero-frag" style="width:16.0px;height:16.0px;margin:-8.0px 0 0 -8.0px;background-position:-35.2px -62.4px;--r:350.0;--th:0.433;--q:0.403;--bob:6.1;--ph:0.765;--rot:37.6"></i>
+            <i class="hero-frag" style="width:16.0px;height:14.4px;margin:-7.2px 0 0 -8.0px;background-position:-112.0px -62.4px;--r:264.5;--th:-0.760;--q:0.403;--bob:3.9;--ph:0.933;--rot:-33.6"></i>
+            <i class="hero-frag" style="width:16.8px;height:12.8px;margin:-6.4px 0 0 -8.4px;background-position:-244.8px -62.4px;--r:417.4;--th:1.632;--q:0.403;--bob:7.9;--ph:0.137;--rot:-24.9"></i>
+            <i class="hero-frag" style="width:16.0px;height:16.0px;margin:-8.0px 0 0 -8.0px;background-position:-52.8px -62.4px;--r:305.1;--th:-2.982;--q:0.403;--bob:7.9;--ph:0.014;--rot:34.6"></i>
+            <i class="hero-frag" style="width:17.6px;height:24.0px;margin:-12.0px 0 0 -8.8px;background-position:-456.0px -0.0px;--r:270.1;--th:-2.199;--q:0.403;--bob:6.1;--ph:0.726;--rot:19.9"></i>
+            <i class="hero-frag" style="width:16.8px;height:12.8px;margin:-6.4px 0 0 -8.4px;background-position:-263.2px -62.4px;--r:327.1;--th:-1.623;--q:0.403;--bob:4.2;--ph:0.363;--rot:-23.0"></i>
+            <i class="hero-frag" style="width:11.2px;height:15.2px;margin:-7.6px 0 0 -5.6px;background-position:-70.4px -62.4px;--r:334.8;--th:0.408;--q:0.403;--bob:8.7;--ph:0.573;--rot:-22.8"></i>
+            <i class="hero-frag" style="width:17.6px;height:12.8px;margin:-6.4px 0 0 -8.8px;background-position:-281.6px -62.4px;--r:340.1;--th:-0.721;--q:0.403;--bob:4.6;--ph:0.952;--rot:-39.5"></i>
+            <i class="hero-frag" style="width:12.8px;height:12.0px;margin:-6.0px 0 0 -6.4px;background-position:-488.0px -62.4px;--r:270.9;--th:-2.674;--q:0.403;--bob:6.1;--ph:0.521;--rot:-37.3"></i>
+            <i class="hero-frag" style="width:14.4px;height:11.2px;margin:-5.6px 0 0 -7.2px;background-position:-557.6px -62.4px;--r:309.4;--th:0.123;--q:0.403;--bob:7.5;--ph:0.581;--rot:36.8"></i>
+            <i class="hero-frag" style="width:12.0px;height:17.6px;margin:-8.8px 0 0 -6.0px;background-position:-730.4px -0.0px;--r:291.7;--th:1.299;--q:0.403;--bob:5.5;--ph:0.923;--rot:-15.8"></i>
+            <i class="hero-frag" style="width:12.0px;height:12.0px;margin:-6.0px 0 0 -6.0px;background-position:-502.4px -62.4px;--r:332.2;--th:-3.072;--q:0.403;--bob:5.6;--ph:0.520;--rot:20.5"></i>
+            <i class="hero-frag" style="width:12.8px;height:12.0px;margin:-6.0px 0 0 -6.4px;background-position:-516.0px -62.4px;--r:387.0;--th:0.916;--q:0.403;--bob:7.8;--ph:0.676;--rot:32.6"></i>
+            <i class="hero-frag" style="width:12.0px;height:12.8px;margin:-6.4px 0 0 -6.0px;background-position:-300.8px -62.4px;--r:305.3;--th:-1.829;--q:0.403;--bob:6.8;--ph:0.972;--rot:-24.4"></i>
+            <i class="hero-frag" style="width:18.4px;height:12.8px;margin:-6.4px 0 0 -9.2px;background-position:-314.4px -62.4px;--r:292.5;--th:-2.317;--q:0.403;--bob:4.2;--ph:0.051;--rot:-19.5"></i>
+            <i class="hero-frag" style="width:11.2px;height:12.8px;margin:-6.4px 0 0 -5.6px;background-position:-334.4px -62.4px;--r:316.7;--th:2.558;--q:0.403;--bob:8.5;--ph:0.840;--rot:29.7"></i>
+            <i class="hero-frag" style="width:11.2px;height:12.8px;margin:-6.4px 0 0 -5.6px;background-position:-347.2px -62.4px;--r:335.6;--th:-0.622;--q:0.403;--bob:5.9;--ph:0.595;--rot:-31.1"></i>
+            <i class="hero-frag" style="width:12.8px;height:12.0px;margin:-6.0px 0 0 -6.4px;background-position:-530.4px -62.4px;--r:343.0;--th:0.241;--q:0.403;--bob:4.8;--ph:0.961;--rot:30.3"></i>
+            <i class="hero-frag" style="width:14.4px;height:14.4px;margin:-7.2px 0 0 -7.2px;background-position:-129.6px -62.4px;--r:399.2;--th:0.272;--q:0.403;--bob:6.8;--ph:0.184;--rot:-15.6"></i>
+            <i class="hero-frag" style="width:12.8px;height:14.4px;margin:-7.2px 0 0 -6.4px;background-position:-145.6px -62.4px;--r:300.0;--th:0.249;--q:0.403;--bob:5.5;--ph:0.764;--rot:33.0"></i>
+            <i class="hero-frag" style="width:10.4px;height:11.2px;margin:-5.6px 0 0 -5.2px;background-position:-573.6px -62.4px;--r:341.1;--th:1.337;--q:0.403;--bob:3.7;--ph:0.913;--rot:34.9"></i>
+            <i class="hero-frag" style="width:20.8px;height:13.6px;margin:-6.8px 0 0 -10.4px;background-position:-196.0px -62.4px;--r:297.2;--th:-1.873;--q:0.403;--bob:8.3;--ph:0.523;--rot:15.2"></i>
+            <i class="hero-frag" style="width:11.2px;height:11.2px;margin:-5.6px 0 0 -5.6px;background-position:-585.6px -62.4px;--r:434.9;--th:2.034;--q:0.403;--bob:3.2;--ph:0.020;--rot:20.6"></i>
+            <i class="hero-frag" style="width:16.8px;height:14.4px;margin:-7.2px 0 0 -8.4px;background-position:-160.0px -62.4px;--r:306.9;--th:-2.363;--q:0.403;--bob:4.5;--ph:0.188;--rot:15.0"></i>
+            <i class="hero-frag" style="width:9.6px;height:15.2px;margin:-7.6px 0 0 -4.8px;background-position:-83.2px -62.4px;--r:270.1;--th:2.919;--q:0.403;--bob:6.5;--ph:0.166;--rot:31.6"></i>
+            <i class="hero-frag" style="width:10.4px;height:10.4px;margin:-5.2px 0 0 -5.2px;background-position:-688.8px -62.4px;--r:295.0;--th:2.399;--q:0.403;--bob:3.1;--ph:0.311;--rot:28.0"></i>
+            <i class="hero-frag" style="width:12.8px;height:12.8px;margin:-6.4px 0 0 -6.4px;background-position:-360.0px -62.4px;--r:389.5;--th:-2.701;--q:0.403;--bob:7.9;--ph:0.658;--rot:29.9"></i>
+            <i class="hero-frag" style="width:32.0px;height:60.8px;margin:-30.4px 0 0 -16.0px;background-position:-0.0px -0.0px;--r:198.5;--th:1.212;--q:0.403;--bob:4.1;--ph:0.574;--rot:-34.8"></i>
+            <i class="hero-frag" style="width:12.0px;height:10.4px;margin:-5.2px 0 0 -6.0px;background-position:-700.8px -62.4px;--r:348.5;--th:2.679;--q:0.403;--bob:8.8;--ph:0.854;--rot:-15.3"></i>
+            <i class="hero-frag" style="width:12.0px;height:12.8px;margin:-6.4px 0 0 -6.0px;background-position:-374.4px -62.4px;--r:288.8;--th:-1.720;--q:0.403;--bob:5.0;--ph:0.318;--rot:-30.3"></i>
+            <i class="hero-frag" style="width:14.4px;height:11.2px;margin:-5.6px 0 0 -7.2px;background-position:-598.4px -62.4px;--r:294.9;--th:0.419;--q:0.403;--bob:7.8;--ph:0.314;--rot:-36.4"></i>
+            <i class="hero-frag" style="width:12.0px;height:10.4px;margin:-5.2px 0 0 -6.0px;background-position:-714.4px -62.4px;--r:329.8;--th:0.685;--q:0.403;--bob:7.8;--ph:0.129;--rot:36.9"></i>
+            <i class="hero-frag" style="width:11.2px;height:9.6px;margin:-4.8px 0 0 -5.6px;background-position:-48.0px -80.8px;--r:300.8;--th:-0.351;--q:0.403;--bob:4.2;--ph:0.574;--rot:30.6"></i>
+            <i class="hero-frag" style="width:11.2px;height:9.6px;margin:-4.8px 0 0 -5.6px;background-position:-60.8px -80.8px;--r:358.3;--th:2.515;--q:0.403;--bob:6.7;--ph:0.096;--rot:-30.4"></i>
+            <i class="hero-frag" style="width:12.8px;height:12.8px;margin:-6.4px 0 0 -6.4px;background-position:-388.0px -62.4px;--r:282.7;--th:2.552;--q:0.403;--bob:7.9;--ph:0.804;--rot:22.5"></i>
+            <i class="hero-frag" style="width:12.8px;height:11.2px;margin:-5.6px 0 0 -6.4px;background-position:-614.4px -62.4px;--r:398.8;--th:-1.742;--q:0.403;--bob:7.3;--ph:0.867;--rot:-18.2"></i>
+            <i class="hero-frag" style="width:9.6px;height:10.4px;margin:-5.2px 0 0 -4.8px;background-position:-728.0px -62.4px;--r:362.4;--th:-2.303;--q:0.403;--bob:3.2;--ph:0.651;--rot:19.6"></i>
+            <i class="hero-frag" style="width:9.6px;height:12.8px;margin:-6.4px 0 0 -4.8px;background-position:-402.4px -62.4px;--r:339.3;--th:2.656;--q:0.403;--bob:6.4;--ph:0.945;--rot:20.6"></i>
+            <i class="hero-frag" style="width:8.8px;height:10.4px;margin:-5.2px 0 0 -4.4px;background-position:-739.2px -62.4px;--r:285.8;--th:2.580;--q:0.403;--bob:5.7;--ph:0.657;--rot:-16.6"></i>
+            <i class="hero-frag" style="width:16.0px;height:15.2px;margin:-7.6px 0 0 -8.0px;background-position:-94.4px -62.4px;--r:257.0;--th:-1.879;--q:0.403;--bob:5.3;--ph:0.134;--rot:-35.6"></i>
+            <i class="hero-frag" style="width:11.2px;height:11.2px;margin:-5.6px 0 0 -5.6px;background-position:-628.8px -62.4px;--r:296.9;--th:-0.711;--q:0.403;--bob:5.3;--ph:0.372;--rot:28.0"></i>
+            <i class="hero-frag" style="width:9.6px;height:11.2px;margin:-5.6px 0 0 -4.8px;background-position:-641.6px -62.4px;--r:293.3;--th:-0.540;--q:0.403;--bob:4.3;--ph:0.247;--rot:-25.9"></i>
+            <i class="hero-frag" style="width:10.4px;height:10.4px;margin:-5.2px 0 0 -5.2px;background-position:-749.6px -62.4px;--r:290.6;--th:0.302;--q:0.403;--bob:3.5;--ph:0.753;--rot:-29.1"></i>
+            <i class="hero-frag" style="width:15.2px;height:8.8px;margin:-4.4px 0 0 -7.6px;background-position:-168.8px -80.8px;--r:316.4;--th:-2.627;--q:0.403;--bob:4.8;--ph:0.078;--rot:-17.4"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.8px;margin:-4.4px 0 0 -4.4px;background-position:-185.6px -80.8px;--r:395.4;--th:1.460;--q:0.403;--bob:3.8;--ph:0.131;--rot:16.1"></i>
+            <i class="hero-frag" style="width:11.2px;height:12.8px;margin:-6.4px 0 0 -5.6px;background-position:-413.6px -62.4px;--r:386.4;--th:-0.884;--q:0.403;--bob:8.4;--ph:0.269;--rot:35.7"></i>
+            <i class="hero-frag" style="width:10.4px;height:13.6px;margin:-6.8px 0 0 -5.2px;background-position:-218.4px -62.4px;--r:292.9;--th:-0.789;--q:0.403;--bob:6.7;--ph:0.187;--rot:-25.3"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-310.4px -80.8px;--r:279.6;--th:1.333;--q:0.403;--bob:8.3;--ph:0.375;--rot:-16.5"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.8px;margin:-4.4px 0 0 -4.4px;background-position:-196.0px -80.8px;--r:295.6;--th:1.263;--q:0.403;--bob:7.4;--ph:0.776;--rot:35.5"></i>
+            <i class="hero-frag" style="width:10.4px;height:8.0px;margin:-4.0px 0 0 -5.2px;background-position:-320.0px -80.8px;--r:348.4;--th:2.492;--q:0.403;--bob:7.0;--ph:0.371;--rot:27.5"></i>
+            <i class="hero-frag" style="width:8.0px;height:12.8px;margin:-6.4px 0 0 -4.0px;background-position:-426.4px -62.4px;--r:274.7;--th:0.221;--q:0.403;--bob:7.5;--ph:0.191;--rot:-20.9"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.8px;margin:-4.4px 0 0 -4.0px;background-position:-206.4px -80.8px;--r:297.0;--th:1.012;--q:0.403;--bob:6.2;--ph:0.748;--rot:17.3"></i>
+            <i class="hero-frag" style="width:9.6px;height:12.8px;margin:-6.4px 0 0 -4.8px;background-position:-436.0px -62.4px;--r:273.4;--th:-1.769;--q:0.403;--bob:4.1;--ph:0.800;--rot:30.8"></i>
+            <i class="hero-frag" style="width:10.4px;height:10.4px;margin:-5.2px 0 0 -5.2px;background-position:-761.6px -62.4px;--r:390.8;--th:-1.704;--q:0.403;--bob:7.3;--ph:0.997;--rot:35.9"></i>
+            <i class="hero-frag" style="width:10.4px;height:11.2px;margin:-5.6px 0 0 -5.2px;background-position:-652.8px -62.4px;--r:272.0;--th:-1.700;--q:0.403;--bob:7.7;--ph:0.395;--rot:30.7"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.8px;margin:-4.4px 0 0 -4.4px;background-position:-216.0px -80.8px;--r:359.1;--th:0.817;--q:0.403;--bob:4.1;--ph:0.759;--rot:32.8"></i>
+            <i class="hero-frag" style="width:12.8px;height:8.0px;margin:-4.0px 0 0 -6.4px;background-position:-332.0px -80.8px;--r:282.2;--th:0.815;--q:0.403;--bob:5.7;--ph:0.378;--rot:24.9"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.8px;margin:-4.4px 0 0 -4.0px;background-position:-226.4px -80.8px;--r:358.3;--th:2.303;--q:0.403;--bob:3.2;--ph:0.844;--rot:-24.1"></i>
+            <i class="hero-frag" style="width:11.2px;height:12.8px;margin:-6.4px 0 0 -5.6px;background-position:-447.2px -62.4px;--r:296.8;--th:3.056;--q:0.403;--bob:6.3;--ph:0.722;--rot:23.9"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-346.4px -80.8px;--r:432.9;--th:1.691;--q:0.403;--bob:8.0;--ph:0.919;--rot:-17.6"></i>
+            <i class="hero-frag" style="width:7.2px;height:10.4px;margin:-5.2px 0 0 -3.6px;background-position:-773.6px -62.4px;--r:286.4;--th:2.671;--q:0.403;--bob:7.6;--ph:0.993;--rot:-17.8"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.0px;margin:-4.0px 0 0 -4.4px;background-position:-356.0px -80.8px;--r:312.0;--th:2.258;--q:0.403;--bob:7.3;--ph:0.825;--rot:-17.2"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.0px;margin:-4.0px 0 0 -4.4px;background-position:-366.4px -80.8px;--r:300.7;--th:2.766;--q:0.403;--bob:3.6;--ph:0.988;--rot:17.0"></i>
+            <i class="hero-frag" style="width:12.0px;height:10.4px;margin:-5.2px 0 0 -6.0px;background-position:-782.4px -62.4px;--r:305.3;--th:-3.128;--q:0.403;--bob:4.1;--ph:0.575;--rot:33.5"></i>
+            <i class="hero-frag" style="width:9.6px;height:9.6px;margin:-4.8px 0 0 -4.8px;background-position:-73.6px -80.8px;--r:334.2;--th:-1.836;--q:0.403;--bob:4.1;--ph:0.914;--rot:-19.6"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.8px;margin:-4.4px 0 0 -4.0px;background-position:-236.0px -80.8px;--r:340.2;--th:2.458;--q:0.403;--bob:7.6;--ph:0.068;--rot:-14.8"></i>
+            <i class="hero-frag" style="width:12.8px;height:16.8px;margin:-8.4px 0 0 -6.4px;background-position:-0.0px -62.4px;--r:303.4;--th:-0.774;--q:0.403;--bob:4.9;--ph:0.312;--rot:-32.7"></i>
+            <i class="hero-frag" style="width:12.8px;height:12.8px;margin:-6.4px 0 0 -6.4px;background-position:-460.0px -62.4px;--r:288.9;--th:-2.462;--q:0.403;--bob:5.7;--ph:0.057;--rot:37.1"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-376.8px -80.8px;--r:342.6;--th:0.974;--q:0.403;--bob:8.5;--ph:0.247;--rot:24.2"></i>
+            <i class="hero-frag" style="width:11.2px;height:8.0px;margin:-4.0px 0 0 -5.6px;background-position:-386.4px -80.8px;--r:307.5;--th:2.625;--q:0.403;--bob:4.4;--ph:0.125;--rot:-27.1"></i>
+            <i class="hero-frag" style="width:9.6px;height:9.6px;margin:-4.8px 0 0 -4.8px;background-position:-84.8px -80.8px;--r:285.6;--th:-2.412;--q:0.403;--bob:3.7;--ph:0.176;--rot:-36.4"></i>
+            <i class="hero-frag" style="width:10.4px;height:10.4px;margin:-5.2px 0 0 -5.2px;background-position:-796.0px -62.4px;--r:292.5;--th:-1.977;--q:0.403;--bob:5.9;--ph:0.184;--rot:-20.9"></i>
+            <i class="hero-frag" style="width:9.6px;height:11.2px;margin:-5.6px 0 0 -4.8px;background-position:-664.8px -62.4px;--r:323.1;--th:-0.802;--q:0.403;--bob:6.2;--ph:0.283;--rot:27.4"></i>
+            <i class="hero-frag" style="width:8.0px;height:9.6px;margin:-4.8px 0 0 -4.0px;background-position:-96.0px -80.8px;--r:292.4;--th:-2.659;--q:0.403;--bob:6.8;--ph:0.536;--rot:34.6"></i>
+            <i class="hero-frag" style="width:9.6px;height:9.6px;margin:-4.8px 0 0 -4.8px;background-position:-105.6px -80.8px;--r:340.1;--th:-1.977;--q:0.403;--bob:8.2;--ph:0.179;--rot:-17.5"></i>
+            <i class="hero-frag" style="width:16.8px;height:9.6px;margin:-4.8px 0 0 -8.4px;background-position:-116.8px -80.8px;--r:293.0;--th:-2.251;--q:0.403;--bob:3.7;--ph:0.980;--rot:20.0"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-399.2px -80.8px;--r:298.7;--th:-0.225;--q:0.403;--bob:8.8;--ph:0.208;--rot:27.2"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.0px;margin:-4.0px 0 0 -4.4px;background-position:-408.8px -80.8px;--r:285.1;--th:1.162;--q:0.403;--bob:6.0;--ph:0.915;--rot:22.2"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-419.2px -80.8px;--r:329.7;--th:2.123;--q:0.403;--bob:6.6;--ph:0.066;--rot:-20.2"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-428.8px -80.8px;--r:359.4;--th:1.457;--q:0.403;--bob:5.8;--ph:0.881;--rot:-35.6"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-437.6px -80.8px;--r:357.9;--th:1.158;--q:0.403;--bob:7.6;--ph:0.708;--rot:36.1"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-447.2px -80.8px;--r:361.5;--th:2.385;--q:0.403;--bob:7.1;--ph:0.736;--rot:-18.4"></i>
+            <i class="hero-frag" style="width:10.4px;height:10.4px;margin:-5.2px 0 0 -5.2px;background-position:-808.0px -62.4px;--r:319.7;--th:-1.677;--q:0.403;--bob:7.5;--ph:0.166;--rot:-37.9"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.8px;margin:-4.4px 0 0 -4.4px;background-position:-245.6px -80.8px;--r:322.8;--th:2.846;--q:0.403;--bob:6.6;--ph:0.329;--rot:18.0"></i>
+            <i class="hero-frag" style="width:11.2px;height:10.4px;margin:-5.2px 0 0 -5.6px;background-position:-0.0px -80.8px;--r:391.6;--th:-1.877;--q:0.403;--bob:6.1;--ph:0.092;--rot:39.1"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-456.8px -80.8px;--r:273.9;--th:1.091;--q:0.403;--bob:6.5;--ph:0.804;--rot:-34.8"></i>
+            <i class="hero-frag" style="width:8.0px;height:7.2px;margin:-3.6px 0 0 -4.0px;background-position:-692.8px -80.8px;--r:304.6;--th:1.072;--q:0.403;--bob:7.2;--ph:0.644;--rot:-38.7"></i>
+            <i class="hero-frag" style="width:11.2px;height:11.2px;margin:-5.6px 0 0 -5.6px;background-position:-676.0px -62.4px;--r:289.6;--th:-2.600;--q:0.403;--bob:5.6;--ph:0.415;--rot:-35.7"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-466.4px -80.8px;--r:318.7;--th:2.160;--q:0.403;--bob:5.0;--ph:0.670;--rot:19.4"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-476.0px -80.8px;--r:310.0;--th:0.597;--q:0.403;--bob:6.3;--ph:0.769;--rot:-32.9"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-485.6px -80.8px;--r:335.8;--th:2.160;--q:0.403;--bob:3.1;--ph:0.958;--rot:-26.2"></i>
+            <i class="hero-frag" style="width:9.6px;height:9.6px;margin:-4.8px 0 0 -4.8px;background-position:-135.2px -80.8px;--r:297.7;--th:-2.491;--q:0.403;--bob:5.5;--ph:0.720;--rot:33.0"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-494.4px -80.8px;--r:301.2;--th:2.851;--q:0.403;--bob:3.5;--ph:0.563;--rot:28.5"></i>
+            <i class="hero-frag" style="width:11.2px;height:12.0px;margin:-6.0px 0 0 -5.6px;background-position:-544.8px -62.4px;--r:338.1;--th:-1.797;--q:0.403;--bob:8.6;--ph:0.040;--rot:30.4"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-504.0px -80.8px;--r:485.4;--th:-1.786;--q:0.403;--bob:6.3;--ph:0.074;--rot:-29.4"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-513.6px -80.8px;--r:336.7;--th:0.926;--q:0.403;--bob:4.3;--ph:0.196;--rot:-19.1"></i>
+            <i class="hero-frag" style="width:8.0px;height:7.2px;margin:-3.6px 0 0 -4.0px;background-position:-702.4px -80.8px;--r:354.9;--th:1.564;--q:0.403;--bob:5.7;--ph:0.750;--rot:32.4"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-522.4px -80.8px;--r:292.5;--th:0.517;--q:0.403;--bob:6.3;--ph:0.807;--rot:-30.1"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-532.0px -80.8px;--r:309.4;--th:2.386;--q:0.403;--bob:7.9;--ph:0.678;--rot:-30.7"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-541.6px -80.8px;--r:310.2;--th:2.690;--q:0.403;--bob:5.4;--ph:0.558;--rot:-33.4"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-550.4px -80.8px;--r:292.7;--th:-0.368;--q:0.403;--bob:5.3;--ph:0.467;--rot:-33.6"></i>
+            <i class="hero-frag" style="width:12.0px;height:12.8px;margin:-6.4px 0 0 -6.0px;background-position:-474.4px -62.4px;--r:290.2;--th:-2.725;--q:0.403;--bob:6.0;--ph:0.338;--rot:-23.9"></i>
+            <i class="hero-frag" style="width:10.4px;height:10.4px;margin:-5.2px 0 0 -5.2px;background-position:-12.8px -80.8px;--r:421.6;--th:-1.329;--q:0.403;--bob:8.1;--ph:0.785;--rot:25.6"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-560.0px -80.8px;--r:306.8;--th:0.683;--q:0.403;--bob:7.3;--ph:0.034;--rot:36.4"></i>
+            <i class="hero-frag" style="width:7.2px;height:7.2px;margin:-3.6px 0 0 -3.6px;background-position:-712.0px -80.8px;--r:307.7;--th:0.829;--q:0.403;--bob:6.5;--ph:0.558;--rot:-31.3"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-569.6px -80.8px;--r:314.4;--th:0.866;--q:0.403;--bob:7.1;--ph:0.584;--rot:-18.8"></i>
+            <i class="hero-frag" style="width:10.4px;height:9.6px;margin:-4.8px 0 0 -5.2px;background-position:-146.4px -80.8px;--r:370.8;--th:-1.845;--q:0.403;--bob:4.8;--ph:0.293;--rot:-25.2"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-578.4px -80.8px;--r:317.6;--th:-2.962;--q:0.403;--bob:9.0;--ph:0.353;--rot:-23.7"></i>
+            <i class="hero-frag" style="width:10.4px;height:8.8px;margin:-4.4px 0 0 -5.2px;background-position:-256.0px -80.8px;--r:333.6;--th:-2.385;--q:0.403;--bob:6.5;--ph:0.948;--rot:-37.1"></i>
+            <i class="hero-frag" style="width:8.0px;height:7.2px;margin:-3.6px 0 0 -4.0px;background-position:-720.8px -80.8px;--r:320.0;--th:0.811;--q:0.403;--bob:5.3;--ph:0.267;--rot:-26.8"></i>
+            <i class="hero-frag" style="width:8.8px;height:9.6px;margin:-4.8px 0 0 -4.4px;background-position:-158.4px -80.8px;--r:337.9;--th:-2.336;--q:0.403;--bob:7.1;--ph:0.073;--rot:36.5"></i>
+            <i class="hero-frag" style="width:8.0px;height:7.2px;margin:-3.6px 0 0 -4.0px;background-position:-730.4px -80.8px;--r:269.5;--th:-3.120;--q:0.403;--bob:4.9;--ph:0.495;--rot:-24.9"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-588.0px -80.8px;--r:312.9;--th:2.643;--q:0.403;--bob:8.0;--ph:0.828;--rot:-26.3"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-597.6px -80.8px;--r:340.5;--th:2.405;--q:0.403;--bob:7.6;--ph:0.458;--rot:28.2"></i>
+            <i class="hero-frag" style="width:9.6px;height:10.4px;margin:-5.2px 0 0 -4.8px;background-position:-24.8px -80.8px;--r:351.6;--th:-1.646;--q:0.403;--bob:4.2;--ph:0.317;--rot:-32.4"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-606.4px -80.8px;--r:321.9;--th:-2.521;--q:0.403;--bob:7.6;--ph:0.057;--rot:-35.3"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.0px;margin:-4.0px 0 0 -4.4px;background-position:-616.0px -80.8px;--r:279.2;--th:0.527;--q:0.403;--bob:5.7;--ph:0.062;--rot:31.8"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-626.4px -80.8px;--r:506.2;--th:-1.728;--q:0.426;--bob:4.5;--ph:0.643;--rot:-30.6"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-636.0px -80.8px;--r:329.3;--th:2.204;--q:0.403;--bob:4.5;--ph:0.477;--rot:-27.6"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.8px;margin:-4.4px 0 0 -4.4px;background-position:-268.0px -80.8px;--r:311.8;--th:-0.719;--q:0.403;--bob:6.8;--ph:0.203;--rot:-21.5"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-645.6px -80.8px;--r:282.3;--th:0.211;--q:0.403;--bob:4.8;--ph:0.256;--rot:15.8"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-654.4px -80.8px;--r:268.4;--th:-1.736;--q:0.403;--bob:5.5;--ph:0.772;--rot:-19.1"></i>
+            <i class="hero-frag" style="width:10.4px;height:10.4px;margin:-5.2px 0 0 -5.2px;background-position:-36.0px -80.8px;--r:255.9;--th:-1.938;--q:0.403;--bob:3.8;--ph:0.321;--rot:34.0"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.8px;margin:-4.4px 0 0 -4.4px;background-position:-278.4px -80.8px;--r:268.8;--th:-1.980;--q:0.403;--bob:5.9;--ph:0.923;--rot:-30.1"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.0px;margin:-4.0px 0 0 -4.4px;background-position:-664.0px -80.8px;--r:274.3;--th:-0.004;--q:0.403;--bob:7.6;--ph:0.750;--rot:22.9"></i>
+            <i class="hero-frag" style="width:7.2px;height:7.2px;margin:-3.6px 0 0 -3.6px;background-position:-740.0px -80.8px;--r:326.6;--th:2.391;--q:0.403;--bob:4.5;--ph:0.438;--rot:-17.7"></i>
+            <i class="hero-frag" style="width:7.2px;height:7.2px;margin:-3.6px 0 0 -3.6px;background-position:-748.8px -80.8px;--r:303.7;--th:2.677;--q:0.403;--bob:5.6;--ph:0.640;--rot:-17.5"></i>
+            <i class="hero-frag" style="width:7.2px;height:7.2px;margin:-3.6px 0 0 -3.6px;background-position:-757.6px -80.8px;--r:493.5;--th:2.015;--q:0.403;--bob:3.8;--ph:0.174;--rot:39.0"></i>
+            <i class="hero-frag" style="width:8.0px;height:8.0px;margin:-4.0px 0 0 -4.0px;background-position:-674.4px -80.8px;--r:181.1;--th:2.574;--q:0.403;--bob:3.2;--ph:0.184;--rot:-18.3"></i>
+            <i class="hero-frag" style="width:7.2px;height:8.0px;margin:-4.0px 0 0 -3.6px;background-position:-684.0px -80.8px;--r:285.2;--th:-1.631;--q:0.403;--bob:5.8;--ph:0.015;--rot:-18.2"></i>
+            <i class="hero-frag" style="width:9.6px;height:8.8px;margin:-4.4px 0 0 -4.8px;background-position:-288.8px -80.8px;--r:509.7;--th:-1.767;--q:0.404;--bob:4.6;--ph:0.792;--rot:-18.8"></i>
+            <i class="hero-frag" style="width:7.2px;height:7.2px;margin:-3.6px 0 0 -3.6px;background-position:-766.4px -80.8px;--r:509.2;--th:-1.380;--q:0.443;--bob:6.7;--ph:0.406;--rot:35.2"></i>
+            <i class="hero-frag" style="width:8.8px;height:8.8px;margin:-4.4px 0 0 -4.4px;background-position:-300.0px -80.8px;--r:314.0;--th:-0.514;--q:0.403;--bob:4.0;--ph:0.924;--rot:-37.2"></i>
+          </div>
+          <!-- shard:end -->
+        </div>
+      </div>
+
+      <div id="hero-fg">
+        <div class="hero-cam" style="--k: 34; --wx: -90; --wy: 36; --o: 0.55">
+          <img class="hero-drift" src="assets/fg-far.webp" alt="" style="--ph: 0.15" />
+          <img class="hero-drift b" src="assets/fg-far.webp" alt="" style="--ph: 0.65" />
+        </div>
+        <div class="hero-cam" style="--k: 46; --wx: -150; --wy: 52; --o: 0.5">
+          <img class="hero-drift" src="assets/fg-mid.webp" alt="" style="--ph: 0.45" />
+          <img class="hero-drift b" src="assets/fg-mid.webp" alt="" style="--ph: 0.95" />
+        </div>
+        <div class="hero-cam" style="--k: 60; --wx: -220; --wy: 70; --o: 0.42">
+          <img class="hero-drift" src="assets/fg-near.webp" alt="" style="--ph: 0.8" />
+          <img class="hero-drift b" src="assets/fg-near.webp" alt="" style="--ph: 0.3" />
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const tl = gsap.timeline({ paused: true });
+    tl.fromTo("#hero-stage", { "--p": 0 }, { "--p": 1, duration: 16, ease: "none" }, 0);
+    window.__timelines["hero"] = tl;
+  </script>
+</template>
