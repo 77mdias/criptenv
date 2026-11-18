@@ -287,7 +287,8 @@ def integrations_sync(
             vault = RemoteVault(client, project_id)
 
             if direction == "push":
-                state = run_async(vault.load_state(environment))
+                # Resolved: a child environment syncs what it inherits too.
+                state = run_async(vault.load_resolved(environment))
                 entries = run_async(vault.decrypt_all(state))
                 kinds = {blob["key_id"]: blob.get("kind") for blob in state.blobs}
                 if not entries and not delete_keys:

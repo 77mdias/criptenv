@@ -152,7 +152,9 @@ async def test_vault_push_passes_expected_version_to_service():
         with patch("app.services.project_service.ProjectService.get_project", new_callable=AsyncMock) as get_project:
             get_project.return_value = make_project()
             with patch("app.services.project_service.ProjectService.verify_vault_proof", return_value=True):
-                with patch("app.services.vault_service.VaultService.push_blobs", new_callable=AsyncMock) as push:
+                with patch("app.services.vault_service.VaultService.push_blobs", new_callable=AsyncMock) as push, \
+                        patch("app.services.vault_service.VaultService.describe_push", new_callable=AsyncMock, return_value={}), \
+                        patch("app.services.vault_service.VaultService.get_unset_keys", new_callable=AsyncMock, return_value=[]):
                     push.return_value = ([], False)
                     with patch("app.services.vault_service.VaultService.get_environment_version", new_callable=AsyncMock) as version:
                         version.return_value = 4
@@ -199,7 +201,9 @@ async def test_vault_push_returns_409_for_expected_version_conflict():
         with patch("app.services.project_service.ProjectService.get_project", new_callable=AsyncMock) as get_project:
             get_project.return_value = make_project()
             with patch("app.services.project_service.ProjectService.verify_vault_proof", return_value=True):
-                with patch("app.services.vault_service.VaultService.push_blobs", new_callable=AsyncMock) as push:
+                with patch("app.services.vault_service.VaultService.push_blobs", new_callable=AsyncMock) as push, \
+                        patch("app.services.vault_service.VaultService.describe_push", new_callable=AsyncMock, return_value={}), \
+                        patch("app.services.vault_service.VaultService.get_unset_keys", new_callable=AsyncMock, return_value=[]):
                     push.side_effect = ConflictError(current_version=3, expected_version=2)
                     async with AsyncClient(
                         transport=ASGITransport(app=app),

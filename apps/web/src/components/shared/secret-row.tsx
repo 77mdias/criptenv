@@ -2,7 +2,7 @@
 
 import { useState } from "react"
 import { useLocale, useTranslations } from "next-intl"
-import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2, RotateCcw, Clock } from "lucide-react"
+import { Clipboard, Eye, EyeOff, KeyRound, Pencil, Trash2, RotateCcw, Clock, Unlink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { cn, formatRelativeTime } from "@/lib/utils"
@@ -17,6 +17,8 @@ export interface DecryptedSecret {
   expiresAt?: string | null
   daysUntilExpiration?: number | null
   isExpired?: boolean
+  /** Child environments: the environment this value is inherited from (null/undefined: the environment's own). */
+  inheritedFrom?: string | null
 }
 
 interface SecretRowProps {
@@ -54,6 +56,8 @@ export function SecretRow({
   const locale = useLocale()
   const masked = "••••••••••••••••"
 
+  // An inherited value belongs to the parent: here it can be overridden (edit) or hidden (unset), nothing else.
+  const inherited = Boolean(secret.inheritedFrom)
   const showSelection = Boolean(canManageSecrets && selectable && onSelectChange)
 
   return (
@@ -67,13 +71,13 @@ export function SecretRow({
     >
       {showSelection && (
         <div className="flex items-center md:justify-center">
-          <input
+          {!inherited && <input
             type="checkbox"
             aria-label={t("select", { key: secret.key })}
             checked={selected}
             onChange={(event) => onSelectChange?.(secret, event.target.checked)}
             className="h-4 w-4 rounded border-[var(--border)] bg-[var(--surface)] accent-[var(--text-primary)]"
-          />
+          />}
         </div>
       )}
 
@@ -98,7 +102,7 @@ export function SecretRow({
         )}
         <div className="mt-1 flex flex-wrap items-center gap-2">
           <Badge variant="outline" className="px-2 py-0 text-[10px]">
-            {environmentName}
+            {inherited ? t("inheritedFrom", { env: secret.inheritedFrom ?? "" }) : environmentName}
           </Badge>
           <Badge variant="outline" className="px-2 py-0 text-[10px]">
             {tKinds(secret.kind ?? "config")}
@@ -149,13 +153,14 @@ export function SecretRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8"
-            aria-label={t("edit")}
+            aria-label={inherited ? t("override") : t("edit")}
+            title={inherited ? t("override") : undefined}
             onClick={() => onEdit(secret)}
           >
             <Pencil className="h-3.5 w-3.5" />
           </Button>
         )}
-        {canManageSecrets && onRotate && (
+        {canManageSecrets && onRotate && !inherited && (
           <Button
             variant="ghost"
             size="icon"
@@ -166,7 +171,7 @@ export function SecretRow({
             <RotateCcw className="h-3.5 w-3.5" />
           </Button>
         )}
-        {canManageSecrets && onSetExpiration && (
+        {canManageSecrets && onSetExpiration && !inherited && (
           <Button
             variant="ghost"
             size="icon"
@@ -182,10 +187,11 @@ export function SecretRow({
             variant="ghost"
             size="icon"
             className="h-8 w-8 text-red-600"
-            aria-label={t("remove")}
+            aria-label={inherited ? t("unset") : t("remove")}
+            title={inherited ? t("unset") : undefined}
             onClick={() => onDelete(secret)}
           >
-            <Trash2 className="h-3.5 w-3.5" />
+            {inherited ? <Unlink className="h-3.5 w-3.5" /> : <Trash2 className="h-3.5 w-3.5" />}
           </Button>
         )}
       </div>

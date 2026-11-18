@@ -24,15 +24,21 @@ import type {
   Project,
   SecretExpiration,
   VaultBlob,
+  VaultResolvedBlob,
 } from "@/lib/api"
-import { decryptVault, encryptVault, sortSecrets } from "./vault-crypto"
+import { decryptResolved, decryptVault, encryptVault, mergeInherited, sortSecrets } from "./vault-crypto"
 
 interface UseProjectSecretsResult {
   state: {
     project: Project | null
     environments: Environment[]
     activeEnv: Environment | null
+    /** The open environment's own secrets (a child's overrides only): what a save pushes back. */
     secrets: DecryptedSecret[]
+    /** What the environment resolves to: a child's own secrets plus what it inherits. */
+    visibleSecrets: DecryptedSecret[]
+    /** Child environments: inherited keys hidden here (the parent keeps them). */
+    unsetKeys: string[]
     secretsWithExpiration: DecryptedSecret[]
     expirations: SecretExpiration[]
     secretCounts: Record<string, number>
@@ -67,6 +73,10 @@ interface UseProjectSecretsResult {
     /** Rejects with the API's 2FA refusal (see twoFactorRefusal) so the confirm dialog can show it. */
     deleteSecret: (secret: DecryptedSecret, twoFactorCode?: string) => Promise<void>
     deleteSecrets: (keys: string[], twoFactorCode?: string) => Promise<void>
+    /** Child environments: hide an inherited key here, without touching the parent. */
+    unsetSecret: (secret: DecryptedSecret) => Promise<void>
+    /** Child environments: inherit a hidden key again. */
+    restoreSecret: (key: string) => Promise<void>
     /** Resolves false when the vault write failed (the error is in `state.error`). */
     importSecrets: (importedSecrets: DecryptedSecret[], options?: { autoSync?: boolean }) => Promise<boolean>
     dismissAutoSync: () => void
@@ -114,6 +124,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     cachedEnvironments?.environments[0] ?? null
   )
   const [secrets, setSecrets] = useState<DecryptedSecret[]>([])
+  const [resolved, setResolved] = useState<DecryptedSecret[]>([])
+  const [unsetKeys, setUnsetKeys] = useState<string[]>([])
   const [expirations, setExpirations] = useState<SecretExpiration[]>([])
   const [secretCountState, setSecretCountState] = useState<SecretCountState>(() =>
     syncSecretCountState(cachedEnvironments?.environments ?? [])
@@ -143,21 +155,49 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   }, [projectId])
 
   const applyVaultPull = useCallback(
-    async (environment: Environment, blobs: VaultBlob[], version: number) => {
+    async (
+      environment: Environment,
+      blobs: VaultBlob[],
+      version: number,
+      // Child environments: the hidden keys and the resolved view (own + inherited blobs).
+      inheritance?: { unsetKeys: string[]; resolvedBlobs: VaultResolvedBlob[] },
+    ) => {
       setVaultVersion(version)
+      setUnsetKeys(inheritance?.unsetKeys ?? [])
       setSecretCountState((currentState) =>
         setEnvironmentSecretMetadata(currentState, environment.id, blobs.length, version)
       )
 
       if (!keyMaterial) {
         setSecrets([])
+        setResolved([])
         return
       }
 
       const envKey = await deriveProjectEnvironmentKey(keyMaterial, environment.id)
       setSecrets(await decryptVault(blobs, envKey))
+      if (!inheritance) {
+        setResolved([])
+        return
+      }
+      // Inherited values are encrypted with the key of the environment holding them.
+      const keys = new Map<string, Promise<CryptoKey>>()
+      const keyFor = (environmentId: string) => {
+        if (!keys.has(environmentId)) keys.set(environmentId, deriveProjectEnvironmentKey(keyMaterial, environmentId))
+        return keys.get(environmentId)!
+      }
+      setResolved(await decryptResolved(inheritance.resolvedBlobs, keyFor))
     },
     [keyMaterial]
+  )
+
+  const fetchInheritance = useCallback(
+    async (environment: Environment) => {
+      if (!environment.parent_id) return undefined
+      const data = await vaultApi.resolved(projectId, environment.id)
+      return { unsetKeys: data.unset_keys, resolvedBlobs: data.blobs }
+    },
+    [projectId]
   )
 
   const loadVault = useCallback(
@@ -165,9 +205,12 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       setVaultLoading(true)
       setError(null)
       try {
-        const data = await vaultApi.pull(projectId, environment.id)
+        const [data, inheritance] = await Promise.all([
+          vaultApi.pull(projectId, environment.id),
+          fetchInheritance(environment),
+        ])
         if (!shouldApply()) return
-        await applyVaultPull(environment, data.blobs, data.version)
+        await applyVaultPull(environment, data.blobs, data.version, inheritance)
       } catch (err) {
         if (!shouldApply()) return
         setSecrets([])
@@ -178,7 +221,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         }
       }
     },
-    [applyVaultPull, projectId, t]
+    [applyVaultPull, fetchInheritance, projectId, t]
   )
 
   useEffect(() => {
@@ -295,8 +338,11 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     }
   }, [])
 
+  const isChild = Boolean(activeEnv?.parent_id)
+  const visibleSecrets = isChild ? resolved : secrets
+
   const secretsWithExpiration = useMemo(() => {
-    if (!activeEnv) return secrets
+    if (!activeEnv) return visibleSecrets
 
     const expirationByKey = new Map(
       expirations
@@ -304,8 +350,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         .map((item) => [item.secret_key, item])
     )
 
-    return secrets.map((secret) => {
-      const expiration = expirationByKey.get(secret.key)
+    return visibleSecrets.map((secret) => {
+      const expiration = secret.inheritedFrom ? undefined : expirationByKey.get(secret.key)
       if (!expiration) return secret
 
       return {
@@ -315,12 +361,15 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         isExpired: Boolean(expiration.is_expired),
       }
     })
-  }, [activeEnv, expirations, secrets])
+  }, [activeEnv, expirations, visibleSecrets])
 
   const activeEnvName = getEnvironmentName(activeEnv)
-  const activeSecretCount = activeEnv
-    ? (secretCountState.counts[activeEnv.id] ?? secrets.length)
-    : secrets.length
+  // A child counts what it resolves to; the stored count is its overrides only.
+  const activeSecretCount = isChild
+    ? visibleSecrets.length
+    : activeEnv
+      ? (secretCountState.counts[activeEnv.id] ?? secrets.length)
+      : secrets.length
 
   const reportAutoSync = useCallback((sending: Promise<AutoSyncResult[]>) => {
     const run = ++autoSyncRunRef.current
@@ -334,7 +383,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
     async (
       nextSecrets: DecryptedSecret[],
       // `twoFactor`: this push drops a secret, so it carries the 2FA code and its caller handles a refusal.
-      options?: { autoSync?: boolean; twoFactor?: { code?: string } },
+      // `unsetKeys`: a child's new list of hidden inherited keys (default: the current one).
+      options?: { autoSync?: boolean; twoFactor?: { code?: string }; unsetKeys?: string[] },
     ): Promise<boolean> => {
       if (!activeEnv || !keyMaterial || !vaultProof) return false
 
@@ -343,16 +393,25 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       try {
         const envKey = await deriveProjectEnvironmentKey(keyMaterial, activeEnv.id)
         const blobs = await encryptVault(nextSecrets, envKey, vaultVersion + 1)
+        const nextUnset = options?.unsetKeys ?? unsetKeys
         const data = await vaultApi.push(
           projectId,
           activeEnv.id,
-          { blobs, vault_proof: vaultProof, expected_version: vaultVersion },
+          {
+            blobs,
+            vault_proof: vaultProof,
+            expected_version: vaultVersion,
+            ...(activeEnv.parent_id ? { unset_keys: nextUnset } : {}),
+          },
           options?.twoFactor?.code,
         )
-        await applyVaultPull(activeEnv, data.blobs, data.version)
+        await applyVaultPull(activeEnv, data.blobs, data.version, await fetchInheritance(activeEnv))
         if (options?.autoSync !== false) {
+          // Hosting gets what the environment resolves to: a child's inherited values too.
+          const before = activeEnv.parent_id ? resolved : secrets
+          const after = activeEnv.parent_id ? mergeInherited(nextSecrets, resolved, nextUnset) : nextSecrets
           // Not awaited: the save is done; hosting is told afterwards and a failure there only shows a notice.
-          reportAutoSync(autoSync(activeEnv.id, nextSecrets, removedKeys(secrets, nextSecrets)))
+          reportAutoSync(autoSync(activeEnv.id, after, removedKeys(before, after)))
         }
         return true
       } catch (err) {
@@ -363,7 +422,10 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
         setSaving(false)
       }
     },
-    [activeEnv, applyVaultPull, autoSync, keyMaterial, projectId, reportAutoSync, secrets, t, vaultProof, vaultVersion]
+    [
+      activeEnv, applyVaultPull, autoSync, fetchInheritance, keyMaterial, projectId, reportAutoSync, resolved,
+      secrets, t, unsetKeys, vaultProof, vaultVersion,
+    ]
   )
 
   const dismissAutoSync = useCallback(() => {
@@ -372,8 +434,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
   }, [])
 
   const resendAutoSync = useCallback(() => {
-    if (activeEnv) reportAutoSync(autoSync(activeEnv.id, secrets, []))
-  }, [activeEnv, autoSync, reportAutoSync, secrets])
+    if (activeEnv) reportAutoSync(autoSync(activeEnv.id, visibleSecrets, []))
+  }, [activeEnv, autoSync, reportAutoSync, visibleSecrets])
 
   const openCreateForm = useCallback(() => {
     setEditingSecret(null)
@@ -418,6 +480,22 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       await deleteSecrets([secret.key], twoFactorCode)
     },
     [deleteSecrets]
+  )
+
+  const unsetSecret = useCallback(
+    async (secret: DecryptedSecret) => {
+      await pushSecrets(secrets.filter((item) => item.key !== secret.key), {
+        unsetKeys: Array.from(new Set([...unsetKeys, secret.key])).sort(),
+      })
+    },
+    [pushSecrets, secrets, unsetKeys]
+  )
+
+  const restoreSecret = useCallback(
+    async (key: string) => {
+      await pushSecrets(secrets, { unsetKeys: unsetKeys.filter((item) => item !== key) })
+    },
+    [pushSecrets, secrets, unsetKeys]
   )
 
   const importSecrets = useCallback(
@@ -530,6 +608,7 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
 
   const lockVault = useCallback(() => {
     setSecrets([])
+    setResolved([])
     dismissAutoSync()
     clearSession()
   }, [clearSession, dismissAutoSync])
@@ -540,6 +619,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       environments,
       activeEnv,
       secrets,
+      visibleSecrets,
+      unsetKeys,
       secretsWithExpiration,
       expirations,
       secretCounts: secretCountState.counts,
@@ -572,6 +653,8 @@ export function useProjectSecrets(projectId: string): UseProjectSecretsResult {
       saveSecret,
       deleteSecret,
       deleteSecrets,
+      unsetSecret,
+      restoreSecret,
       importSecrets,
       dismissAutoSync,
       resendAutoSync,

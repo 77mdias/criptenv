@@ -4,11 +4,12 @@ from uuid import UUID, uuid4
 
 import bcrypt
 from fastapi import HTTPException
-from sqlalchemy import select, func
+from sqlalchemy import select, func, update
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.project import Project
 from app.models.environment import Environment
+from app.services.environment_inheritance import is_gone
 from app.models.member import ProjectMember
 from app.strategies.access import get_access_strategy
 
@@ -261,16 +262,23 @@ class ProjectService:
         if not project:
             return False
 
+        # Children point at their parent with ON DELETE RESTRICT, and the ORM does not order the
+        # environments it cascades: unlink them first so the whole project goes in one statement order.
+        await self.db.execute(
+            update(Environment).where(Environment.project_id == project_id).values(parent_id=None)
+            .execution_options(synchronize_session=False)
+        )
         await self.db.delete(project)
         return True
 
     async def active_environment_names(self, project_id: UUID) -> list[str]:
         result = await self.db.execute(
-            select(Environment.name)
+            select(Environment)
             .where(Environment.project_id == project_id, Environment.archived.is_(False))
             .order_by(Environment.name)
         )
-        return list(result.scalars().all())
+        # An expired child is gone even before the cleanup job deletes it.
+        return [env.name for env in result.scalars().all() if not is_gone(env)]
 
     async def validate_environment_scope(
         self, project_id: UUID, scope: Optional[str]

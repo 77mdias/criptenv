@@ -613,6 +613,7 @@ class TestEnvironmentExtraCommands:
     def test_env_delete(self, mock_ctx, runner):
         mock_client = AsyncMock()
         mock_client.delete_environment = AsyncMock(return_value=None)
+        mock_client.list_environments = AsyncMock(return_value={"environments": [{"id": "env_1", "name": "staging"}]})
         mock_ctx.return_value.__enter__ = lambda s: (_make_mock_db(), None, mock_client)
         mock_ctx.return_value.__exit__ = lambda s, *a: None
 

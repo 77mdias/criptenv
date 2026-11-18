@@ -61,7 +61,8 @@ async function open(environments: Environment[] = SEEDED, ownerPlan: Plan = plan
   mocked.plan.mockResolvedValue(ownerPlan)
   renderWithIntl(<EnvironmentsPanel projectId="project-1" />)
   await screen.findByRole("heading", { name: "Ambientes" })
-  await screen.findByText("production")
+  // The parent picker lists the names too: wait for the row.
+  await screen.findByRole("listitem", { name: "production" })
 }
 
 const row = (name: string) => screen.getByRole("listitem", { name })
@@ -102,7 +103,7 @@ describe("EnvironmentsPanel", () => {
     await userEvent.type(screen.getByLabelText("Nome"), "Banco Admin")
     await userEvent.click(screen.getByRole("button", { name: "Criar ambiente" }))
 
-    expect(await screen.findByRole("alert")).toHaveTextContent("letras minúsculas, números e hífen")
+    expect(await screen.findByRole("alert")).toHaveTextContent("letras minúsculas, números, hífen e /")
     expect(mocked.create).not.toHaveBeenCalled()
   })
 
@@ -192,6 +193,68 @@ describe("EnvironmentsPanel", () => {
     await userEvent.click(screen.getByRole("button", { name: "Criar ambiente" }))
 
     expect(await screen.findByRole("alert")).toHaveTextContent("limite de ambientes do plano")
-    expect(screen.getByText("production")).toBeInTheDocument()
+    expect(row("production")).toBeInTheDocument()
+  })
+
+  // The parent and TTL pickers are themed Radix selects; each keeps a hidden native select for autofill.
+  const nativeSelects = () => Array.from(document.querySelectorAll("select"))
+
+  it("creates an ephemeral child of an environment", async () => {
+    mocked.create.mockResolvedValue(env("development/wt-x", { parent_id: "env-development" }))
+    await open()
+
+    await userEvent.type(screen.getByLabelText("Nome"), "development/wt-x")
+    const [parentSelect] = nativeSelects()
+    await userEvent.selectOptions(parentSelect, "env-development")
+    await userEvent.selectOptions(nativeSelects()[1], String(7 * 86400))
+    await userEvent.click(screen.getByRole("button", { name: "Criar ambiente" }))
+
+    await waitFor(() =>
+      expect(mocked.create).toHaveBeenCalledWith("project-1", {
+        name: "development/wt-x",
+        restricted: false,
+        parent_id: "env-development",
+        ttl_seconds: 7 * 86400,
+      }),
+    )
+  })
+
+  it("lets an ephemeral child be created on a full plan", async () => {
+    await open(SEEDED, plan(3, 3))
+    expect(screen.getByRole("button", { name: "Criar ambiente" })).toBeDisabled()
+
+    await userEvent.selectOptions(nativeSelects()[0], "env-development")
+    await userEvent.selectOptions(nativeSelects()[1], String(86400))
+
+    expect(screen.getByRole("button", { name: "Criar ambiente" })).toBeEnabled()
+  })
+
+  it("shows the parent and expiry of a child and deletes it for good", async () => {
+    mocked.remove.mockResolvedValue(undefined)
+    await open([
+      ...SEEDED,
+      env("development/wt-x", { parent_id: "env-development", expires_at: "2027-01-08T00:00:00Z" }),
+    ])
+
+    const child = row("development/wt-x")
+    expect(child).toHaveTextContent("Herda de development")
+    expect(child).toHaveTextContent("Expira em")
+    expect(within(child).queryByRole("button", { name: "Arquivar" })).not.toBeInTheDocument()
+    await userEvent.click(within(child).getByRole("button", { name: "Excluir" }))
+    const dialog = await screen.findByRole("dialog")
+    expect(dialog).toHaveTextContent("o pai não muda")
+    await userEvent.click(within(dialog).getByRole("button", { name: "Excluir" }))
+
+    await waitFor(() => expect(mocked.remove).toHaveBeenCalledWith("project-1", "env-development/wt-x"))
+  })
+
+  it("explains why a parent with children cannot be deleted", async () => {
+    mocked.remove.mockRejectedValue(new ApiError("Environment has 1 child environment(s)", 409, null))
+    await open([...SEEDED, env("qa"), env("qa/wt", { parent_id: "env-qa" })])
+
+    await userEvent.click(within(row("qa")).getByRole("button", { name: "Arquivar" }))
+    await userEvent.click(within(await screen.findByRole("dialog")).getByRole("button", { name: "Arquivar" }))
+
+    expect(await screen.findByRole("alert")).toHaveTextContent("Exclua os filhos primeiro")
   })
 })

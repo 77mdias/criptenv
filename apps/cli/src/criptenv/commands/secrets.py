@@ -89,11 +89,12 @@ def get_command(key: str, env_name: str | None, project: str | None, clipboard: 
         with cli_context(require_auth=True) as (db, _master_key, client):
             resolved_project_id = resolve_project_id(db, project, client)
             vault = RemoteVault(client, resolved_project_id)
-            state = run_async(vault.load_state(env_name))
+            # Resolved: a child environment answers with what it inherits too.
+            state = run_async(vault.load_resolved(env_name))
             blob = next((item for item in state.blobs if item["key_id"] == key), None)
             if not blob:
                 raise click.ClickException(f"Secret '{key}' not found")
-            plaintext = run_async(vault.decrypt_blob(blob, state.environment.id))
+            plaintext = run_async(vault.decrypt_blob(blob, blob.get("environment_id") or state.environment.id))
             value = plaintext.decode("utf-8")
     except click.ClickException as e:
         click.echo(f"Error: {e.message}", err=True)
@@ -136,8 +137,9 @@ def list_command(env_name: str | None, project: str | None):
         with cli_context(require_auth=True) as (db, _master_key, client):
             resolved_project_id = resolve_project_id(db, project, client)
             vault = RemoteVault(client, resolved_project_id)
-            state = run_async(vault.load_state(env_name))
+            state = run_async(vault.load_resolved(env_name))
             env_display, secrets = state.environment.name, state.blobs
+            is_child = bool(state.environment.parent_id)
     except click.ClickException as e:
         click.echo(f"Error: {e.message}", err=True)
         raise SystemExit(1)
@@ -153,7 +155,13 @@ def list_command(env_name: str | None, project: str | None):
     click.echo("")
     for s in secrets:
         updated = str(s.get("updated_at", ""))[:16].replace("T", " ")
-        click.echo(f"  {s.get('key_id', 'unknown'):<30} {s.get('kind') or 'config':<7} v{int(s.get('version', 1)):<3} {updated}")
+        origin = ""
+        if is_child:
+            origin = "local" if s.get("origin") == "local" else f"inherited from {s.get('source_environment_name')}"
+        click.echo(
+            f"  {s.get('key_id', 'unknown'):<30} {s.get('kind') or 'config':<7} v{int(s.get('version', 1)):<3} "
+            f"{updated}  {origin}".rstrip()
+        )
 
     click.echo("")
     click.echo(f"Total: {len(secrets)} secret(s)")
@@ -195,6 +203,43 @@ def delete_command(key: str, env_name: str | None, project: str | None, force: b
         raise SystemExit(1)
 
     click.echo(f"✓ Deleted {key}")
+
+
+@click.command("unset")
+@click.argument("key")
+@click.option("--env", "-e", "env_name", required=True, help="Child environment name or ID")
+@click.option("--project", "-p", default=None, help="Project name or ID")
+def unset_command(key: str, env_name: str, project: str | None):
+    """Hide an inherited secret in a child environment, without touching its parent.
+
+    Drops the child's own value for KEY too, if it has one. `criptenv set KEY=...`
+    on the child brings the key back.
+
+    \b
+    Examples:
+        criptenv unset SENTRY_DSN --env dev/wt-feature-x
+    """
+    try:
+        with cli_context(require_auth=True) as (db, _master_key, client):
+            resolved_project_id = resolve_project_id(db, project, client)
+            vault = RemoteVault(client, resolved_project_id)
+            state = run_async(vault.load_state(env_name))
+            if not state.environment.parent_id:
+                raise click.ClickException(
+                    f"'{state.environment.name}' has no parent: there is nothing to unset. "
+                    f"Use 'criptenv delete {key} -e {state.environment.name}' to remove its own secret."
+                )
+            blobs = [blob for blob in state.blobs if blob["key_id"] != key]
+            state.unset_keys = sorted(set(state.unset_keys) | {key})
+            run_async(vault.push_state(state, blobs))
+    except click.ClickException as e:
+        click.echo(f"Error: {e.message}", err=True)
+        raise SystemExit(1)
+    except Exception as e:
+        click.echo(f"Error: {e}", err=True)
+        raise SystemExit(1)
+
+    click.echo(f"✓ Unset {key} in '{state.environment.name}' (its parent keeps it)")
 
 
 # ─── Rotation Commands (M3.5) ──────────────────────────────────────────────────

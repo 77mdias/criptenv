@@ -15,6 +15,8 @@ import { SyncModal } from "@/components/shared/sync-modal"
 import { ExpirationModal } from "@/components/shared/expiration-modal"
 import { VaultUnlockPanel } from "@/components/shared/vault-unlock-panel"
 import type { DecryptedSecret } from "@/components/shared/secret-row"
+import { Button } from "@/components/ui/button"
+import { Card } from "@/components/ui/card"
 import { canWriteProjectSecrets } from "@/lib/project-permissions"
 import { AutoSyncNotice } from "./_components/auto-sync-notice"
 import { SecretsEmptyState } from "./_components/secrets-empty-state"
@@ -123,7 +125,8 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
     if (!canManageSecrets) return
     setSelection({
       environmentId: state.activeEnv?.id ?? null,
-      keys: selected ? state.secretsWithExpiration.map((secret) => secret.key) : [],
+      // Inherited values belong to the parent: they are never selected for deletion.
+      keys: selected ? state.secretsWithExpiration.filter((secret) => !secret.inheritedFrom).map((secret) => secret.key) : [],
     })
   }
 
@@ -196,6 +199,31 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         onSelect={actions.setActiveEnv}
       />
 
+      {state.isProjectUnlocked && state.activeEnv?.parent_id && state.unsetKeys.length > 0 && (
+        <Card className="p-4">
+          <p className="text-sm font-medium text-(--text-primary)">{t("unsetPanelTitle")}</p>
+          <p className="mb-3 text-xs text-(--text-secondary)">{t("unsetPanelBody")}</p>
+          <ul className="flex flex-wrap gap-2">
+            {state.unsetKeys.map((key) => (
+              <li key={key} className="flex items-center gap-2 rounded-lg border border-(--border) px-2 py-1">
+                <span className="font-mono text-xs text-(--text-primary)">{key}</span>
+                {canManageSecrets && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    disabled={state.saving}
+                    aria-label={t("restoreKey", { key })}
+                    onClick={() => void actions.restoreSecret(key)}
+                  >
+                    {t("restore")}
+                  </Button>
+                )}
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
+
       {!state.isProjectUnlocked ? (
         <VaultUnlockPanel
           vaultConfig={state.project?.vault_config}
@@ -261,7 +289,26 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         />
       )}
       <ConfirmActionDialog
-        open={Boolean(deleteTarget)}
+        open={Boolean(deleteTarget?.inheritedFrom)}
+        title={t("unsetTitle", { key: deleteTarget?.key ?? "" })}
+        description={
+          deleteTarget?.inheritedFrom
+            ? t("unsetDescription", { key: deleteTarget.key, env: deleteTarget.inheritedFrom })
+            : ""
+        }
+        confirmLabel={t("unsetConfirm")}
+        loading={state.saving}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTarget(null)
+        }}
+        onConfirm={async () => {
+          if (!deleteTarget) return
+          await actions.unsetSecret(deleteTarget)
+          setDeleteTarget(null)
+        }}
+      />
+      <ConfirmActionDialog
+        open={Boolean(deleteTarget) && !deleteTarget?.inheritedFrom}
         title={t("removeSecret")}
         description={
           deleteTarget
@@ -332,7 +379,8 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
         onOpenChange={(open) => (open ? setSyncOpen(true) : closeSync())}
         projectId={projectId}
         environmentName={state.activeEnv?.name ?? "production"}
-        secrets={state.secrets}
+        // A child sends what it resolves to, inherited values included.
+        secrets={state.visibleSecrets}
         // What was just pulled from the provider is not sent straight back to it.
         onImport={(pulled) => actions.importSecrets(pulled, { autoSync: false })}
         initialIntegrationId={syncParam}
@@ -340,7 +388,7 @@ export function SecretsClient({ projectId }: SecretsClientProps) {
       <ExportModal
         open={state.exportOpen}
         onOpenChange={actions.setExportOpen}
-        secrets={state.secrets}
+        secrets={state.visibleSecrets}
       />
     </div>
   )

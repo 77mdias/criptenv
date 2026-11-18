@@ -78,6 +78,7 @@ criptenv push .env.production -p <project-id>
 | `get <key>` | Retrieve and decrypt a remote secret in memory |
 | `list` | List remote secret keys (names only) |
 | `delete <key>` | Remove a secret from the remote vault |
+| `unset <key> --env <child>` | Hide an inherited secret in a child environment (the parent keeps it) |
 
 ### Sync & Projects
 
@@ -88,6 +89,9 @@ criptenv push .env.production -p <project-id>
 | `projects` | List projects |
 | `projects create` | Create a new cloud project |
 | `env` | Manage project environments |
+| `env create <name> --parent <env> [--ttl 7d]` | Child environment: inherits the parent, stores only overrides, optional expiry |
+| `env show <env> --resolved [--show-values]` | Every key the environment resolves to and where it comes from (values masked) |
+| `env diff <child>` | Key names of a child against its parent (never values) |
 
 ### Import / Export
 

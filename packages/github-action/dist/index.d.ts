@@ -19,6 +19,7 @@ interface VaultBlob {
     auth_tag: string;
     version: number;
     checksum: string;
+    environment_id?: string;
 }
 interface SecretsResponse {
     blobs: VaultBlob[];

@@ -17,7 +17,6 @@ from sqlalchemy import select
 
 from app.database import get_db
 from app.models.member import CIToken
-from app.models.vault import VaultBlob
 from app.models.environment import Environment
 from app.models.project import Project
 from app.middleware.ci_auth import (
@@ -29,7 +28,10 @@ from app.middleware.ci_auth import (
     ScopeValidator,
     validate_ci_session,
 )
-from app.schemas.vault import VaultBlobPull
+from app.schemas.vault import VaultResolvedBlob
+from app.services import environment_inheritance as inheritance
+from app.services.audit_service import AuditService
+from app.routers.vault import keys_audit, resolved_blobs
 
 
 router = APIRouter(prefix="/api/v1", tags=["CI/CD"])
@@ -50,7 +52,8 @@ class CILoginResponse(BaseModel):
 
 
 class CISecretsResponse(BaseModel):
-    blobs: list[VaultBlobPull]
+    # Resolved through the environment's parents; decrypt each blob with the key of its environment_id.
+    blobs: list[VaultResolvedBlob]
     version: int
     environment: str
     environment_id: str
@@ -245,6 +248,31 @@ async def ci_login(
     )
 
 
+async def _resolved_for_ci(db: AsyncSession, project_uuid: UUID, environment: str, ci_session: dict):
+    """The live environment by name, as the CI session may reach it, and what it resolves to.
+
+    The scope check is on the environment asked for only: a token scoped to a child reads the values
+    the child inherits through this resolution, never its parent by name.
+    """
+    env = (await db.execute(
+        select(Environment).where(Environment.project_id == project_uuid, Environment.name == environment)
+    )).scalar_one_or_none()
+    # A restricted environment does not exist for a token that is not scoped to it.
+    if inheritance.is_gone(env) or not credential_reaches(env, ci_session.get("environment_scope")):
+        raise HTTPException(
+            status_code=status.HTTP_404_NOT_FOUND,
+            detail={
+                "code": "ENVIRONMENT_NOT_FOUND",
+                "message": f"Environment '{environment}' not found in project '{project_uuid}'"
+            }
+        )
+    try:
+        chain = await inheritance.load_chain(db, env)
+    except inheritance.InheritanceError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail={"code": "INHERITANCE_ERROR", "message": str(error)})
+    return env, await inheritance.resolve(db, chain)
+
+
 @router.get("/ci/secrets", response_model=CISecretsResponse, tags=["CI/CD"])
 async def get_ci_secrets(
     request: Request,
@@ -267,36 +295,23 @@ async def get_ci_secrets(
         404: If environment not found
     """
     project_uuid, _ci_session = await _authenticate_ci_secrets_request(request, environment)
-    
-    # Find environment
-    env_result = await db.execute(
-        select(Environment).where(
-            Environment.project_id == project_uuid,
-            Environment.name == environment
-        )
+    env, resolved = await _resolved_for_ci(db, project_uuid, environment, _ci_session)
+
+    await AuditService(db).log(
+        action="vault.resolved_read",
+        resource_type="vault",
+        resource_id=env.id,
+        project_id=project_uuid,
+        metadata={
+            "auth_type": "ci_session",
+            "ci_session_id": _ci_session.get("session_id"),
+            "ci_token_id": _ci_session.get("ci_token_id"),
+            "environment_name": env.name,
+            "keys": keys_audit(resolved),
+        },
+        ip_address=request.client.host if request.client else None,
+        user_agent=request.headers.get("User-Agent"),
     )
-    env = env_result.scalar_one_or_none()
-    
-    # A restricted environment does not exist for a token that is not scoped to it.
-    if not env or not credential_reaches(env, _ci_session.get("environment_scope")):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "code": "ENVIRONMENT_NOT_FOUND",
-                "message": f"Environment '{environment}' not found in project '{project_uuid}'"
-            }
-        )
-    
-    # Fetch vault blobs
-    blobs_result = await db.execute(
-        select(VaultBlob)
-        .where(
-            VaultBlob.project_id == project_uuid,
-            VaultBlob.environment_id == env.id
-        )
-        .order_by(VaultBlob.created_at)
-    )
-    blobs = list(blobs_result.scalars().all())
 
     project_result = await db.execute(
         select(Project).where(Project.id == project_uuid)
@@ -313,7 +328,7 @@ async def get_ci_secrets(
             }
     
     return CISecretsResponse(
-        blobs=[VaultBlobPull.model_validate(_force_load_blob(b)) for b in blobs],
+        blobs=resolved_blobs(resolved),
         version=env.secrets_version,
         environment=environment,
         environment_id=str(env.id),
@@ -339,43 +354,20 @@ async def list_ci_secrets_keys(
         dict: List of secret metadata (no values)
     """
     project_uuid, _ci_session = await _authenticate_ci_secrets_request(request, environment)
-    
-    # Find environment
-    env_result = await db.execute(
-        select(Environment).where(
-            Environment.project_id == project_uuid,
-            Environment.name == environment
-        )
-    )
-    env = env_result.scalar_one_or_none()
-    
-    # A restricted environment does not exist for a token that is not scoped to it.
-    if not env or not credential_reaches(env, _ci_session.get("environment_scope")):
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail={
-                "code": "ENVIRONMENT_NOT_FOUND",
-                "message": f"Environment '{environment}' not found"
-            }
-        )
-    
-    # Get blob metadata only
-    blobs_result = await db.execute(
-        select(VaultBlob.key_id, VaultBlob.version, VaultBlob.created_at)
-        .where(
-            VaultBlob.project_id == project_uuid,
-            VaultBlob.environment_id == env.id
-        )
-        .order_by(VaultBlob.key_id)
-    )
-    blob_meta = list(blobs_result.all())
-    
+    env, resolved = await _resolved_for_ci(db, project_uuid, environment, _ci_session)
+
     return {
         "keys": [
-            {"key_id": row[0], "version": row[1], "created_at": row[2].isoformat() if row[2] else None}
-            for row in blob_meta
+            {
+                "key_id": key,
+                "version": entry.blob.version,
+                "created_at": entry.blob.created_at.isoformat() if entry.blob.created_at else None,
+                "source": entry.source.name,
+                "origin": "inherited" if entry.inherited else "local",
+            }
+            for key, entry in sorted(resolved.items())
         ],
-        "count": len(blob_meta),
+        "count": len(resolved),
         "version": env.secrets_version,
         "environment": environment
     }

@@ -31828,7 +31828,7 @@ function exportableSecretValue(blob, secrets, vaultPassword) {
     if (vaultPassword) {
         assertVaultPasswordCanDecrypt(vaultPassword, secrets.vault_config);
     }
-    return decryptSecret(blob, vaultPassword, secrets.vault_config, secrets.environment_id);
+    return decryptSecret(blob, vaultPassword, secrets.vault_config, blob.environment_id ?? secrets.environment_id);
 }
 function legacyCiphertextSecret(blob) {
     return blob.ciphertext;

@@ -83,6 +83,9 @@ def mock_environment(mock_project):
     env.archived = False
     env.restricted = False
     env.archived_at = None
+    env.parent_id = None
+    env.expires_at = None
+    env.unset_keys = []
     env.created_at = datetime.now(timezone.utc)
     env.updated_at = datetime.now(timezone.utc)
     return env
@@ -103,6 +106,7 @@ async def test_vault_pull_with_api_key(transport, mock_user, mock_project, mock_
     mock_result.scalar_one_or_none = MagicMock(return_value=mock_environment)
     mock_session = MagicMock()
     mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session.flush = AsyncMock()  # the audit log entry of a read
 
     async def _mock_get_db():
         yield mock_session
@@ -139,6 +143,7 @@ async def test_vault_version_with_api_key(transport, mock_user, mock_project, mo
     mock_result.scalar_one_or_none = MagicMock(return_value=mock_environment)
     mock_session = MagicMock()
     mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session.flush = AsyncMock()  # the audit log entry of a read
 
     async def _mock_get_db():
         yield mock_session
@@ -241,6 +246,7 @@ async def test_environments_list_with_api_key(transport, mock_user, mock_project
     
     mock_session = MagicMock()
     mock_session.execute = AsyncMock(return_value=mock_result)
+    mock_session.flush = AsyncMock()  # the audit log entry of a read
     
     async def _mock_get_db():
         yield mock_session

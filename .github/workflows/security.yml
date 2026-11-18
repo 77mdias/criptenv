@@ -69,12 +69,14 @@ jobs:
       # frontend bundle or the Action dist, and some (e.g. braces via
       # eslint-config-next) have no published fix yet — `npm audit fix --force`
       # would only downgrade the toolchain. Production audit is the gate.
+      # High/critical advisories block, except the few allowed (with the reason) in
+      # scripts/npm-audit-gate.mjs: no published fix and unreachable in production.
       - name: Audit web npm production dependencies
         working-directory: apps/web
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev --json | node ../../scripts/npm-audit-gate.mjs
       - name: Audit GitHub Action npm production dependencies
         working-directory: packages/github-action
-        run: npm audit --omit=dev --audit-level=high
+        run: npm audit --omit=dev --json | node ../../scripts/npm-audit-gate.mjs
       - name: Report web npm development advisories (non-blocking)
         working-directory: apps/web
         continue-on-error: true

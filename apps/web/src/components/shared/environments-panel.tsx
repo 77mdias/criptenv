@@ -1,8 +1,8 @@
 "use client"
 
 import { useEffect, useState, type FormEvent } from "react"
-import { Layers, Lock } from "lucide-react"
-import { useTranslations } from "next-intl"
+import { GitBranch, Layers, Lock, Timer } from "lucide-react"
+import { useLocale, useTranslations } from "next-intl"
 
 import { ConfirmActionDialog } from "@/components/shared/confirm-action-dialog"
 import { PlanUsage, isPlanFull } from "@/components/shared/plan-usage"
@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { Card } from "@/components/ui/card"
 import { Checkbox } from "@/components/ui/checkbox"
 import { Input } from "@/components/ui/input"
+import { Select } from "@/components/ui/select"
 import { environmentsApi, projectsApi } from "@/lib/api"
 import type { Environment } from "@/lib/api"
 import { ApiError } from "@/lib/api/client"
@@ -17,11 +18,14 @@ import type { Plan } from "@/lib/api/me"
 
 // The environments every project is born with: the API never lets them be restricted.
 const SEEDED = new Set(["production", "staging", "development"])
-// The same pattern the API enforces.
-const NAME = /^[a-z0-9-]+$/
+// The same pattern the API enforces; "/" separates a child from its parent by convention (dev/wt-x).
+const NAME = /^[a-z0-9-]+(\/[a-z0-9-]+)*$/
+// TTL choices for an ephemeral child, in seconds ("" = never expires).
+const TTLS = ["", String(86400), String(7 * 86400), String(30 * 86400)]
 
-// Each of these changes who reaches the environment or whether it exists: all three ask first.
-type Pending = { action: "restrict" | "open" | "archive"; environment: Environment }
+// Each of these changes who reaches the environment or whether it exists: all of them ask first.
+// "delete": a child is deleted for good (its overrides only; the parent is untouched).
+type Pending = { action: "restrict" | "open" | "archive" | "delete"; environment: Environment }
 
 /**
  * Project settings: create, restrict and archive environments. A restricted environment is reached
@@ -29,11 +33,14 @@ type Pending = { action: "restrict" | "open" | "archive"; environment: Environme
  */
 export function EnvironmentsPanel({ projectId }: { projectId: string }) {
   const t = useTranslations("settings.environments")
+  const locale = useLocale()
   const [environments, setEnvironments] = useState<Environment[] | null>(null)
   const [plan, setPlan] = useState<Plan | null>(null)
   const [name, setName] = useState("")
   const [displayName, setDisplayName] = useState("")
   const [restricted, setRestricted] = useState(false)
+  const [parentId, setParentId] = useState("")
+  const [ttl, setTtl] = useState("")
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [limitHit, setLimitHit] = useState(false)
@@ -64,8 +71,10 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
   function explain(cause: unknown): string {
     const status = cause instanceof ApiError ? cause.status : 0
     if (status === 402) return t("errors.limit")
-    if (status === 409) return t("errors.conflict")
-    if (status === 422) return t("errors.invalid")
+    if (status === 409) return pending?.action === "delete" || pending?.action === "archive"
+      ? t("errors.hasChildren")
+      : t("errors.conflict")
+    if (status === 422) return parentId ? t("errors.inheritance") : t("errors.invalid")
     return t("errors.generic")
   }
 
@@ -94,22 +103,25 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
         name,
         ...(displayName.trim() ? { display_name: displayName.trim() } : {}),
         restricted,
+        ...(parentId ? { parent_id: parentId } : {}),
+        ...(parentId && ttl ? { ttl_seconds: Number(ttl) } : {}),
       })
       setName("")
       setDisplayName("")
       setRestricted(false)
+      setParentId("")
+      setTtl("")
     })
   }
 
   function confirm() {
     if (!pending) return
     const { action, environment } = pending
-    setPending(null)
     void run(() =>
-      action === "archive"
+      action === "archive" || action === "delete"
         ? environmentsApi.delete(projectId, environment.id)
         : environmentsApi.update(projectId, environment.id, { restricted: action === "restrict" }),
-    )
+    ).finally(() => setPending(null))
   }
 
   function rename(event: FormEvent) {
@@ -120,7 +132,11 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
     void run(() => environmentsApi.update(projectId, id, { display_name: value.trim() }))
   }
 
-  const full = isPlanFull(plan, "environments_per_project") || limitHit
+  // An ephemeral child (with a TTL) does not count against the plan: it can be created on a full plan.
+  const full = (isPlanFull(plan, "environments_per_project") || limitHit) && !(parentId && ttl)
+  const names = new Map((environments ?? []).map((environment) => [environment.id, environment.name]))
+  const formatDate = (iso: string) =>
+    new Intl.DateTimeFormat(locale, { dateStyle: "medium", timeStyle: "short" }).format(new Date(iso))
 
   return (
     <Card className="p-6">
@@ -162,6 +178,18 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
                     <span className="inline-flex items-center gap-1">
                       <Lock className="h-3 w-3" aria-hidden />
                       {t("restricted")}
+                    </span>
+                  )}
+                  {environment.parent_id && (
+                    <span className="inline-flex items-center gap-1">
+                      <GitBranch className="h-3 w-3" aria-hidden />
+                      {t("inherits", { parent: names.get(environment.parent_id) ?? "—" })}
+                    </span>
+                  )}
+                  {environment.expires_at && (
+                    <span className="inline-flex items-center gap-1">
+                      <Timer className="h-3 w-3" aria-hidden />
+                      {t("expires", { date: formatDate(environment.expires_at) })}
                     </span>
                   )}
                 </p>
@@ -206,9 +234,11 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
                         variant="secondary"
                         size="sm"
                         disabled={busy}
-                        onClick={() => setPending({ action: "archive", environment })}
+                        onClick={() =>
+                          setPending({ action: environment.parent_id ? "delete" : "archive", environment })
+                        }
                       >
-                        {t("archive")}
+                        {environment.parent_id ? t("delete") : t("archive")}
                       </Button>
                     </>
                   )}
@@ -236,6 +266,39 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
             maxLength={255}
           />
         </div>
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="space-y-1">
+            <label htmlFor="environment-parent" className="text-sm font-medium text-(--text-primary)">
+              {t("parent")}
+            </label>
+            <Select
+              id="environment-parent"
+              value={parentId}
+              onValueChange={(value) => {
+                setParentId(value)
+                if (!value) setTtl("")
+              }}
+              options={[
+                { value: "", label: t("parentNone") },
+                ...(environments ?? []).map((environment) => ({ value: environment.id, label: environment.name })),
+              ]}
+            />
+            <p className="text-xs text-(--text-muted)">{t("parentHint")}</p>
+          </div>
+          <div className="space-y-1">
+            <label htmlFor="environment-ttl" className="text-sm font-medium text-(--text-primary)">
+              {t("ttl")}
+            </label>
+            <Select
+              id="environment-ttl"
+              value={ttl}
+              onValueChange={setTtl}
+              disabled={!parentId}
+              options={TTLS.map((value) => ({ value, label: t(`ttlOptions.${value || "none"}`) }))}
+            />
+            <p className="text-xs text-(--text-muted)">{t("ttlHint")}</p>
+          </div>
+        </div>
         <div className="space-y-1">
           <Checkbox checked={restricted} onChange={(event) => setRestricted(event.target.checked)}>
             {t("restricted")}
@@ -252,21 +315,31 @@ export function EnvironmentsPanel({ projectId }: { projectId: string }) {
         title={
           pending?.action === "archive"
             ? t("archiveTitle", { name: pending.environment.name })
-            : pending?.action === "open"
+            : pending?.action === "delete"
+              ? t("deleteTitle", { name: pending.environment.name })
+              : pending?.action === "open"
               ? t("openTitle", { name: pending.environment.name })
               : t("restrictTitle", { name: pending?.environment.name ?? "" })
         }
         description={
           pending?.action === "archive"
             ? t("archiveBody")
-            : pending?.action === "open"
+            : pending?.action === "delete"
+              ? t("deleteBody")
+              : pending?.action === "open"
               ? t("openBody")
               : t("restrictBody")
         }
         confirmLabel={
-          pending?.action === "archive" ? t("archive") : pending?.action === "open" ? t("open") : t("restrict")
+          pending?.action === "archive"
+            ? t("archive")
+            : pending?.action === "delete"
+              ? t("delete")
+              : pending?.action === "open"
+                ? t("open")
+                : t("restrict")
         }
-        destructive={pending?.action === "archive"}
+        destructive={pending?.action === "archive" || pending?.action === "delete"}
         loading={busy}
         onConfirm={confirm}
         onOpenChange={(open) => {

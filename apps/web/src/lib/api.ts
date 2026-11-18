@@ -49,6 +49,8 @@ export type {
   SecretKind,
   VaultPushRequest,
   VaultPullResponse,
+  VaultResolvedBlob,
+  VaultResolvedResponse,
   VaultVersionResponse,
   Member,
   MemberListResponse,

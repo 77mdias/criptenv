@@ -44,6 +44,9 @@ class FakeDb:
             return self.execute_results.pop(0)
         return FakeScalarResult(None)
 
+    async def scalars(self, query):
+        return []  # no child environments
+
     async def delete(self, value):
         self.deleted.append(value)
 
@@ -84,6 +87,9 @@ def make_environment(**overrides):
         "archived": False,
         "archived_at": None,
         "restricted": False,
+        "parent_id": None,
+        "expires_at": None,
+        "unset_keys": [],
     }
     values.update(overrides)
     return SimpleNamespace(**values)

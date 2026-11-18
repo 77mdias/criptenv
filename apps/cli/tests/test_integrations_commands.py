@@ -99,7 +99,7 @@ def _sync_env(monkeypatch, client, entries=None, blobs=None):
         yield object(), None, client
 
     vault = MagicMock()
-    vault.load_state = AsyncMock(return_value=SimpleNamespace(blobs=blobs or []))
+    vault.load_resolved = AsyncMock(return_value=SimpleNamespace(blobs=blobs or []))
     vault.decrypt_all = AsyncMock(return_value=entries or {})
     monkeypatch.setattr(integrations_module, "cli_context", fake_cli_context)
     monkeypatch.setattr(integrations_module, "resolve_project_id", lambda *a, **k: "proj-1")
@@ -318,3 +318,49 @@ def test_ci_deploy_uses_only_ci_routes(mock_config_dir, monkeypatch):
     vault = RemoteVault(FakeClient(), "prj_1")
     vault.load_ci_state({"environment_id": "env_1", "vault_config": vault_config}, "production")
     assert asyncio.run(vault.decrypt_blob(pushed["blobs"][0], "env_1")) == b"from-ci"
+
+
+def test_ci_deploy_to_a_child_pushes_only_its_own_blobs(mock_config_dir, monkeypatch):
+    """/ci/secrets resolves a child through its parent: the inherited blobs must not be copied into it."""
+    from criptenv.commands import ci as ci_module
+    from criptenv.crypto.keys import build_project_vault_config
+
+    vault_config, _proof = build_project_vault_config("ci-vault-pw")
+    pushed = {}
+    inherited = {"key_id": "DATABASE_URL", "iv": "aXY=", "ciphertext": "Y3Q=", "auth_tag": "dGFn", "checksum": "x",
+                 "version": 1, "environment_id": "env_dev", "origin": "inherited", "source_environment_name": "dev"}
+    own = {**inherited, "key_id": "PORT", "environment_id": "env_wt", "origin": "local",
+           "source_environment_name": "dev/wt"}
+
+    class FakeClient:
+        async def get_ci_secrets(self, project_id, environment):
+            return {"blobs": [inherited, own], "version": 2, "environment_id": "env_wt", "vault_config": vault_config}
+
+        async def push_vault(self, project_id, env_id, blobs, vault_proof, expected_version):
+            pushed.update(env_id=env_id, keys=sorted(b["key_id"] for b in blobs))
+            return {"version": 3}
+
+    class FakeSession:
+        project_id = "prj_1"
+        environment_scope = "dev/wt"
+        scopes = ["write:secrets"]
+
+    class FakeManager:
+        async def get_active_session(self):
+            return FakeSession()
+
+        async def get_authenticated_client(self):
+            return FakeClient()
+
+    monkeypatch.setattr(ci_module, "_ci_manager", lambda db: FakeManager())
+    monkeypatch.setenv("CRIPTENV_VAULT_PASSWORD", "ci-vault-pw")
+
+    runner = CliRunner()
+    assert runner.invoke(main, ["init"]).exit_code == 0
+    with runner.isolated_filesystem():
+        with open(".env.wt", "w") as f:
+            f.write("API_KEY=from-ci\n")
+        result = runner.invoke(main, ["ci", "deploy", "--env", "dev/wt", "--file", ".env.wt"])
+
+    assert result.exit_code == 0, result.output
+    assert pushed == {"env_id": "env_wt", "keys": ["API_KEY", "PORT"]}

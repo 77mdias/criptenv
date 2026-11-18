@@ -124,6 +124,12 @@ export interface Environment {
   restricted?: boolean;
   secrets_count?: number;
   secrets_version?: number;
+  /** Set on a child environment: it stores only its overrides and reads the rest from this parent. */
+  parent_id?: string | null;
+  /** Ephemeral child: deleted automatically at this moment. */
+  expires_at?: string | null;
+  /** Inherited keys this child hides (its parent keeps them). */
+  unset_keys?: string[];
   created_at: string;
   updated_at: string;
 }
@@ -167,11 +173,30 @@ export interface VaultPushRequest {
   blobs: VaultBlobPush[];
   vault_proof?: string;
   expected_version?: number;
+  /** Child environments only: the inherited keys to hide. Omitted keeps the current ones. */
+  unset_keys?: string[];
 }
 
 export interface VaultPullResponse {
+  /** The environment's own blobs (a child's overrides only). */
   blobs: VaultBlob[];
   version: number;
+  unset_keys?: string[];
+}
+
+export interface VaultResolvedBlob extends VaultBlob {
+  /** `environment_id` is the environment holding the blob: decrypt with that environment's key. */
+  source_environment_name: string;
+  origin: "local" | "inherited";
+}
+
+export interface VaultResolvedResponse {
+  blobs: VaultResolvedBlob[];
+  version: number;
+  environment_id: string;
+  environment_name: string;
+  unset_keys: string[];
+  chain: { id: string; name: string }[];
 }
 
 export interface VaultVersionResponse {
@@ -287,6 +312,10 @@ export interface CreateEnvironmentRequest {
   display_name?: string;
   /** Not for production, staging, development or the project's default environment (422). */
   restricted?: boolean;
+  /** Inherit from this environment of the project; set once, at creation. */
+  parent_id?: string;
+  /** Ephemeral child (needs parent_id): deleted this many seconds from now. */
+  ttl_seconds?: number;
 }
 
 export interface UpdateMemberRequest {

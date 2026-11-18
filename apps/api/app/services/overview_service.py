@@ -14,6 +14,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.models.api_key import APIKey
 from app.models.audit import AuditLog
 from app.models.environment import Environment
+from app.services.environment_inheritance import is_gone
 from app.services.environment_access import hidden_ids, sees_restricted
 from app.services.audit_service import visible_audit_condition
 from app.services.plan_limits import PlanLimits
@@ -72,7 +73,8 @@ class OverviewService:
             select(Environment)
             .where(Environment.project_id.in_(project_ids), Environment.archived == False)  # noqa: E712
             .order_by(Environment.is_default.desc(), Environment.name)
-        )).scalars().all() if not env.restricted or sees_restricted(roles.get(env.project_id))]
+        )).scalars().all()
+            if not is_gone(env) and (not env.restricted or sees_restricted(roles.get(env.project_id)))]
 
         blob_stats = {
             env_id: (count, _utc(updated_at))
@@ -264,7 +266,7 @@ class OverviewService:
             select(Environment)
             .where(Environment.project_id == project_id, Environment.archived == False)  # noqa: E712
             .order_by(Environment.is_default.desc(), Environment.name)
-        )).scalars().all() if env.id not in hidden]
+        )).scalars().all() if env.id not in hidden and not is_gone(env)]
         env_ids = [env.id for env in environments]
 
         rows = (await self.db.execute(

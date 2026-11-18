@@ -16,6 +16,8 @@ export type {
   VaultPushRequest,
   VaultRekeyRequest,
   VaultPullResponse,
+  VaultResolvedBlob,
+  VaultResolvedResponse,
   VaultVersionResponse,
   Member,
   MemberListResponse,

@@ -136,6 +136,54 @@ describe("github action", () => {
     )
   })
 
+  it("decrypts an inherited secret with the key of the environment holding it", async () => {
+    const vaultPassword = "vault-password"
+    const parentEnvId = "env-dev"
+    const salt = Buffer.from("project-salt-project-salt-123456")
+    const proofSalt = Buffer.from("proof-salt-proof-salt-1234567890")
+    const masterKey = crypto.pbkdf2Sync(vaultPassword, salt, 100000, 32, "sha256")
+    const parentKey = crypto.hkdfSync("sha256", masterKey, Buffer.from(parentEnvId), Buffer.from("criptenv-vault-v1"), 32)
+    const iv = Buffer.from("123456789012")
+    const cipher = crypto.createCipheriv("aes-256-gcm", Buffer.from(parentKey), iv)
+    const ciphertext = Buffer.concat([cipher.update(Buffer.from("from-parent", "utf8")), cipher.final()])
+    const authTag = cipher.getAuthTag()
+
+    mockPostJson.mockResolvedValue({
+      result: { expires_in: 3600, permissions: ["read:secrets"], project_id: "project-id", session_token: "session-token" },
+      statusCode: 200,
+    })
+    mockGetJson.mockResolvedValue({
+      result: {
+        blobs: [{
+          auth_tag: authTag.toString("base64"), checksum: "checksum", ciphertext: ciphertext.toString("base64"),
+          id: "blob-id", iv: iv.toString("base64"), key_id: "database-url", version: 1,
+          environment_id: parentEnvId, origin: "inherited", source_environment_name: "dev",
+        }],
+        environment: "dev/wt-x",
+        environment_id: "env-wt",
+        vault_config: {
+          kdf: "PBKDF2-SHA256", iterations: 100000, proof_salt: proofSalt.toString("base64"),
+          salt: salt.toString("base64"), verifier_auth_tag: "unused", verifier_ciphertext: "unused",
+          verifier_iv: "unused", version: 1,
+        },
+        version: 2,
+      },
+      statusCode: 200,
+    })
+
+    await run(
+      {
+        apiUrl: "https://api.example.com/api/v1", environment: "dev/wt-x", prefix: "SECRET_",
+        project: "project-id", token: "ci_token", vaultPassword, versionOutput: "vault-version",
+      },
+      () => ({ getJson: mockGetJson, postJson: mockPostJson }) as any,
+      [0, 0, 0],
+    )
+
+    expect(core.exportVariable).toHaveBeenCalledWith("SECRET_DATABASE_URL", "from-parent")
+    expect(core.setFailed).not.toHaveBeenCalled()
+  })
+
   it("decrypts fetched secrets when vault password is provided", async () => {
     const vaultPassword = "vault-password"
     const envId = "env-id"

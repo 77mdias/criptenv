@@ -73,7 +73,7 @@ class CITokenCreate(BaseModel):
     scopes: list[str] = Field(default=["read:secrets"])
     environment_scope: Optional[str] = Field(
         None,
-        pattern=r'^[a-z0-9-]+$',  # kebab-case env names only
+        pattern=r'^[a-z0-9-]+(/[a-z0-9-]+)*$',  # kebab-case env names; '/' for children (dev/wt-x)
         description="Restrict token to specific environment"
     )
 

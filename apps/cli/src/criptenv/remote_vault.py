@@ -4,7 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import os
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 from typing import Any
 
 import click
@@ -69,6 +69,19 @@ class RemoteEnvironment:
     id: str
     name: str
     is_default: bool = False
+    # Set on a child environment: it stores only overrides and reads through this parent.
+    parent_id: str | None = None
+    expires_at: str | None = None
+
+    @classmethod
+    def from_api(cls, env: dict[str, Any]) -> "RemoteEnvironment":
+        return cls(
+            id=env["id"],
+            name=env.get("name", env["id"]),
+            is_default=bool(env.get("is_default")),
+            parent_id=env.get("parent_id"),
+            expires_at=env.get("expires_at"),
+        )
 
 
 @dataclass
@@ -77,6 +90,12 @@ class RemoteVaultState:
     environment: RemoteEnvironment
     blobs: list[dict[str, Any]]
     version: int
+    # Inherited keys a child hides. Sent back on push for a child only.
+    unset_keys: list[str] = field(default_factory=list)
+    # True when `blobs` is the resolved view (read-only: never push it back).
+    resolved: bool = False
+    # Resolved view only: [this environment, its parent, ...] by name.
+    chain: list[str] = field(default_factory=list)
 
 
 class RemoteVault:
@@ -152,11 +171,7 @@ class RemoteVault:
         if env_name_or_id:
             for env in environments:
                 if env.get("id") == env_name_or_id or env.get("name") == env_name_or_id:
-                    return RemoteEnvironment(
-                        id=env["id"],
-                        name=env.get("name", env["id"]),
-                        is_default=bool(env.get("is_default")),
-                    )
+                    return RemoteEnvironment.from_api(env)
             raise click.ClickException(
                 f"Environment '{env_name_or_id}' not found in project '{self.project_id}'. "
                 f"Run 'criptenv env list --project {self.project_id}' to see available environments."
@@ -166,11 +181,7 @@ class RemoteVault:
         production_env = next((env for env in environments if env.get("name") == "production"), None)
         selected = default_env or production_env or (environments[0] if environments else None)
         if selected and selected.get("id"):
-            return RemoteEnvironment(
-                id=selected["id"],
-                name=selected.get("name", selected["id"]),
-                is_default=bool(selected.get("is_default")),
-            )
+            return RemoteEnvironment.from_api(selected)
 
         raise click.ClickException(
             f"No environments found in project '{self.project_id}'. "
@@ -185,6 +196,22 @@ class RemoteVault:
             environment=environment,
             blobs=list(result.get("blobs", [])),
             version=int(result.get("version", 0)),
+            unset_keys=list(result.get("unset_keys") or []),
+        )
+
+    async def load_resolved(self, env_name_or_id: str | None) -> RemoteVaultState:
+        """What the environment resolves to through its parents (what `run` injects). Read-only:
+        each blob carries `origin` (local/inherited) and `source_environment_name`."""
+        environment = await self.resolve_environment(env_name_or_id)
+        result = await self.client.resolved_vault(self.project_id, environment.id)
+        return RemoteVaultState(
+            project_id=self.project_id,
+            environment=environment,
+            blobs=list(result.get("blobs", [])),
+            version=int(result.get("version", 0)),
+            unset_keys=list(result.get("unset_keys") or []),
+            resolved=True,
+            chain=[step.get("name", "") for step in result.get("chain", [])],
         )
 
     def load_ci_state(self, ci_secrets: dict[str, Any], env_name: str) -> RemoteVaultState:
@@ -205,6 +232,7 @@ class RemoteVault:
             environment=RemoteEnvironment(id=ci_secrets["environment_id"], name=env_name),
             blobs=list(ci_secrets.get("blobs", [])),
             version=int(ci_secrets.get("version", 0)),
+            resolved=True,
         )
 
     async def decrypt_blob(self, blob: dict[str, Any], environment_id: str) -> bytes:
@@ -261,6 +289,9 @@ class RemoteVault:
         state: RemoteVaultState,
         blobs: list[dict[str, Any]],
     ) -> dict[str, Any]:
+        if state.resolved:
+            # A resolved view holds the parents' blobs: pushing it would copy them into the child.
+            raise click.ClickException("Internal error: refusing to push a resolved (inherited) view.")
         try:
             return await self.client.push_vault(
                 self.project_id,
@@ -268,6 +299,8 @@ class RemoteVault:
                 [self.push_shape(blob) for blob in blobs],
                 vault_proof=await self.vault_proof(),
                 expected_version=state.version,
+                # Children only: a root environment push stays exactly as before.
+                **({"unset_keys": state.unset_keys} if state.environment.parent_id else {}),
             )
         except CriptEnvAPIError as exc:
             if exc.status_code == 409:
@@ -280,6 +313,7 @@ class RemoteVault:
     async def decrypt_all(self, state: RemoteVaultState) -> dict[str, str]:
         entries: dict[str, str] = {}
         for blob in state.blobs:
-            plaintext = await self.decrypt_blob(blob, state.environment.id)
+            # An inherited blob is encrypted with the key of the environment holding it.
+            plaintext = await self.decrypt_blob(blob, blob.get("environment_id") or state.environment.id)
             entries[blob["key_id"]] = plaintext.decode("utf-8")
         return entries
