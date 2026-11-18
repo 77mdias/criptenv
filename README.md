@@ -160,13 +160,32 @@ criptenv pull -e production -o .env.production
 
 > Exported files contain plaintext secrets. Prefer `criptenv run` whenever you can.
 
+### 6. Child environments for git worktrees
+
+A child environment inherits everything from its parent and stores only what it changes — one per
+git worktree, so parallel branches or coding agents share `dev`'s secrets with their own port,
+database name or webhook secret. Changes in the parent reach every child.
+
+```bash
+criptenv env create dev/wt-feature-x --parent dev --ttl 7d   # deleted automatically after 7 days
+criptenv set PORT=3101 --env dev/wt-feature-x                 # override
+criptenv unset SENTRY_DSN --env dev/wt-feature-x              # hide an inherited key (dev keeps it)
+criptenv env show dev/wt-feature-x --resolved                 # every key and where it comes from (masked)
+criptenv env diff dev/wt-feature-x                            # key names vs dev, never values
+criptenv run --env dev/wt-feature-x -- docker compose up      # inherited + overridden values injected
+criptenv env delete dev/wt-feature-x --force                  # the child only; dev is untouched
+```
+
+A CI token or API key scoped to the child reads the values it inherits but cannot read or change the
+parent. Rules, permissions, audit and limitations: [docs/features/environment-inheritance.md](docs/features/environment-inheritance.md).
+
 ### CLI command reference
 
 | Area | Commands |
 |------|----------|
-| **Secrets** | `set`, `get`, `list`, `delete`, `rotate`, `run`, `diff` |
+| **Secrets** | `set`, `get`, `list`, `delete`, `unset`, `rotate`, `run`, `diff` |
 | **Files** | `import`, `export`, `push`, `pull` |
-| **Projects & environments** | `projects create\|list\|info\|update\|delete\|rekey`, `env list\|get\|create\|update\|delete`, `use`, `status` |
+| **Projects & environments** | `projects create\|list\|info\|update\|delete\|rekey`, `env list\|get\|show\|diff\|create\|update\|delete`, `use`, `status` |
 | **Team** | `members list\|add\|update\|remove`, `invites list\|create\|accept\|revoke`, `audit list\|export` |
 | **Expiration & rotation** | `secrets expire`, `secrets alert`, `rotation list\|history` |
 | **Automation** | `ci login\|logout\|secrets\|deploy`, `ci tokens list\|create\|revoke`, `api-keys list\|create\|revoke`, `integrations list\|connect\|disconnect\|validate\|sync` |
