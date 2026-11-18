@@ -40,11 +40,37 @@ class VaultPushRequest(BaseModel):
     blobs: list[VaultBlobPush]
     vault_proof: Optional[str] = None
     expected_version: Optional[int] = Field(default=None, ge=0)
+    # Child environments only: inherited key names to hide. None keeps the ones it has; [] clears them.
+    unset_keys: Optional[list[str]] = Field(default=None, max_length=1000)
 
 
 class VaultPullResponse(BaseModel):
+    """The environment's own blobs (a child's overrides only): what a client edits and pushes back."""
     blobs: list[VaultBlobPull]
     version: int
+    unset_keys: list[str] = []
+
+
+class VaultResolvedBlob(VaultBlobPull):
+    """A blob that wins for the environment. `environment_id` is the one holding it: decrypt with its key."""
+    source_environment_name: str
+    origin: Literal["local", "inherited"]
+
+
+class EnvironmentRef(BaseModel):
+    id: UUID
+    name: str
+
+
+class VaultResolvedResponse(BaseModel):
+    """What the environment resolves to through its parents: what `run` injects. Read-only."""
+    blobs: list[VaultResolvedBlob]
+    version: int
+    environment_id: UUID
+    environment_name: str
+    unset_keys: list[str] = []
+    # [the environment, its parent, ...]
+    chain: list[EnvironmentRef]
 
 
 class VaultConflictError(BaseModel):

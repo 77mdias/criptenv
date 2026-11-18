@@ -87,9 +87,14 @@ class VaultService:
         project_id: UUID,
         environment_id: UUID,
         blobs: list[dict],
-        expected_version: Optional[int] = None
+        expected_version: Optional[int] = None,
+        unset_keys: Optional[list[str]] = None,
     ) -> tuple[list[VaultBlob], bool]:
+        """Replace the environment's own blobs. `unset_keys` (children only) replaces the inherited keys it
+        hides; None keeps the current ones. A key pushed with a value is never unset at the same time."""
         environment = await self._get_active_environment(project_id, environment_id)
+        if unset_keys and getattr(environment, "parent_id", None) is None:
+            raise UnsetOnRootEnvironment()
 
         if expected_version is not None and environment.secrets_version != expected_version:
             raise ConflictError(
@@ -110,6 +115,9 @@ class VaultService:
         )
 
         environment.secrets_version = new_version
+        pushed = {blob["key_id"] for blob in blobs}
+        hidden = (getattr(environment, "unset_keys", None) or []) if unset_keys is None else unset_keys
+        environment.unset_keys = sorted(set(hidden) - pushed)
         await self.db.flush()
 
         # Refresh blobs to load server-generated columns
@@ -117,6 +125,32 @@ class VaultService:
             await self.db.refresh(blob)
 
         return created_blobs, False
+
+    async def describe_push(
+        self,
+        project_id: UUID,
+        environment_id: UUID,
+        blobs: list[dict],
+        unset_keys: Optional[list[str]] = None,
+    ) -> dict[str, list[str]]:
+        """Key names a push adds, updates (new ciphertext), removes, unsets and un-unsets. For the audit
+        log: names only, never a value."""
+        environment = await self._get_active_environment(project_id, environment_id)
+        rows = await self.db.execute(
+            select(VaultBlob.key_id, VaultBlob.checksum).where(VaultBlob.environment_id == environment_id)
+        )
+        before = dict(rows.all())
+        after = {blob["key_id"]: blob["checksum"] for blob in blobs}
+        old_unset = set(environment.unset_keys or [])
+        new_unset = (old_unset if unset_keys is None else set(unset_keys)) - set(after)
+        changes = {
+            "added": sorted(set(after) - set(before)),
+            "updated": sorted(k for k in set(after) & set(before) if after[k] != before[k]),
+            "removed": sorted(set(before) - set(after)),
+            "unset": sorted(new_unset - old_unset),
+            "restored": sorted(old_unset - new_unset),
+        }
+        return {name: keys for name, keys in changes.items() if keys}
 
     async def removes_keys(
         self,
@@ -172,9 +206,20 @@ class VaultService:
         )
         return result.scalar() or 0
 
+    async def get_unset_keys(self, project_id: UUID, environment_id: UUID) -> list[str]:
+        environment = await self._get_active_environment(project_id, environment_id)
+        return list(environment.unset_keys or [])
+
     async def get_environment_version(self, project_id: UUID, environment_id: UUID) -> int:
         environment = await self._get_active_environment(project_id, environment_id)
         return environment.secrets_version
 
 
 ConflictError = VaultConflict
+
+
+class UnsetOnRootEnvironment(ValueError):
+    """Only a child environment can hide inherited keys: a root one has nothing to inherit."""
+
+    def __init__(self):
+        super().__init__("Only a child environment can unset inherited keys")

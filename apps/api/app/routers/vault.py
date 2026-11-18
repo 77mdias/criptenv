@@ -6,9 +6,11 @@ from uuid import UUID
 
 from app.database import get_db
 from app.services.project_service import ProjectService
-from app.services.vault_service import VaultService, ConflictError
+from app.services.vault_service import VaultService, ConflictError, UnsetOnRootEnvironment
 from app.services.audit_service import AuditService
-from app.schemas.vault import VaultPushRequest, VaultPullResponse, VaultBlobPull
+from app.schemas.vault import (
+    EnvironmentRef, VaultBlobPull, VaultPullResponse, VaultPushRequest, VaultResolvedBlob, VaultResolvedResponse,
+)
 from app.middleware.auth import get_current_user, get_current_auth_context, AuthContext
 from app.middleware.second_factor import require_second_factor
 from app.middleware.ci_auth import (
@@ -26,6 +28,7 @@ from app.models.user import User
 from app.models.environment import Environment
 from app.services.environment_access import sees_restricted
 from sqlalchemy import select
+from app.services import environment_inheritance as inheritance
 from app.services.environment_inheritance import is_gone
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/environments/{environment_id}/vault", tags=["Vault"])
@@ -44,7 +47,35 @@ def _force_load_vault_blob(blob):
     _ = blob.checksum
     _ = blob.created_at
     _ = blob.updated_at
+    _ = blob.kind
     return blob
+
+
+def reader_audit_meta(auth_context: AuthContext) -> dict:
+    """Who read: the auth type and, for an API key, which one. Never a secret."""
+    meta = {"auth_type": auth_context.auth_type}
+    if auth_context.api_key is not None:
+        meta["api_key_id"] = str(getattr(auth_context.api_key, "id", None))
+    return meta
+
+
+def keys_audit(resolved: dict) -> list[dict]:
+    """[{key, source, origin}] for each key read: which environment the value came from. Names only."""
+    return [
+        {"key": key, "source": entry.source.name, "origin": "inherited" if entry.inherited else "local"}
+        for key, entry in sorted(resolved.items())
+    ]
+
+
+def resolved_blobs(resolved: dict) -> list[VaultResolvedBlob]:
+    return [
+        VaultResolvedBlob.model_validate({
+            **VaultBlobPull.model_validate(_force_load_vault_blob(entry.blob)).model_dump(),
+            "source_environment_name": entry.source.name,
+            "origin": "inherited" if entry.inherited else "local",
+        })
+        for _key, entry in sorted(resolved.items())
+    ]
 
 
 def _extract_bearer_token(request: Request) -> str | None:
@@ -185,12 +216,16 @@ async def push_vault(
                 await require_second_factor(request, current_user, db, exempt_cli=True)
 
         blobs_data = [blob.model_dump() for blob in payload.blobs]
+        changes = await vault_service.describe_push(project_uuid, env_uuid, blobs_data, payload.unset_keys)
         created_blobs, conflict = await vault_service.push_blobs(
             project_id=project_uuid,
             environment_id=env_uuid,
             blobs=blobs_data,
             expected_version=payload.expected_version,
+            unset_keys=payload.unset_keys,
         )
+    except UnsetOnRootEnvironment as e:
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY, detail=str(e))
     except ConflictError as e:
         raise HTTPException(
             status_code=status.HTTP_409_CONFLICT,
@@ -217,6 +252,8 @@ async def push_vault(
             "auth_type": "ci_session" if ci_session else "session",
             "ci_session_id": ci_session.get("session_id") if ci_session else None,
             "ci_token_id": ci_session.get("ci_token_id") if ci_session else None,
+            # Key names per change (added/updated/removed/unset/restored); never a value.
+            "changes": changes,
         },
         ip_address=request.client.host if request.client else None,
         user_agent=request.headers.get("User-Agent")
@@ -226,7 +263,8 @@ async def push_vault(
 
     return VaultPullResponse(
         blobs=[VaultBlobPull.model_validate(_force_load_vault_blob(b)) for b in created_blobs],
-        version=current_version
+        version=current_version,
+        unset_keys=await vault_service.get_unset_keys(project_uuid, env_uuid),
     )
 
 
@@ -277,9 +315,79 @@ async def pull_vault(
             detail=str(e)
         )
 
+    await AuditService(db).log(
+        action="vault.pulled",
+        resource_type="vault",
+        resource_id=env_uuid,
+        user_id=current_user.id,
+        project_id=project_uuid,
+        metadata={
+            **reader_audit_meta(auth_context),
+            "environment_name": _environment.name,
+            "keys": [{"key": b.key_id, "source": _environment.name, "origin": "local"} for b in blobs],
+        },
+    )
+
     return VaultPullResponse(
         blobs=[VaultBlobPull.model_validate(_force_load_vault_blob(b)) for b in blobs],
-        version=version
+        version=version,
+        unset_keys=list(_environment.unset_keys or []),
+    )
+
+
+@router.get("/resolved", response_model=VaultResolvedResponse)
+async def resolved_vault(
+    project_id: str,
+    environment_id: str,
+    auth_context: AuthContext = Depends(get_current_auth_context),
+    db: AsyncSession = Depends(get_db)
+):
+    """The environment's secrets resolved through its parents (child > parent > grandparent), each blob
+    tagged with the environment holding it. Values stay encrypted with that environment's key.
+
+    A credential scoped to a child reads the inherited values this way, and only the ones the child
+    neither overrides nor unsets; it cannot pull, list or push the parent itself.
+    """
+    project_service = ProjectService(db)
+    try:
+        project_uuid = UUID(project_id)
+        env_uuid = UUID(environment_id)
+    except ValueError:
+        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Invalid ID")
+
+    current_user, environment = await _authenticate_vault_read(auth_context, db, project_uuid, env_uuid)
+    member = await project_service.check_user_access(current_user.id, project_uuid)
+    if not member:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Project not found")
+    if environment.restricted and not sees_restricted(member.role):
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Environment not found")
+
+    try:
+        chain = await inheritance.load_chain(db, environment)
+    except inheritance.InheritanceError as error:
+        raise HTTPException(status_code=status.HTTP_409_CONFLICT, detail=str(error))
+    resolved = await inheritance.resolve(db, chain)
+
+    await AuditService(db).log(
+        action="vault.resolved_read",
+        resource_type="vault",
+        resource_id=env_uuid,
+        user_id=current_user.id,
+        project_id=project_uuid,
+        metadata={
+            **reader_audit_meta(auth_context),
+            "environment_name": environment.name,
+            "keys": keys_audit(resolved),
+        },
+    )
+
+    return VaultResolvedResponse(
+        blobs=resolved_blobs(resolved),
+        version=environment.secrets_version,
+        environment_id=environment.id,
+        environment_name=environment.name,
+        unset_keys=list(environment.unset_keys or []),
+        chain=[EnvironmentRef(id=e.id, name=e.name) for e in chain],
     )
 
 
