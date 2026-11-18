@@ -27,6 +27,8 @@ interface VaultBlob {
   auth_tag: string;
   version: number;
   checksum: string;
+  // Environment holding the blob: a child environment's inherited values are encrypted with its parent's key.
+  environment_id?: string;
 }
 
 interface SecretsResponse {
@@ -257,7 +259,7 @@ export function exportableSecretValue(
     blob,
     vaultPassword,
     secrets.vault_config,
-    secrets.environment_id,
+    blob.environment_id ?? secrets.environment_id,
   );
 }
 
