@@ -243,3 +243,65 @@ async def test_created_audit_names_the_parent(client, world, factory):
         meta = (await db.scalar(select(AuditLog).where(AuditLog.action == "environment.created"))).meta
         count = await db.scalar(select(func.count()).select_from(AuditLog))
     assert meta["parent_name"] == "development" and "expires_at" in meta and count == 1
+
+
+# ─── Fixes from the review ───────────────────────────────────────────────────
+
+
+async def test_deleting_a_project_with_children_works_with_foreign_keys_on(world, seed, factory):
+    from sqlalchemy import text
+
+    from app.services.project_service import ProjectService
+
+    dev = world.envs["development"]
+    child = Environment(id=uuid4(), project_id=world.project.id, name="development/wt", parent_id=dev.id, unset_keys=[])
+    grandchild = Environment(id=uuid4(), project_id=world.project.id, name="development/wt/x", parent_id=child.id,
+                             unset_keys=[])
+    await seed(child, grandchild)
+
+    async with factory() as db:
+        # SQLite leaves foreign keys off; on, the RESTRICT on parent_id refuses a parent deleted first.
+        await db.execute(text("PRAGMA foreign_keys=ON"))  # the in-memory database keeps one connection
+        assert (await db.execute(text("PRAGMA foreign_keys"))).scalar() == 1
+        assert await ProjectService(db).delete_project(world.project.id)
+        await db.commit()
+
+    assert await _rows(factory, Environment, Environment.project_id == world.project.id) == []
+
+
+async def test_deleting_a_child_ends_open_ci_sessions_scoped_to_it(client, world, seed, factory):
+    from app.models.member import CISession
+
+    _as(world.bia)
+    dev = world.envs["development"]
+    child = (await _create(client, world, name="development/wt", parent_id=str(dev.id))).json()
+    token = CIToken(id=uuid4(), project_id=world.project.id, name="wt", token_hash=uuid4().hex,
+                    environment_scope="development/wt")
+    soon = datetime.now(timezone.utc) + timedelta(hours=1)
+    session = CISession(id=uuid4(), token_hash=uuid4().hex, ci_token_id=token.id, project_id=world.project.id,
+                        environment_scope="development/wt", expires_at=soon)
+    other = CISession(id=uuid4(), token_hash=uuid4().hex, ci_token_id=token.id, project_id=world.project.id,
+                      environment_scope="development", expires_at=soon)
+    await seed(token, session, other)
+
+    assert (await client.delete(f"{world.url}/{child['id']}")).status_code == 204
+
+    assert await _rows(factory, CISession, CISession.id == session.id) == []
+    assert len(await _rows(factory, CISession, CISession.id == other.id)) == 1
+
+
+async def test_expired_child_is_gone_for_scopes_rotation_and_overview(client, world, seed, db_session):
+    from app.services.overview_service import OverviewService
+    from app.services.project_service import ProjectService
+
+    _as(world.bia)
+    dev = world.envs["development"]
+    old = Environment(id=uuid4(), project_id=world.project.id, name="development/old", parent_id=dev.id,
+                      expires_at=datetime.now(timezone.utc) - timedelta(minutes=1), unset_keys=[])
+    await seed(old, _blob(old, "PORT"))
+
+    assert "development/old" not in await ProjectService(db_session).active_environment_names(world.project.id)
+    history = await client.get(f"{world.url}/{old.id}/secrets/PORT/rotation/history")
+    assert history.status_code == 404
+    matrix = await OverviewService(db_session).get_secret_matrix(world.project.id)
+    assert "development/old" not in [env["name"] for env in matrix["environments"]]

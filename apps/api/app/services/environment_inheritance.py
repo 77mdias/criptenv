@@ -24,7 +24,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from app.config import settings
 from app.models.api_key import APIKey
 from app.models.environment import Environment
-from app.models.member import CIToken
+from app.models.member import CISession, CIToken
 from app.models.secret_expiration import SecretExpiration, SecretRotation
 from app.models.vault import VaultBlob
 
@@ -45,8 +45,10 @@ def _aware(moment: datetime | None) -> datetime | None:
 
 
 def is_expired(env: Environment, now: datetime | None = None) -> bool:
-    expires_at = _aware(getattr(env, "expires_at", None))
-    return expires_at is not None and expires_at <= (now or datetime.now(timezone.utc))
+    expires_at = getattr(env, "expires_at", None)
+    if not isinstance(expires_at, datetime):  # unset (or a stand-in object without the column)
+        return False
+    return _aware(expires_at) <= (now or datetime.now(timezone.utc))
 
 
 def is_gone(env: Environment | None, now: datetime | None = None) -> bool:
@@ -190,6 +192,10 @@ async def hard_delete(db: AsyncSession, env: Environment) -> None:
         )
     for model in (SecretExpiration, SecretRotation):
         await db.execute(delete(model).where(model.environment_id == env.id))
+    # Sessions already opened by those tokens end too (a session is checked on its own, not its token).
+    await db.execute(
+        delete(CISession).where(CISession.project_id == env.project_id, CISession.environment_scope == env.name)
+    )
     await db.execute(delete(VaultBlob).where(VaultBlob.environment_id == env.id))
     await db.execute(delete(Environment).where(Environment.id == env.id))
 

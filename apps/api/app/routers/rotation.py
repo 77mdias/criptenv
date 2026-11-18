@@ -15,6 +15,7 @@ from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
+from app.services.environment_inheritance import is_gone
 from app.services.rotation_service import RotationService
 from app.services.project_service import ProjectService
 from app.services.audit_service import AuditService
@@ -78,7 +79,7 @@ async def _check_access(
     )
     environment = result.scalar_one_or_none()
     if (
-        not environment or getattr(environment, "archived", False)
+        is_gone(environment)  # archived, or an expired child
         # For anyone but the owner and admins a restricted environment does not exist.
         or (environment.restricted and not sees_restricted(member.role))
     ):
