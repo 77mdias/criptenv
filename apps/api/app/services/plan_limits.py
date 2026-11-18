@@ -64,7 +64,9 @@ class PlanLimits:
         )
         return {
             ENVIRONMENTS_PER_PROJECT: await self._count(
-                Environment, Environment.project_id == project_id, Environment.archived.is_(False)
+                # Ephemeral children (with an expiry) are not counted: they are worktree scratch space.
+                Environment, Environment.project_id == project_id, Environment.archived.is_(False),
+                Environment.expires_at.is_(None),
             ),
             MEMBERS_PER_PROJECT: members + pending_invites,
             INTEGRATIONS_PER_PROJECT: await self._count(Integration, Integration.project_id == project_id),

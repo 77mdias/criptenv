@@ -192,3 +192,35 @@ async def hard_delete(db: AsyncSession, env: Environment) -> None:
         await db.execute(delete(model).where(model.environment_id == env.id))
     await db.execute(delete(VaultBlob).where(VaultBlob.environment_id == env.id))
     await db.execute(delete(Environment).where(Environment.id == env.id))
+
+
+async def purge(db: AsyncSession, env: Environment) -> list[Environment]:
+    """Hard-delete env and every environment below it (deepest first). Returns what was deleted.
+
+    Callers only reach here when the descendants are gone already (expired with their ancestor,
+    or refused upfront while live), so nothing live is lost.
+    """
+    doomed = [*await descendants(db, env), env]
+    for victim in doomed:
+        await hard_delete(db, victim)
+    return doomed
+
+
+async def purge_expired(db: AsyncSession, now: datetime | None = None) -> list[Environment]:
+    """Delete every expired child environment of every project. Returns what was deleted."""
+    now = now or datetime.now(timezone.utc)
+    expired = list(await db.scalars(
+        select(Environment).where(
+            # A root environment is never ephemeral, whatever the column holds.
+            Environment.parent_id.is_not(None), Environment.expires_at.is_not(None), Environment.expires_at <= now,
+        )
+    ))
+    deleted: list[Environment] = []
+    deleted_ids: set[UUID] = set()
+    for env in expired:
+        if env.id in deleted_ids:
+            continue  # went with an expired ancestor
+        for victim in await purge(db, env):
+            deleted_ids.add(victim.id)
+            deleted.append(victim)
+    return deleted

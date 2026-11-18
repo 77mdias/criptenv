@@ -106,6 +106,19 @@ async def lifespan(app: FastAPI):
             )
             logger.info("Added session cleanup job (interval: 1h)")
 
+            # Ephemeral child environments past their TTL (routes already treat them as gone).
+            from app.jobs.environment_cleanup import create_session_scoped_scheduler_job as create_env_cleanup_job
+            scheduler_manager.scheduler.add_job(
+                create_env_cleanup_job(async_session_factory),
+                trigger=IntervalTrigger(minutes=15),
+                id="environment_cleanup",
+                name="Expired Environment Cleanup",
+                replace_existing=True,
+                max_instances=1,
+                misfire_grace_time=300,
+            )
+            logger.info("Added environment cleanup job (interval: 15m)")
+
             # Fire the provider deploys that pushes asked for (integrations.deploy_due_at)
             from app.jobs.deploy_due import create_session_scoped_scheduler_job as create_deploy_due_job
             scheduler_manager.scheduler.add_job(

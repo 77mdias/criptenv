@@ -26,6 +26,7 @@ from app.models.user import User
 from app.models.environment import Environment
 from app.services.environment_access import sees_restricted
 from sqlalchemy import select
+from app.services.environment_inheritance import is_gone
 
 router = APIRouter(prefix="/api/v1/projects/{project_id}/environments/{environment_id}/vault", tags=["Vault"])
 
@@ -83,7 +84,7 @@ async def _get_environment_or_404(
         )
     )
     environment = result.scalar_one_or_none()
-    if not environment or getattr(environment, "archived", False):
+    if is_gone(environment):
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND,
             detail="Environment not found",

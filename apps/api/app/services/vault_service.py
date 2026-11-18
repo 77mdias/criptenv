@@ -7,6 +7,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.models.vault import VaultBlob
 from app.models.environment import Environment
+from app.services.environment_inheritance import is_gone
 from app.strategies.exceptions import VaultConflict
 from app.strategies.vault_push import ReplaceAllVaultBlobsStrategy, VaultPushStrategy
 
@@ -39,7 +40,7 @@ class VaultService:
         )
         environment = env_result.scalar_one_or_none()
 
-        if not environment or getattr(environment, "archived", False):
+        if is_gone(environment):
             raise ValueError("Environment not found")
 
         return environment
