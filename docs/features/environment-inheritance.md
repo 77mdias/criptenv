@@ -121,5 +121,7 @@ For an agent that must not touch anything else, give it a read-only API key scop
 - **Rotation, expiration alerts and the per-environment secret count** work on a child's own values,
   not on the inherited ones (rotate those in the parent).
 - **The secrets matrix** (`/secrets/matrix`) shows each environment's own keys, not the resolved set.
+- **Integration bindings** (`auto_sync_targets`) keep the id of a deleted child as a stale entry; it
+  matches nothing and is harmless, but it is not cleaned up.
 - **Migration downgrade** keeps every environment and secret but drops the parent link, the unset
   lists and the expiries: children become standalone environments holding only their overrides.
