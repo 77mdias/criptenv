@@ -232,9 +232,14 @@ def test_oauth_callback_with_2fa_redirects_to_challenge_without_session(monkeypa
 
 
 def test_oauth_init_uses_forwarded_host_for_callback(monkeypatch):
-    """Test that OAuth initiation uses the public forwarded host in redirect_uri."""
+    """Test that OAuth initiation uses the public forwarded host in redirect_uri.
+
+    The forwarded host is honored only because it matches a configured public
+    host (FRONTEND_URL); an unknown host is rejected (see the spoof test below).
+    """
     monkeypatch.setattr(settings, "GITHUB_CLIENT_ID", "github-client-id")
     monkeypatch.setattr(settings, "GITHUB_CLIENT_SECRET", "github-client-secret")
+    monkeypatch.setattr(settings, "FRONTEND_URL", "https://criptenv.77mdevseven.tech")
 
     with TestClient(make_app()) as client:
         response = client.get(
@@ -250,6 +255,31 @@ def test_oauth_init_uses_forwarded_host_for_callback(monkeypatch):
     assert (
         "redirect_uri=https://criptenv.77mdevseven.tech/api/auth/oauth/github/callback"
         in response.headers["location"]
+    )
+
+
+def test_oauth_init_ignores_spoofed_forwarded_host(monkeypatch):
+    """A forwarded host we do not serve under must not reach the redirect_uri."""
+    monkeypatch.setattr(settings, "GITHUB_CLIENT_ID", "github-client-id")
+    monkeypatch.setattr(settings, "GITHUB_CLIENT_SECRET", "github-client-secret")
+    monkeypatch.setattr(settings, "API_URL", "https://criptenv.77mdevseven.tech")
+
+    with TestClient(make_app()) as client:
+        response = client.get(
+            "/api/auth/oauth/github",
+            headers={
+                "x-forwarded-host": "evil.example.com",
+                "x-forwarded-proto": "https",
+            },
+            follow_redirects=False,
+        )
+
+    assert response.status_code == 307
+    location = response.headers["location"]
+    assert "evil.example.com" not in location
+    assert (
+        "redirect_uri=https://criptenv.77mdevseven.tech/api/auth/oauth/github/callback"
+        in location
     )
 
 

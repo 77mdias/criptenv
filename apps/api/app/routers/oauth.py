@@ -1,4 +1,5 @@
 import logging
+from urllib.parse import urlparse
 
 from fastapi import APIRouter, Depends, HTTPException, status, Request, Response
 from fastapi.responses import RedirectResponse
@@ -48,14 +49,29 @@ def _set_two_factor_challenge_cookie(response: Response, token: str) -> None:
     )
 
 
+def _allowed_public_hosts() -> set[str]:
+    """Hosts this API is actually served under (its configured API and frontend URLs)."""
+    hosts = set()
+    for url in (settings.API_URL, settings.FRONTEND_URL):
+        netloc = urlparse(url).netloc.lower()
+        if netloc:
+            hosts.add(netloc)
+    return hosts
+
+
 def _get_public_request_base_url(request: Request) -> str:
     forwarded_host = request.headers.get("x-forwarded-host")
     forwarded_proto = request.headers.get("x-forwarded-proto")
 
     if forwarded_host:
         host = forwarded_host.split(",", 1)[0].strip()
-        proto = (forwarded_proto or request.url.scheme).split(",", 1)[0].strip()
-        return f"{proto}://{host}"
+        # The OAuth redirect_uri is built from this host, so only honor a
+        # forwarded host we actually serve under: a spoofed X-Forwarded-Host must
+        # not steer the redirect_uri to an attacker's domain. Any other value
+        # falls back to the canonical, provider-registered API_URL.
+        if host.lower() in _allowed_public_hosts():
+            proto = (forwarded_proto or request.url.scheme).split(",", 1)[0].strip()
+            return f"{proto}://{host}"
 
     return settings.API_URL.rstrip("/")
 
