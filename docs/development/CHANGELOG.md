@@ -7,6 +7,14 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [Unreleased]
 
+### CLI 0.2.5 (PyPI) — 2026-11-20
+
+- **Ambientes filhos com herança:** `env create <nome> --parent <env> [--ttl 7d]` cria um ambiente que herda tudo do pai e guarda só o que muda. `unset <chave> --env <filho>` esconde uma chave herdada sem tocar no pai. `env show <env> --resolved` mostra a origem de cada chave (valores mascarados) e `env diff <filho>` compara os nomes com o pai. `get`, `list`, `export`, `run` e o sync de integrações leem o conjunto resolvido, e cada valor herdado é decifrado com a chave do ambiente de origem. CLIs anteriores falham no primeiro segredo herdado de um filho: atualizar antes de usar. Fluxo com git worktrees em `docs/features/environment-inheritance.md`.
+- **Ambientes restritos:** `env create --restricted`, `env update --restricted` / `--open` e a restrição em `env list`.
+- **Chave de API só de leitura:** a CLI mostra e explica a chave só de leitura; o token de CI lista os ambientes a que tem acesso.
+- **Tipos Secret e Config:** as variáveis podem ser marcadas como secret ou config, e o tipo vai junto no sync. Variáveis de antes dos tipos ficam sem tipo e nunca rebaixam um Secret da Vercel.
+- **Envio automático para a hospedagem ao salvar**, com `integrations sync --delete` para reenviar remoções pendentes depois de uma falha.
+
 ### Hero da landing: "o segredo" no lugar do modelo 3D — 2026-11-18
 
 - **Hero novo:** saem o modelo 3D em Three.js e o gradiente de fundo. Entram um fragmento de luz com 90 estilhaços em órbita e um fundo de raios de luz com flocos desfocados, nos temas escuro e claro, com imagens de fundo próprias para tela estreita.
